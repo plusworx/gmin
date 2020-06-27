@@ -2,7 +2,7 @@
 Administration CLI for Google G Suite written in Go (aka Golang). gmin performs actions by using credentials of a service account that has delegated domain-wide authority and the email address of a user with administrative authority.
 
 ## Usage
-A Wiki is on the list of tasks.
+A Wiki is on the list of tasks on the upcoming roadmap.
 
 Commands usually take the form of `gmin <verb> <object> <flags>`. Although there may be the odd exception like `gmin whoami`.
 
@@ -51,14 +51,6 @@ Similarly to the attributes flag above, query clauses are separated by the tilde
 
 https://developers.google.com/admin-sdk/directory/v1/get-start/getting-started is a useful resource for looking up query parameters. There are 'Search for' links for different objects like Users and Groups.
 
-## Why am I writing gmin
-
-* I wanted to write something in Go
-* I wanted to write something that would help me in my daily work
-* I wanted to create something that could be distributed as a single executable
-* I wanted something that was more intuitive and easier to work with for me than existing tools
-* Maybe there are other people who might benefit from gmin
-
 ## Installing gmin
 gmin is intended to run on Linux, Windows and MacOS for which pre-compiled binaries will be made available. gmin may run on other operating systems, but it is up to the user to test.
 
@@ -88,6 +80,14 @@ https://www.googleapis.com/auth/admin.directory.group.member
 6. Run the command `gmin init` inputting the email address of the admin whose privileges will be used and optionally, the path where you would like the config file, .gmin.yaml, to be written. By default the config file is written to the current user's home directory. If you choose a different installation path then that path will need to be given with each gmin command by using the --config flag.
 7. To see the version number of your gmin binary, run the command `gmin -v` or `gmin --version`.
 8. To get help from gmin itself, enter `gmin -h` or `gmin --help` and go from there.
+
+## Why am I writing gmin
+
+* I wanted to write something in Go
+* I wanted to write something that would help me in my daily work
+* I wanted to create something that could be distributed as a single executable
+* I wanted something that was more intuitive and easier to work with for me than existing tools
+* Maybe there are other people who might benefit from gmin
 
 ## Project Status
 gmin is alpha software at the moment which means that it is liable to rapid change, although the command syntax is unlikely to change much (if at all) over time. The functionality is currently limited to users, groups, members and organisation units but additional functionality will be added when it is ready.
