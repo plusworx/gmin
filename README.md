@@ -1,6 +1,36 @@
 # gmin
 Administration CLI for Google G Suite written in Go (aka Golang). gmin performs actions by using credentials of a service account that has delegated domain-wide authority and the email address of a user with administrative authority.
 
+## Installing gmin
+gmin is intended to run on Linux, Windows and MacOS for which pre-compiled binaries will be made available. gmin may run on other operating systems, but it is up to the user to test.
+
+At present, there is no automated installation. Users should obtain a pre-compiled binary for their particular operating system or compile it themselves if they have a Go environment set up.
+
+The following steps should get you a working gmin installation -
+
+1. Create a Google Cloud Platform project.
+2. Enable the Admin SDK API for the project. At the moment, the Admin SDK is all that is needed to use gmin. Additional APIs might be required when future functionality is added.
+3. Create a service account, create and download a JSON key for the service account and enable G Suite domain-wide delegation.
+4. In the G Suite admin console of the domain with which you want to use gmin, go to Security > API Permissions > Manage Domain-wide Delegation and add a new record (or update an existing one). The scopes that you will need to add to the record for full functionality are as follows -
+```
+Readonly scopes are needed for get and list functions. The other scopes are needed for create, delete, update
+and undelete functions.
+
+https://www.googleapis.com/auth/admin.directory.group
+https://www.googleapis.com/auth/admin.directory.group.member.readonly
+https://www.googleapis.com/auth/admin.directory.orgunit
+https://www.googleapis.com/auth/admin.directory.orgunit.readonly
+https://www.googleapis.com/auth/admin.directory.user
+https://www.googleapis.com/auth/admin.directory.user.readonly
+https://www.googleapis.com/auth/admin.directory.group.readonly
+https://www.googleapis.com/auth/admin.directory.group.member
+```
+
+5. Copy/move the gmin binary to a convenient directory/folder and rename the JSON key file, downloaded earlier, to gmin_credentials and place in the same directory/folder as the gmin binary.
+6. Run the command `gmin init` inputting the email address of the admin whose privileges will be used and optionally, the path where you would like the config file, .gmin.yaml, to be written. By default the config file is written to the current user's home directory. If you choose a different installation path then that path will need to be given with each gmin command by using the --config flag.
+7. To see the version number of your gmin binary, run the command `gmin -v` or `gmin --version`.
+8. To get help from gmin itself, enter `gmin -h` or `gmin --help` and go from there.
+
 ## Usage
 A Wiki is on the list of tasks on the upcoming roadmap.
 
@@ -50,36 +80,6 @@ This command will only return the primary email address for each user that satis
 Similarly to the attributes flag above, query clauses are separated by the tilde (~) character and quotation marks may need to be used.
 
 https://developers.google.com/admin-sdk/directory/v1/get-start/getting-started is a useful resource for looking up query parameters. There are 'Search for' links for different objects like Users and Groups.
-
-## Installing gmin
-gmin is intended to run on Linux, Windows and MacOS for which pre-compiled binaries will be made available. gmin may run on other operating systems, but it is up to the user to test.
-
-At present, there is no automated installation. Users should obtain a pre-compiled binary for their particular operating system or compile it themselves if they have a Go environment set up.
-
-The following steps should get you a working gmin installation -
-
-1. Create a Google Cloud Platform project.
-2. Enable the Admin SDK API for the project. At the moment, the Admin SDK is all that is needed to use gmin. Additional APIs might be required when future functionality is added.
-3. Create a service account, create and download a JSON key for the service account and enable G Suite domain-wide delegation.
-4. In the G Suite admin console of the domain with which you want to use gmin, go to Security > API Permissions > Manage Domain-wide Delegation and add a new record (or update an existing one). The scopes that you will need to add to the record for full functionality are as follows -
-```
-Readonly scopes are needed for get and list functions. The other scopes are needed for create, delete, update
-and undelete functions.
-
-https://www.googleapis.com/auth/admin.directory.group
-https://www.googleapis.com/auth/admin.directory.group.member.readonly
-https://www.googleapis.com/auth/admin.directory.orgunit
-https://www.googleapis.com/auth/admin.directory.orgunit.readonly
-https://www.googleapis.com/auth/admin.directory.user
-https://www.googleapis.com/auth/admin.directory.user.readonly
-https://www.googleapis.com/auth/admin.directory.group.readonly
-https://www.googleapis.com/auth/admin.directory.group.member
-```
-
-5. Copy/move the gmin binary to a convenient directory/folder and rename the JSON key file, downloaded earlier, to gmin_credentials and place in the same directory/folder as the gmin binary.
-6. Run the command `gmin init` inputting the email address of the admin whose privileges will be used and optionally, the path where you would like the config file, .gmin.yaml, to be written. By default the config file is written to the current user's home directory. If you choose a different installation path then that path will need to be given with each gmin command by using the --config flag.
-7. To see the version number of your gmin binary, run the command `gmin -v` or `gmin --version`.
-8. To get help from gmin itself, enter `gmin -h` or `gmin --help` and go from there.
 
 ## Why am I writing gmin
 
