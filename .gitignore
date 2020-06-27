@@ -6,6 +6,9 @@
 *.dylib
 *.json
 
+# gmin credentials JSON file
+gmin_credentials
+
 # Test binary, built with `go test -c`
 *.test
 
