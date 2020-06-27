@@ -1,0 +1,12 @@
+{
+  "type": "service_account",
+  "project_id": "peerless-truck-278610",
+  "private_key_id": "5e54058242389bf09617ef7db03bf0b128bea660",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQDAVMIin+L0KrpY\n03H/51P5b3xpFTvIiFLppl1eryzCzJTqjBI59Rp6397GFeClS6y2GrWetWkuh/dQ\n5v+N6xhppC0hJZHvZ9M2gFTaOLp16HVNOcegFlY+nsjXcXaFgJ+/1ajCm0GLzm5K\nBJRklW/xxCWYjSYyCuCKr3rWcAwjwUZH23ti9CcK/yFGl6LPRDdOD5omHk3Ok/do\nfg99hlQzbqI3o9Zynjx4Y4hkf4MfMFW9Hv3j9c+YTXX+lRpqocpXpLkPBJ3dYpIc\nAoY6yekxFo+mw333xx7ydR5CKi4aTPQIM1+xuxYQKY4t0bl5WDK1l8VoaPjlcOxn\nRG7jZY1BAgMBAAECggEAAaYm7/ds+kYMmm3SDFAan8L3lO1Arg9jtd+BMxMVPrX3\nnCuTGSipSY1TeEoL6a1zD7xJQRbU6wmrlXNbZh6Pc0wQbSzIp0PU5jnpF5wTokmI\nZzZJKFZ/9p8fLSvk3/ucnTaLqz1NW+6xFWNh78m/21PPTCqL1QS8fh+NaUC5mHdq\naDOqGJQ73QSotedfgygCi94luaUHMKjXHgUz/9B7VvjTGkmrazfoDUVeLvPP/wTT\n4N0srz9mGYqIg/15CKdqB7BRjQDiWZD3NJNrYhkPgahB9DNjy46FND9QpK02SR+a\nkqrLO236u3f47LqakTKf+OmEeadv4yGdWft7b56DUQKBgQDp+mLucl1Kb7CZ3+mO\ncc8H8b8poxOQrTTCFUfho1NDltdvzeCh4Rlbxlw2pZuQfP40x7/+4mPeyGY45sxQ\nFzzhL26anoOVewPD8jNaZmi3OVQ29VX1ZDuyTG1imLFKa7u0spqfnqX0dVFm0Lyd\ndA8P/8xiboZhrVsu5PCbYKo3VQKBgQDSbudJ8KVnnMRRojMrsLeL8UQTVcLUtv+i\n2rUH/S9ZltdxRlSMQiPBYtAxayWI46yFqPk7iA4oi7DKYI9K07/Mx+G5xepR8XKK\nh9+CHVICd26HiMPj7PyFBmD0SH9eH8UIdRKFfde389GjQSIvyMU6HVzqf37mutFO\nXPZH+KDmPQKBgGPN1TNm/xpISClq1KJZM3ltCiDFmgvlhhKfpzi9RUAYcK8VP5Nt\nhDachyscOx5H4ts6tVAQ247lJo1xDYfAUcywQdqccP5rKbEEeBlAg7xcLOsAfXke\nF0S3yxT6ku1uxPOQF9qsfpenD2Du+vWi0uX9M/5srM+vdaysJWHxusm9AoGAI1Hq\nEEcL/DAb43fODu9CX4LHYldqtDli/vqmmAivAeKHlsOvPTt8tODZAPJzAl70fhq2\nen+DoNqReeZrJqwT7VM/V+cYRVi5WPclVLmHIlLZgnY6Ku+EEu/XJilk929tqtW7\nnhxZMM8DyNsN2edg8zgqeFGeAywoJXcE/1+D4iECgYB33/u1QFiOnc2EIWOiX1kI\nLtAbnJkbMioKfGiXtVmTbMOCXfSF1Xs25K2SSWVzQ1rXNMsCqo50x2ocg4MNCcpd\nX3Jq3Vx+A+aO2vuRZD0gfggW/fiaHz5ZrF1RN3rVtYbgLabviaeCmLcCpUXYRi6d\nVaqhVKIVqU83kPksXbL/SA==\n-----END PRIVATE KEY-----\n",
+  "client_email": "galena-admin-srvaccount@peerless-truck-278610.iam.gserviceaccount.com",
+  "client_id": "112069349509659999800",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/galena-admin-srvaccount%40peerless-truck-278610.iam.gserviceaccount.com"
+}
