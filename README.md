@@ -32,8 +32,6 @@ https://www.googleapis.com/auth/admin.directory.group.member
 8. To get help from gmin itself, enter `gmin -h` or `gmin --help` and go from there.
 
 ## Usage
-A Wiki is on the list of tasks on the upcoming roadmap.
-
 Commands usually take the form of `gmin <verb> <object> <flags>`. Although there may be the odd exception like `gmin whoami`.
 
 Command flags look like -x or --longnameforx. Flags that relate to boolean values (true/false) just need the flag to be provided and no value. For example, the `-c or --changepassword` flag when creating a user.
@@ -47,6 +45,30 @@ Type `gmin <command> -h or --help` to get help about a particular command. For e
 with abbreviations the command would look like this -
 
 `gmin crt user new.user@mydomain.com -f New -l User -p MyStrongPassword`
+
+**Get a user**
+
+`gmin get user new.user@mydomain.com`
+
+This command results in all user information being returned. If I only want their addresses then I would say -
+
+`gmin get user new.user@mydomain.com -a addresses`
+
+If I only want a particular part of the address, because address is made up of other attributes, I could say something like -
+
+`gmin get user new.user@mydomain.com -a addresses(formatted)`
+
+**List users**
+
+`gmin list users`
+
+This command returns all user information about all users. If I want to restrict the amount of information returned then I can specify some attributes -
+
+`gmin list users -a primaryemail~name~addresses`
+
+If I want to filter the results still further I can provide a query with or without attributes -
+
+`gmin list users -q orgunitpath=/Sales`
 
 **Attributes Flag**
 
@@ -63,6 +85,12 @@ Therefore the user above could be created by using the following command -
 
 `gmin create user new.user@domain.com -a name:{firstname:New~lastname:User}~password:MyStrongPassword`
 
+When creating objects, attributes and other flags can be both be used but values provided by the attributes flag override attributes provided by other flags. For example -
+
+`gmin crt user d.williams@mycompany.org -f Danny -l Williams -p SuperSecretPwd -a name:{firstname:Douglas}`
+
+would result in a user whose first name is Douglas not Danny.
+
 https://developers.google.com/admin-sdk/directory/v1/reference is a useful resource for looking up valid attribute names and values.
 
 **Query Flag**
@@ -77,28 +105,37 @@ This command will return a list of users that have super admin privileges. You c
 
 This command will only return the primary email address for each user that satisfies the query.
 
-Similarly to the attributes flag above, query clauses are separated by the tilde (~) character and quotation marks may need to be used.
+Similarly to the attributes flag above, query clauses are separated by the tilde (~) character and quotation marks may need to be used. This command returns a list of users whose last name is Smith and has an address in London -
+
+`gmin list users -q lastname=Smith~addressLocality=London`
 
 https://developers.google.com/admin-sdk/directory/v1/get-start/getting-started is a useful resource for looking up query parameters. There are 'Search for' links for different objects like Users and Groups.
 
 ## Why am I writing gmin
 
-* I wanted to write something in Go
-* I wanted to write something that would help me in my daily work
-* I wanted to create something that could be distributed as a single executable
-* I wanted something that was more intuitive and easier to work with for me than existing tools
+* I want to write something non-trivial in Go
+* I want to gain a deep understanding of Google APIs, particularly those useful to G Suite admins
+* I want to write something that would help me in my daily G Suite admin work 
+* I want to create something that can be distributed as a single executable
+* I want a G Suite admin tool that is more intuitive and easier to work with (at least for me) than existing tools
 * Maybe there are other people who might benefit from gmin
 
 ## Project Status
-gmin is alpha software at the moment which means that it is liable to rapid change, although the command syntax is unlikely to change much (if at all) over time. The functionality is currently limited to users, groups, members and organisation units but additional functionality will be added when it is ready.
+gmin is pretty young which means that it is liable to rapid change, although the command syntax is unlikely to change much (if at all) over time. The functionality is currently limited to users, groups, members and organisation units but additional functionality will be added when it is ready.
 
-All output is in JSON format apart from informational and error messages. Output in other formats such as CSV will be on the roadmap, however, I have found the use of the jq utility (https://stedolan.github.io/jq/) can be a great help in working with JSON.
+All output is in JSON format apart from informational and error messages. Output in other formats such as CSV is on the roadmap, however, I have found the use of the jq utility (https://stedolan.github.io/jq/) can be a great help in working with JSON.
 
-I will be publishing a roadmap and welcome any suggestions as to the most important features to add.
+I will be publishing a roadmap and welcome any suggestions as to the most important features to add. A Wiki is on the list of tasks on the upcoming roadmap.
 
 ## Community
 
 Google Group: https://groups.google.com/a/plusworx.uk/d/forum/gmin
+
+## Acknowledgements
+
+Thank you to Jay Lee for writing GAM (https://github.com/jay0lee/GAM) which inspired me to have a go at gmin.
+Thanks to the Go team for creating a programming language that is really enjoyable to use.
+Thanks to the G Suite team for building a world-class collaboration platform.
 
 
 ## License

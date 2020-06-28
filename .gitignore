@@ -4,7 +4,12 @@
 *.dll
 *.so
 *.dylib
+
+# JSON files
 *.json
+
+# gmin Linux executable
+gmin
 
 # gmin credentials JSON file
 gmin_credentials
