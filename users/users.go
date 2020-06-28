@@ -537,6 +537,11 @@ func doComposite(user *admin.User, attrStack []string) ([]string, error) {
 		stop         bool
 	)
 
+	if len(attrStack) < 2 {
+		err := errors.New("gmin: error - malformed attribute string")
+		return nil, err
+	}
+
 	attrName = attrStack[0]
 	processStack = attrStack[1:]
 
@@ -663,6 +668,11 @@ func doName(name *admin.UserName, attrStack []string) ([]string, error) {
 
 // doNonComposite processes admin.User non-composite attributes
 func doNonComposite(user *admin.User, attrStack []string) ([]string, error) {
+	if len(attrStack)%2 != 0 {
+		err := errors.New("gmin: error - malformed attribute string")
+		return nil, err
+	}
+
 	attrName := strings.ToLower(attrStack[0])
 	attrValue := attrStack[1]
 	newStack := []string{}
@@ -719,6 +729,9 @@ func doNonComposite(user *admin.User, attrStack []string) ([]string, error) {
 			user.Suspended = false
 			user.ForceSendFields = append(user.ForceSendFields, "Suspended")
 		}
+	default:
+		err := fmt.Errorf("gmin: error - attribute %v not recognised", attrName)
+		return nil, err
 	}
 
 	return newStack, nil
