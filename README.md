@@ -31,6 +31,8 @@ https://www.googleapis.com/auth/admin.directory.group.member
 7. To see the version number of your gmin binary, run the command `gmin -v` or `gmin --version`.
 8. To get help from gmin itself, enter `gmin -h` or `gmin --help` and go from there.
 
+If you already use GAM (https://github.com/jay0lee/GAM) then you will already have a service account and JSON credentials file. In this case you could use the same service account by copying the GAM credentials.json, rename the copy to gmin_credentials and place it in the same directory/folder as the gmin executable.
+
 ## Usage
 Commands usually take the form of `gmin <verb> <object> <flags>`. Although there may be the odd exception like `gmin whoami`.
 
@@ -70,6 +72,18 @@ If I want to filter the results still further I can provide a query with or with
 
 `gmin list users -q orgunitpath=/Sales`
 
+**Delete a user**
+
+`gmin delete user new.user@mydomain.com`
+
+There are no warnings issued by the delete command so use it carefully.
+
+**Undelete a user**
+
+`gmin undelete user new.user@mydomain.com`
+
+This allows you to restore a user that has been deleted.
+
 **Attributes Flag**
 
 Some commands have an attribute flag (-a or --attributes) where you can specify object attributes that you want to provide or that you want to see. For instance, where you are creating a user you can provide all or some of the user attributes that you want to create the user with via the attribute flag.
@@ -85,7 +99,7 @@ Therefore the user above could be created by using the following command -
 
 `gmin create user new.user@domain.com -a name:{firstname:New~lastname:User}~password:MyStrongPassword`
 
-When creating objects, attributes and other flags can be both be used but values provided by the attributes flag override attributes provided by other flags. For example -
+When creating objects, values provided by the attributes flag override attributes provided by other flags. For example -
 
 `gmin crt user d.williams@mycompany.org -f Danny -l Williams -p SuperSecretPwd -a name:{firstname:Douglas}`
 
@@ -134,7 +148,9 @@ Google Group: https://groups.google.com/a/plusworx.uk/d/forum/gmin
 ## Acknowledgements
 
 Thank you to Jay Lee for writing GAM (https://github.com/jay0lee/GAM) which inspired me to have a go at gmin.
+
 Thanks to the Go team for creating a programming language that is really enjoyable to use.
+
 Thanks to the G Suite team for building a world-class collaboration platform.
 
 
