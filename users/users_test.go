@@ -1,6 +1,7 @@
 package users
 
 import (
+	"strconv"
 	"testing"
 
 	admin "google.golang.org/api/admin/directory/v1"
@@ -157,17 +158,63 @@ func TestDoName(t *testing.T) {
 			continue
 		}
 
-		if newStack != nil {
-			if len(newStack) != c.expectedNSLen {
-				t.Errorf("Expected newStack length %v - got %v", c.expectedNSLen, len(newStack))
-			}
-
+		if len(newStack) != 0 && len(newStack) != c.expectedNSLen {
+			t.Errorf("Expected newStack length %v - got %v", c.expectedNSLen, len(newStack))
 			continue
 		}
 
 		if name.GivenName != c.expectedFirstName || name.FamilyName != c.expectedLastName || name.FullName != c.expectedFullName {
 			t.Errorf("Name error - expected firstName: %v; fullName: %v; lastName: %v - got firstName: %v; fullName: %v; lastName: %v",
 				c.expectedFirstName, c.expectedFullName, c.expectedLastName, name.GivenName, name.FullName, name.FamilyName)
+		}
+	}
+}
+func TestDoNonComposite(t *testing.T) {
+	cases := []struct {
+		attrStack     []string
+		expectedErr   string
+		expectedValue string
+		expectedNSLen int
+	}{
+		{
+			attrStack:     []string{"changepasswordatnextlogin", "true"},
+			expectedErr:   "",
+			expectedValue: "true",
+		},
+		{
+			attrStack:     []string{"changepasswordatnextlogin", "false"},
+			expectedErr:   "",
+			expectedValue: "false",
+		},
+	}
+
+	for _, c := range cases {
+		user := new(admin.User)
+
+		attrStack := c.attrStack
+
+		newStack, err := doNonComposite(user, attrStack)
+
+		if err != nil {
+			if err.Error() != c.expectedErr {
+				t.Errorf("Got error: %v - expected error: %v", err.Error(), c.expectedErr)
+			}
+
+			continue
+		}
+
+		if len(newStack) != 0 && len(newStack) != c.expectedNSLen {
+			t.Errorf("Expected newStack length %v - got %v", c.expectedNSLen, len(newStack))
+			continue
+		}
+
+		switch true {
+		case attrStack[0] == "changepasswordatnextlogin":
+			b, _ := strconv.ParseBool(c.expectedValue)
+
+			if b != user.ChangePasswordAtNextLogin {
+				t.Errorf("Expected user.ChangePasswordAtNextLogin to be %v but got %v", b, user.ChangePasswordAtNextLogin)
+			}
 		}
 	}
 }

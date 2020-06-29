@@ -677,7 +677,7 @@ func doName(name *admin.UserName, attrStack []string) ([]string, error) {
 
 // doNonComposite processes admin.User non-composite attributes
 func doNonComposite(user *admin.User, attrStack []string) ([]string, error) {
-	if len(attrStack)%2 != 0 {
+	if len(attrStack) < 2 {
 		err := errors.New("gmin: error - malformed attribute string")
 		return nil, err
 	}
