@@ -147,6 +147,9 @@ I will be publishing a roadmap and welcome any suggestions as to the most import
 
 Google Group: https://groups.google.com/a/plusworx.uk/d/forum/gmin
 
+## Code of Conduct
+Please see the code of conduct document - https://github.com/plusworx/gmin/blob/master/CODE_OF_CONDUCT.md
+
 ## Acknowledgements
 
 Thank you to Jay Lee for writing GAM (https://github.com/jay0lee/GAM) which inspired me to have a go at gmin.
