@@ -318,6 +318,13 @@ var UserAttrMap = map[string]string{
 	"websites":                   "websites",
 }
 
+var validAddressTypes = []string{
+	"custom",
+	"home",
+	"other",
+	"work",
+}
+
 var validEmailTypes = []string{
 	"custom",
 	"home",
@@ -574,7 +581,8 @@ func doComposite(user *admin.User, attrStack []string) ([]string, error) {
 		}
 	}
 
-	return newStack, nil
+	err := errors.New("gmin: error - malformed attribute string")
+	return nil, err
 }
 
 // Domain fetches users for a particular domain
@@ -862,6 +870,11 @@ func makeAddress(addrParts []string) (*admin.UserAddress, error) {
 			case attrName == "streetaddress":
 				newAddress.StreetAddress = part
 			case attrName == "type":
+				ok := cmn.SliceContainsStr(validAddressTypes, part)
+				if !ok {
+					err := fmt.Errorf("gmin: error - %v is not a valid address type", part)
+					return nil, err
+				}
 				newAddress.Type = part
 			}
 		}

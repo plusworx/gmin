@@ -96,7 +96,7 @@ func IsValidAttr(attr string, attrMap map[string]string) (string, error) {
 
 	validAttr := attrMap[lowerAttr]
 	if validAttr == "" {
-		err := fmt.Errorf("attribute %v is unrecognized", attr)
+		err := fmt.Errorf("gmin: error - attribute %v is unrecognized", attr)
 		return "", err
 	}
 
