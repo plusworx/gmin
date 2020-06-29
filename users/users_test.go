@@ -186,6 +186,69 @@ func TestDoNonComposite(t *testing.T) {
 			expectedErr:   "",
 			expectedValue: "false",
 		},
+		{
+			attrStack:     []string{"includeinglobaladdresslist", "true"},
+			expectedErr:   "",
+			expectedValue: "true",
+		},
+		{
+			attrStack:     []string{"includeinglobaladdresslist", "false"},
+			expectedErr:   "",
+			expectedValue: "false",
+		},
+		{
+			attrStack:     []string{"ipwhitelisted", "true"},
+			expectedErr:   "",
+			expectedValue: "true",
+		},
+		{
+			attrStack:     []string{"ipwhitelisted", "false"},
+			expectedErr:   "",
+			expectedValue: "false",
+		},
+		{
+			attrStack:     []string{"orgunitpath", "/Finance"},
+			expectedErr:   "",
+			expectedValue: "/Finance",
+		},
+		{
+			attrStack:     []string{"password", "ExtraSecurePassword"},
+			expectedErr:   "",
+			expectedValue: "f04b2e2e92336f5412d4c709749b26e29ea48e2f",
+		},
+		{
+			attrStack:     []string{"primaryemail", "dick.turpin@famoushighwaymen.com"},
+			expectedErr:   "",
+			expectedValue: "dick.turpin@famoushighwaymen.com",
+		},
+		{
+			attrStack:     []string{"recoveryemail", "dick.turpin@alternative.com"},
+			expectedErr:   "",
+			expectedValue: "dick.turpin@alternative.com",
+		},
+		{
+			attrStack:     []string{"recoveryphone", "+447880234167"},
+			expectedErr:   "",
+			expectedValue: "+447880234167",
+		},
+		{
+			attrStack:   []string{"recoveryphone", "447880234167"},
+			expectedErr: "gmin: error - recovery phone number 447880234167 must start with '+'",
+		},
+		{
+			attrStack:     []string{"suspended", "true"},
+			expectedErr:   "",
+			expectedValue: "true",
+		},
+		{
+			attrStack:     []string{"suspended", "false"},
+			expectedErr:   "",
+			expectedValue: "false",
+		},
+		{
+			attrStack:   []string{"bogus", "false"},
+			expectedErr: "gmin: error - attribute bogus not recognised",
+		},
 	}
 
 	for _, c := range cases {
@@ -214,6 +277,44 @@ func TestDoNonComposite(t *testing.T) {
 
 			if b != user.ChangePasswordAtNextLogin {
 				t.Errorf("Expected user.ChangePasswordAtNextLogin to be %v but got %v", b, user.ChangePasswordAtNextLogin)
+			}
+		case attrStack[0] == "includeinglobaladdresslist":
+			b, _ := strconv.ParseBool(c.expectedValue)
+
+			if b != user.IncludeInGlobalAddressList {
+				t.Errorf("Expected user.IncludeInGlobalAddressList to be %v but got %v", b, user.IncludeInGlobalAddressList)
+			}
+		case attrStack[0] == "ipwhitelisted":
+			b, _ := strconv.ParseBool(c.expectedValue)
+
+			if b != user.IpWhitelisted {
+				t.Errorf("Expected user.IpWhitelisted to be %v but got %v", b, user.IpWhitelisted)
+			}
+		case attrStack[0] == "orgunitpath":
+			if user.OrgUnitPath != c.expectedValue {
+				t.Errorf("Expected user.OrgUnitPath to be %v but got %v", c.expectedValue, user.OrgUnitPath)
+			}
+		case attrStack[0] == "password":
+			if user.Password != c.expectedValue {
+				t.Errorf("Expected user.Password to be %v but got %v", c.expectedValue, user.Password)
+			}
+		case attrStack[0] == "primaryemail":
+			if user.PrimaryEmail != c.expectedValue {
+				t.Errorf("Expected user.PrimaryEmail to be %v but got %v", c.expectedValue, user.PrimaryEmail)
+			}
+		case attrStack[0] == "recoveryemail":
+			if user.RecoveryEmail != c.expectedValue {
+				t.Errorf("Expected user.RecoveryEmail to be %v but got %v", c.expectedValue, user.RecoveryEmail)
+			}
+		case attrStack[0] == "recoveryphone":
+			if user.RecoveryPhone != c.expectedValue {
+				t.Errorf("Expected user.RecoveryPhone to be %v but got %v", c.expectedValue, user.RecoveryPhone)
+			}
+		case attrStack[0] == "suspended":
+			b, _ := strconv.ParseBool(c.expectedValue)
+
+			if b != user.Suspended {
+				t.Errorf("Expected user.Suspended to be %v but got %v", b, user.Suspended)
 			}
 		}
 	}

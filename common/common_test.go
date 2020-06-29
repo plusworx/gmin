@@ -9,7 +9,7 @@ func TestHashPassword(t *testing.T) {
 
 	hashedPwd, _ := HashPassword(pwd)
 
-	if len(hashedPwd) < 1 {
-		t.Error("Password hashing failed")
+	if hashedPwd != "e1f7c050db42a86e4d358e8c1dcef57e3b4f2fc0" {
+		t.Errorf("Expected user.Password to be %v but got %v", "e1f7c050db42a86e4d358e8c1dcef57e3b4f2fc0", hashedPwd)
 	}
 }
