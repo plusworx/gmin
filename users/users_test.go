@@ -247,7 +247,7 @@ func TestDoNonComposite(t *testing.T) {
 		},
 		{
 			attrStack:   []string{"bogus", "false"},
-			expectedErr: "gmin: error - attribute bogus not recognised",
+			expectedErr: "gmin: error - attribute bogus not recognized",
 		},
 	}
 

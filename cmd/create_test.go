@@ -39,7 +39,7 @@ func TestDoCreateUser(t *testing.T) {
 			firstname:  "Mickey",
 			lastname:   "Mouse",
 			password:   "SuperStrongPassword",
-			expected:   "gmin: error - attribute jklkjf not recognised",
+			expected:   "gmin: error - attribute jklkjf not recognized",
 		},
 	}
 

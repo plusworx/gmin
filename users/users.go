@@ -739,7 +739,7 @@ func doNonComposite(user *admin.User, attrStack []string) ([]string, error) {
 			user.ForceSendFields = append(user.ForceSendFields, "Suspended")
 		}
 	default:
-		err := fmt.Errorf("gmin: error - attribute %v not recognised", attrName)
+		err := fmt.Errorf("gmin: error - attribute %v not recognized", attrName)
 		return nil, err
 	}
 
