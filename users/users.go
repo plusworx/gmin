@@ -1684,7 +1684,7 @@ func processCompStack(user *admin.User, compStack []string, attrName string) err
 			case attrName == "posixaccount":
 				newPosAcct = newAttr.(*admin.UserPosixAccount)
 				posixaccts = append(posixaccts, newPosAcct)
-				user.Phones = phones
+				user.PosixAccounts = posixaccts
 			case attrName == "relation":
 				newRelation = newAttr.(*admin.UserRelation)
 				relations = append(relations, newRelation)
