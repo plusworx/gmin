@@ -69,7 +69,12 @@ func doCreateOU(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	ouic := ds.Orgunits.Insert(cfg.CustomerID, orgunit)
+	customerID, err := cfg.ReadConfigString("customerid")
+	if err != nil {
+		return err
+	}
+
+	ouic := ds.Orgunits.Insert(customerID, orgunit)
 	newOrgUnit, err := ouic.Do()
 	if err != nil {
 		return err

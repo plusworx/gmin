@@ -77,7 +77,12 @@ func doUpdateOU(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	ouuc := ds.Orgunits.Update(cfg.CustomerID, ouPath, orgunit)
+	customerID, err := cfg.ReadConfigString("customerid")
+	if err != nil {
+		return err
+	}
+
+	ouuc := ds.Orgunits.Update(customerID, ouPath, orgunit)
 	_, err = ouuc.Do()
 	if err != nil {
 		return err

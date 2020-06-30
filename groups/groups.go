@@ -58,7 +58,12 @@ var QueryAttrMap = map[string]string{
 
 // AllDomain fetches groups for all domains
 func AllDomain(glc *admin.GroupsListCall) (*admin.Groups, error) {
-	groups, err := glc.Customer(cfg.CustomerID).Do()
+	customerID, err := cfg.ReadConfigString("customerid")
+	if err != nil {
+		return nil, err
+	}
+
+	groups, err := glc.Customer(customerID).Do()
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +75,12 @@ func AllDomain(glc *admin.GroupsListCall) (*admin.Groups, error) {
 func AllDomainAttrs(glc *admin.GroupsListCall, attrs string) (*admin.Groups, error) {
 	var fields googleapi.Field = googleapi.Field(attrs)
 
-	groups, err := glc.Customer(cfg.CustomerID).Fields(fields).Do()
+	customerID, err := cfg.ReadConfigString("customerid")
+	if err != nil {
+		return nil, err
+	}
+
+	groups, err := glc.Customer(customerID).Fields(fields).Do()
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +90,12 @@ func AllDomainAttrs(glc *admin.GroupsListCall, attrs string) (*admin.Groups, err
 
 // AllDomainQuery fetches groups for all domains that satisfy query arguments
 func AllDomainQuery(glc *admin.GroupsListCall, query string) (*admin.Groups, error) {
-	groups, err := glc.Customer(cfg.CustomerID).Query(query).Do()
+	customerID, err := cfg.ReadConfigString("customerid")
+	if err != nil {
+		return nil, err
+	}
+
+	groups, err := glc.Customer(customerID).Query(query).Do()
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +107,12 @@ func AllDomainQuery(glc *admin.GroupsListCall, query string) (*admin.Groups, err
 func AllDomainQueryAttrs(glc *admin.GroupsListCall, query string, attrs string) (*admin.Groups, error) {
 	var fields googleapi.Field = googleapi.Field(attrs)
 
-	groups, err := glc.Customer(cfg.CustomerID).Query(query).Fields(fields).Do()
+	customerID, err := cfg.ReadConfigString("customerid")
+	if err != nil {
+		return nil, err
+	}
+
+	groups, err := glc.Customer(customerID).Query(query).Fields(fields).Do()
 	if err != nil {
 		return nil, err
 	}

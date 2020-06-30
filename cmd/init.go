@@ -62,6 +62,24 @@ func askForConfigPath() string {
 	return response
 }
 
+func askForCustomerID() string {
+	var response string
+
+	fmt.Print("Please enter customer ID: ")
+
+	_, err := fmt.Scanln(&response)
+	if response == "" {
+		return response
+	}
+
+	if err != nil {
+		fmt.Println(err)
+		return askForCustomerID()
+	}
+
+	return response
+}
+
 func askForEmail() string {
 	var response string
 
@@ -86,10 +104,12 @@ func doInit(cmd *cobra.Command, args []string) error {
 	answers := struct {
 		AdminEmail string
 		ConfigPath string
+		CustomerID string
 	}{}
 
 	answers.AdminEmail = askForEmail()
 	answers.ConfigPath = askForConfigPath()
+	answers.CustomerID = askForCustomerID()
 
 	if answers.ConfigPath == "" {
 		hmDir, err := homedir.Dir()
@@ -100,7 +120,11 @@ func doInit(cmd *cobra.Command, args []string) error {
 		answers.ConfigPath = hmDir
 	}
 
-	cfgFile := cfg.File{Administrator: answers.AdminEmail}
+	if answers.CustomerID == "" {
+		answers.CustomerID = "my_customer"
+	}
+
+	cfgFile := cfg.File{Administrator: answers.AdminEmail, CustomerID: answers.CustomerID}
 
 	path := filepath.Join(filepath.ToSlash(answers.ConfigPath), cfg.FileName)
 

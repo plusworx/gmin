@@ -46,7 +46,12 @@ func doDeleteOU(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	oudc := ds.Orgunits.Delete(cfg.CustomerID, args)
+	customerID, err := cfg.ReadConfigString("customerid")
+	if err != nil {
+		return err
+	}
+
+	oudc := ds.Orgunits.Delete(customerID, args)
 
 	err = oudc.Do()
 	if err != nil {

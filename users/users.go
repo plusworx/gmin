@@ -461,7 +461,12 @@ var validWebsiteTypes = []string{
 
 // AllDomain fetches users for all domains
 func AllDomain(ulc *admin.UsersListCall) (*admin.Users, error) {
-	users, err := ulc.Customer(cfg.CustomerID).Do()
+	customerID, err := cfg.ReadConfigString("customerid")
+	if err != nil {
+		return nil, err
+	}
+
+	users, err := ulc.Customer(customerID).Do()
 	if err != nil {
 		return nil, err
 	}
@@ -473,7 +478,12 @@ func AllDomain(ulc *admin.UsersListCall) (*admin.Users, error) {
 func AllDomainAttrs(ulc *admin.UsersListCall, attrs string) (*admin.Users, error) {
 	var fields googleapi.Field = googleapi.Field(attrs)
 
-	users, err := ulc.Customer(cfg.CustomerID).Fields(fields).Do()
+	customerID, err := cfg.ReadConfigString("customerid")
+	if err != nil {
+		return nil, err
+	}
+
+	users, err := ulc.Customer(customerID).Fields(fields).Do()
 	if err != nil {
 		return nil, err
 	}
@@ -483,7 +493,12 @@ func AllDomainAttrs(ulc *admin.UsersListCall, attrs string) (*admin.Users, error
 
 // AllDomainQuery fetches users for all domains that satisfy query arguments
 func AllDomainQuery(ulc *admin.UsersListCall, query string) (*admin.Users, error) {
-	users, err := ulc.Customer(cfg.CustomerID).Query(query).Do()
+	customerID, err := cfg.ReadConfigString("customerid")
+	if err != nil {
+		return nil, err
+	}
+
+	users, err := ulc.Customer(customerID).Query(query).Do()
 	if err != nil {
 		return nil, err
 	}
@@ -495,7 +510,12 @@ func AllDomainQuery(ulc *admin.UsersListCall, query string) (*admin.Users, error
 func AllDomainQueryAttrs(ulc *admin.UsersListCall, query string, attrs string) (*admin.Users, error) {
 	var fields googleapi.Field = googleapi.Field(attrs)
 
-	users, err := ulc.Customer(cfg.CustomerID).Query(query).Fields(fields).Do()
+	customerID, err := cfg.ReadConfigString("customerid")
+	if err != nil {
+		return nil, err
+	}
+
+	users, err := ulc.Customer(customerID).Query(query).Fields(fields).Do()
 	if err != nil {
 		return nil, err
 	}
@@ -505,7 +525,12 @@ func AllDomainQueryAttrs(ulc *admin.UsersListCall, query string, attrs string) (
 
 // DelAllDomain fetches deleted users for all domains
 func DelAllDomain(ulc *admin.UsersListCall) (*admin.Users, error) {
-	users, err := ulc.Customer(cfg.CustomerID).ShowDeleted("true").Do()
+	customerID, err := cfg.ReadConfigString("customerid")
+	if err != nil {
+		return nil, err
+	}
+
+	users, err := ulc.Customer(customerID).ShowDeleted("true").Do()
 	if err != nil {
 		return nil, err
 	}
@@ -517,7 +542,12 @@ func DelAllDomain(ulc *admin.UsersListCall) (*admin.Users, error) {
 func DelAllDomainAttrs(ulc *admin.UsersListCall, attrs string) (*admin.Users, error) {
 	var fields googleapi.Field = googleapi.Field(attrs)
 
-	users, err := ulc.Customer(cfg.CustomerID).Fields(fields).ShowDeleted("true").Do()
+	customerID, err := cfg.ReadConfigString("customerid")
+	if err != nil {
+		return nil, err
+	}
+
+	users, err := ulc.Customer(customerID).Fields(fields).ShowDeleted("true").Do()
 	if err != nil {
 		return nil, err
 	}

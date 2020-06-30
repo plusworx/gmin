@@ -31,8 +31,6 @@ import (
 const (
 	// CredentialsFile holds service account credentials
 	CredentialsFile string = "gmin_credentials"
-	// CustomerID is G Suite customer ID
-	CustomerID string = "my_customer"
 	// FileName is configuration file name
 	FileName string = ".gmin.yaml"
 )
@@ -40,7 +38,11 @@ const (
 // File holds configuration data
 type File struct {
 	Administrator string `yaml:"administrator"`
+	CustomerID    string `yaml:"customerid"`
 }
+
+// CustomerID is G Suite customer ID
+var CustomerID string
 
 // ReadConfigString gets a string item from config file
 func ReadConfigString(s string) (string, error) {

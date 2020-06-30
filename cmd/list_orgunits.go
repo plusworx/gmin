@@ -52,7 +52,12 @@ func doListOUs(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	oulc := ds.Orgunits.List(cfg.CustomerID)
+	customerID, err := cfg.ReadConfigString("customerid")
+	if err != nil {
+		return err
+	}
+
+	oulc := ds.Orgunits.List(customerID)
 
 	if attrs != "" {
 		validAttrs, err = cmn.ValidateAttrs(attrs, ous.OrgUnitAttrMap)
