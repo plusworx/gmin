@@ -41,9 +41,6 @@ type File struct {
 	CustomerID    string `yaml:"customerid"`
 }
 
-// CustomerID is G Suite customer ID
-var CustomerID string
-
 // ReadConfigString gets a string item from config file
 func ReadConfigString(s string) (string, error) {
 	var err error
