@@ -47,6 +47,20 @@ func TestDoComposite(t *testing.T) {
 			expectedErr: "",
 			noElems:     1,
 		},
+		{
+			attrStack:   []string{"email", "{address", "chief.exec@mycorp.com", "primary", "true", "type", "work}"},
+			expectedErr: "",
+			noElems:     1,
+		},
+		{
+			attrStack:   []string{"externalid", "{customtype", "GitHubID", "type", "custom", "value", "1234567890}"},
+			expectedErr: "",
+			noElems:     1,
+		},
+		{
+			attrStack:   []string{"gender", "{addressmeas", "they/them", "customgender", "non-binary", "type", "other}"},
+			expectedErr: "",
+		},
 	}
 
 	for _, c := range cases {
@@ -64,11 +78,8 @@ func TestDoComposite(t *testing.T) {
 			continue
 		}
 
-		if newStack != nil {
-			if len(newStack) != c.expectedNSLen {
-				t.Errorf("Expected newStack length %v - got %v", c.expectedNSLen, len(newStack))
-			}
-
+		if newStack != nil && len(newStack) != c.expectedNSLen {
+			t.Errorf("Expected newStack length %v - got %v", c.expectedNSLen, len(newStack))
 			continue
 		}
 
@@ -77,6 +88,22 @@ func TestDoComposite(t *testing.T) {
 			addresses := user.Addresses.([]*admin.UserAddress)
 			if len(addresses) != 1 {
 				t.Errorf("Stack error - expected 1 address got %v", len(addresses))
+			}
+		case attrStack[0] == "email":
+			emails := user.Emails.([]*admin.UserEmail)
+			if len(emails) != 1 {
+				t.Errorf("Stack error - expected 1 email got %v", len(emails))
+			}
+		case attrStack[0] == "externalid":
+			externalids := user.ExternalIds.([]*admin.UserExternalId)
+			if len(externalids) != 1 {
+				t.Errorf("Stack error - expected 1 external id got %v", len(externalids))
+			}
+		case attrStack[0] == "gender":
+			gender := user.Gender.(*admin.UserGender)
+			if gender.AddressMeAs != "they/them" || gender.CustomGender != "non-binary" || gender.Type != "other" {
+				t.Errorf("Gender error - expected: addressmeas = they/them; customgender = non-binary; type = other; got: addressmeas = %v; customgender = %v; type = %v",
+					gender.AddressMeAs, gender.CustomGender, gender.Type)
 			}
 		}
 
