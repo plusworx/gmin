@@ -348,6 +348,19 @@ var validGenders = []string{
 	"unknown",
 }
 
+var validImProtocols = []string{
+	"aim",
+	"custom_protocol",
+	"gtalk",
+	"icq",
+	"jabber",
+	"msn",
+	"net_meeting",
+	"qq",
+	"skype",
+	"yahoo",
+}
+
 var validImTypes = []string{
 	"custom",
 	"home",
@@ -1035,6 +1048,11 @@ func makeIm(imParts []string) (*admin.UserIm, error) {
 					newIm.ForceSendFields = append(newIm.ForceSendFields, "Primary")
 				}
 			case attrName == "protocol":
+				ok := cmn.SliceContainsStr(validImProtocols, part)
+				if !ok {
+					err = fmt.Errorf("gmin: error - %v is not a valid im protocol", part)
+					return nil, err
+				}
 				newIm.Protocol = part
 			case attrName == "type":
 				ok := cmn.SliceContainsStr(validImTypes, part)
