@@ -852,6 +852,11 @@ func makeAbout(aboutParts []string) (*admin.UserAbout, error) {
 		newAbout *admin.UserAbout
 	)
 
+	if len(aboutParts)%2 != 0 {
+		err := errors.New("gmin: error - malformed attribute string")
+		return nil, err
+	}
+
 	newAbout = new(admin.UserAbout)
 
 	for idx, part := range aboutParts {
@@ -885,6 +890,11 @@ func makeAddress(addrParts []string) (*admin.UserAddress, error) {
 		newAddress *admin.UserAddress
 		attrName   string
 	)
+
+	if len(addrParts)%2 != 0 {
+		err := errors.New("gmin: error - malformed attribute string")
+		return nil, err
+	}
 
 	newAddress = new(admin.UserAddress)
 
@@ -945,6 +955,11 @@ func makeEmail(emailParts []string) (*admin.UserEmail, error) {
 		newEmail *admin.UserEmail
 	)
 
+	if len(emailParts)%2 != 0 {
+		err := errors.New("gmin: error - malformed attribute string")
+		return nil, err
+	}
+
 	newEmail = new(admin.UserEmail)
 
 	for idx, part := range emailParts {
@@ -989,6 +1004,11 @@ func makeExtID(extIDParts []string) (*admin.UserExternalId, error) {
 		newExtID *admin.UserExternalId
 	)
 
+	if len(extIDParts)%2 != 0 {
+		err := errors.New("gmin: error - malformed attribute string")
+		return nil, err
+	}
+
 	newExtID = new(admin.UserExternalId)
 
 	for idx, part := range extIDParts {
@@ -1026,6 +1046,11 @@ func makeGender(genParts []string) (*admin.UserGender, error) {
 		newGender *admin.UserGender
 	)
 
+	if len(genParts)%2 != 0 {
+		err := errors.New("gmin: error - malformed attribute string")
+		return nil, err
+	}
+
 	newGender = new(admin.UserGender)
 
 	for idx, part := range genParts {
@@ -1062,6 +1087,11 @@ func makeIm(imParts []string) (*admin.UserIm, error) {
 		err      error
 		newIm    *admin.UserIm
 	)
+
+	if len(imParts)%2 != 0 {
+		err := errors.New("gmin: error - malformed attribute string")
+		return nil, err
+	}
 
 	newIm = new(admin.UserIm)
 
@@ -1116,6 +1146,11 @@ func makeKeyword(keyParts []string) (*admin.UserKeyword, error) {
 		newKeyword *admin.UserKeyword
 	)
 
+	if len(keyParts)%2 != 0 {
+		err := errors.New("gmin: error - malformed attribute string")
+		return nil, err
+	}
+
 	newKeyword = new(admin.UserKeyword)
 
 	for idx, part := range keyParts {
@@ -1153,6 +1188,11 @@ func makeLanguage(langParts []string) (*admin.UserLanguage, error) {
 		newLanguage *admin.UserLanguage
 	)
 
+	if len(langParts)%2 != 0 {
+		err := errors.New("gmin: error - malformed attribute string")
+		return nil, err
+	}
+
 	newLanguage = new(admin.UserLanguage)
 
 	for idx, part := range langParts {
@@ -1182,6 +1222,11 @@ func makeLocation(locParts []string) (*admin.UserLocation, error) {
 		err         error
 		newLocation *admin.UserLocation
 	)
+
+	if len(locParts)%2 != 0 {
+		err := errors.New("gmin: error - malformed attribute string")
+		return nil, err
+	}
 
 	newLocation = new(admin.UserLocation)
 
@@ -1229,6 +1274,11 @@ func makeName(nameParts []string) (*admin.UserName, error) {
 		validName string
 	)
 
+	if len(nameParts)%2 != 0 {
+		err := errors.New("gmin: error - malformed attribute string")
+		return nil, err
+	}
+
 	newName = new(admin.UserName)
 
 	for idx, part := range nameParts {
@@ -1261,6 +1311,11 @@ func makeOrganization(orgParts []string) (*admin.UserOrganization, error) {
 		err      error
 		newOrg   *admin.UserOrganization
 	)
+
+	if len(orgParts)%2 != 0 {
+		err := errors.New("gmin: error - malformed attribute string")
+		return nil, err
+	}
 
 	newOrg = new(admin.UserOrganization)
 
@@ -1327,6 +1382,11 @@ func makePhone(phoneParts []string) (*admin.UserPhone, error) {
 		newPhone *admin.UserPhone
 	)
 
+	if len(phoneParts)%2 != 0 {
+		err := errors.New("gmin: error - malformed attribute string")
+		return nil, err
+	}
+
 	newPhone = new(admin.UserPhone)
 
 	for idx, part := range phoneParts {
@@ -1370,6 +1430,11 @@ func makePosAcct(posParts []string) (*admin.UserPosixAccount, error) {
 		err        error
 		newPosAcct *admin.UserPosixAccount
 	)
+
+	if len(posParts)%2 != 0 {
+		err := errors.New("gmin: error - malformed attribute string")
+		return nil, err
+	}
 
 	newPosAcct = new(admin.UserPosixAccount)
 
@@ -1437,6 +1502,11 @@ func makeRelation(relParts []string) (*admin.UserRelation, error) {
 		newRelation *admin.UserRelation
 	)
 
+	if len(relParts)%2 != 0 {
+		err := errors.New("gmin: error - malformed attribute string")
+		return nil, err
+	}
+
 	newRelation = new(admin.UserRelation)
 
 	for idx, part := range relParts {
@@ -1474,6 +1544,11 @@ func makeSSHPubKey(pKeyParts []string) (*admin.UserSshPublicKey, error) {
 		newPubKey *admin.UserSshPublicKey
 	)
 
+	if len(pKeyParts)%2 != 0 {
+		err := errors.New("gmin: error - malformed attribute string")
+		return nil, err
+	}
+
 	newPubKey = new(admin.UserSshPublicKey)
 
 	for idx, part := range pKeyParts {
@@ -1508,6 +1583,11 @@ func makeWebsite(webParts []string) (*admin.UserWebsite, error) {
 		err        error
 		newWebsite *admin.UserWebsite
 	)
+
+	if len(webParts)%2 != 0 {
+		err := errors.New("gmin: error - malformed attribute string")
+		return nil, err
+	}
 
 	newWebsite = new(admin.UserWebsite)
 
