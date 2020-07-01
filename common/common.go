@@ -123,7 +123,7 @@ func ValidateAttrs(attrs string, attrMap map[string]string) ([]string, error) {
 		trimmedAttr := strings.TrimSpace(attr)
 		correctAttr := attrMap[trimmedAttr]
 		if correctAttr == "" {
-			err := fmt.Errorf("attribute %v is unrecognized", attr)
+			err := fmt.Errorf("gmin: error - attribute %v is unrecognized", attr)
 			return nil, err
 		}
 		convertedAttrs = append(convertedAttrs, correctAttr)
