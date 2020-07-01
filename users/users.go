@@ -792,11 +792,12 @@ func doNonComposite(user *admin.User, attrStack []string) ([]string, error) {
 // FormatAttrs formats attributes for admin.UsersListCall.Fields or admin.UsersGetCall.Fields call
 func FormatAttrs(attrs []string, get bool) string {
 	var (
-		nameRequired bool
-		outputName   string
-		outputStr    string
-		name         []string
-		userFields   []string
+		nameRequired    bool
+		outputName      string
+		outputOtherFlds string
+		outputStr       string
+		name            []string
+		userFields      []string
 	)
 
 	for _, a := range attrs {
@@ -809,16 +810,26 @@ func FormatAttrs(attrs []string, get bool) string {
 		userFields = append(userFields, a)
 	}
 
+	if len(userFields) > 0 {
+		outputOtherFlds = strings.Join(userFields, ",")
+	}
+
+	outputStr = outputOtherFlds
+
 	if nameRequired {
 		outputName = startNameField + strings.Join(name, ",") + endField
+	}
+
+	if outputName != "" && outputStr != "" {
 		outputStr = outputStr + "," + outputName
 	}
 
-	if get {
-		outputStr = strings.Join(userFields, ",")
-	} else {
-		outputStr = startUsersField + strings.Join(userFields, ",")
-		outputStr = outputStr + endField
+	if outputName != "" && outputStr == "" {
+		outputStr = outputName
+	}
+
+	if !get {
+		outputStr = startUsersField + outputStr + endField
 	}
 
 	return outputStr
