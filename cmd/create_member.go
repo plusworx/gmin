@@ -33,14 +33,14 @@ import (
 )
 
 var createMemberCmd = &cobra.Command{
-	Use:     "member <user email address>",
-	Aliases: []string{"mem"},
+	Use:     "group-member <user/group email address> -g <group email address or id>",
+	Aliases: []string{"grp-member", "grp-mem", "gmember", "gmem"},
 	Args:    cobra.ExactArgs(1),
 	Short:   "Makes a user a group member",
 	Long: `Makes a user a group member.
 	
-	Examples: gmin create member another.user@mycompany.com  -g office@mycompany.com -d NONE
-	          gmin crt mem finance.person@mycompany.com -g finance@mycompany.com -r MEMBER`,
+	Examples: gmin create group-member another.user@mycompany.com  -g office@mycompany.com -d NONE
+	          gmin crt gmem finance.person@mycompany.com -g finance@mycompany.com -r MEMBER`,
 	RunE: doCreateMember,
 }
 

@@ -34,8 +34,8 @@ import (
 )
 
 var getMemberCmd = &cobra.Command{
-	Use:     "member <email address or id>",
-	Aliases: []string{"mem"},
+	Use:     "group-member <member email address or id> -g <group email address or id>",
+	Aliases: []string{"grp-member", "grp-mem", "gmember", "gmem"},
 	Args:    cobra.ExactArgs(1),
 	Short:   "Outputs information about a member of a group",
 	Long: `Outputs information about a member of a group.

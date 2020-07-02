@@ -32,8 +32,8 @@ import (
 )
 
 var deleteMemberCmd = &cobra.Command{
-	Use:     "member <email address or id>",
-	Aliases: []string{"mem"},
+	Use:     "group-member <member email address or id> -g <group email address or id>",
+	Aliases: []string{"grp-member", "grp-mem", "gmember", "gmem"},
 	Args:    cobra.ExactArgs(1),
 	Short:   "Deletes member of a group",
 	Long:    `Deletes member of a group.`,
