@@ -35,7 +35,7 @@ import (
 
 var listMembersCmd = &cobra.Command{
 	Use:     "group-members -g <group email address or id>",
-	Aliases: []string{"group-member", "grp-members", "grp-member", "grp-mem", "gmember", "gmems", "gmem"},
+	Aliases: []string{"group-member", "grp-members", "grp-member", "grp-mems", "grp-mem", "gmembers", "gmember", "gmems", "gmem"},
 	Short:   "Outputs a list of group members",
 	Long:    `Outputs a list of group members. Must specify a group email address.`,
 	RunE:    doListMembers,
