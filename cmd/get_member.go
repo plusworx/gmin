@@ -81,7 +81,7 @@ func doGetMember(cmd *cobra.Command, args []string) error {
 func init() {
 	getCmd.AddCommand(getMemberCmd)
 
-	getMemberCmd.Flags().StringVarP(&attrs, "attrs", "a", "", "required group attributes (separated by ~)")
+	getMemberCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required group attributes (separated by ~)")
 	getMemberCmd.Flags().StringVarP(&group, "group", "g", "", "email address of group")
 	getMemberCmd.Flags().StringVarP(&orgUnit, "orgunit", "o", "", "path of orgunit")
 }

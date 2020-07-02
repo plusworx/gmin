@@ -72,7 +72,7 @@ func doListMembers(cmd *cobra.Command, args []string) error {
 func init() {
 	listCmd.AddCommand(listMembersCmd)
 
-	listMembersCmd.Flags().StringVarP(&attrs, "attrs", "a", "", "required member attributes (separated by ~)")
+	listMembersCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required member attributes (separated by ~)")
 	listMembersCmd.Flags().StringVarP(&group, "group", "g", "", "email address of group")
 	listMembersCmd.Flags().StringVarP(&orgUnit, "orgunit", "o", "", "path of orgunit")
 

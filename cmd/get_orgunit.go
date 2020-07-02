@@ -96,5 +96,5 @@ func doGetOrgUnit(cmd *cobra.Command, args []string) error {
 func init() {
 	getCmd.AddCommand(getOrgUnitCmd)
 
-	getOrgUnitCmd.Flags().StringVarP(&attrs, "attrs", "a", "", "required orgunit attributes (separated by ~)")
+	getOrgUnitCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required orgunit attributes (separated by ~)")
 }

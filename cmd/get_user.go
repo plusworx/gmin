@@ -88,5 +88,5 @@ func doGetUser(cmd *cobra.Command, args []string) error {
 func init() {
 	getCmd.AddCommand(getUserCmd)
 
-	getUserCmd.Flags().StringVarP(&attrs, "attrs", "a", "", "required user attributes (separated by ~)")
+	getUserCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required user attributes (separated by ~)")
 }

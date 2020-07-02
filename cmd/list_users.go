@@ -98,8 +98,8 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 func init() {
 	listCmd.AddCommand(listUsersCmd)
 
+	listUsersCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required user attributes (separated by ~)")
 	listUsersCmd.Flags().StringVarP(&domain, "domain", "d", "", "domain from which to get users")
-	listUsersCmd.Flags().StringVarP(&attrs, "attrs", "a", "", "required user attributes (separated by ~)")
 	listUsersCmd.Flags().StringVarP(&query, "query", "q", "", "selection criteria to get users (separated by ~)")
 	listUsersCmd.Flags().BoolVarP(&deleted, "deleted", "x", false, "show deleted users")
 

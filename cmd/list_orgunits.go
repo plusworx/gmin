@@ -91,5 +91,5 @@ func doListOUs(cmd *cobra.Command, args []string) error {
 func init() {
 	listCmd.AddCommand(listOUsCmd)
 
-	listOUsCmd.Flags().StringVarP(&attrs, "attrs", "a", "", "required orgunit attributes separated by ~)")
+	listOUsCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required orgunit attributes separated by ~)")
 }

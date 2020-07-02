@@ -133,8 +133,8 @@ func groupDomainCall(domain string, glc *admin.GroupsListCall, fmtAttrs string) 
 func init() {
 	listCmd.AddCommand(listGroupsCmd)
 
+	listGroupsCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required group attributes (separated by ~)")
 	listGroupsCmd.Flags().StringVarP(&domain, "domain", "d", "", "domain from which to get groups")
-	listGroupsCmd.Flags().StringVarP(&attrs, "attrs", "a", "", "required group attributes (separated by ~)")
 	listGroupsCmd.Flags().StringVarP(&query, "query", "q", "", "selection criteria to get groups (separated by ~)")
 }
 
