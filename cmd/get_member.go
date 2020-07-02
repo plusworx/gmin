@@ -26,12 +26,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 
-	valid "github.com/asaskevich/govalidator"
 	cmn "github.com/plusworx/gmin/common"
 	mems "github.com/plusworx/gmin/members"
-	usrs "github.com/plusworx/gmin/users"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 )
@@ -40,37 +37,24 @@ var getMemberCmd = &cobra.Command{
 	Use:     "member <email address or id>",
 	Aliases: []string{"mem"},
 	Args:    cobra.ExactArgs(1),
-	Short:   "Outputs information about a member of a group or orgunit",
-	Long: `Outputs information about a member of a group or orgunit.
+	Short:   "Outputs information about a member of a group",
+	Long: `Outputs information about a member of a group.
 	
-	Examples: gmin get member auser@mydomain.org -o /IT
-	          gmin get member 12345678 -g mygroup@mydomain.org -a email`,
+	Examples: gmin get member 12345678 -g mygroup@mydomain.org -a email`,
 	RunE: doGetMember,
 }
 
 func doGetMember(cmd *cobra.Command, args []string) error {
 	var jsonData []byte
 
-	err := mems.ValidateFlags(group, orgUnit)
-	if err != nil {
+	if group == "" {
+		err := errors.New("gmin: error - group email address must be provided")
 		return err
 	}
 
-	if group != "" {
-		jsonData, err = processGroupMember(args[0], attrs, group)
-		if err != nil {
-			return err
-		}
-	}
-
-	if orgUnit != "" {
-		ok := valid.IsEmail(args[0])
-		if ok {
-			jsonData = processOrgUnitMember(args[0], attrs, orgUnit)
-		} else {
-			err := errors.New("gmin: error - argument must be an email address for orgunit member")
-			return err
-		}
+	jsonData, err := processGroupMember(args[0], attrs, group)
+	if err != nil {
+		return err
 	}
 
 	fmt.Println(string(jsonData))
@@ -83,7 +67,6 @@ func init() {
 
 	getMemberCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required group attributes (separated by ~)")
 	getMemberCmd.Flags().StringVarP(&group, "group", "g", "", "email address of group")
-	getMemberCmd.Flags().StringVarP(&orgUnit, "orgunit", "o", "", "path of orgunit")
 }
 
 func processGroupMember(memID string, attrs string, groupEmail string) ([]byte, error) {
@@ -123,47 +106,4 @@ func processGroupMember(memID string, attrs string, groupEmail string) ([]byte, 
 	}
 
 	return jsonData, nil
-}
-
-func processOrgUnitMember(email string, attrs string, orgUnit string) []byte {
-	var (
-		query      string
-		users      *admin.Users
-		validAttrs []string
-	)
-
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserReadonlyScope)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	ulc := ds.Users.List()
-
-	query = "orgUnitPath=" + orgUnit + " " + "email=" + email
-
-	if attrs != "" {
-		validAttrs, err = cmn.ValidateAttrs(attrs, usrs.UserAttrMap)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		formattedAttrs := usrs.FormatAttrs(validAttrs, false)
-
-		users, err = usrs.AllDomainQueryAttrs(ulc, query, formattedAttrs)
-		if err != nil {
-			log.Fatal(err)
-		}
-	} else {
-		users, err = usrs.AllDomainQuery(ulc, query)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-
-	jsonData, err := json.MarshalIndent(users, "", "    ")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return jsonData
 }
