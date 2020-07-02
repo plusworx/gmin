@@ -40,6 +40,22 @@ const (
 	startNameField  = "name("
 )
 
+// addressAttrs contains names of all the addressable admin.UserAddress attributes
+var addressAttrs = []string{
+	"country",
+	"countrycode",
+	"customtype",
+	"extendedaddress",
+	"formatted",
+	"locality",
+	"pobox",
+	"postalcode",
+	"primary",
+	"region",
+	"streetaddress",
+	"type",
+}
+
 // compositeAttrs contains names all admin.User attributes that are composite types
 var compositeAttrs = []string{
 	"address",
@@ -119,9 +135,11 @@ var locationAttrs = []string{
 
 // nameAttrs contains names of all the addressable admin.UserName attributes
 var nameAttrs = []string{
-	"familyName",
-	"fullName",
-	"givenName",
+	"familyname",
+	"firstname",
+	"fullname",
+	"givenname",
+	"lastname",
 }
 
 // notesAttrs contains names of all the addressable admin.UserAbout attributes
@@ -187,22 +205,6 @@ var websiteAttrs = []string{
 	"primary",
 	"type",
 	"value",
-}
-
-// AddressAttrMap provides lowercase mappings to valid admin.UserAddress attributes
-var AddressAttrMap = map[string]string{
-	"country":         "country",
-	"countrycode":     "countryCode",
-	"customtype":      "customType",
-	"extendedaddress": "extendedAddress",
-	"formatted":       "formatted",
-	"locality":        "locality",
-	"pobox":           "poBox",
-	"postalcode":      "postalCode",
-	"primary":         "primary",
-	"region":          "region",
-	"streetaddress":   "streetAddress",
-	"type":            "type",
 }
 
 // QueryAttrMap provides lowercase mappings to valid admin.User query attributes
@@ -801,7 +803,8 @@ func FormatAttrs(attrs []string, get bool) string {
 	)
 
 	for _, a := range attrs {
-		if cmn.SliceContainsStr(nameAttrs, a) {
+		lowerA := strings.ToLower(a)
+		if cmn.SliceContainsStr(nameAttrs, lowerA) {
 			nameRequired = true
 			name = append(name, a)
 			continue
@@ -901,8 +904,9 @@ func makeAddress(addrParts []string) (*admin.UserAddress, error) {
 	for idx, part := range addrParts {
 		if idx%2 == 0 {
 			attrName = strings.ToLower(part)
-			_, err := cmn.IsValidAttr(attrName, AddressAttrMap)
-			if err != nil {
+			ok := cmn.SliceContainsStr(addressAttrs, attrName)
+			if !ok {
+				err := fmt.Errorf("gmin: error - %v is not a valid UserAddress attribute", part)
 				return nil, err
 			}
 		} else {
@@ -1268,10 +1272,9 @@ func makeLocation(locParts []string) (*admin.UserLocation, error) {
 
 func makeName(nameParts []string) (*admin.UserName, error) {
 	var (
-		attrName  string
-		err       error
-		newName   *admin.UserName
-		validName string
+		attrName string
+		err      error
+		newName  *admin.UserName
 	)
 
 	if len(nameParts)%2 != 0 {
@@ -1284,19 +1287,18 @@ func makeName(nameParts []string) (*admin.UserName, error) {
 	for idx, part := range nameParts {
 		if idx%2 == 0 {
 			attrName = strings.ToLower(part)
-			validName, err = cmn.IsValidAttr(attrName, UserAttrMap)
-			if err != nil {
+			ok := cmn.SliceContainsStr(nameAttrs, attrName)
+			if !ok {
+				err = fmt.Errorf("gmin: error - %v is not a valid UserName attribute", part)
 				return nil, err
 			}
 		} else {
-			lwrValidName := strings.ToLower(validName)
-
 			switch true {
-			case lwrValidName == "familyname":
+			case attrName == "familyname" || attrName == "lastname":
 				newName.FamilyName = part
-			case lwrValidName == "givenname":
+			case attrName == "givenname" || attrName == "firstname":
 				newName.GivenName = part
-			case lwrValidName == "fullname":
+			case attrName == "fullname":
 				newName.FullName = part
 			}
 		}
