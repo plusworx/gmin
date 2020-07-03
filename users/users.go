@@ -1619,6 +1619,8 @@ func makeWebsite(webParts []string) (*admin.UserWebsite, error) {
 					return nil, err
 				}
 				newWebsite.Type = part
+			case attrName == "value":
+				newWebsite.Value = part
 			}
 		}
 	}
