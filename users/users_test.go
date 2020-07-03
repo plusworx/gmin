@@ -1,9 +1,31 @@
+/*
+Copyright © 2020 Chris Duncan <chris.duncan@plusworx.uk>
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+*/
+
 package users
 
 import (
-	"strconv"
 	"testing"
 
+	tsts "github.com/plusworx/gmin/tests"
 	admin "google.golang.org/api/admin/directory/v1"
 )
 
@@ -12,22 +34,28 @@ func TestDoComposite(t *testing.T) {
 		attrStack     []string
 		expectedErr   string
 		expectedNSLen int
+		expectedVals  map[string]string
 		noElems       int
 	}{
 		{
-			attrStack:   []string{"address", "{streetaddress", "201 Arbour Avenue", "locality", "Leeds", "postalcode", "LS2 1ND", "type", "home}"},
-			expectedErr: "",
-			noElems:     1,
+			attrStack: []string{"address", "{streetaddress", "201 Arbour Avenue", "locality", "Leeds", "postalcode", "LS2 1ND", "type", "home}"},
+			expectedVals: map[string]string{"StreetAddress": "201 Arbour Avenue",
+				"Locality":   "Leeds",
+				"PostalCode": "LS2 1ND",
+				"Type":       "home"},
+			noElems: 1,
 		},
 		{
 			attrStack:   []string{"address", "{streetaddress", "201 Arbour Avenue", "locality", "Leeds", "postalcode", "LS2 1ND", "type}"},
 			expectedErr: "gmin: error - malformed attribute string",
-			noElems:     1,
 		},
 		{
-			attrStack:   []string{"address", "streetaddress", "201 Arbour Avenue", "locality", "Leeds", "postalcode", "LS2 1ND", "type", "home}"},
-			expectedErr: "",
-			noElems:     1,
+			attrStack: []string{"address", "streetaddress", "201 Arbour Avenue", "locality", "Leeds", "postalcode", "LS2 1ND", "type", "home}"},
+			expectedVals: map[string]string{"StreetAddress": "201 Arbour Avenue",
+				"Locality":   "Leeds",
+				"PostalCode": "LS2 1ND",
+				"Type":       "home"},
+			noElems: 1,
 		},
 		{
 			attrStack:   []string{"address", "{streetaddress", "201 Arbour Avenue", "locality", "Leeds", "postalcode", "LS2 1ND", "type", "home"},
@@ -35,12 +63,15 @@ func TestDoComposite(t *testing.T) {
 		},
 		{
 			attrStack:   []string{"address", "{roadaddress", "201 Arbour Avenue", "locality", "Leeds", "postalcode", "LS2 1ND", "type", "home}"},
-			expectedErr: "gmin: error - attribute roadaddress is unrecognized",
+			expectedErr: "gmin: error - roadaddress is not a valid UserAddress attribute",
 		},
 		{
-			attrStack:   []string{"address", "{StreetAddress", "201 Arbour Avenue", "Locality", "Leeds", "PostalCode", "LS2 1ND", "TYPE", "home}"},
-			expectedErr: "",
-			noElems:     1,
+			attrStack: []string{"address", "{StreetAddress", "201 Arbour Avenue", "Locality", "Leeds", "PostalCode", "LS2 1ND", "TYPE", "home}"},
+			expectedVals: map[string]string{"StreetAddress": "201 Arbour Avenue",
+				"Locality":   "Leeds",
+				"PostalCode": "LS2 1ND",
+				"Type":       "home"},
+			noElems: 1,
 		},
 		{
 			attrStack:   []string{"address", "{streetaddress", "201 Arbour Avenue", "locality", "Leeds", "postalcode", "LS2 1ND", "type", "wrong}"},
@@ -49,89 +80,147 @@ func TestDoComposite(t *testing.T) {
 		{
 			attrStack: []string{"   address   ", "{   streetaddress   ", "201 Arbour Avenue", "   locality  ", "Leeds",
 				"   postalcode   ", "LS2 1ND", "   type   ", "home}"},
-			expectedErr: "",
-			noElems:     1,
+			expectedVals: map[string]string{"StreetAddress": "201 Arbour Avenue",
+				"Locality":   "Leeds",
+				"PostalCode": "LS2 1ND",
+				"Type":       "home"},
+			noElems: 1,
 		},
 		{
-			attrStack:   []string{"email", "{address", "chief.exec@mycorp.com", "primary", "true", "type", "work}"},
-			expectedErr: "",
-			noElems:     1,
+			attrStack: []string{"email", "{address", "chief.exec@mycorp.com", "primary", "true", "type", "work}"},
+			expectedVals: map[string]string{"Address": "chief.exec@mycorp.com",
+				"Primary": "true",
+				"Type":    "work"},
+			noElems: 1,
 		},
 		{
-			attrStack:   []string{"externalid", "{customtype", "GitHubID", "type", "custom", "value", "1234567890}"},
-			expectedErr: "",
-			noElems:     1,
+			attrStack: []string{"externalid", "{customtype", "GitHubID", "type", "custom", "value", "1234567890}"},
+			expectedVals: map[string]string{"CustomType": "GitHubID",
+				"Type":  "custom",
+				"Value": "1234567890"},
+			noElems: 1,
 		},
 		{
-			attrStack:   []string{"gender", "{addressmeas", "they/them", "customgender", "non-binary", "type", "other}"},
-			expectedErr: "",
+			attrStack: []string{"gender", "{addressmeas", "they/them", "customgender", "non-binary", "type", "other}"},
+			expectedVals: map[string]string{"AddressMeAs": "they/them",
+				"CustomGender": "non-binary",
+				"Type":         "other"},
 		},
 		{
 			attrStack: []string{"im", "{customprotocol", "plusworx", "customtype", "experimental", "im", "@mistered",
 				"primary", "true", "protocol", "custom_protocol", "type", "custom}"},
-			expectedErr: "",
-			noElems:     1,
+			expectedVals: map[string]string{"CustomProtocol": "plusworx",
+				"CustomType": "experimental",
+				"Im":         "@mistered",
+				"Primary":    "true",
+				"Protocol":   "custom_protocol",
+				"Type":       "custom"},
+			noElems: 1,
 		},
 		{
-			attrStack:   []string{"keyword", "{customtype", "workhours", "type", "custom", "value", "part-time}"},
-			expectedErr: "",
-			noElems:     1,
+			attrStack: []string{"keyword", "{customtype", "workhours", "type", "custom", "value", "part-time}"},
+			expectedVals: map[string]string{"CustomType": "workhours",
+				"Type":  "custom",
+				"Value": "part-time"},
+			noElems: 1,
 		},
 		{
-			attrStack:   []string{"language", "{languagecode", "en-GB}"},
-			expectedErr: "",
-			noElems:     1,
+			attrStack:    []string{"language", "{languagecode", "en-GB}"},
+			expectedVals: map[string]string{"LanguageCode": "en-GB"},
+			noElems:      1,
 		},
 		{
 			attrStack: []string{"location", "{area", "Shoreditch", "buildingid", "Grebe House", "deskcode", "D12", "floorname", "12",
 				"floorsection", "Marketing", "type", "desk}"},
-			expectedErr: "",
-			noElems:     1,
+			expectedVals: map[string]string{"Area": "Shoreditch",
+				"BuildingId":   "Grebe House",
+				"DeskCode":     "D12",
+				"FloorName":    "12",
+				"FloorSection": "Marketing",
+				"Type":         "desk"},
+			noElems: 1,
 		},
 		{
-			attrStack:   []string{"notes", "{contenttype", "text_plain", "value", "This user is one of the company founders.}"},
-			expectedErr: "",
+			attrStack: []string{"notes", "{contenttype", "text_plain", "value", "This user is one of the company founders.}"},
+			expectedVals: map[string]string{"ContentType": "text_plain",
+				"Value": "This user is one of the company founders."},
 		},
 		{
 			attrStack: []string{"organisation", "{costcenter", "104", "department", "Finance", "description", "Head Office Finance Department",
 				"domain", "majestic.co.uk", "fulltimeequivalent", "100000", "location", "Newcastle", "name", "Majestic Film Ltd",
 				"primary", "true", "symbol", "MAJ", "title", "CFO", "type", "work}"},
-			expectedErr: "",
-			noElems:     1,
+			expectedVals: map[string]string{"CostCenter": "104",
+				"Department":         "Finance",
+				"Description":        "Head Office Finance Department",
+				"Domain":             "majestic.co.uk",
+				"FullTimeEquivalent": "100000",
+				"Location":           "Newcastle",
+				"Name":               "Majestic Film Ltd",
+				"Primary":            "true",
+				"Symbol":             "MAJ",
+				"Title":              "CFO",
+				"Type":               "work"},
+			noElems: 1,
 		},
 		{
 			attrStack: []string{"organization", "{costcenter", "105", "customtype", "acquisition", "department", "Sales", "description", "Head Office Sales Department",
 				"domain", "majestic.co.uk", "fulltimeequivalent", "90000", "location", "Newcastle", "name", "Majestic Film Ltd",
 				"primary", "false", "symbol", "MAJ", "title", "Head of Sales", "type", "custom}"},
-			expectedErr: "",
-			noElems:     1,
+			expectedVals: map[string]string{"CostCenter": "105",
+				"CustomType":         "acquisition",
+				"Department":         "Sales",
+				"Description":        "Head Office Sales Department",
+				"Domain":             "majestic.co.uk",
+				"FullTimeEquivalent": "90000",
+				"Location":           "Newcastle",
+				"Name":               "Majestic Film Ltd",
+				"Primary":            "false",
+				"Symbol":             "MAJ",
+				"Title":              "Head of Sales",
+				"Type":               "custom"},
+			noElems: 1,
 		},
 		{
-			attrStack:   []string{"phone", "{primary", "false", "type", "mobile", "value", "05467983211}"},
-			expectedErr: "",
-			noElems:     1,
+			attrStack: []string{"phone", "{primary", "false", "type", "mobile", "value", "05467983211}"},
+			expectedVals: map[string]string{"Primary": "false",
+				"Type":  "mobile",
+				"Value": "05467983211"},
+			noElems: 1,
 		},
 		{
 			attrStack: []string{"posixaccount", "{accountid", "1000", "gecos", "Brian Phelps", "gid", "1000", "homedirectory", "/home/brian",
 				"operatingsystemtype", "linux", "primary", "true", "shell", "/bin/bash", "systemid", "2000",
 				"uid", "1000", "username", "brian}"},
-			expectedErr: "",
-			noElems:     1,
+			expectedVals: map[string]string{"AccountId": "1000",
+				"Gecos":               "Brian Phelps",
+				"Gid":                 "1000",
+				"HomeDirectory":       "/home/brian",
+				"OperatingSystemType": "linux",
+				"Primary":             "true",
+				"Shell":               "/bin/bash",
+				"SystemId":            "2000",
+				"Uid":                 "1000",
+				"Username":            "brian"},
+			noElems: 1,
 		},
 		{
-			attrStack:   []string{"relation", "{type", "partner", "value", "David Letterman}"},
-			expectedErr: "",
-			noElems:     1,
+			attrStack: []string{"relation", "{type", "partner", "value", "David Letterman}"},
+			expectedVals: map[string]string{"Type": "partner",
+				"Value": "David Letterman"},
+			noElems: 1,
 		},
 		{
-			attrStack:   []string{"sshpublickey", "{expirationtimeusec", "1625123095000", "key", "id-rsaxxxxxxxxxxxxxxxxxxxxxxxxxx}"},
-			expectedErr: "",
-			noElems:     1,
+			attrStack: []string{"sshpublickey", "{expirationtimeusec", "1625123095000", "key", "id-rsaxxxxxxxxxxxxxxxxxxxxxxxxxx}"},
+			expectedVals: map[string]string{"ExpirationTimeUsec": "1625123095000",
+				"Key": "id-rsaxxxxxxxxxxxxxxxxxxxxxxxxxx"},
+			noElems: 1,
 		},
 		{
-			attrStack:   []string{"website", "{primary", "true", "type", "blog", "value", "blm.org}"},
-			expectedErr: "",
-			noElems:     1,
+			attrStack: []string{"website", "{primary", "true", "type", "blog", "value", "blm.org}"},
+			expectedVals: map[string]string{"Primary": "true",
+				"Type":  "blog",
+				"Value": "blm.org"},
+			noElems: 1,
 		},
 	}
 
@@ -146,7 +235,6 @@ func TestDoComposite(t *testing.T) {
 			if err.Error() != c.expectedErr {
 				t.Errorf("Got error: %v - expected error: %v", err.Error(), c.expectedErr)
 			}
-
 			continue
 		}
 
@@ -160,78 +248,156 @@ func TestDoComposite(t *testing.T) {
 			addresses := user.Addresses.([]*admin.UserAddress)
 			if len(addresses) != c.noElems {
 				t.Errorf("Address error - expected %v address got %v", c.noElems, len(addresses))
+				break
+			}
+
+			err = tsts.AddressCompActualExpected(addresses[0], c.expectedVals)
+			if err != nil {
+				t.Errorf("Address error: %v", err.Error())
 			}
 		case attrStack[0] == "email":
 			emails := user.Emails.([]*admin.UserEmail)
 			if len(emails) != c.noElems {
 				t.Errorf("Email error - expected %v email got %v", c.noElems, len(emails))
+				break
+			}
+
+			err = tsts.EmailCompActualExpected(emails[0], c.expectedVals)
+			if err != nil {
+				t.Errorf("Email error: %v", err.Error())
 			}
 		case attrStack[0] == "externalid":
 			externalids := user.ExternalIds.([]*admin.UserExternalId)
 			if len(externalids) != c.noElems {
 				t.Errorf("ExternalID error - expected %v external id got %v", c.noElems, len(externalids))
+				break
+			}
+
+			err = tsts.ExtIDCompActualExpected(externalids[0], c.expectedVals)
+			if err != nil {
+				t.Errorf("ExternalID error: %v", err.Error())
 			}
 		case attrStack[0] == "gender":
 			gender := user.Gender.(*admin.UserGender)
-			if gender.AddressMeAs != "they/them" || gender.CustomGender != "non-binary" || gender.Type != "other" {
-				t.Errorf("Gender error - expected: addressmeas = they/them; customgender = non-binary; type = other; got: addressmeas = %v; customgender = %v; type = %v",
-					gender.AddressMeAs, gender.CustomGender, gender.Type)
+			err = tsts.GenderCompActualExpected(gender, c.expectedVals)
+			if err != nil {
+				t.Errorf("Gender error: %v", err.Error())
 			}
 		case attrStack[0] == "im":
 			ims := user.Ims.([]*admin.UserIm)
 			if len(ims) != c.noElems {
 				t.Errorf("Im error - expected %v im got %v", c.noElems, len(ims))
+				break
+			}
+
+			err = tsts.ImCompActualExpected(ims[0], c.expectedVals)
+			if err != nil {
+				t.Errorf("Im error: %v", err.Error())
 			}
 		case attrStack[0] == "keyword":
 			keywords := user.Keywords.([]*admin.UserKeyword)
 			if len(keywords) != c.noElems {
 				t.Errorf("Keyword error - expected %v keyword got %v", c.noElems, len(keywords))
+				break
+			}
+
+			err = tsts.KeywordCompActualExpected(keywords[0], c.expectedVals)
+			if err != nil {
+				t.Errorf("Keyword error: %v", err.Error())
 			}
 		case attrStack[0] == "language":
 			languages := user.Languages.([]*admin.UserLanguage)
 			if len(languages) != c.noElems {
 				t.Errorf("Language error - expected %v language got %v", c.noElems, len(languages))
+				break
+			}
+
+			err = tsts.LanguageCompActualExpected(languages[0], c.expectedVals)
+			if err != nil {
+				t.Errorf("Language error: %v", err.Error())
 			}
 		case attrStack[0] == "location":
 			locations := user.Locations.([]*admin.UserLocation)
 			if len(locations) != c.noElems {
 				t.Errorf("Location error - expected %v location got %v", c.noElems, len(locations))
+				break
+			}
+
+			err = tsts.LocationCompActualExpected(locations[0], c.expectedVals)
+			if err != nil {
+				t.Errorf("Location error: %v", err.Error())
 			}
 		case attrStack[0] == "notes":
 			about := user.Notes.(*admin.UserAbout)
-			if about.ContentType != "text_plain" || about.Value != "This user is one of the company founders." {
-				t.Errorf("Notes error - expected: contenttype = text_plain; value = This user is one of the company founders. got: contenttype = %v; value = %v",
-					about.ContentType, about.Value)
+			err = tsts.AboutCompActualExpected(about, c.expectedVals)
+			if err != nil {
+				t.Errorf("Notes error: %v", err.Error())
 			}
 		case attrStack[0] == "organisation" || attrStack[0] == "organization":
 			organizations := user.Organizations.([]*admin.UserOrganization)
 			if len(organizations) != c.noElems {
 				t.Errorf("Organization error - expected %v organization got %v", c.noElems, len(organizations))
+				break
+			}
+
+			err = tsts.OrgCompActualExpected(organizations[0], c.expectedVals)
+			if err != nil {
+				t.Errorf("Organization error: %v", err.Error())
 			}
 		case attrStack[0] == "phone":
 			phones := user.Phones.([]*admin.UserPhone)
 			if len(phones) != c.noElems {
 				t.Errorf("Phone error - expected %v phone got %v", c.noElems, len(phones))
+				break
+			}
+
+			err = tsts.PhoneCompActualExpected(phones[0], c.expectedVals)
+			if err != nil {
+				t.Errorf("Phone error: %v", err.Error())
 			}
 		case attrStack[0] == "posixaccount":
 			posixaccounts := user.PosixAccounts.([]*admin.UserPosixAccount)
 			if len(posixaccounts) != c.noElems {
-				t.Errorf("Posixaccount error - expected %v posixaccount got %v", c.noElems, len(posixaccounts))
+				t.Errorf("PosixAccount error - expected %v posixaccount got %v", c.noElems, len(posixaccounts))
+				break
+			}
+
+			err = tsts.PosixCompActualExpected(posixaccounts[0], c.expectedVals)
+			if err != nil {
+				t.Errorf("PosixAccount error: %v", err.Error())
 			}
 		case attrStack[0] == "relation":
 			relations := user.Relations.([]*admin.UserRelation)
 			if len(relations) != c.noElems {
 				t.Errorf("Relation error - expected %v relation got %v", c.noElems, len(relations))
+				break
+			}
+
+			err = tsts.RelationCompActualExpected(relations[0], c.expectedVals)
+			if err != nil {
+				t.Errorf("Relation error: %v", err.Error())
 			}
 		case attrStack[0] == "sshpublickey":
 			sshpublickeys := user.SshPublicKeys.([]*admin.UserSshPublicKey)
 			if len(sshpublickeys) != c.noElems {
 				t.Errorf("SshPublicKey error - expected %v sshpublickey got %v", c.noElems, len(sshpublickeys))
+				break
+			}
+
+			err = tsts.SSHKeyCompActualExpected(sshpublickeys[0], c.expectedVals)
+			if err != nil {
+				t.Errorf("SshPublicKey error: %v", err.Error())
 			}
 		case attrStack[0] == "website":
 			websites := user.Websites.([]*admin.UserWebsite)
 			if len(websites) != c.noElems {
 				t.Errorf("Website error - expected %v website got %v", c.noElems, len(websites))
+				break
+			}
+
+			err = tsts.WebsiteCompActualExpected(websites[0], c.expectedVals)
+			if err != nil {
+				t.Errorf("Website error: %v", err.Error())
 			}
 		}
 
@@ -268,11 +434,8 @@ func TestDoName(t *testing.T) {
 			expectedLastName:  "Dent",
 		},
 		{
-			attrStack:         []string{"name", "{firstname", "Arthur", "lastname", "Dent"},
-			expectedErr:       "gmin: error - malformed name attribute",
-			expectedFirstName: "Arthur",
-			expectedFullName:  "",
-			expectedLastName:  "Dent",
+			attrStack:   []string{"name", "{firstname", "Arthur", "lastname", "Dent"},
+			expectedErr: "gmin: error - malformed name attribute",
 		},
 		{
 			attrStack:         []string{"name", "{FirstName", "Arthur", "FullName", "Algernon", "LASTNAME", "Dent}"},
@@ -290,11 +453,8 @@ func TestDoName(t *testing.T) {
 			expectedNSLen:     3,
 		},
 		{
-			attrStack:         []string{"name", "{firstname", "Arthur", "lastname", "Dent", "address", "{formatted", "10 Worlds End, Paignton, TQ2 6TF}"},
-			expectedErr:       "gmin: error - malformed attribute string",
-			expectedFirstName: "Arthur",
-			expectedFullName:  "",
-			expectedLastName:  "Dent",
+			attrStack:   []string{"name", "{firstname", "Arthur", "lastname", "Dent", "address", "{formatted", "10 Worlds End, Paignton, TQ2 6TF}"},
+			expectedErr: "gmin: error - malformed attribute string",
 		},
 	}
 
@@ -326,79 +486,65 @@ func TestDoName(t *testing.T) {
 }
 func TestDoNonComposite(t *testing.T) {
 	cases := []struct {
-		attrStack     []string
-		expectedErr   string
-		expectedValue string
-		expectedNSLen int
+		attrStack    []string
+		expectedErr  string
+		expectedVals map[string]string
 	}{
 		{
-			attrStack:     []string{"changepasswordatnextlogin", "true"},
-			expectedErr:   "",
-			expectedValue: "true",
+			attrStack:    []string{"changepasswordatnextlogin", "true"},
+			expectedVals: map[string]string{"ChangePasswordAtNextLogin": "true"},
 		},
 		{
-			attrStack:     []string{"changepasswordatnextlogin", "false"},
-			expectedErr:   "",
-			expectedValue: "false",
+			attrStack:    []string{"changepasswordatnextlogin", "false"},
+			expectedVals: map[string]string{"ChangePasswordAtNextLogin": "false"},
 		},
 		{
-			attrStack:     []string{"includeinglobaladdresslist", "true"},
-			expectedErr:   "",
-			expectedValue: "true",
+			attrStack:    []string{"includeinglobaladdresslist", "true"},
+			expectedVals: map[string]string{"IncludeInGlobalAddressList": "true"},
 		},
 		{
-			attrStack:     []string{"includeinglobaladdresslist", "false"},
-			expectedErr:   "",
-			expectedValue: "false",
+			attrStack:    []string{"includeinglobaladdresslist", "false"},
+			expectedVals: map[string]string{"IncludeInGlobalAddressList": "false"},
 		},
 		{
-			attrStack:     []string{"ipwhitelisted", "true"},
-			expectedErr:   "",
-			expectedValue: "true",
+			attrStack:    []string{"ipwhitelisted", "true"},
+			expectedVals: map[string]string{"IpWhitelisted": "true"},
 		},
 		{
-			attrStack:     []string{"ipwhitelisted", "false"},
-			expectedErr:   "",
-			expectedValue: "false",
+			attrStack:    []string{"ipwhitelisted", "false"},
+			expectedVals: map[string]string{"IpWhitelisted": "false"},
 		},
 		{
-			attrStack:     []string{"orgunitpath", "/Finance"},
-			expectedErr:   "",
-			expectedValue: "/Finance",
+			attrStack:    []string{"orgunitpath", "/Finance"},
+			expectedVals: map[string]string{"OrgUnitPath": "/Finance"},
 		},
 		{
-			attrStack:     []string{"password", "ExtraSecurePassword"},
-			expectedErr:   "",
-			expectedValue: "f04b2e2e92336f5412d4c709749b26e29ea48e2f",
+			attrStack:    []string{"password", "ExtraSecurePassword"},
+			expectedVals: map[string]string{"Password": "f04b2e2e92336f5412d4c709749b26e29ea48e2f"},
 		},
 		{
-			attrStack:     []string{"primaryemail", "dick.turpin@famoushighwaymen.com"},
-			expectedErr:   "",
-			expectedValue: "dick.turpin@famoushighwaymen.com",
+			attrStack:    []string{"primaryemail", "dick.turpin@famoushighwaymen.com"},
+			expectedVals: map[string]string{"PrimaryEmail": "dick.turpin@famoushighwaymen.com"},
 		},
 		{
-			attrStack:     []string{"recoveryemail", "dick.turpin@alternative.com"},
-			expectedErr:   "",
-			expectedValue: "dick.turpin@alternative.com",
+			attrStack:    []string{"recoveryemail", "dick.turpin@alternative.com"},
+			expectedVals: map[string]string{"RecoveryEmail": "dick.turpin@alternative.com"},
 		},
 		{
-			attrStack:     []string{"recoveryphone", "+447880234167"},
-			expectedErr:   "",
-			expectedValue: "+447880234167",
+			attrStack:    []string{"recoveryphone", "+447880234167"},
+			expectedVals: map[string]string{"RecoveryPhone": "+447880234167"},
 		},
 		{
 			attrStack:   []string{"recoveryphone", "447880234167"},
 			expectedErr: "gmin: error - recovery phone number 447880234167 must start with '+'",
 		},
 		{
-			attrStack:     []string{"suspended", "true"},
-			expectedErr:   "",
-			expectedValue: "true",
+			attrStack:    []string{"suspended", "true"},
+			expectedVals: map[string]string{"Suspended": "true"},
 		},
 		{
-			attrStack:     []string{"suspended", "false"},
-			expectedErr:   "",
-			expectedValue: "false",
+			attrStack:    []string{"suspended", "false"},
+			expectedVals: map[string]string{"Suspended": "false"},
 		},
 		{
 			attrStack:   []string{"bogus", "false"},
@@ -411,8 +557,7 @@ func TestDoNonComposite(t *testing.T) {
 
 		attrStack := c.attrStack
 
-		newStack, err := doNonComposite(user, attrStack)
-
+		_, err := doNonComposite(user, attrStack)
 		if err != nil {
 			if err.Error() != c.expectedErr {
 				t.Errorf("Got error: %v - expected error: %v", err.Error(), c.expectedErr)
@@ -421,56 +566,9 @@ func TestDoNonComposite(t *testing.T) {
 			continue
 		}
 
-		if len(newStack) != 0 && len(newStack) != c.expectedNSLen {
-			t.Errorf("Expected newStack length %v - got %v", c.expectedNSLen, len(newStack))
-			continue
-		}
-
-		switch true {
-		case attrStack[0] == "changepasswordatnextlogin":
-			b, _ := strconv.ParseBool(c.expectedValue)
-
-			if b != user.ChangePasswordAtNextLogin {
-				t.Errorf("Expected user.ChangePasswordAtNextLogin to be %v but got %v", b, user.ChangePasswordAtNextLogin)
-			}
-		case attrStack[0] == "includeinglobaladdresslist":
-			b, _ := strconv.ParseBool(c.expectedValue)
-
-			if b != user.IncludeInGlobalAddressList {
-				t.Errorf("Expected user.IncludeInGlobalAddressList to be %v but got %v", b, user.IncludeInGlobalAddressList)
-			}
-		case attrStack[0] == "ipwhitelisted":
-			b, _ := strconv.ParseBool(c.expectedValue)
-
-			if b != user.IpWhitelisted {
-				t.Errorf("Expected user.IpWhitelisted to be %v but got %v", b, user.IpWhitelisted)
-			}
-		case attrStack[0] == "orgunitpath":
-			if user.OrgUnitPath != c.expectedValue {
-				t.Errorf("Expected user.OrgUnitPath to be %v but got %v", c.expectedValue, user.OrgUnitPath)
-			}
-		case attrStack[0] == "password":
-			if user.Password != c.expectedValue {
-				t.Errorf("Expected user.Password to be %v but got %v", c.expectedValue, user.Password)
-			}
-		case attrStack[0] == "primaryemail":
-			if user.PrimaryEmail != c.expectedValue {
-				t.Errorf("Expected user.PrimaryEmail to be %v but got %v", c.expectedValue, user.PrimaryEmail)
-			}
-		case attrStack[0] == "recoveryemail":
-			if user.RecoveryEmail != c.expectedValue {
-				t.Errorf("Expected user.RecoveryEmail to be %v but got %v", c.expectedValue, user.RecoveryEmail)
-			}
-		case attrStack[0] == "recoveryphone":
-			if user.RecoveryPhone != c.expectedValue {
-				t.Errorf("Expected user.RecoveryPhone to be %v but got %v", c.expectedValue, user.RecoveryPhone)
-			}
-		case attrStack[0] == "suspended":
-			b, _ := strconv.ParseBool(c.expectedValue)
-
-			if b != user.Suspended {
-				t.Errorf("Expected user.Suspended to be %v but got %v", b, user.Suspended)
-			}
+		err = tsts.UserCompActualExpected(user, c.expectedVals)
+		if err != nil {
+			t.Errorf("User NonComposite error: %v", err.Error())
 		}
 	}
 }
@@ -600,23 +698,27 @@ func TestIsCompositeAttr(t *testing.T) {
 
 func TestMakeAbout(t *testing.T) {
 	cases := []struct {
-		aboutParts          []string
+		addrParts           []string
 		expectedContentType string
 		expectedErr         string
 		expectedValue       string
 	}{
 		{
-			aboutParts:          []string{"contenttype", "text_plain", "value", "This is a test note."},
+			addrParts:           []string{"contenttype", "text_plain", "value", "This is a test note."},
 			expectedContentType: "text_plain",
 			expectedValue:       "This is a test note.",
 		},
 		{
-			aboutParts:  []string{"contenttype", "text-plain", "value", "This is a test note."},
+			addrParts:   []string{"contenttype", "text-plain", "value", "This is a test note."},
 			expectedErr: "gmin: error - text-plain is not a valid notes content type",
 		},
 		{
-			aboutParts:  []string{"content", "text_html", "value", "This is a test note."},
+			addrParts:   []string{"content", "text_html", "value", "This is a test note."},
 			expectedErr: "gmin: error - content is not a valid UserAbout attribute",
+		},
+		{
+			addrParts:   []string{"content", "text_html", "value"},
+			expectedErr: "gmin: error - malformed attribute string",
 		},
 	}
 
@@ -625,7 +727,7 @@ func TestMakeAbout(t *testing.T) {
 
 		about = new(admin.UserAbout)
 
-		about, err := makeAbout(c.aboutParts)
+		about, err := makeAbout(c.addrParts)
 		if err != nil && (err.Error() != c.expectedErr) {
 			t.Errorf("Expected error: %v - Got: %v", c.expectedErr, err.Error())
 			continue
@@ -640,5 +742,92 @@ func TestMakeAbout(t *testing.T) {
 				c.expectedContentType, c.expectedValue, about.ContentType, about.Value)
 		}
 
+	}
+}
+
+func TestMakeAddress(t *testing.T) {
+	cases := []struct {
+		addrParts    []string
+		expectedVals map[string]string
+		expectedErr  string
+	}{
+		{
+			addrParts: []string{"country", "USA", "countrycode", "USA", "extendedaddress",
+				"Pentagram Building, 2301 Lake Shore Drive, Chicago, IL 60616, USA", "formatted", "2301 Lake Shore Drive, Chicago, IL 60616",
+				"locality", "Chicago", "postalcode", "IL 60616", "primary", "true", "streetaddress", "2301 Lake Shore Drive", "type", "work"},
+			expectedVals: map[string]string{"Country": "USA",
+				"CountryCode":     "USA",
+				"ExtendedAddress": "Pentagram Building, 2301 Lake Shore Drive, Chicago, IL 60616, USA",
+				"Formatted":       "2301 Lake Shore Drive, Chicago, IL 60616",
+				"Locality":        "Chicago",
+				"PostalCode":      "IL 60616",
+				"Primary":         "true",
+				"StreetAddress":   "2301 Lake Shore Drive",
+				"Type":            "work"},
+		},
+		{
+			addrParts: []string{"country", "USA", "countrycode", "USA", "extendedaddress",
+				"Pentagram Building, 2301 Lake Shore Drive, Chicago, IL 60616, USA", "formatted", "2301 Lake Shore Drive, Chicago, IL 60616",
+				"locality", "Chicago", "postalcode", "IL 60616", "primary", "True", "streetaddress", "2301 Lake Shore Drive", "type", "work"},
+			expectedVals: map[string]string{"Country": "USA",
+				"CountryCode":     "USA",
+				"ExtendedAddress": "Pentagram Building, 2301 Lake Shore Drive, Chicago, IL 60616, USA",
+				"Formatted":       "2301 Lake Shore Drive, Chicago, IL 60616",
+				"Locality":        "Chicago",
+				"PostalCode":      "IL 60616",
+				"Primary":         "true",
+				"StreetAddress":   "2301 Lake Shore Drive",
+				"Type":            "work"},
+		},
+		{
+			addrParts: []string{"country", "USA", "countrycode", "USA", "extendedaddress",
+				"Pentagram Building, 2301 Lake Shore Drive, Chicago, IL 60616, USA", "formatted", "2301 Lake Shore Drive, Chicago, IL 60616",
+				"locality", "Chicago", "postalcode", "IL 60616", "primary", "true", "streetaddress", "2301 Lake Shore Drive", "type", "badtype"},
+			expectedErr: "gmin: error - badtype is not a valid address type",
+		},
+		{
+			addrParts: []string{"country", "USA", "countrycode", "USA", "customtype", "satellite_office", "extendedaddress",
+				"Pentagram Building, 2301 Lake Shore Drive, Chicago, IL 60616, USA", "formatted", "2301 Lake Shore Drive, Chicago, IL 60616",
+				"locality", "Chicago", "postalcode", "IL 60616", "primary", "true", "streetaddress", "2301 Lake Shore Drive", "type", "custom"},
+			expectedVals: map[string]string{"Country": "USA",
+				"CountryCode":     "USA",
+				"CustomType":      "satellite_office",
+				"ExtendedAddress": "Pentagram Building, 2301 Lake Shore Drive, Chicago, IL 60616, USA",
+				"Formatted":       "2301 Lake Shore Drive, Chicago, IL 60616",
+				"Locality":        "Chicago",
+				"PostalCode":      "IL 60616",
+				"Primary":         "true",
+				"StreetAddress":   "2301 Lake Shore Drive",
+				"Type":            "custom"},
+		},
+		{
+			addrParts: []string{"nation", "USA", "countrycode", "USA", "extendedaddress",
+				"Pentagram Building, 2301 Lake Shore Drive, Chicago, IL 60616, USA", "formatted", "2301 Lake Shore Drive, Chicago, IL 60616",
+				"locality", "Chicago", "postalcode", "IL 60616", "primary", "true", "streetaddress", "2301 Lake Shore Drive", "type", "badtype"},
+			expectedErr: "gmin: error - nation is not a valid UserAddress attribute",
+		},
+		{
+			addrParts: []string{"nation", "USA", "countrycode", "USA", "extendedaddress",
+				"Pentagram Building, 2301 Lake Shore Drive, Chicago, IL 60616, USA", "formatted", "2301 Lake Shore Drive, Chicago, IL 60616",
+				"locality", "Chicago", "postalcode", "IL 60616", "primary", "true", "streetaddress", "2301 Lake Shore Drive", "type"},
+			expectedErr: "gmin: error - malformed attribute string",
+		},
+	}
+
+	for _, c := range cases {
+		var address *admin.UserAddress
+
+		address = new(admin.UserAddress)
+
+		address, err := makeAddress(c.addrParts)
+		if err != nil && (err.Error() != c.expectedErr) {
+			t.Errorf("Expected error: %v - Got: %v", c.expectedErr, err.Error())
+			continue
+		}
+
+		err = tsts.AddressCompActualExpected(address, c.expectedVals)
+		if err != nil {
+			t.Errorf("MakeAddress error: %v", err.Error())
+		}
 	}
 }
