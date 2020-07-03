@@ -1,4 +1,4 @@
-![Go](https://github.com/plusworx/gmin/workflows/Go/badge.svg)
+![Go](https://github.com/plusworx/gmin/workflows/Go/badge.svg)  [![Go Report Card](https://goreportcard.com/badge/github.com/plusworx/gmin)](https://goreportcard.com/report/github.com/plusworx/gmin)
 
 # gmin
 Administration CLI (command line interface) for Google G Suite written in Go (aka Golang). gmin performs actions by using credentials of a service account that has delegated domain-wide authority and the email address of a user with administrative authority.
