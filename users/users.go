@@ -928,7 +928,7 @@ func makeAddress(addrParts []string) (*admin.UserAddress, error) {
 			case attrName == "postalcode":
 				newAddress.PostalCode = part
 			case attrName == "primary":
-				if part == "true" {
+				if strings.ToLower(part) == "true" {
 					newAddress.Primary = true
 				} else {
 					newAddress.Primary = false
@@ -981,7 +981,7 @@ func makeEmail(emailParts []string) (*admin.UserEmail, error) {
 			case attrName == "customtype":
 				newEmail.CustomType = part
 			case attrName == "primary":
-				if part == "true" {
+				if strings.ToLower(part) == "true" {
 					newEmail.Primary = true
 				} else {
 					newEmail.Primary = false
@@ -1116,7 +1116,7 @@ func makeIm(imParts []string) (*admin.UserIm, error) {
 			case attrName == "im":
 				newIm.Im = part
 			case attrName == "primary":
-				if part == "true" {
+				if strings.ToLower(part) == "true" {
 					newIm.Primary = true
 				} else {
 					newIm.Primary = false
@@ -1353,7 +1353,7 @@ func makeOrganization(orgParts []string) (*admin.UserOrganization, error) {
 			case attrName == "name":
 				newOrg.Name = part
 			case attrName == "primary":
-				if part == "true" {
+				if strings.ToLower(part) == "true" {
 					newOrg.Primary = true
 				} else {
 					newOrg.Primary = false
@@ -1404,7 +1404,7 @@ func makePhone(phoneParts []string) (*admin.UserPhone, error) {
 			case attrName == "customtype":
 				newPhone.CustomType = part
 			case attrName == "primary":
-				if part == "true" {
+				if strings.ToLower(part) == "true" {
 					newPhone.Primary = true
 				} else {
 					newPhone.Primary = false
@@ -1471,7 +1471,7 @@ func makePosAcct(posParts []string) (*admin.UserPosixAccount, error) {
 				}
 				newPosAcct.OperatingSystemType = part
 			case attrName == "primary":
-				if part == "true" {
+				if strings.ToLower(part) == "true" {
 					newPosAcct.Primary = true
 				} else {
 					newPosAcct.Primary = false
@@ -1606,7 +1606,7 @@ func makeWebsite(webParts []string) (*admin.UserWebsite, error) {
 			case attrName == "customtype":
 				newWebsite.CustomType = part
 			case attrName == "primary":
-				if part == "true" {
+				if strings.ToLower(part) == "true" {
 					newWebsite.Primary = true
 				} else {
 					newWebsite.Primary = false
