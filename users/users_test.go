@@ -39,11 +39,7 @@ func TestDoComposite(t *testing.T) {
 	}{
 		{
 			attrStack: []string{"address", "{streetaddress", "201 Arbour Avenue", "locality", "Leeds", "postalcode", "LS2 1ND", "type", "home}"},
-			expectedVals: map[string]string{"StreetAddress": "201 Arbour Avenue",
-				"Locality":   "Leeds",
-				"PostalCode": "LS2 1ND",
-				"Type":       "home"},
-			noElems: 1,
+			noElems:   1,
 		},
 		{
 			attrStack:   []string{"address", "{streetaddress", "201 Arbour Avenue", "locality", "Leeds", "postalcode", "LS2 1ND", "type}"},
@@ -51,11 +47,7 @@ func TestDoComposite(t *testing.T) {
 		},
 		{
 			attrStack: []string{"address", "streetaddress", "201 Arbour Avenue", "locality", "Leeds", "postalcode", "LS2 1ND", "type", "home}"},
-			expectedVals: map[string]string{"StreetAddress": "201 Arbour Avenue",
-				"Locality":   "Leeds",
-				"PostalCode": "LS2 1ND",
-				"Type":       "home"},
-			noElems: 1,
+			noElems:   1,
 		},
 		{
 			attrStack:   []string{"address", "{streetaddress", "201 Arbour Avenue", "locality", "Leeds", "postalcode", "LS2 1ND", "type", "home"},
@@ -67,11 +59,7 @@ func TestDoComposite(t *testing.T) {
 		},
 		{
 			attrStack: []string{"address", "{StreetAddress", "201 Arbour Avenue", "Locality", "Leeds", "PostalCode", "LS2 1ND", "TYPE", "home}"},
-			expectedVals: map[string]string{"StreetAddress": "201 Arbour Avenue",
-				"Locality":   "Leeds",
-				"PostalCode": "LS2 1ND",
-				"Type":       "home"},
-			noElems: 1,
+			noElems:   1,
 		},
 		{
 			attrStack:   []string{"address", "{streetaddress", "201 Arbour Avenue", "locality", "Leeds", "postalcode", "LS2 1ND", "type", "wrong}"},
@@ -80,147 +68,73 @@ func TestDoComposite(t *testing.T) {
 		{
 			attrStack: []string{"   address   ", "{   streetaddress   ", "201 Arbour Avenue", "   locality  ", "Leeds",
 				"   postalcode   ", "LS2 1ND", "   type   ", "home}"},
-			expectedVals: map[string]string{"StreetAddress": "201 Arbour Avenue",
-				"Locality":   "Leeds",
-				"PostalCode": "LS2 1ND",
-				"Type":       "home"},
 			noElems: 1,
 		},
 		{
 			attrStack: []string{"email", "{address", "chief.exec@mycorp.com", "primary", "true", "type", "work}"},
-			expectedVals: map[string]string{"Address": "chief.exec@mycorp.com",
-				"Primary": "true",
-				"Type":    "work"},
-			noElems: 1,
+			noElems:   1,
 		},
 		{
 			attrStack: []string{"externalid", "{customtype", "GitHubID", "type", "custom", "value", "1234567890}"},
-			expectedVals: map[string]string{"CustomType": "GitHubID",
-				"Type":  "custom",
-				"Value": "1234567890"},
-			noElems: 1,
+			noElems:   1,
 		},
 		{
 			attrStack: []string{"gender", "{addressmeas", "they/them", "customgender", "non-binary", "type", "other}"},
-			expectedVals: map[string]string{"AddressMeAs": "they/them",
-				"CustomGender": "non-binary",
-				"Type":         "other"},
 		},
 		{
 			attrStack: []string{"im", "{customprotocol", "plusworx", "customtype", "experimental", "im", "@mistered",
 				"primary", "true", "protocol", "custom_protocol", "type", "custom}"},
-			expectedVals: map[string]string{"CustomProtocol": "plusworx",
-				"CustomType": "experimental",
-				"Im":         "@mistered",
-				"Primary":    "true",
-				"Protocol":   "custom_protocol",
-				"Type":       "custom"},
 			noElems: 1,
 		},
 		{
 			attrStack: []string{"keyword", "{customtype", "workhours", "type", "custom", "value", "part-time}"},
-			expectedVals: map[string]string{"CustomType": "workhours",
-				"Type":  "custom",
-				"Value": "part-time"},
-			noElems: 1,
+			noElems:   1,
 		},
 		{
-			attrStack:    []string{"language", "{languagecode", "en-GB}"},
-			expectedVals: map[string]string{"LanguageCode": "en-GB"},
-			noElems:      1,
+			attrStack: []string{"language", "{languagecode", "en-GB}"},
+			noElems:   1,
 		},
 		{
 			attrStack: []string{"location", "{area", "Shoreditch", "buildingid", "Grebe House", "deskcode", "D12", "floorname", "12",
 				"floorsection", "Marketing", "type", "desk}"},
-			expectedVals: map[string]string{"Area": "Shoreditch",
-				"BuildingId":   "Grebe House",
-				"DeskCode":     "D12",
-				"FloorName":    "12",
-				"FloorSection": "Marketing",
-				"Type":         "desk"},
 			noElems: 1,
 		},
 		{
 			attrStack: []string{"notes", "{contenttype", "text_plain", "value", "This user is one of the company founders.}"},
-			expectedVals: map[string]string{"ContentType": "text_plain",
-				"Value": "This user is one of the company founders."},
 		},
 		{
 			attrStack: []string{"organisation", "{costcenter", "104", "department", "Finance", "description", "Head Office Finance Department",
 				"domain", "majestic.co.uk", "fulltimeequivalent", "100000", "location", "Newcastle", "name", "Majestic Film Ltd",
 				"primary", "true", "symbol", "MAJ", "title", "CFO", "type", "work}"},
-			expectedVals: map[string]string{"CostCenter": "104",
-				"Department":         "Finance",
-				"Description":        "Head Office Finance Department",
-				"Domain":             "majestic.co.uk",
-				"FullTimeEquivalent": "100000",
-				"Location":           "Newcastle",
-				"Name":               "Majestic Film Ltd",
-				"Primary":            "true",
-				"Symbol":             "MAJ",
-				"Title":              "CFO",
-				"Type":               "work"},
 			noElems: 1,
 		},
 		{
 			attrStack: []string{"organization", "{costcenter", "105", "customtype", "acquisition", "department", "Sales", "description", "Head Office Sales Department",
 				"domain", "majestic.co.uk", "fulltimeequivalent", "90000", "location", "Newcastle", "name", "Majestic Film Ltd",
 				"primary", "false", "symbol", "MAJ", "title", "Head of Sales", "type", "custom}"},
-			expectedVals: map[string]string{"CostCenter": "105",
-				"CustomType":         "acquisition",
-				"Department":         "Sales",
-				"Description":        "Head Office Sales Department",
-				"Domain":             "majestic.co.uk",
-				"FullTimeEquivalent": "90000",
-				"Location":           "Newcastle",
-				"Name":               "Majestic Film Ltd",
-				"Primary":            "false",
-				"Symbol":             "MAJ",
-				"Title":              "Head of Sales",
-				"Type":               "custom"},
 			noElems: 1,
 		},
 		{
 			attrStack: []string{"phone", "{primary", "false", "type", "mobile", "value", "05467983211}"},
-			expectedVals: map[string]string{"Primary": "false",
-				"Type":  "mobile",
-				"Value": "05467983211"},
-			noElems: 1,
+			noElems:   1,
 		},
 		{
 			attrStack: []string{"posixaccount", "{accountid", "1000", "gecos", "Brian Phelps", "gid", "1000", "homedirectory", "/home/brian",
 				"operatingsystemtype", "linux", "primary", "true", "shell", "/bin/bash", "systemid", "2000",
 				"uid", "1000", "username", "brian}"},
-			expectedVals: map[string]string{"AccountId": "1000",
-				"Gecos":               "Brian Phelps",
-				"Gid":                 "1000",
-				"HomeDirectory":       "/home/brian",
-				"OperatingSystemType": "linux",
-				"Primary":             "true",
-				"Shell":               "/bin/bash",
-				"SystemId":            "2000",
-				"Uid":                 "1000",
-				"Username":            "brian"},
 			noElems: 1,
 		},
 		{
 			attrStack: []string{"relation", "{type", "partner", "value", "David Letterman}"},
-			expectedVals: map[string]string{"Type": "partner",
-				"Value": "David Letterman"},
-			noElems: 1,
+			noElems:   1,
 		},
 		{
 			attrStack: []string{"sshpublickey", "{expirationtimeusec", "1625123095000", "key", "id-rsaxxxxxxxxxxxxxxxxxxxxxxxxxx}"},
-			expectedVals: map[string]string{"ExpirationTimeUsec": "1625123095000",
-				"Key": "id-rsaxxxxxxxxxxxxxxxxxxxxxxxxxx"},
-			noElems: 1,
+			noElems:   1,
 		},
 		{
 			attrStack: []string{"website", "{primary", "true", "type", "blog", "value", "blm.org}"},
-			expectedVals: map[string]string{"Primary": "true",
-				"Type":  "blog",
-				"Value": "blm.org"},
-			noElems: 1,
+			noElems:   1,
 		},
 	}
 
@@ -248,156 +162,76 @@ func TestDoComposite(t *testing.T) {
 			addresses := user.Addresses.([]*admin.UserAddress)
 			if len(addresses) != c.noElems {
 				t.Errorf("Address error - expected %v address got %v", c.noElems, len(addresses))
-				break
-			}
-
-			err = tsts.AddressCompActualExpected(addresses[0], c.expectedVals)
-			if err != nil {
-				t.Errorf("Address error: %v", err.Error())
 			}
 		case attrStack[0] == "email":
 			emails := user.Emails.([]*admin.UserEmail)
 			if len(emails) != c.noElems {
 				t.Errorf("Email error - expected %v email got %v", c.noElems, len(emails))
-				break
-			}
-
-			err = tsts.EmailCompActualExpected(emails[0], c.expectedVals)
-			if err != nil {
-				t.Errorf("Email error: %v", err.Error())
 			}
 		case attrStack[0] == "externalid":
 			externalids := user.ExternalIds.([]*admin.UserExternalId)
 			if len(externalids) != c.noElems {
 				t.Errorf("ExternalID error - expected %v external id got %v", c.noElems, len(externalids))
-				break
-			}
-
-			err = tsts.ExtIDCompActualExpected(externalids[0], c.expectedVals)
-			if err != nil {
-				t.Errorf("ExternalID error: %v", err.Error())
 			}
 		case attrStack[0] == "gender":
 			gender := user.Gender.(*admin.UserGender)
-			err = tsts.GenderCompActualExpected(gender, c.expectedVals)
-			if err != nil {
-				t.Errorf("Gender error: %v", err.Error())
+			if gender.AddressMeAs == "" || gender.CustomGender == "" || gender.Type == "" {
+				t.Error("Gender error: Fields not populated")
 			}
 		case attrStack[0] == "im":
 			ims := user.Ims.([]*admin.UserIm)
 			if len(ims) != c.noElems {
 				t.Errorf("Im error - expected %v im got %v", c.noElems, len(ims))
-				break
-			}
-
-			err = tsts.ImCompActualExpected(ims[0], c.expectedVals)
-			if err != nil {
-				t.Errorf("Im error: %v", err.Error())
 			}
 		case attrStack[0] == "keyword":
 			keywords := user.Keywords.([]*admin.UserKeyword)
 			if len(keywords) != c.noElems {
 				t.Errorf("Keyword error - expected %v keyword got %v", c.noElems, len(keywords))
-				break
-			}
-
-			err = tsts.KeywordCompActualExpected(keywords[0], c.expectedVals)
-			if err != nil {
-				t.Errorf("Keyword error: %v", err.Error())
 			}
 		case attrStack[0] == "language":
 			languages := user.Languages.([]*admin.UserLanguage)
 			if len(languages) != c.noElems {
 				t.Errorf("Language error - expected %v language got %v", c.noElems, len(languages))
-				break
-			}
-
-			err = tsts.LanguageCompActualExpected(languages[0], c.expectedVals)
-			if err != nil {
-				t.Errorf("Language error: %v", err.Error())
 			}
 		case attrStack[0] == "location":
 			locations := user.Locations.([]*admin.UserLocation)
 			if len(locations) != c.noElems {
 				t.Errorf("Location error - expected %v location got %v", c.noElems, len(locations))
-				break
-			}
-
-			err = tsts.LocationCompActualExpected(locations[0], c.expectedVals)
-			if err != nil {
-				t.Errorf("Location error: %v", err.Error())
 			}
 		case attrStack[0] == "notes":
 			about := user.Notes.(*admin.UserAbout)
-			err = tsts.AboutCompActualExpected(about, c.expectedVals)
-			if err != nil {
-				t.Errorf("Notes error: %v", err.Error())
+			if about.ContentType == "" || about.Value == "" {
+				t.Error("Notes error: Fields not populated")
 			}
 		case attrStack[0] == "organisation" || attrStack[0] == "organization":
 			organizations := user.Organizations.([]*admin.UserOrganization)
 			if len(organizations) != c.noElems {
 				t.Errorf("Organization error - expected %v organization got %v", c.noElems, len(organizations))
-				break
-			}
-
-			err = tsts.OrgCompActualExpected(organizations[0], c.expectedVals)
-			if err != nil {
-				t.Errorf("Organization error: %v", err.Error())
 			}
 		case attrStack[0] == "phone":
 			phones := user.Phones.([]*admin.UserPhone)
 			if len(phones) != c.noElems {
 				t.Errorf("Phone error - expected %v phone got %v", c.noElems, len(phones))
-				break
-			}
-
-			err = tsts.PhoneCompActualExpected(phones[0], c.expectedVals)
-			if err != nil {
-				t.Errorf("Phone error: %v", err.Error())
 			}
 		case attrStack[0] == "posixaccount":
 			posixaccounts := user.PosixAccounts.([]*admin.UserPosixAccount)
 			if len(posixaccounts) != c.noElems {
 				t.Errorf("PosixAccount error - expected %v posixaccount got %v", c.noElems, len(posixaccounts))
-				break
-			}
-
-			err = tsts.PosixCompActualExpected(posixaccounts[0], c.expectedVals)
-			if err != nil {
-				t.Errorf("PosixAccount error: %v", err.Error())
 			}
 		case attrStack[0] == "relation":
 			relations := user.Relations.([]*admin.UserRelation)
 			if len(relations) != c.noElems {
 				t.Errorf("Relation error - expected %v relation got %v", c.noElems, len(relations))
-				break
-			}
-
-			err = tsts.RelationCompActualExpected(relations[0], c.expectedVals)
-			if err != nil {
-				t.Errorf("Relation error: %v", err.Error())
 			}
 		case attrStack[0] == "sshpublickey":
 			sshpublickeys := user.SshPublicKeys.([]*admin.UserSshPublicKey)
 			if len(sshpublickeys) != c.noElems {
 				t.Errorf("SshPublicKey error - expected %v sshpublickey got %v", c.noElems, len(sshpublickeys))
-				break
-			}
-
-			err = tsts.SSHKeyCompActualExpected(sshpublickeys[0], c.expectedVals)
-			if err != nil {
-				t.Errorf("SshPublicKey error: %v", err.Error())
 			}
 		case attrStack[0] == "website":
 			websites := user.Websites.([]*admin.UserWebsite)
 			if len(websites) != c.noElems {
 				t.Errorf("Website error - expected %v website got %v", c.noElems, len(websites))
-				break
-			}
-
-			err = tsts.WebsiteCompActualExpected(websites[0], c.expectedVals)
-			if err != nil {
-				t.Errorf("Website error: %v", err.Error())
 			}
 		}
 
@@ -828,6 +662,443 @@ func TestMakeAddress(t *testing.T) {
 		err = tsts.AddressCompActualExpected(address, c.expectedVals)
 		if err != nil {
 			t.Errorf("MakeAddress error: %v", err.Error())
+		}
+	}
+}
+
+func TestMakeEmail(t *testing.T) {
+	cases := []struct {
+		emailParts   []string
+		expectedVals map[string]string
+		expectedErr  string
+	}{
+		{
+			emailParts:   []string{"address", "chief.exec@mycorp.com", "primary", "true", "type", "work"},
+			expectedVals: map[string]string{"Address": "chief.exec@mycorp.com", "Primary": "true", "Type": "work"},
+		},
+	}
+
+	for _, c := range cases {
+		var email *admin.UserEmail
+
+		email = new(admin.UserEmail)
+
+		email, err := makeEmail(c.emailParts)
+		if err != nil && (err.Error() != c.expectedErr) {
+			t.Errorf("Expected error: %v - Got: %v", c.expectedErr, err.Error())
+			continue
+		}
+
+		err = tsts.EmailCompActualExpected(email, c.expectedVals)
+		if err != nil {
+			t.Errorf("MakeEmail error: %v", err.Error())
+		}
+	}
+}
+
+func TestMakeExtID(t *testing.T) {
+	cases := []struct {
+		extIDParts   []string
+		expectedVals map[string]string
+		expectedErr  string
+	}{
+		{
+			extIDParts: []string{"customtype", "GitHubID", "type", "custom", "value", "1234567890"},
+			expectedVals: map[string]string{"CustomType": "GitHubID",
+				"Type":  "custom",
+				"Value": "1234567890"},
+		},
+	}
+
+	for _, c := range cases {
+		var extID *admin.UserExternalId
+
+		extID = new(admin.UserExternalId)
+
+		extID, err := makeExtID(c.extIDParts)
+		if err != nil && (err.Error() != c.expectedErr) {
+			t.Errorf("Expected error: %v - Got: %v", c.expectedErr, err.Error())
+			continue
+		}
+
+		err = tsts.ExtIDCompActualExpected(extID, c.expectedVals)
+		if err != nil {
+			t.Errorf("MakeExtID error: %v", err.Error())
+		}
+	}
+}
+
+func TestMakeGender(t *testing.T) {
+	cases := []struct {
+		genParts     []string
+		expectedVals map[string]string
+		expectedErr  string
+	}{
+		{
+			genParts: []string{"addressmeas", "they/them", "customgender", "non-binary", "type", "other"},
+			expectedVals: map[string]string{"AddressMeAs": "they/them",
+				"CustomGender": "non-binary",
+				"Type":         "other"},
+		},
+	}
+
+	for _, c := range cases {
+		var gender *admin.UserGender
+
+		gender = new(admin.UserGender)
+
+		gender, err := makeGender(c.genParts)
+		if err != nil && (err.Error() != c.expectedErr) {
+			t.Errorf("Expected error: %v - Got: %v", c.expectedErr, err.Error())
+			continue
+		}
+
+		err = tsts.GenderCompActualExpected(gender, c.expectedVals)
+		if err != nil {
+			t.Errorf("MakeGender error: %v", err.Error())
+		}
+	}
+}
+
+func TestMakeIm(t *testing.T) {
+	cases := []struct {
+		imParts      []string
+		expectedVals map[string]string
+		expectedErr  string
+	}{
+		{
+			imParts: []string{"customprotocol", "plusworx", "customtype", "experimental", "im", "@mistered",
+				"primary", "true", "protocol", "custom_protocol", "type", "custom"},
+			expectedVals: map[string]string{"CustomProtocol": "plusworx",
+				"CustomType": "experimental",
+				"Im":         "@mistered",
+				"Primary":    "true",
+				"Protocol":   "custom_protocol",
+				"Type":       "custom"},
+		},
+	}
+
+	for _, c := range cases {
+		var im *admin.UserIm
+
+		im = new(admin.UserIm)
+
+		im, err := makeIm(c.imParts)
+		if err != nil && (err.Error() != c.expectedErr) {
+			t.Errorf("Expected error: %v - Got: %v", c.expectedErr, err.Error())
+			continue
+		}
+
+		err = tsts.ImCompActualExpected(im, c.expectedVals)
+		if err != nil {
+			t.Errorf("MakeIm error: %v", err.Error())
+		}
+	}
+}
+
+func TestMakeKeyword(t *testing.T) {
+	cases := []struct {
+		keyParts     []string
+		expectedVals map[string]string
+		expectedErr  string
+	}{
+		{
+			keyParts: []string{"customtype", "workhours", "type", "custom", "value", "part-time"},
+			expectedVals: map[string]string{"CustomType": "workhours",
+				"Type":  "custom",
+				"Value": "part-time"},
+		},
+	}
+
+	for _, c := range cases {
+		var keyword *admin.UserKeyword
+
+		keyword = new(admin.UserKeyword)
+
+		keyword, err := makeKeyword(c.keyParts)
+		if err != nil && (err.Error() != c.expectedErr) {
+			t.Errorf("Expected error: %v - Got: %v", c.expectedErr, err.Error())
+			continue
+		}
+
+		err = tsts.KeywordCompActualExpected(keyword, c.expectedVals)
+		if err != nil {
+			t.Errorf("MakeKeyword error: %v", err.Error())
+		}
+	}
+}
+
+func TestMakeLanguage(t *testing.T) {
+	cases := []struct {
+		langParts    []string
+		expectedVals map[string]string
+		expectedErr  string
+	}{
+		{
+			langParts:    []string{"languagecode", "en-GB"},
+			expectedVals: map[string]string{"LanguageCode": "en-GB"},
+		},
+	}
+
+	for _, c := range cases {
+		var language *admin.UserLanguage
+
+		language = new(admin.UserLanguage)
+
+		language, err := makeLanguage(c.langParts)
+		if err != nil && (err.Error() != c.expectedErr) {
+			t.Errorf("Expected error: %v - Got: %v", c.expectedErr, err.Error())
+			continue
+		}
+
+		err = tsts.LanguageCompActualExpected(language, c.expectedVals)
+		if err != nil {
+			t.Errorf("MakeLanguage error: %v", err.Error())
+		}
+	}
+}
+
+func TestMakeLocation(t *testing.T) {
+	cases := []struct {
+		locParts     []string
+		expectedVals map[string]string
+		expectedErr  string
+	}{
+		{
+			locParts: []string{"area", "Shoreditch", "buildingid", "Grebe House", "deskcode", "D12", "floorname", "12",
+				"floorsection", "Marketing", "type", "desk"},
+			expectedVals: map[string]string{"Area": "Shoreditch",
+				"BuildingId":   "Grebe House",
+				"DeskCode":     "D12",
+				"FloorName":    "12",
+				"FloorSection": "Marketing",
+				"Type":         "desk"},
+		},
+	}
+
+	for _, c := range cases {
+		var location *admin.UserLocation
+
+		location = new(admin.UserLocation)
+
+		location, err := makeLocation(c.locParts)
+		if err != nil && (err.Error() != c.expectedErr) {
+			t.Errorf("Expected error: %v - Got: %v", c.expectedErr, err.Error())
+			continue
+		}
+
+		err = tsts.LocationCompActualExpected(location, c.expectedVals)
+		if err != nil {
+			t.Errorf("MakeLocation error: %v", err.Error())
+		}
+	}
+}
+
+func TestMakeOrganization(t *testing.T) {
+	cases := []struct {
+		orgParts     []string
+		expectedVals map[string]string
+		expectedErr  string
+	}{
+		{
+			orgParts: []string{"costcenter", "104", "department", "Finance", "description", "Head Office Finance Department",
+				"domain", "majestic.co.uk", "fulltimeequivalent", "100000", "location", "Newcastle", "name", "Majestic Film Ltd",
+				"primary", "true", "symbol", "MAJ", "title", "CFO", "type", "work"},
+			expectedVals: map[string]string{"CostCenter": "104",
+				"Department":         "Finance",
+				"Description":        "Head Office Finance Department",
+				"Domain":             "majestic.co.uk",
+				"FullTimeEquivalent": "100000",
+				"Location":           "Newcastle",
+				"Name":               "Majestic Film Ltd",
+				"Primary":            "true",
+				"Symbol":             "MAJ",
+				"Title":              "CFO",
+				"Type":               "work"},
+		},
+	}
+
+	for _, c := range cases {
+		var org *admin.UserOrganization
+
+		org = new(admin.UserOrganization)
+
+		org, err := makeOrganization(c.orgParts)
+		if err != nil && (err.Error() != c.expectedErr) {
+			t.Errorf("Expected error: %v - Got: %v", c.expectedErr, err.Error())
+			continue
+		}
+
+		err = tsts.OrgCompActualExpected(org, c.expectedVals)
+		if err != nil {
+			t.Errorf("MakeOrganization error: %v", err.Error())
+		}
+	}
+}
+
+func TestMakePhone(t *testing.T) {
+	cases := []struct {
+		phoneParts   []string
+		expectedVals map[string]string
+		expectedErr  string
+	}{
+		{
+			phoneParts: []string{"primary", "false", "type", "mobile", "value", "05467983211"},
+			expectedVals: map[string]string{"Primary": "false",
+				"Type":  "mobile",
+				"Value": "05467983211"},
+		},
+	}
+
+	for _, c := range cases {
+		var phone *admin.UserPhone
+
+		phone = new(admin.UserPhone)
+
+		phone, err := makePhone(c.phoneParts)
+		if err != nil && (err.Error() != c.expectedErr) {
+			t.Errorf("Expected error: %v - Got: %v", c.expectedErr, err.Error())
+			continue
+		}
+
+		err = tsts.PhoneCompActualExpected(phone, c.expectedVals)
+		if err != nil {
+			t.Errorf("MakePhone error: %v", err.Error())
+		}
+	}
+}
+
+func TestMakePosixAccount(t *testing.T) {
+	cases := []struct {
+		posixParts   []string
+		expectedVals map[string]string
+		expectedErr  string
+	}{
+		{
+			posixParts: []string{"accountid", "1000", "gecos", "Brian Phelps", "gid", "1000", "homedirectory", "/home/brian",
+				"operatingsystemtype", "linux", "primary", "true", "shell", "/bin/bash", "systemid", "2000",
+				"uid", "1000", "username", "brian"},
+			expectedVals: map[string]string{"AccountId": "1000",
+				"Gecos":               "Brian Phelps",
+				"Gid":                 "1000",
+				"HomeDirectory":       "/home/brian",
+				"OperatingSystemType": "linux",
+				"Primary":             "true",
+				"Shell":               "/bin/bash",
+				"SystemId":            "2000",
+				"Uid":                 "1000",
+				"Username":            "brian"},
+		},
+	}
+
+	for _, c := range cases {
+		var posix *admin.UserPosixAccount
+
+		posix = new(admin.UserPosixAccount)
+
+		posix, err := makePosAcct(c.posixParts)
+		if err != nil && (err.Error() != c.expectedErr) {
+			t.Errorf("Expected error: %v - Got: %v", c.expectedErr, err.Error())
+			continue
+		}
+
+		err = tsts.PosixCompActualExpected(posix, c.expectedVals)
+		if err != nil {
+			t.Errorf("MakePosAcct error: %v", err.Error())
+		}
+	}
+}
+
+func TestMakeRelation(t *testing.T) {
+	cases := []struct {
+		relParts     []string
+		expectedVals map[string]string
+		expectedErr  string
+	}{
+		{
+			relParts: []string{"type", "partner", "value", "David Letterman"},
+			expectedVals: map[string]string{"Type": "partner",
+				"Value": "David Letterman"},
+		},
+	}
+
+	for _, c := range cases {
+		var relation *admin.UserRelation
+
+		relation = new(admin.UserRelation)
+
+		relation, err := makeRelation(c.relParts)
+		if err != nil && (err.Error() != c.expectedErr) {
+			t.Errorf("Expected error: %v - Got: %v", c.expectedErr, err.Error())
+			continue
+		}
+
+		err = tsts.RelationCompActualExpected(relation, c.expectedVals)
+		if err != nil {
+			t.Errorf("MakeRelation error: %v", err.Error())
+		}
+	}
+}
+
+func TestMakeSSHPublicKey(t *testing.T) {
+	cases := []struct {
+		sshParts     []string
+		expectedVals map[string]string
+		expectedErr  string
+	}{
+		{
+			sshParts: []string{"expirationtimeusec", "1625123095000", "key", "id-rsaxxxxxxxxxxxxxxxxxxxxxxxxxx"},
+			expectedVals: map[string]string{"ExpirationTimeUsec": "1625123095000",
+				"Key": "id-rsaxxxxxxxxxxxxxxxxxxxxxxxxxx"},
+		},
+	}
+
+	for _, c := range cases {
+		var sshkey *admin.UserSshPublicKey
+
+		sshkey = new(admin.UserSshPublicKey)
+
+		sshkey, err := makeSSHPubKey(c.sshParts)
+		if err != nil && (err.Error() != c.expectedErr) {
+			t.Errorf("Expected error: %v - Got: %v", c.expectedErr, err.Error())
+			continue
+		}
+
+		err = tsts.SSHKeyCompActualExpected(sshkey, c.expectedVals)
+		if err != nil {
+			t.Errorf("MakeSSHPubKey error: %v", err.Error())
+		}
+	}
+}
+
+func TestMakeWebsite(t *testing.T) {
+	cases := []struct {
+		webParts     []string
+		expectedVals map[string]string
+		expectedErr  string
+	}{
+		{
+			webParts: []string{"primary", "true", "type", "blog", "value", "blm.org"},
+			expectedVals: map[string]string{"Primary": "true",
+				"Type":  "blog",
+				"Value": "blm.org"},
+		},
+	}
+
+	for _, c := range cases {
+		var website *admin.UserWebsite
+
+		website = new(admin.UserWebsite)
+
+		website, err := makeWebsite(c.webParts)
+		if err != nil && (err.Error() != c.expectedErr) {
+			t.Errorf("Expected error: %v - Got: %v", c.expectedErr, err.Error())
+			continue
+		}
+
+		err = tsts.WebsiteCompActualExpected(website, c.expectedVals)
+		if err != nil {
+			t.Errorf("MakeWebsite error: %v", err.Error())
 		}
 	}
 }
