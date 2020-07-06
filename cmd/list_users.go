@@ -107,13 +107,16 @@ func init() {
 
 func userAllDomainCall(ulc *admin.UsersListCall, fmtAttrs string) (*admin.Users, error) {
 	var (
-		err   error
-		users *admin.Users
+		err            error
+		formattedQuery string
+		users          *admin.Users
 	)
 
-	formattedQuery, err := usrProcessQuery(query)
-	if err != nil {
-		return nil, err
+	if query != "" {
+		formattedQuery, err = usrProcessQuery(query)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	switch true {
@@ -174,13 +177,16 @@ func userDelAllDomainCall(ulc *admin.UsersListCall, fmtAttrs string) (*admin.Use
 
 func userDomainCall(domain string, ulc *admin.UsersListCall, fmtAttrs string) (*admin.Users, error) {
 	var (
-		err   error
-		users *admin.Users
+		err            error
+		formattedQuery string
+		users          *admin.Users
 	)
 
-	formattedQuery, err := usrProcessQuery(query)
-	if err != nil {
-		return nil, err
+	if query != "" {
+		formattedQuery, err = usrProcessQuery(query)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	switch true {
@@ -202,18 +208,12 @@ func userDomainCall(domain string, ulc *admin.UsersListCall, fmtAttrs string) (*
 }
 
 func usrProcessQuery(query string) (string, error) {
-	var formattedQuery string
-
-	if query != "" {
-		queryParts, err := cmn.ValidateQuery(query, usrs.QueryAttrMap)
-		if err != nil {
-			return "", err
-		}
-
-		formattedQuery = strings.Join(queryParts, " ")
-	} else {
-		formattedQuery = ""
+	queryParts, err := cmn.ValidateQuery(query, usrs.QueryAttrMap)
+	if err != nil {
+		return "", err
 	}
+
+	formattedQuery := strings.Join(queryParts, " ")
 
 	return formattedQuery, nil
 }
