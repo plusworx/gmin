@@ -47,7 +47,7 @@ var OrgUnitAttrMap = map[string]string{
 	"parentorgunitpath": "parentOrgUnitPath",
 }
 
-// Attrs fetches specified attributes for orgunits
+// Attrs fetches specified attributes for admin.OrgunitsListCall
 func Attrs(oulc *admin.OrgunitsListCall, attrs string) (*admin.OrgUnits, error) {
 	var fields googleapi.Field = googleapi.Field(attrs)
 
@@ -59,7 +59,7 @@ func Attrs(oulc *admin.OrgunitsListCall, attrs string) (*admin.OrgUnits, error) 
 	return orgUnits, nil
 }
 
-// FormatAttrs formats attributes for admin.MembersListCall.Fields call
+// FormatAttrs formats attributes for admin.OrgunitsListCall.Fields call
 func FormatAttrs(attrs []string) string {
 	var (
 		outputStr string
@@ -95,7 +95,7 @@ func Single(ougc *admin.OrgunitsGetCall) (*admin.OrgUnit, error) {
 	return orgUnit, nil
 }
 
-// SingleAttrs fetches specified attributes for group
+// SingleAttrs fetches specified attributes for orgunit
 func SingleAttrs(ougc *admin.OrgunitsGetCall, attrs string) (*admin.OrgUnit, error) {
 	var fields googleapi.Field = googleapi.Field(attrs)
 
