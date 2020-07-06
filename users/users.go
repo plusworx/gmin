@@ -703,7 +703,17 @@ func doName(name *admin.UserName, attrStack []string) ([]string, error) {
 				return nil, err
 			}
 
-			PopulateNameAttr(name, newName)
+			if newName.FamilyName != "" {
+				name.FamilyName = newName.FamilyName
+			}
+
+			if newName.FullName != "" {
+				name.FullName = newName.FullName
+			}
+
+			if newName.GivenName != "" {
+				name.GivenName = newName.GivenName
+			}
 
 			if idx == len(processStack)-1 {
 				return nil, nil
@@ -1626,21 +1636,6 @@ func makeWebsite(webParts []string) (*admin.UserWebsite, error) {
 	}
 
 	return newWebsite, nil
-}
-
-// PopulateNameAttr populates admin.UserName attributes
-func PopulateNameAttr(name *admin.UserName, newName *admin.UserName) {
-	if newName.FamilyName != "" {
-		name.FamilyName = newName.FamilyName
-	}
-
-	if newName.FullName != "" {
-		name.FullName = newName.FullName
-	}
-
-	if newName.GivenName != "" {
-		name.GivenName = newName.GivenName
-	}
 }
 
 func processAttrStack(user *admin.User, name *admin.UserName, attrStack []string) error {
