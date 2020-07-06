@@ -139,21 +139,6 @@ func ValidateDeliverySetting(ds string) (string, error) {
 	return validSetting, nil
 }
 
-// ValidateFlags checks that a valid flag combination exists
-// func ValidateFlags(groupEmail string, orgUnitPath string) error {
-// 	var err error
-
-// 	if groupEmail != "" && orgUnitPath != "" {
-// 		err = errors.New("gmin: error - cannot specify both a group and an organization unit")
-// 	}
-
-// 	if groupEmail == "" && orgUnitPath == "" {
-// 		err = errors.New("gmin: error - must specify a group or an organization unit")
-// 	}
-
-// 	return err
-// }
-
 // ValidateRole checks that a valid role has been provided
 func ValidateRole(role string) (string, error) {
 	lowerRole := strings.ToLower(role)
