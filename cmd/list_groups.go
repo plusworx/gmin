@@ -25,7 +25,6 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 
 	cmn "github.com/plusworx/gmin/common"
 	grps "github.com/plusworx/gmin/groups"
@@ -88,11 +87,17 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 
 func groupAllDomainCall(glc *admin.GroupsListCall, fmtAttrs string) (*admin.Groups, error) {
 	var (
-		err    error
-		groups *admin.Groups
+		err            error
+		formattedQuery string
+		groups         *admin.Groups
 	)
 
-	formattedQuery := processQuery(query)
+	if query != "" {
+		formattedQuery, err = processQuery(query)
+		if err != nil {
+			return nil, err
+		}
+	}
 
 	switch true {
 	case formattedQuery == "" && attrs == "":
@@ -110,11 +115,17 @@ func groupAllDomainCall(glc *admin.GroupsListCall, fmtAttrs string) (*admin.Grou
 
 func groupDomainCall(domain string, glc *admin.GroupsListCall, fmtAttrs string) (*admin.Groups, error) {
 	var (
-		err    error
-		groups *admin.Groups
+		err            error
+		formattedQuery string
+		groups         *admin.Groups
 	)
 
-	formattedQuery := processQuery(query)
+	if query != "" {
+		formattedQuery, err = processQuery(query)
+		if err != nil {
+			return nil, err
+		}
+	}
 
 	switch true {
 	case formattedQuery == "" && attrs == "":
@@ -138,22 +149,18 @@ func init() {
 	listGroupsCmd.Flags().StringVarP(&query, "query", "q", "", "selection criteria to get groups (separated by ~)")
 }
 
-func processQuery(query string) string {
+func processQuery(query string) (string, error) {
 	var formattedQuery string
 
-	if query != "" {
-		validQuery, err := cmn.ValidateQuery(query, grps.QueryAttrMap)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		formattedQuery, err = grps.FormatQuery(validQuery)
-		if err != nil {
-			log.Fatal(err)
-		}
-	} else {
-		formattedQuery = ""
+	validQuery, err := cmn.ValidateQuery(query, grps.QueryAttrMap)
+	if err != nil {
+		return "", err
 	}
 
-	return formattedQuery
+	formattedQuery, err = grps.FormatQuery(validQuery)
+	if err != nil {
+		return "", err
+	}
+
+	return formattedQuery, nil
 }
