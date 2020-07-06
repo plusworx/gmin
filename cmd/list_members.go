@@ -24,7 +24,6 @@ package cmd
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 
 	cmn "github.com/plusworx/gmin/common"
@@ -34,8 +33,9 @@ import (
 )
 
 var listMembersCmd = &cobra.Command{
-	Use:     "group-members -g <group email address or id>",
+	Use:     "group-members <group email address or id>",
 	Aliases: []string{"group-member", "grp-members", "grp-member", "grp-mems", "grp-mem", "gmembers", "gmember", "gmems", "gmem"},
+	Args:    cobra.ExactArgs(1),
 	Short:   "Outputs a list of group members",
 	Long:    `Outputs a list of group members. Must specify a group email address.`,
 	RunE:    doListMembers,
@@ -44,12 +44,7 @@ var listMembersCmd = &cobra.Command{
 func doListMembers(cmd *cobra.Command, args []string) error {
 	var jsonData []byte
 
-	if group == "" {
-		err := errors.New("gmin: error - group email address must be provided")
-		return err
-	}
-
-	jsonData, err := processGroupMembers(attrs, group)
+	jsonData, err := processGroupMembers(attrs, args[0])
 	if err != nil {
 		return err
 	}
@@ -63,7 +58,6 @@ func init() {
 	listCmd.AddCommand(listMembersCmd)
 
 	listMembersCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required member attributes (separated by ~)")
-	listMembersCmd.Flags().StringVarP(&group, "group", "g", "", "email address of group")
 }
 
 func processGroupMembers(attrs string, groupEmail string) ([]byte, error) {
