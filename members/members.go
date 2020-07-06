@@ -95,7 +95,7 @@ func FormatAttrs(attrs []string, get bool) string {
 	return outputStr
 }
 
-// Members fetches members of a particular group
+// Members fetches members of a particular group for admin.MembersListCall
 func Members(mlc *admin.MembersListCall) (*admin.Members, error) {
 	members, err := mlc.Do()
 	if err != nil {
