@@ -34,10 +34,11 @@ import (
 )
 
 var batchDelUserCmd = &cobra.Command{
-	Use:   "users",
-	Short: "Deletes a batch of users",
-	Long:  `Deletes a batch of users.`,
-	RunE:  doBatchDelUser,
+	Use:     "users -i <input file path>",
+	Aliases: []string{"user"},
+	Short:   "Deletes a batch of users",
+	Long:    `Deletes a batch of users.`,
+	RunE:    doBatchDelUser,
 }
 
 func doBatchDelUser(cmd *cobra.Command, args []string) error {
