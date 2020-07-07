@@ -53,6 +53,42 @@ func TestDoBatchDelGroup(t *testing.T) {
 	}
 }
 
+func TestDoBatchDelMember(t *testing.T) {
+	cases := []struct {
+		expectedErr string
+		group       string
+		infile      string
+	}{
+		{
+			expectedErr: "gmin: error - group email address or id must be provided",
+		},
+		{
+			expectedErr: "gmin: error - must provide inputfile",
+			group:       "test@mycompany.org",
+		},
+		{
+			infile:      "/home/me/nonexistentfile",
+			expectedErr: "open /home/me/nonexistentfile: no such file or directory",
+		},
+	}
+
+	for _, c := range cases {
+		if c.group != "" {
+			group = c.group
+		}
+
+		if c.infile != "" {
+			inputFile = c.infile
+		}
+
+		err := doBatchDelMember(nil, nil)
+		if err.Error() != c.expectedErr {
+			t.Errorf("Expected error %v, got %v", c.expectedErr, err)
+
+		}
+	}
+}
+
 func TestDoBatchDelUser(t *testing.T) {
 	cases := []struct {
 		expectedErr string
