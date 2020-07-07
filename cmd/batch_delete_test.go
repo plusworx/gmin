@@ -41,6 +41,8 @@ func TestDoBatchDelGroup(t *testing.T) {
 	}
 
 	for _, c := range cases {
+		inputFile = ""
+
 		if c.infile != "" {
 			inputFile = c.infile
 		}
@@ -73,6 +75,8 @@ func TestDoBatchDelMember(t *testing.T) {
 	}
 
 	for _, c := range cases {
+		inputFile = ""
+
 		if c.group != "" {
 			group = c.group
 		}
@@ -104,6 +108,8 @@ func TestDoBatchDelOrgUnit(t *testing.T) {
 	}
 
 	for _, c := range cases {
+		inputFile = ""
+
 		if c.infile != "" {
 			inputFile = c.infile
 		}
@@ -131,6 +137,8 @@ func TestDoBatchDelUser(t *testing.T) {
 	}
 
 	for _, c := range cases {
+		inputFile = ""
+
 		if c.infile != "" {
 			inputFile = c.infile
 		}
