@@ -29,6 +29,7 @@ import (
 	cmn "github.com/plusworx/gmin/common"
 	"github.com/spf13/cobra"
 
+	valid "github.com/asaskevich/govalidator"
 	usrs "github.com/plusworx/gmin/users"
 	admin "google.golang.org/api/admin/directory/v1"
 )
@@ -52,6 +53,11 @@ func doCreateUser(cmd *cobra.Command, args []string) error {
 
 	user = new(admin.User)
 	name = new(admin.UserName)
+
+	ok := valid.IsEmail(args[0])
+	if !ok {
+		return errors.New("gmin: error - invalid email address")
+	}
 
 	user.PrimaryEmail = args[0]
 
