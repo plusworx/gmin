@@ -45,6 +45,7 @@ var (
 	groupDesc        string
 	groupEmail       string
 	groupName        string
+	inputFile        string
 	lastName         string
 	noChangePassword bool
 	noGAL            bool
