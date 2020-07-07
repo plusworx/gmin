@@ -26,6 +26,33 @@ import (
 	"testing"
 )
 
+func TestDoBatchDelGroup(t *testing.T) {
+	cases := []struct {
+		expectedErr string
+		infile      string
+	}{
+		{
+			expectedErr: "gmin: error - must provide inputfile",
+		},
+		{
+			infile:      "/home/me/nonexistentfile",
+			expectedErr: "open /home/me/nonexistentfile: no such file or directory",
+		},
+	}
+
+	for _, c := range cases {
+		if c.infile != "" {
+			inputFile = c.infile
+		}
+
+		err := doBatchDelGroup(nil, nil)
+		if err.Error() != c.expectedErr {
+			t.Errorf("Expected error %v, got %v", c.expectedErr, err)
+
+		}
+	}
+}
+
 func TestDoBatchDelUser(t *testing.T) {
 	cases := []struct {
 		expectedErr string
