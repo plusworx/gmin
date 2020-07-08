@@ -54,3 +54,32 @@ func TestDoBatchCrtGroup(t *testing.T) {
 		}
 	}
 }
+
+func TestDoBatchCrtOrgUnit(t *testing.T) {
+	cases := []struct {
+		expectedErr string
+		infile      string
+	}{
+		{
+			expectedErr: "gmin: error - must provide inputfile",
+		},
+		{
+			infile:      "/home/me/nonexistentfile",
+			expectedErr: "open /home/me/nonexistentfile: no such file or directory",
+		},
+	}
+
+	for _, c := range cases {
+		inputFile = ""
+
+		if c.infile != "" {
+			inputFile = c.infile
+		}
+
+		err := doBatchCrtOrgUnit(nil, nil)
+		if err.Error() != c.expectedErr {
+			t.Errorf("Expected error %v, got %v", c.expectedErr, err)
+
+		}
+	}
+}
