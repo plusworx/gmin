@@ -94,5 +94,5 @@ func doBatchDelOrgUnit(cmd *cobra.Command, args []string) error {
 func init() {
 	batchDelCmd.AddCommand(batchDelOrgUnitCmd)
 
-	batchDelOrgUnitCmd.Flags().StringVarP(&inputFile, "inputfile", "i", "", "filepath to group data text file")
+	batchDelOrgUnitCmd.Flags().StringVarP(&inputFile, "inputfile", "i", "", "filepath to orgunit data text file")
 }

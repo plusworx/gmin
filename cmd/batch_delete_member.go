@@ -99,5 +99,5 @@ func init() {
 	batchDelCmd.AddCommand(batchDelMemberCmd)
 
 	batchDelMemberCmd.Flags().StringVarP(&group, "group", "g", "", "email address or id of group")
-	batchDelMemberCmd.Flags().StringVarP(&inputFile, "inputfile", "i", "", "filepath to group data text file")
+	batchDelMemberCmd.Flags().StringVarP(&inputFile, "inputfile", "i", "", "filepath to member data text file")
 }
