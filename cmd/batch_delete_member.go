@@ -76,7 +76,8 @@ func doBatchDelMember(cmd *cobra.Command, args []string) error {
 				return err
 			}
 
-			if strings.Contains(err.Error(), "Resource Not Found") {
+			if strings.Contains(err.Error(), "Resource Not Found") ||
+				strings.Contains(err.Error(), "Bad Request") {
 				return backoff.Permanent(err)
 			}
 
