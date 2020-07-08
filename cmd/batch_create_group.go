@@ -121,5 +121,5 @@ func createGroup(jsonData string) error {
 func init() {
 	batchCreateCmd.AddCommand(batchCrtGroupCmd)
 
-	batchCrtGroupCmd.Flags().StringVarP(&inputFile, "inputfile", "i", "", "filepath to group data text file")
+	batchCrtGroupCmd.Flags().StringVarP(&inputFile, "inputfile", "i", "", "filepath to group data file")
 }
