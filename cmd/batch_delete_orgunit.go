@@ -71,7 +71,8 @@ func doBatchDelOrgUnit(cmd *cobra.Command, args []string) error {
 				return err
 			}
 
-			if strings.Contains(err.Error(), "Resource Not Found") {
+			if strings.Contains(err.Error(), "Org unit not found") ||
+				strings.Contains(err.Error(), "Cannot delete entity with members") {
 				return backoff.Permanent(err)
 			}
 
