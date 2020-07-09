@@ -461,124 +461,6 @@ var validWebsiteTypes = []string{
 	"work",
 }
 
-// AllDomain fetches users for all domains
-func AllDomain(ulc *admin.UsersListCall, maxResults int64) (*admin.Users, error) {
-	customerID, err := cfg.ReadConfigString("customerid")
-	if err != nil {
-		return nil, err
-	}
-
-	users, err := ulc.Customer(customerID).MaxResults(maxResults).Do()
-	if err != nil {
-		return nil, err
-	}
-
-	return users, nil
-}
-
-// AllDomainAttrs fetches specified attributes for all domain users
-func AllDomainAttrs(ulc *admin.UsersListCall, attrs string, maxResults int64) (*admin.Users, error) {
-	var fields googleapi.Field = googleapi.Field(attrs)
-
-	customerID, err := cfg.ReadConfigString("customerid")
-	if err != nil {
-		return nil, err
-	}
-
-	users, err := ulc.Customer(customerID).Fields(fields).MaxResults(maxResults).Do()
-	if err != nil {
-		return nil, err
-	}
-
-	return users, nil
-}
-
-// AllDomainQuery fetches users for all domains that satisfy query arguments
-func AllDomainQuery(ulc *admin.UsersListCall, query string, maxResults int64) (*admin.Users, error) {
-	customerID, err := cfg.ReadConfigString("customerid")
-	if err != nil {
-		return nil, err
-	}
-
-	users, err := ulc.Customer(customerID).MaxResults(maxResults).Query(query).Do()
-	if err != nil {
-		return nil, err
-	}
-
-	return users, nil
-}
-
-// AllDomainQueryAttrs fetches specified attributes for all domain users that satisfy query arguments
-func AllDomainQueryAttrs(ulc *admin.UsersListCall, query string, attrs string, maxResults int64) (*admin.Users, error) {
-	var fields googleapi.Field = googleapi.Field(attrs)
-
-	customerID, err := cfg.ReadConfigString("customerid")
-	if err != nil {
-		return nil, err
-	}
-
-	users, err := ulc.Customer(customerID).Fields(fields).MaxResults(maxResults).Query(query).Do()
-	if err != nil {
-		return nil, err
-	}
-
-	return users, nil
-}
-
-// DelAllDomain fetches deleted users for all domains
-func DelAllDomain(ulc *admin.UsersListCall, maxResults int64) (*admin.Users, error) {
-	customerID, err := cfg.ReadConfigString("customerid")
-	if err != nil {
-		return nil, err
-	}
-
-	users, err := ulc.Customer(customerID).MaxResults(maxResults).ShowDeleted("true").Do()
-	if err != nil {
-		return nil, err
-	}
-
-	return users, nil
-}
-
-// DelAllDomainAttrs fetches specified attributes for all deleted domain users
-func DelAllDomainAttrs(ulc *admin.UsersListCall, attrs string, maxResults int64) (*admin.Users, error) {
-	var fields googleapi.Field = googleapi.Field(attrs)
-
-	customerID, err := cfg.ReadConfigString("customerid")
-	if err != nil {
-		return nil, err
-	}
-
-	users, err := ulc.Customer(customerID).Fields(fields).MaxResults(maxResults).ShowDeleted("true").Do()
-	if err != nil {
-		return nil, err
-	}
-
-	return users, nil
-}
-
-// DelDomain fetches deleted users for a particular domain
-func DelDomain(domain string, ulc *admin.UsersListCall, maxResults int64) (*admin.Users, error) {
-	users, err := ulc.Domain(domain).MaxResults(maxResults).ShowDeleted("true").Do()
-	if err != nil {
-		return nil, err
-	}
-
-	return users, nil
-}
-
-// DelDomainAttrs fetches specified attributes for deleted domain users
-func DelDomainAttrs(domain string, ulc *admin.UsersListCall, attrs string, maxResults int64) (*admin.Users, error) {
-	var fields googleapi.Field = googleapi.Field(attrs)
-
-	users, err := ulc.Domain(domain).Fields(fields).MaxResults(maxResults).ShowDeleted("true").Do()
-	if err != nil {
-		return nil, err
-	}
-
-	return users, nil
-}
-
 // doComposite processes composite admin.UserName attributes
 func doComposite(user *admin.User, attrStack []string) ([]string, error) {
 	var (
@@ -628,50 +510,6 @@ func doComposite(user *admin.User, attrStack []string) ([]string, error) {
 
 	err := errors.New("gmin: error - malformed attribute string")
 	return nil, err
-}
-
-// Domain fetches users for a particular domain
-func Domain(domain string, ulc *admin.UsersListCall, maxResults int64) (*admin.Users, error) {
-	users, err := ulc.Domain(domain).MaxResults(maxResults).Do()
-	if err != nil {
-		return nil, err
-	}
-
-	return users, nil
-}
-
-// DomainAttrs fetches specified attributes for domain users
-func DomainAttrs(domain string, ulc *admin.UsersListCall, attrs string, maxResults int64) (*admin.Users, error) {
-	var fields googleapi.Field = googleapi.Field(attrs)
-
-	users, err := ulc.Domain(domain).Fields(fields).MaxResults(maxResults).Do()
-	if err != nil {
-		return nil, err
-	}
-
-	return users, nil
-}
-
-// DomainQuery fetches users for specified domain that satisfy query arguments
-func DomainQuery(domain string, ulc *admin.UsersListCall, query string, maxResults int64) (*admin.Users, error) {
-	users, err := ulc.Domain(domain).MaxResults(maxResults).Query(query).Do()
-	if err != nil {
-		return nil, err
-	}
-
-	return users, nil
-}
-
-// DomainQueryAttrs fetches specified attributes for domain users that satisfy query arguments
-func DomainQueryAttrs(domain string, ulc *admin.UsersListCall, query string, attrs string, maxResults int64) (*admin.Users, error) {
-	var fields googleapi.Field = googleapi.Field(attrs)
-
-	users, err := ulc.Domain(domain).Fields(fields).MaxResults(maxResults).Query(query).Do()
-	if err != nil {
-		return nil, err
-	}
-
-	return users, nil
 }
 
 // doName processes admin.UserName attributes
@@ -848,6 +686,28 @@ func FormatAttrs(attrs []string, get bool) string {
 	return outputStr
 }
 
+// Get fetches a user
+func Get(ugc *admin.UsersGetCall) (*admin.User, error) {
+	user, err := ugc.Do()
+	if err != nil {
+		return nil, err
+	}
+
+	return user, nil
+}
+
+// GetAttrs fetches specified attributes for user
+func GetAttrs(ugc *admin.UsersGetCall, attrs string) (*admin.User, error) {
+	var fields googleapi.Field = googleapi.Field(attrs)
+
+	user, err := ugc.Fields(fields).Do()
+	if err != nil {
+		return nil, err
+	}
+
+	return user, nil
+}
+
 // isCompositeAttr checks whether or not an attribute is a composite type
 func isCompositeAttr(attr string) bool {
 
@@ -896,6 +756,168 @@ func makeAbout(aboutParts []string) (*admin.UserAbout, error) {
 	}
 
 	return newAbout, nil
+}
+
+// ListAllDomain fetches users for all domains
+func ListAllDomain(ulc *admin.UsersListCall, maxResults int64) (*admin.Users, error) {
+	customerID, err := cfg.ReadConfigString("customerid")
+	if err != nil {
+		return nil, err
+	}
+
+	users, err := ulc.Customer(customerID).MaxResults(maxResults).Do()
+	if err != nil {
+		return nil, err
+	}
+
+	return users, nil
+}
+
+// ListAllDomainAttrs fetches specified attributes for all domain users
+func ListAllDomainAttrs(ulc *admin.UsersListCall, attrs string, maxResults int64) (*admin.Users, error) {
+	var fields googleapi.Field = googleapi.Field(attrs)
+
+	customerID, err := cfg.ReadConfigString("customerid")
+	if err != nil {
+		return nil, err
+	}
+
+	users, err := ulc.Customer(customerID).Fields(fields).MaxResults(maxResults).Do()
+	if err != nil {
+		return nil, err
+	}
+
+	return users, nil
+}
+
+// ListAllDomainQuery fetches users for all domains that satisfy query arguments
+func ListAllDomainQuery(ulc *admin.UsersListCall, query string, maxResults int64) (*admin.Users, error) {
+	customerID, err := cfg.ReadConfigString("customerid")
+	if err != nil {
+		return nil, err
+	}
+
+	users, err := ulc.Customer(customerID).MaxResults(maxResults).Query(query).Do()
+	if err != nil {
+		return nil, err
+	}
+
+	return users, nil
+}
+
+// ListAllDomainQueryAttrs fetches specified attributes for all domain users that satisfy query arguments
+func ListAllDomainQueryAttrs(ulc *admin.UsersListCall, query string, attrs string, maxResults int64) (*admin.Users, error) {
+	var fields googleapi.Field = googleapi.Field(attrs)
+
+	customerID, err := cfg.ReadConfigString("customerid")
+	if err != nil {
+		return nil, err
+	}
+
+	users, err := ulc.Customer(customerID).Fields(fields).MaxResults(maxResults).Query(query).Do()
+	if err != nil {
+		return nil, err
+	}
+
+	return users, nil
+}
+
+// ListDelAllDomain fetches deleted users for all domains
+func ListDelAllDomain(ulc *admin.UsersListCall, maxResults int64) (*admin.Users, error) {
+	customerID, err := cfg.ReadConfigString("customerid")
+	if err != nil {
+		return nil, err
+	}
+
+	users, err := ulc.Customer(customerID).MaxResults(maxResults).ShowDeleted("true").Do()
+	if err != nil {
+		return nil, err
+	}
+
+	return users, nil
+}
+
+// ListDelAllDomainAttrs fetches specified attributes for all deleted domain users
+func ListDelAllDomainAttrs(ulc *admin.UsersListCall, attrs string, maxResults int64) (*admin.Users, error) {
+	var fields googleapi.Field = googleapi.Field(attrs)
+
+	customerID, err := cfg.ReadConfigString("customerid")
+	if err != nil {
+		return nil, err
+	}
+
+	users, err := ulc.Customer(customerID).Fields(fields).MaxResults(maxResults).ShowDeleted("true").Do()
+	if err != nil {
+		return nil, err
+	}
+
+	return users, nil
+}
+
+// ListDelDomain fetches deleted users for a particular domain
+func ListDelDomain(domain string, ulc *admin.UsersListCall, maxResults int64) (*admin.Users, error) {
+	users, err := ulc.Domain(domain).MaxResults(maxResults).ShowDeleted("true").Do()
+	if err != nil {
+		return nil, err
+	}
+
+	return users, nil
+}
+
+// ListDelDomainAttrs fetches specified attributes for deleted domain users
+func ListDelDomainAttrs(domain string, ulc *admin.UsersListCall, attrs string, maxResults int64) (*admin.Users, error) {
+	var fields googleapi.Field = googleapi.Field(attrs)
+
+	users, err := ulc.Domain(domain).Fields(fields).MaxResults(maxResults).ShowDeleted("true").Do()
+	if err != nil {
+		return nil, err
+	}
+
+	return users, nil
+}
+
+// ListDomain fetches users for a particular domain
+func ListDomain(domain string, ulc *admin.UsersListCall, maxResults int64) (*admin.Users, error) {
+	users, err := ulc.Domain(domain).MaxResults(maxResults).Do()
+	if err != nil {
+		return nil, err
+	}
+
+	return users, nil
+}
+
+// ListDomainAttrs fetches specified attributes for domain users
+func ListDomainAttrs(domain string, ulc *admin.UsersListCall, attrs string, maxResults int64) (*admin.Users, error) {
+	var fields googleapi.Field = googleapi.Field(attrs)
+
+	users, err := ulc.Domain(domain).Fields(fields).MaxResults(maxResults).Do()
+	if err != nil {
+		return nil, err
+	}
+
+	return users, nil
+}
+
+// ListDomainQuery fetches users for specified domain that satisfy query arguments
+func ListDomainQuery(domain string, ulc *admin.UsersListCall, query string, maxResults int64) (*admin.Users, error) {
+	users, err := ulc.Domain(domain).MaxResults(maxResults).Query(query).Do()
+	if err != nil {
+		return nil, err
+	}
+
+	return users, nil
+}
+
+// ListDomainQueryAttrs fetches specified attributes for domain users that satisfy query arguments
+func ListDomainQueryAttrs(domain string, ulc *admin.UsersListCall, query string, attrs string, maxResults int64) (*admin.Users, error) {
+	var fields googleapi.Field = googleapi.Field(attrs)
+
+	users, err := ulc.Domain(domain).Fields(fields).MaxResults(maxResults).Query(query).Do()
+	if err != nil {
+		return nil, err
+	}
+
+	return users, nil
 }
 
 func makeAddress(addrParts []string) (*admin.UserAddress, error) {
@@ -1919,26 +1941,4 @@ func ProcessFreeformAttrs(user *admin.User, name *admin.UserName, ffAttrs string
 	}
 
 	return nil
-}
-
-// Single fetches a user
-func Single(ugc *admin.UsersGetCall) (*admin.User, error) {
-	user, err := ugc.Do()
-	if err != nil {
-		return nil, err
-	}
-
-	return user, nil
-}
-
-// SingleAttrs fetches specified attributes for user
-func SingleAttrs(ugc *admin.UsersGetCall, attrs string) (*admin.User, error) {
-	var fields googleapi.Field = googleapi.Field(attrs)
-
-	user, err := ugc.Fields(fields).Do()
-	if err != nil {
-		return nil, err
-	}
-
-	return user, nil
 }

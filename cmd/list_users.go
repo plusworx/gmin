@@ -122,13 +122,13 @@ func userAllDomainCall(ulc *admin.UsersListCall, fmtAttrs string) (*admin.Users,
 
 	switch true {
 	case formattedQuery == "" && attrs == "":
-		users, err = usrs.AllDomain(ulc, maxResults)
+		users, err = usrs.ListAllDomain(ulc, maxResults)
 	case formattedQuery != "" && attrs == "":
-		users, err = usrs.AllDomainQuery(ulc, formattedQuery, maxResults)
+		users, err = usrs.ListAllDomainQuery(ulc, formattedQuery, maxResults)
 	case formattedQuery == "" && attrs != "":
-		users, err = usrs.AllDomainAttrs(ulc, fmtAttrs, maxResults)
+		users, err = usrs.ListAllDomainAttrs(ulc, fmtAttrs, maxResults)
 	case formattedQuery != "" && attrs != "":
-		users, err = usrs.AllDomainQueryAttrs(ulc, formattedQuery, fmtAttrs, maxResults)
+		users, err = usrs.ListAllDomainQueryAttrs(ulc, formattedQuery, fmtAttrs, maxResults)
 	}
 
 	if err != nil {
@@ -145,9 +145,9 @@ func userDelDomainCall(domain string, ulc *admin.UsersListCall, fmtAttrs string)
 	)
 
 	if attrs == "" {
-		users, err = usrs.DelDomain(domain, ulc, maxResults)
+		users, err = usrs.ListDelDomain(domain, ulc, maxResults)
 	} else {
-		users, err = usrs.DelDomainAttrs(domain, ulc, fmtAttrs, maxResults)
+		users, err = usrs.ListDelDomainAttrs(domain, ulc, fmtAttrs, maxResults)
 	}
 
 	if err != nil {
@@ -164,9 +164,9 @@ func userDelAllDomainCall(ulc *admin.UsersListCall, fmtAttrs string) (*admin.Use
 	)
 
 	if attrs == "" {
-		users, err = usrs.DelAllDomain(ulc, maxResults)
+		users, err = usrs.ListDelAllDomain(ulc, maxResults)
 	} else {
-		users, err = usrs.DelAllDomainAttrs(ulc, fmtAttrs, maxResults)
+		users, err = usrs.ListDelAllDomainAttrs(ulc, fmtAttrs, maxResults)
 	}
 
 	if err != nil {
@@ -192,13 +192,13 @@ func userDomainCall(domain string, ulc *admin.UsersListCall, fmtAttrs string) (*
 
 	switch true {
 	case formattedQuery == "" && attrs == "":
-		users, err = usrs.Domain(domain, ulc, maxResults)
+		users, err = usrs.ListDomain(domain, ulc, maxResults)
 	case formattedQuery != "" && attrs == "":
-		users, err = usrs.DomainQuery(domain, ulc, formattedQuery, maxResults)
+		users, err = usrs.ListDomainQuery(domain, ulc, formattedQuery, maxResults)
 	case formattedQuery == "" && attrs != "":
-		users, err = usrs.DomainAttrs(domain, ulc, fmtAttrs, maxResults)
+		users, err = usrs.ListDomainAttrs(domain, ulc, fmtAttrs, maxResults)
 	case formattedQuery != "" && attrs != "":
-		users, err = usrs.DomainQueryAttrs(domain, ulc, formattedQuery, fmtAttrs, maxResults)
+		users, err = usrs.ListDomainQueryAttrs(domain, ulc, formattedQuery, fmtAttrs, maxResults)
 	}
 
 	if err != nil {

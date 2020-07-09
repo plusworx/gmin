@@ -89,12 +89,12 @@ func processGroupMember(memID string, attrs string, groupEmail string) ([]byte, 
 		}
 
 		formattedAttrs := mems.FormatAttrs(validAttrs, true)
-		member, err = mems.SingleAttrs(mgc, formattedAttrs)
+		member, err = mems.GetAttrs(mgc, formattedAttrs)
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		member, err = mems.Single(mgc)
+		member, err = mems.Get(mgc)
 		if err != nil {
 			return nil, err
 		}

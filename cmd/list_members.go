@@ -81,12 +81,12 @@ func processGroupMembers(attrs string, groupEmail string) ([]byte, error) {
 		}
 
 		formattedAttrs := mems.FormatAttrs(validAttrs, false)
-		members, err = mems.Attrs(mlc, formattedAttrs, maxResults)
+		members, err = mems.ListMemberAttrs(mlc, formattedAttrs, maxResults)
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		members, err = mems.Members(mlc, maxResults)
+		members, err = mems.ListMembers(mlc, maxResults)
 		if err != nil {
 			return nil, err
 		}

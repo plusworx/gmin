@@ -101,13 +101,13 @@ func groupAllDomainCall(glc *admin.GroupsListCall, fmtAttrs string) (*admin.Grou
 
 	switch true {
 	case formattedQuery == "" && attrs == "":
-		groups, err = grps.AllDomain(glc, maxResults)
+		groups, err = grps.ListAllDomain(glc, maxResults)
 	case formattedQuery != "" && attrs == "":
-		groups, err = grps.AllDomainQuery(glc, formattedQuery, maxResults)
+		groups, err = grps.ListAllDomainQuery(glc, formattedQuery, maxResults)
 	case formattedQuery == "" && attrs != "":
-		groups, err = grps.AllDomainAttrs(glc, fmtAttrs, maxResults)
+		groups, err = grps.ListAllDomainAttrs(glc, fmtAttrs, maxResults)
 	case formattedQuery != "" && attrs != "":
-		groups, err = grps.AllDomainQueryAttrs(glc, formattedQuery, fmtAttrs, maxResults)
+		groups, err = grps.ListAllDomainQueryAttrs(glc, formattedQuery, fmtAttrs, maxResults)
 	}
 
 	return groups, err
@@ -129,13 +129,13 @@ func groupDomainCall(domain string, glc *admin.GroupsListCall, fmtAttrs string) 
 
 	switch true {
 	case formattedQuery == "" && attrs == "":
-		groups, err = grps.Domain(domain, glc, maxResults)
+		groups, err = grps.ListDomain(domain, glc, maxResults)
 	case formattedQuery != "" && attrs == "":
-		groups, err = grps.DomainQuery(domain, glc, formattedQuery, maxResults)
+		groups, err = grps.ListDomainQuery(domain, glc, formattedQuery, maxResults)
 	case formattedQuery == "" && attrs != "":
-		groups, err = grps.DomainAttrs(domain, glc, fmtAttrs, maxResults)
+		groups, err = grps.ListDomainAttrs(domain, glc, fmtAttrs, maxResults)
 	case formattedQuery != "" && attrs != "":
-		groups, err = grps.DomainQueryAttrs(domain, glc, formattedQuery, fmtAttrs, maxResults)
+		groups, err = grps.ListDomainQueryAttrs(domain, glc, formattedQuery, fmtAttrs, maxResults)
 	}
 
 	return groups, err

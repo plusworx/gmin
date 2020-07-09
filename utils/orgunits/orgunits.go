@@ -47,18 +47,6 @@ var OrgUnitAttrMap = map[string]string{
 	"parentorgunitpath": "parentOrgUnitPath",
 }
 
-// Attrs fetches specified attributes for admin.OrgunitsListCall
-func Attrs(oulc *admin.OrgunitsListCall, attrs string) (*admin.OrgUnits, error) {
-	var fields googleapi.Field = googleapi.Field(attrs)
-
-	orgUnits, err := oulc.Fields(fields).Do()
-	if err != nil {
-		return nil, err
-	}
-
-	return orgUnits, nil
-}
-
 // FormatAttrs formats attributes for admin.OrgunitsListCall.Fields call
 func FormatAttrs(attrs []string) string {
 	var (
@@ -75,18 +63,8 @@ func FormatAttrs(attrs []string) string {
 	return outputStr
 }
 
-// OrgUnits fetches all orgunits
-func OrgUnits(oulc *admin.OrgunitsListCall) (*admin.OrgUnits, error) {
-	orgUnits, err := oulc.Do()
-	if err != nil {
-		return nil, err
-	}
-
-	return orgUnits, nil
-}
-
-// Single fetches an orgunit
-func Single(ougc *admin.OrgunitsGetCall) (*admin.OrgUnit, error) {
+// Get fetches an orgunit
+func Get(ougc *admin.OrgunitsGetCall) (*admin.OrgUnit, error) {
 	orgUnit, err := ougc.Do()
 	if err != nil {
 		return nil, err
@@ -95,8 +73,8 @@ func Single(ougc *admin.OrgunitsGetCall) (*admin.OrgUnit, error) {
 	return orgUnit, nil
 }
 
-// SingleAttrs fetches specified attributes for orgunit
-func SingleAttrs(ougc *admin.OrgunitsGetCall, attrs string) (*admin.OrgUnit, error) {
+// GetAttrs fetches specified attributes for orgunit
+func GetAttrs(ougc *admin.OrgunitsGetCall, attrs string) (*admin.OrgUnit, error) {
 	var fields googleapi.Field = googleapi.Field(attrs)
 
 	orgUnit, err := ougc.Fields(fields).Do()
@@ -105,4 +83,26 @@ func SingleAttrs(ougc *admin.OrgunitsGetCall, attrs string) (*admin.OrgUnit, err
 	}
 
 	return orgUnit, nil
+}
+
+// ListOrgUnitAttrs fetches specified attributes for admin.OrgunitsListCall
+func ListOrgUnitAttrs(oulc *admin.OrgunitsListCall, attrs string) (*admin.OrgUnits, error) {
+	var fields googleapi.Field = googleapi.Field(attrs)
+
+	orgUnits, err := oulc.Fields(fields).Do()
+	if err != nil {
+		return nil, err
+	}
+
+	return orgUnits, nil
+}
+
+// ListOrgUnits fetches all orgunits
+func ListOrgUnits(oulc *admin.OrgunitsListCall) (*admin.OrgUnits, error) {
+	orgUnits, err := oulc.Do()
+	if err != nil {
+		return nil, err
+	}
+
+	return orgUnits, nil
 }

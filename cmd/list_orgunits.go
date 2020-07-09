@@ -67,12 +67,12 @@ func doListOUs(cmd *cobra.Command, args []string) error {
 
 		formattedAttrs := ous.FormatAttrs(validAttrs)
 
-		orgUnits, err = ous.Attrs(oulc, formattedAttrs)
+		orgUnits, err = ous.ListOrgUnitAttrs(oulc, formattedAttrs)
 		if err != nil {
 			return err
 		}
 	} else {
-		orgUnits, err = ous.OrgUnits(oulc)
+		orgUnits, err = ous.ListOrgUnits(oulc)
 		if err != nil {
 			return err
 		}

@@ -64,12 +64,12 @@ func doGetGroup(cmd *cobra.Command, args []string) error {
 		}
 
 		formattedAttrs := grps.FormatAttrs(validAttrs, true)
-		group, err = grps.SingleAttrs(ggc, formattedAttrs)
+		group, err = grps.GetAttrs(ggc, formattedAttrs)
 		if err != nil {
 			return err
 		}
 	} else {
-		group, err = grps.Single(ggc)
+		group, err = grps.Get(ggc)
 		if err != nil {
 			return err
 		}

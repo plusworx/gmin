@@ -71,12 +71,12 @@ func doGetOrgUnit(cmd *cobra.Command, args []string) error {
 
 		formattedAttrs := ous.FormatAttrs(validAttrs)
 
-		orgUnit, err = ous.SingleAttrs(ougc, formattedAttrs)
+		orgUnit, err = ous.GetAttrs(ougc, formattedAttrs)
 		if err != nil {
 			return err
 		}
 	} else {
-		orgUnit, err = ous.Single(ougc)
+		orgUnit, err = ous.Get(ougc)
 		if err != nil {
 			return err
 		}

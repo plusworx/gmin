@@ -64,12 +64,12 @@ func doGetUser(cmd *cobra.Command, args []string) error {
 
 		formattedAttrs := usrs.FormatAttrs(validAttrs, true)
 
-		user, err = usrs.SingleAttrs(ugc, formattedAttrs)
+		user, err = usrs.GetAttrs(ugc, formattedAttrs)
 		if err != nil {
 			return err
 		}
 	} else {
-		user, err = usrs.Single(ugc)
+		user, err = usrs.Get(ugc)
 		if err != nil {
 			return err
 		}
