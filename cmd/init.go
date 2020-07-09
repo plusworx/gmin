@@ -47,7 +47,7 @@ var initCmd = &cobra.Command{
 func askForConfigPath() string {
 	var response string
 
-	fmt.Print("Please enter a config file path (must be full path): ")
+	fmt.Print("Please enter a full config file path\n(Press <Enter> for default value): ")
 
 	_, err := fmt.Scanln(&response)
 	if response == "" {
@@ -65,7 +65,7 @@ func askForConfigPath() string {
 func askForCustomerID() string {
 	var response string
 
-	fmt.Print("Please enter customer ID: ")
+	fmt.Print("Please enter customer ID\n(Press <Enter> for default value): ")
 
 	_, err := fmt.Scanln(&response)
 	if response == "" {
