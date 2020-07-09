@@ -31,7 +31,7 @@ import (
 
 	"crypto/sha1"
 
-	cfg "github.com/plusworx/gmin/config"
+	cfg "github.com/plusworx/gmin/utils/config"
 	"golang.org/x/oauth2/google"
 	admin "google.golang.org/api/admin/directory/v1"
 	"google.golang.org/api/option"

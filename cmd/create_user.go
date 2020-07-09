@@ -26,11 +26,11 @@ import (
 	"errors"
 	"fmt"
 
-	cmn "github.com/plusworx/gmin/common"
+	cmn "github.com/plusworx/gmin/utils/common"
 	"github.com/spf13/cobra"
 
 	valid "github.com/asaskevich/govalidator"
-	usrs "github.com/plusworx/gmin/users"
+	usrs "github.com/plusworx/gmin/utils/users"
 	admin "google.golang.org/api/admin/directory/v1"
 )
 

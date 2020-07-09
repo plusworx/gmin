@@ -26,8 +26,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	cmn "github.com/plusworx/gmin/common"
-	grps "github.com/plusworx/gmin/groups"
+	cmn "github.com/plusworx/gmin/utils/common"
+	grps "github.com/plusworx/gmin/utils/groups"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 )

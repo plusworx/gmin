@@ -30,7 +30,7 @@ import (
 
 	valid "github.com/asaskevich/govalidator"
 	"github.com/mitchellh/go-homedir"
-	cfg "github.com/plusworx/gmin/config"
+	cfg "github.com/plusworx/gmin/utils/config"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
 )

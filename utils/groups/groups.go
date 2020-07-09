@@ -26,7 +26,7 @@ import (
 	"errors"
 	"strings"
 
-	cfg "github.com/plusworx/gmin/config"
+	cfg "github.com/plusworx/gmin/utils/config"
 	admin "google.golang.org/api/admin/directory/v1"
 	"google.golang.org/api/googleapi"
 )

@@ -26,10 +26,10 @@ import (
 	"encoding/json"
 	"fmt"
 
-	cmn "github.com/plusworx/gmin/common"
-	cfg "github.com/plusworx/gmin/config"
-	ous "github.com/plusworx/gmin/orgunits"
-	usrs "github.com/plusworx/gmin/users"
+	cmn "github.com/plusworx/gmin/utils/common"
+	cfg "github.com/plusworx/gmin/utils/config"
+	ous "github.com/plusworx/gmin/utils/orgunits"
+	usrs "github.com/plusworx/gmin/utils/users"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 )

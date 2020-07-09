@@ -26,7 +26,7 @@ import (
 	"errors"
 	"fmt"
 
-	cmn "github.com/plusworx/gmin/common"
+	cmn "github.com/plusworx/gmin/utils/common"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 )

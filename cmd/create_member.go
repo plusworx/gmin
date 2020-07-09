@@ -26,8 +26,8 @@ import (
 	"errors"
 	"fmt"
 
-	cmn "github.com/plusworx/gmin/common"
-	mems "github.com/plusworx/gmin/members"
+	cmn "github.com/plusworx/gmin/utils/common"
+	mems "github.com/plusworx/gmin/utils/members"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 )
