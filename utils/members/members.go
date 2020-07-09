@@ -63,6 +63,35 @@ var roleMap = map[string]string{
 	"member":  "MEMBER",
 }
 
+// AddListFields adds fields to be returned to admin.MembersListCall
+func AddListFields(mlc *admin.MembersListCall, attrs string) *admin.MembersListCall {
+	var fields googleapi.Field = googleapi.Field(attrs)
+	var newMLC *admin.MembersListCall
+
+	newMLC = mlc.Fields(fields)
+
+	return newMLC
+}
+
+// AddListMaxResults adds MaxResults to admin.MembersListCall
+func AddListMaxResults(mlc *admin.MembersListCall, maxResults int64) *admin.MembersListCall {
+	var newMLC *admin.MembersListCall
+
+	newMLC = mlc.MaxResults(maxResults)
+
+	return newMLC
+}
+
+// DoList calls the .Do() function on the admin.MembersListCall
+func DoList(mlc *admin.MembersListCall) (*admin.Members, error) {
+	members, err := mlc.Do()
+	if err != nil {
+		return nil, err
+	}
+
+	return members, nil
+}
+
 // FormatAttrs formats attributes for admin.MembersListCall.Fields and admin.MembersGetCall.Fields call
 func FormatAttrs(attrs []string, get bool) string {
 	var (
@@ -103,28 +132,6 @@ func GetAttrs(mgc *admin.MembersGetCall, attrs string) (*admin.Member, error) {
 	}
 
 	return member, nil
-}
-
-// ListMemberAttrs fetches specified attributes for members
-func ListMemberAttrs(mlc *admin.MembersListCall, attrs string, maxResults int64) (*admin.Members, error) {
-	var fields googleapi.Field = googleapi.Field(attrs)
-
-	members, err := mlc.Fields(fields).MaxResults(maxResults).Do()
-	if err != nil {
-		return nil, err
-	}
-
-	return members, nil
-}
-
-// ListMembers fetches members of a particular group for admin.MembersListCall
-func ListMembers(mlc *admin.MembersListCall, maxResults int64) (*admin.Members, error) {
-	members, err := mlc.MaxResults(maxResults).Do()
-	if err != nil {
-		return nil, err
-	}
-
-	return members, nil
 }
 
 // ValidateDeliverySetting checks that a valid delivery setting has been provided

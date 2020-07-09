@@ -37,14 +37,42 @@ var listMembersCmd = &cobra.Command{
 	Aliases: []string{"group-member", "grp-members", "grp-member", "grp-mems", "grp-mem", "gmembers", "gmember", "gmems", "gmem"},
 	Args:    cobra.ExactArgs(1),
 	Short:   "Outputs a list of group members",
-	Long:    `Outputs a list of group members. Must specify a group email address.`,
+	Long:    `Outputs a list of group members. Must specify a group email address or id.`,
 	RunE:    doListMembers,
 }
 
 func doListMembers(cmd *cobra.Command, args []string) error {
-	var jsonData []byte
+	var (
+		jsonData   []byte
+		members    *admin.Members
+		validAttrs []string
+	)
 
-	jsonData, err := processGroupMembers(attrs, args[0])
+	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupMemberReadonlyScope)
+	if err != nil {
+		return err
+	}
+
+	mlc := ds.Members.List(args[0])
+
+	if attrs != "" {
+		validAttrs, err = cmn.ValidateAttrs(attrs, mems.MemberAttrMap)
+		if err != nil {
+			return err
+		}
+
+		formattedAttrs := mems.FormatAttrs(validAttrs, false)
+		mlc = mems.AddListFields(mlc, formattedAttrs)
+	}
+
+	mlc = mems.AddListMaxResults(mlc, maxResults)
+
+	members, err = mems.DoList(mlc)
+	if err != nil {
+		return err
+	}
+
+	jsonData, err = json.MarshalIndent(members, "", "    ")
 	if err != nil {
 		return err
 	}
@@ -59,43 +87,4 @@ func init() {
 
 	listMembersCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required member attributes (separated by ~)")
 	listMembersCmd.Flags().Int64VarP(&maxResults, "maxresults", "m", 200, "maximum number or results to return")
-}
-
-func processGroupMembers(attrs string, groupEmail string) ([]byte, error) {
-	var (
-		members    *admin.Members
-		validAttrs []string
-	)
-
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupMemberReadonlyScope)
-	if err != nil {
-		return nil, err
-	}
-
-	mlc := ds.Members.List(groupEmail)
-
-	if attrs != "" {
-		validAttrs, err = cmn.ValidateAttrs(attrs, mems.MemberAttrMap)
-		if err != nil {
-			return nil, err
-		}
-
-		formattedAttrs := mems.FormatAttrs(validAttrs, false)
-		members, err = mems.ListMemberAttrs(mlc, formattedAttrs, maxResults)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		members, err = mems.ListMembers(mlc, maxResults)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	jsonData, err := json.MarshalIndent(members, "", "    ")
-	if err != nil {
-		return nil, err
-	}
-
-	return jsonData, nil
 }
