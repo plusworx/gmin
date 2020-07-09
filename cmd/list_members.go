@@ -58,6 +58,7 @@ func init() {
 	listCmd.AddCommand(listMembersCmd)
 
 	listMembersCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required member attributes (separated by ~)")
+	listMembersCmd.Flags().Int64VarP(&maxResults, "maxresults", "m", 200, "maximum number or results to return")
 }
 
 func processGroupMembers(attrs string, groupEmail string) ([]byte, error) {
@@ -80,12 +81,12 @@ func processGroupMembers(attrs string, groupEmail string) ([]byte, error) {
 		}
 
 		formattedAttrs := mems.FormatAttrs(validAttrs, false)
-		members, err = mems.Attrs(mlc, formattedAttrs)
+		members, err = mems.Attrs(mlc, formattedAttrs, maxResults)
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		members, err = mems.Members(mlc)
+		members, err = mems.Members(mlc, maxResults)
 		if err != nil {
 			return nil, err
 		}

@@ -47,6 +47,7 @@ var (
 	groupName        string
 	inputFile        string
 	lastName         string
+	maxResults       int64
 	noChangePassword bool
 	noGAL            bool
 	orgUnit          string

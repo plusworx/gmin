@@ -57,13 +57,13 @@ var QueryAttrMap = map[string]string{
 }
 
 // AllDomain fetches groups for all domains
-func AllDomain(glc *admin.GroupsListCall) (*admin.Groups, error) {
+func AllDomain(glc *admin.GroupsListCall, maxResults int64) (*admin.Groups, error) {
 	customerID, err := cfg.ReadConfigString("customerid")
 	if err != nil {
 		return nil, err
 	}
 
-	groups, err := glc.Customer(customerID).Do()
+	groups, err := glc.Customer(customerID).MaxResults(maxResults).Do()
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +72,7 @@ func AllDomain(glc *admin.GroupsListCall) (*admin.Groups, error) {
 }
 
 // AllDomainAttrs fetches specified attributes for all domain groups
-func AllDomainAttrs(glc *admin.GroupsListCall, attrs string) (*admin.Groups, error) {
+func AllDomainAttrs(glc *admin.GroupsListCall, attrs string, maxResults int64) (*admin.Groups, error) {
 	var fields googleapi.Field = googleapi.Field(attrs)
 
 	customerID, err := cfg.ReadConfigString("customerid")
@@ -80,7 +80,7 @@ func AllDomainAttrs(glc *admin.GroupsListCall, attrs string) (*admin.Groups, err
 		return nil, err
 	}
 
-	groups, err := glc.Customer(customerID).Fields(fields).Do()
+	groups, err := glc.Customer(customerID).Fields(fields).MaxResults(maxResults).Do()
 	if err != nil {
 		return nil, err
 	}
@@ -89,13 +89,13 @@ func AllDomainAttrs(glc *admin.GroupsListCall, attrs string) (*admin.Groups, err
 }
 
 // AllDomainQuery fetches groups for all domains that satisfy query arguments
-func AllDomainQuery(glc *admin.GroupsListCall, query string) (*admin.Groups, error) {
+func AllDomainQuery(glc *admin.GroupsListCall, query string, maxResults int64) (*admin.Groups, error) {
 	customerID, err := cfg.ReadConfigString("customerid")
 	if err != nil {
 		return nil, err
 	}
 
-	groups, err := glc.Customer(customerID).Query(query).Do()
+	groups, err := glc.Customer(customerID).MaxResults(maxResults).Query(query).Do()
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +104,7 @@ func AllDomainQuery(glc *admin.GroupsListCall, query string) (*admin.Groups, err
 }
 
 // AllDomainQueryAttrs fetches specified attributes for all domain groups that satisfy query arguments
-func AllDomainQueryAttrs(glc *admin.GroupsListCall, query string, attrs string) (*admin.Groups, error) {
+func AllDomainQueryAttrs(glc *admin.GroupsListCall, query string, attrs string, maxResults int64) (*admin.Groups, error) {
 	var fields googleapi.Field = googleapi.Field(attrs)
 
 	customerID, err := cfg.ReadConfigString("customerid")
@@ -112,7 +112,7 @@ func AllDomainQueryAttrs(glc *admin.GroupsListCall, query string, attrs string) 
 		return nil, err
 	}
 
-	groups, err := glc.Customer(customerID).Query(query).Fields(fields).Do()
+	groups, err := glc.Customer(customerID).Fields(fields).MaxResults(maxResults).Query(query).Do()
 	if err != nil {
 		return nil, err
 	}
@@ -121,8 +121,8 @@ func AllDomainQueryAttrs(glc *admin.GroupsListCall, query string, attrs string) 
 }
 
 // Domain fetches groups for a particular domain
-func Domain(domain string, glc *admin.GroupsListCall) (*admin.Groups, error) {
-	groups, err := glc.Domain(domain).Do()
+func Domain(domain string, glc *admin.GroupsListCall, maxResults int64) (*admin.Groups, error) {
+	groups, err := glc.Domain(domain).MaxResults(maxResults).Do()
 	if err != nil {
 		return nil, err
 	}
@@ -131,10 +131,10 @@ func Domain(domain string, glc *admin.GroupsListCall) (*admin.Groups, error) {
 }
 
 // DomainAttrs fetches specified attributes for domain groups
-func DomainAttrs(domain string, glc *admin.GroupsListCall, attrs string) (*admin.Groups, error) {
+func DomainAttrs(domain string, glc *admin.GroupsListCall, attrs string, maxResults int64) (*admin.Groups, error) {
 	var fields googleapi.Field = googleapi.Field(attrs)
 
-	groups, err := glc.Domain(domain).Fields(fields).Do()
+	groups, err := glc.Domain(domain).Fields(fields).MaxResults(maxResults).Do()
 	if err != nil {
 		return nil, err
 	}
@@ -143,8 +143,8 @@ func DomainAttrs(domain string, glc *admin.GroupsListCall, attrs string) (*admin
 }
 
 // DomainQuery fetches groups for specified domain that satisfy query arguments
-func DomainQuery(domain string, glc *admin.GroupsListCall, query string) (*admin.Groups, error) {
-	groups, err := glc.Domain(domain).Query(query).Do()
+func DomainQuery(domain string, glc *admin.GroupsListCall, query string, maxResults int64) (*admin.Groups, error) {
+	groups, err := glc.Domain(domain).MaxResults(maxResults).Query(query).Do()
 	if err != nil {
 		return nil, err
 	}
@@ -153,10 +153,10 @@ func DomainQuery(domain string, glc *admin.GroupsListCall, query string) (*admin
 }
 
 // DomainQueryAttrs fetches specified attributes for domain groups that satisfy query arguments
-func DomainQueryAttrs(domain string, glc *admin.GroupsListCall, query string, attrs string) (*admin.Groups, error) {
+func DomainQueryAttrs(domain string, glc *admin.GroupsListCall, query string, attrs string, maxResults int64) (*admin.Groups, error) {
 	var fields googleapi.Field = googleapi.Field(attrs)
 
-	groups, err := glc.Domain(domain).Query(query).Fields(fields).Do()
+	groups, err := glc.Domain(domain).Fields(fields).MaxResults(maxResults).Query(query).Do()
 	if err != nil {
 		return nil, err
 	}

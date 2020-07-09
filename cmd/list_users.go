@@ -100,6 +100,7 @@ func init() {
 
 	listUsersCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required user attributes (separated by ~)")
 	listUsersCmd.Flags().StringVarP(&domain, "domain", "d", "", "domain from which to get users")
+	listUsersCmd.Flags().Int64VarP(&maxResults, "maxresults", "m", 500, "maximum number of results to return")
 	listUsersCmd.Flags().StringVarP(&query, "query", "q", "", "selection criteria to get users (separated by ~)")
 	listUsersCmd.Flags().BoolVarP(&deleted, "deleted", "x", false, "show deleted users")
 
@@ -121,13 +122,13 @@ func userAllDomainCall(ulc *admin.UsersListCall, fmtAttrs string) (*admin.Users,
 
 	switch true {
 	case formattedQuery == "" && attrs == "":
-		users, err = usrs.AllDomain(ulc)
+		users, err = usrs.AllDomain(ulc, maxResults)
 	case formattedQuery != "" && attrs == "":
-		users, err = usrs.AllDomainQuery(ulc, formattedQuery)
+		users, err = usrs.AllDomainQuery(ulc, formattedQuery, maxResults)
 	case formattedQuery == "" && attrs != "":
-		users, err = usrs.AllDomainAttrs(ulc, fmtAttrs)
+		users, err = usrs.AllDomainAttrs(ulc, fmtAttrs, maxResults)
 	case formattedQuery != "" && attrs != "":
-		users, err = usrs.AllDomainQueryAttrs(ulc, formattedQuery, fmtAttrs)
+		users, err = usrs.AllDomainQueryAttrs(ulc, formattedQuery, fmtAttrs, maxResults)
 	}
 
 	if err != nil {
@@ -144,9 +145,9 @@ func userDelDomainCall(domain string, ulc *admin.UsersListCall, fmtAttrs string)
 	)
 
 	if attrs == "" {
-		users, err = usrs.DelDomain(domain, ulc)
+		users, err = usrs.DelDomain(domain, ulc, maxResults)
 	} else {
-		users, err = usrs.DelDomainAttrs(domain, ulc, fmtAttrs)
+		users, err = usrs.DelDomainAttrs(domain, ulc, fmtAttrs, maxResults)
 	}
 
 	if err != nil {
@@ -163,9 +164,9 @@ func userDelAllDomainCall(ulc *admin.UsersListCall, fmtAttrs string) (*admin.Use
 	)
 
 	if attrs == "" {
-		users, err = usrs.DelAllDomain(ulc)
+		users, err = usrs.DelAllDomain(ulc, maxResults)
 	} else {
-		users, err = usrs.DelAllDomainAttrs(ulc, fmtAttrs)
+		users, err = usrs.DelAllDomainAttrs(ulc, fmtAttrs, maxResults)
 	}
 
 	if err != nil {
@@ -191,13 +192,13 @@ func userDomainCall(domain string, ulc *admin.UsersListCall, fmtAttrs string) (*
 
 	switch true {
 	case formattedQuery == "" && attrs == "":
-		users, err = usrs.Domain(domain, ulc)
+		users, err = usrs.Domain(domain, ulc, maxResults)
 	case formattedQuery != "" && attrs == "":
-		users, err = usrs.DomainQuery(domain, ulc, formattedQuery)
+		users, err = usrs.DomainQuery(domain, ulc, formattedQuery, maxResults)
 	case formattedQuery == "" && attrs != "":
-		users, err = usrs.DomainAttrs(domain, ulc, fmtAttrs)
+		users, err = usrs.DomainAttrs(domain, ulc, fmtAttrs, maxResults)
 	case formattedQuery != "" && attrs != "":
-		users, err = usrs.DomainQueryAttrs(domain, ulc, formattedQuery, fmtAttrs)
+		users, err = usrs.DomainQueryAttrs(domain, ulc, formattedQuery, fmtAttrs, maxResults)
 	}
 
 	if err != nil {

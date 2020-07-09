@@ -101,13 +101,13 @@ func groupAllDomainCall(glc *admin.GroupsListCall, fmtAttrs string) (*admin.Grou
 
 	switch true {
 	case formattedQuery == "" && attrs == "":
-		groups, err = grps.AllDomain(glc)
+		groups, err = grps.AllDomain(glc, maxResults)
 	case formattedQuery != "" && attrs == "":
-		groups, err = grps.AllDomainQuery(glc, formattedQuery)
+		groups, err = grps.AllDomainQuery(glc, formattedQuery, maxResults)
 	case formattedQuery == "" && attrs != "":
-		groups, err = grps.AllDomainAttrs(glc, fmtAttrs)
+		groups, err = grps.AllDomainAttrs(glc, fmtAttrs, maxResults)
 	case formattedQuery != "" && attrs != "":
-		groups, err = grps.AllDomainQueryAttrs(glc, formattedQuery, fmtAttrs)
+		groups, err = grps.AllDomainQueryAttrs(glc, formattedQuery, fmtAttrs, maxResults)
 	}
 
 	return groups, err
@@ -129,13 +129,13 @@ func groupDomainCall(domain string, glc *admin.GroupsListCall, fmtAttrs string) 
 
 	switch true {
 	case formattedQuery == "" && attrs == "":
-		groups, err = grps.Domain(domain, glc)
+		groups, err = grps.Domain(domain, glc, maxResults)
 	case formattedQuery != "" && attrs == "":
-		groups, err = grps.DomainQuery(domain, glc, formattedQuery)
+		groups, err = grps.DomainQuery(domain, glc, formattedQuery, maxResults)
 	case formattedQuery == "" && attrs != "":
-		groups, err = grps.DomainAttrs(domain, glc, fmtAttrs)
+		groups, err = grps.DomainAttrs(domain, glc, fmtAttrs, maxResults)
 	case formattedQuery != "" && attrs != "":
-		groups, err = grps.DomainQueryAttrs(domain, glc, formattedQuery, fmtAttrs)
+		groups, err = grps.DomainQueryAttrs(domain, glc, formattedQuery, fmtAttrs, maxResults)
 	}
 
 	return groups, err
@@ -146,6 +146,7 @@ func init() {
 
 	listGroupsCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required group attributes (separated by ~)")
 	listGroupsCmd.Flags().StringVarP(&domain, "domain", "d", "", "domain from which to get groups")
+	listGroupsCmd.Flags().Int64VarP(&maxResults, "maxresults", "m", 200, "maximum number or results to return")
 	listGroupsCmd.Flags().StringVarP(&query, "query", "q", "", "selection criteria to get groups (separated by ~)")
 }
 

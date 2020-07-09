@@ -64,10 +64,10 @@ var roleMap = map[string]string{
 }
 
 // Attrs fetches specified attributes for members
-func Attrs(mlc *admin.MembersListCall, attrs string) (*admin.Members, error) {
+func Attrs(mlc *admin.MembersListCall, attrs string, maxResults int64) (*admin.Members, error) {
 	var fields googleapi.Field = googleapi.Field(attrs)
 
-	members, err := mlc.Fields(fields).Do()
+	members, err := mlc.Fields(fields).MaxResults(maxResults).Do()
 	if err != nil {
 		return nil, err
 	}
@@ -96,8 +96,8 @@ func FormatAttrs(attrs []string, get bool) string {
 }
 
 // Members fetches members of a particular group for admin.MembersListCall
-func Members(mlc *admin.MembersListCall) (*admin.Members, error) {
-	members, err := mlc.Do()
+func Members(mlc *admin.MembersListCall, maxResults int64) (*admin.Members, error) {
+	members, err := mlc.MaxResults(maxResults).Do()
 	if err != nil {
 		return nil, err
 	}
