@@ -26,14 +26,13 @@ import (
 	"errors"
 	"strings"
 
-	cfg "github.com/plusworx/gmin/utils/config"
 	admin "google.golang.org/api/admin/directory/v1"
 	"google.golang.org/api/googleapi"
 )
 
 const (
 	endField         string = ")"
-	startGroupsField string = "(groups:"
+	startGroupsField string = "groups("
 )
 
 // GroupAttrMap provides lowercase mappings to valid admin.Group attributes
@@ -54,6 +53,62 @@ var QueryAttrMap = map[string]string{
 	"email":     "email",
 	"name":      "name",
 	"memberkey": "memberKey",
+}
+
+// AddListCustomer adds customer to admin.GroupsListCall
+func AddListCustomer(glc *admin.GroupsListCall, customerID string) *admin.GroupsListCall {
+	var newGLC *admin.GroupsListCall
+
+	newGLC = glc.Customer(customerID)
+
+	return newGLC
+}
+
+// AddListDomain adds domain to admin.GroupsListCall
+func AddListDomain(glc *admin.GroupsListCall, domain string) *admin.GroupsListCall {
+	var newGLC *admin.GroupsListCall
+
+	newGLC = glc.Domain(domain)
+
+	return newGLC
+}
+
+// AddListFields adds fields to be returned to admin.GroupsListCall
+func AddListFields(glc *admin.GroupsListCall, attrs string) *admin.GroupsListCall {
+	var fields googleapi.Field = googleapi.Field(attrs)
+	var newGLC *admin.GroupsListCall
+
+	newGLC = glc.Fields(fields)
+
+	return newGLC
+}
+
+// AddListMaxResults adds MaxResults to admin.GroupsListCall
+func AddListMaxResults(glc *admin.GroupsListCall, maxResults int64) *admin.GroupsListCall {
+	var newGLC *admin.GroupsListCall
+
+	newGLC = glc.MaxResults(maxResults)
+
+	return newGLC
+}
+
+// AddListQuery adds query to admin.GroupsListCall
+func AddListQuery(glc *admin.GroupsListCall, query string) *admin.GroupsListCall {
+	var newGLC *admin.GroupsListCall
+
+	newGLC = glc.Query(query)
+
+	return newGLC
+}
+
+// DoList calls the .Do() function on the admin.GroupsListCall
+func DoList(glc *admin.GroupsListCall) (*admin.Groups, error) {
+	groups, err := glc.Do()
+	if err != nil {
+		return nil, err
+	}
+
+	return groups, nil
 }
 
 // FormatAttrs formats attributes for admin.GroupsListCall.Fields and admin.GroupsGetCall.Fields call
@@ -110,112 +165,4 @@ func GetAttrs(ggc *admin.GroupsGetCall, attrs string) (*admin.Group, error) {
 	}
 
 	return group, nil
-}
-
-// ListAllDomain fetches groups for all domains
-func ListAllDomain(glc *admin.GroupsListCall, maxResults int64) (*admin.Groups, error) {
-	customerID, err := cfg.ReadConfigString("customerid")
-	if err != nil {
-		return nil, err
-	}
-
-	groups, err := glc.Customer(customerID).MaxResults(maxResults).Do()
-	if err != nil {
-		return nil, err
-	}
-
-	return groups, nil
-}
-
-// ListAllDomainAttrs fetches specified attributes for all domain groups
-func ListAllDomainAttrs(glc *admin.GroupsListCall, attrs string, maxResults int64) (*admin.Groups, error) {
-	var fields googleapi.Field = googleapi.Field(attrs)
-
-	customerID, err := cfg.ReadConfigString("customerid")
-	if err != nil {
-		return nil, err
-	}
-
-	groups, err := glc.Customer(customerID).Fields(fields).MaxResults(maxResults).Do()
-	if err != nil {
-		return nil, err
-	}
-
-	return groups, nil
-}
-
-// ListAllDomainQuery fetches groups for all domains that satisfy query arguments
-func ListAllDomainQuery(glc *admin.GroupsListCall, query string, maxResults int64) (*admin.Groups, error) {
-	customerID, err := cfg.ReadConfigString("customerid")
-	if err != nil {
-		return nil, err
-	}
-
-	groups, err := glc.Customer(customerID).MaxResults(maxResults).Query(query).Do()
-	if err != nil {
-		return nil, err
-	}
-
-	return groups, nil
-}
-
-// ListAllDomainQueryAttrs fetches specified attributes for all domain groups that satisfy query arguments
-func ListAllDomainQueryAttrs(glc *admin.GroupsListCall, query string, attrs string, maxResults int64) (*admin.Groups, error) {
-	var fields googleapi.Field = googleapi.Field(attrs)
-
-	customerID, err := cfg.ReadConfigString("customerid")
-	if err != nil {
-		return nil, err
-	}
-
-	groups, err := glc.Customer(customerID).Fields(fields).MaxResults(maxResults).Query(query).Do()
-	if err != nil {
-		return nil, err
-	}
-
-	return groups, nil
-}
-
-// ListDomain fetches groups for a particular domain
-func ListDomain(domain string, glc *admin.GroupsListCall, maxResults int64) (*admin.Groups, error) {
-	groups, err := glc.Domain(domain).MaxResults(maxResults).Do()
-	if err != nil {
-		return nil, err
-	}
-
-	return groups, nil
-}
-
-// ListDomainAttrs fetches specified attributes for domain groups
-func ListDomainAttrs(domain string, glc *admin.GroupsListCall, attrs string, maxResults int64) (*admin.Groups, error) {
-	var fields googleapi.Field = googleapi.Field(attrs)
-
-	groups, err := glc.Domain(domain).Fields(fields).MaxResults(maxResults).Do()
-	if err != nil {
-		return nil, err
-	}
-
-	return groups, nil
-}
-
-// ListDomainQuery fetches groups for specified domain that satisfy query arguments
-func ListDomainQuery(domain string, glc *admin.GroupsListCall, query string, maxResults int64) (*admin.Groups, error) {
-	groups, err := glc.Domain(domain).MaxResults(maxResults).Query(query).Do()
-	if err != nil {
-		return nil, err
-	}
-
-	return groups, nil
-}
-
-// ListDomainQueryAttrs fetches specified attributes for domain groups that satisfy query arguments
-func ListDomainQueryAttrs(domain string, glc *admin.GroupsListCall, query string, attrs string, maxResults int64) (*admin.Groups, error) {
-	var fields googleapi.Field = googleapi.Field(attrs)
-
-	groups, err := glc.Domain(domain).Fields(fields).MaxResults(maxResults).Query(query).Do()
-	if err != nil {
-		return nil, err
-	}
-
-	return groups, nil
 }

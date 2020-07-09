@@ -27,6 +27,7 @@ import (
 	"fmt"
 
 	cmn "github.com/plusworx/gmin/utils/common"
+	cfg "github.com/plusworx/gmin/utils/config"
 	grps "github.com/plusworx/gmin/utils/groups"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
@@ -61,18 +62,33 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 		}
 
 		formattedAttrs = grps.FormatAttrs(validAttrs, false)
+		glc = grps.AddListFields(glc, formattedAttrs)
 	}
 
 	if domain != "" {
-		groups, err = groupDomainCall(domain, glc, formattedAttrs)
-		if err != nil {
-			return err
-		}
+		glc = grps.AddListDomain(glc, domain)
 	} else {
-		groups, err = groupAllDomainCall(glc, formattedAttrs)
+		customerID, err := cfg.ReadConfigString("customerid")
 		if err != nil {
 			return err
 		}
+		glc = grps.AddListCustomer(glc, customerID)
+	}
+
+	if query != "" {
+		formattedQuery, err := processQuery(query)
+		if err != nil {
+			return err
+		}
+
+		glc = grps.AddListQuery(glc, formattedQuery)
+	}
+
+	glc = grps.AddListMaxResults(glc, maxResults)
+
+	groups, err = grps.DoList(glc)
+	if err != nil {
+		return err
 	}
 
 	jsonData, err := json.MarshalIndent(groups, "", "    ")
@@ -83,62 +99,6 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 	fmt.Println(string(jsonData))
 
 	return nil
-}
-
-func groupAllDomainCall(glc *admin.GroupsListCall, fmtAttrs string) (*admin.Groups, error) {
-	var (
-		err            error
-		formattedQuery string
-		groups         *admin.Groups
-	)
-
-	if query != "" {
-		formattedQuery, err = processQuery(query)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	switch true {
-	case formattedQuery == "" && attrs == "":
-		groups, err = grps.ListAllDomain(glc, maxResults)
-	case formattedQuery != "" && attrs == "":
-		groups, err = grps.ListAllDomainQuery(glc, formattedQuery, maxResults)
-	case formattedQuery == "" && attrs != "":
-		groups, err = grps.ListAllDomainAttrs(glc, fmtAttrs, maxResults)
-	case formattedQuery != "" && attrs != "":
-		groups, err = grps.ListAllDomainQueryAttrs(glc, formattedQuery, fmtAttrs, maxResults)
-	}
-
-	return groups, err
-}
-
-func groupDomainCall(domain string, glc *admin.GroupsListCall, fmtAttrs string) (*admin.Groups, error) {
-	var (
-		err            error
-		formattedQuery string
-		groups         *admin.Groups
-	)
-
-	if query != "" {
-		formattedQuery, err = processQuery(query)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	switch true {
-	case formattedQuery == "" && attrs == "":
-		groups, err = grps.ListDomain(domain, glc, maxResults)
-	case formattedQuery != "" && attrs == "":
-		groups, err = grps.ListDomainQuery(domain, glc, formattedQuery, maxResults)
-	case formattedQuery == "" && attrs != "":
-		groups, err = grps.ListDomainAttrs(domain, glc, fmtAttrs, maxResults)
-	case formattedQuery != "" && attrs != "":
-		groups, err = grps.ListDomainQueryAttrs(domain, glc, formattedQuery, fmtAttrs, maxResults)
-	}
-
-	return groups, err
 }
 
 func init() {
