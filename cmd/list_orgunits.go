@@ -66,16 +66,23 @@ func doListOUs(cmd *cobra.Command, args []string) error {
 		}
 
 		formattedAttrs := ous.FormatAttrs(validAttrs)
+		oulc = ous.AddListFields(oulc, formattedAttrs)
+	}
 
-		orgUnits, err = ous.ListOrgUnitAttrs(oulc, formattedAttrs)
-		if err != nil {
-			return err
-		}
-	} else {
-		orgUnits, err = ous.ListOrgUnits(oulc)
-		if err != nil {
-			return err
-		}
+	if orgUnit != "" {
+		oulc = ous.AddListOUPath(oulc, orgUnit)
+	}
+
+	ok := cmn.SliceContainsStr(ous.ValidSearchTypes, searchType)
+	if !ok {
+		err := fmt.Errorf("gmin: error - %v is not a valid OrgunitsListCall type", searchType)
+		return err
+	}
+	oulc = ous.AddListType(oulc, searchType)
+
+	orgUnits, err = ous.DoList(oulc)
+	if err != nil {
+		return err
 	}
 
 	jsonData, err := json.MarshalIndent(orgUnits, "", "    ")
@@ -91,5 +98,7 @@ func doListOUs(cmd *cobra.Command, args []string) error {
 func init() {
 	listCmd.AddCommand(listOUsCmd)
 
-	listOUsCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required orgunit attributes separated by ~)")
+	listOUsCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required orgunit attributes separated by (~)")
+	listOUsCmd.Flags().StringVarP(&orgUnit, "orgunitpath", "o", "", "orgunitpath or id of starting orgunit")
+	listOUsCmd.Flags().StringVarP(&searchType, "type", "t", "children", "all sub-organizational unit or only immediate children")
 }

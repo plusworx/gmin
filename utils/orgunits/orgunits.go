@@ -47,6 +47,50 @@ var OrgUnitAttrMap = map[string]string{
 	"parentorgunitpath": "parentOrgUnitPath",
 }
 
+// ValidSearchTypes provides list of valid types for admin.OrgunitsListCall
+var ValidSearchTypes = []string{
+	"all",
+	"children",
+}
+
+// AddListFields adds fields to be returned to admin.OrgunitsListCall
+func AddListFields(oulc *admin.OrgunitsListCall, attrs string) *admin.OrgunitsListCall {
+	var fields googleapi.Field = googleapi.Field(attrs)
+	var newOULC *admin.OrgunitsListCall
+
+	newOULC = oulc.Fields(fields)
+
+	return newOULC
+}
+
+// AddListOUPath adds OrgUnitPath or ID to admin.OrgunitsListCall
+func AddListOUPath(oulc *admin.OrgunitsListCall, path string) *admin.OrgunitsListCall {
+	var newOULC *admin.OrgunitsListCall
+
+	newOULC = oulc.OrgUnitPath(path)
+
+	return newOULC
+}
+
+// AddListType adds Type to admin.OrgunitsListCall
+func AddListType(oulc *admin.OrgunitsListCall, searchType string) *admin.OrgunitsListCall {
+	var newOULC *admin.OrgunitsListCall
+
+	newOULC = oulc.Type(searchType)
+
+	return newOULC
+}
+
+// DoList calls the .Do() function on the admin.OrgunitsListCall
+func DoList(oulc *admin.OrgunitsListCall) (*admin.OrgUnits, error) {
+	orgunits, err := oulc.Do()
+	if err != nil {
+		return nil, err
+	}
+
+	return orgunits, nil
+}
+
 // FormatAttrs formats attributes for admin.OrgunitsListCall.Fields call
 func FormatAttrs(attrs []string) string {
 	var (
@@ -83,26 +127,4 @@ func GetAttrs(ougc *admin.OrgunitsGetCall, attrs string) (*admin.OrgUnit, error)
 	}
 
 	return orgUnit, nil
-}
-
-// ListOrgUnitAttrs fetches specified attributes for admin.OrgunitsListCall
-func ListOrgUnitAttrs(oulc *admin.OrgunitsListCall, attrs string) (*admin.OrgUnits, error) {
-	var fields googleapi.Field = googleapi.Field(attrs)
-
-	orgUnits, err := oulc.Fields(fields).Do()
-	if err != nil {
-		return nil, err
-	}
-
-	return orgUnits, nil
-}
-
-// ListOrgUnits fetches all orgunits
-func ListOrgUnits(oulc *admin.OrgunitsListCall) (*admin.OrgUnits, error) {
-	orgUnits, err := oulc.Do()
-	if err != nil {
-		return nil, err
-	}
-
-	return orgUnits, nil
 }

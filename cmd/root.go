@@ -59,6 +59,7 @@ var (
 	recoveryEmail    string
 	recoveryPhone    string
 	role             string
+	searchType       string
 	suspended        bool
 	unblockInherit   bool
 	unSuspended      bool
