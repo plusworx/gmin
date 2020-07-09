@@ -28,7 +28,6 @@ import (
 
 	cmn "github.com/plusworx/gmin/utils/common"
 	grps "github.com/plusworx/gmin/utils/groups"
-	usrs "github.com/plusworx/gmin/utils/users"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 )
@@ -64,7 +63,7 @@ func doGetGroup(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
-		formattedAttrs := usrs.FormatAttrs(validAttrs, true)
+		formattedAttrs := grps.FormatAttrs(validAttrs, true)
 		group, err = grps.SingleAttrs(ggc, formattedAttrs)
 		if err != nil {
 			return err

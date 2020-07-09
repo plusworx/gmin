@@ -29,7 +29,6 @@ import (
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
 	ous "github.com/plusworx/gmin/utils/orgunits"
-	usrs "github.com/plusworx/gmin/utils/users"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 )
@@ -70,7 +69,7 @@ func doGetOrgUnit(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
-		formattedAttrs := usrs.FormatAttrs(validAttrs, true)
+		formattedAttrs := ous.FormatAttrs(validAttrs)
 
 		orgUnit, err = ous.SingleAttrs(ougc, formattedAttrs)
 		if err != nil {
