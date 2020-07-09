@@ -29,6 +29,7 @@ import (
 	"strings"
 
 	cmn "github.com/plusworx/gmin/utils/common"
+	cfg "github.com/plusworx/gmin/utils/config"
 	usrs "github.com/plusworx/gmin/utils/users"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
@@ -68,19 +69,35 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 		}
 
 		formattedAttrs = usrs.FormatAttrs(validAttrs, false)
+		ulc = usrs.AddListFields(ulc, formattedAttrs)
 	}
 
-	switch true {
-	case domain != "" && !deleted:
-		users, err = userDomainCall(domain, ulc, formattedAttrs)
-	case domain != "" && deleted:
-		users, err = userDelDomainCall(domain, ulc, formattedAttrs)
-	case domain == "" && !deleted:
-		users, err = userAllDomainCall(ulc, formattedAttrs)
-	case domain == "" && deleted:
-		users, err = userDelAllDomainCall(ulc, formattedAttrs)
+	if deleted {
+		ulc = usrs.AddListShowDeleted(ulc)
 	}
 
+	if domain != "" {
+		ulc = usrs.AddListDomain(ulc, domain)
+	} else {
+		customerID, err := cfg.ReadConfigString("customerid")
+		if err != nil {
+			return err
+		}
+		ulc = usrs.AddListCustomer(ulc, customerID)
+	}
+
+	if query != "" {
+		formattedQuery, err := usrProcessQuery(query)
+		if err != nil {
+			return err
+		}
+
+		ulc = usrs.AddListQuery(ulc, formattedQuery)
+	}
+
+	ulc = usrs.AddListMaxResults(ulc, maxResults)
+
+	users, err = usrs.DoList(ulc)
 	if err != nil {
 		return err
 	}
@@ -104,108 +121,6 @@ func init() {
 	listUsersCmd.Flags().StringVarP(&query, "query", "q", "", "selection criteria to get users (separated by ~)")
 	listUsersCmd.Flags().BoolVarP(&deleted, "deleted", "x", false, "show deleted users")
 
-}
-
-func userAllDomainCall(ulc *admin.UsersListCall, fmtAttrs string) (*admin.Users, error) {
-	var (
-		err            error
-		formattedQuery string
-		users          *admin.Users
-	)
-
-	if query != "" {
-		formattedQuery, err = usrProcessQuery(query)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	switch true {
-	case formattedQuery == "" && attrs == "":
-		users, err = usrs.ListAllDomain(ulc, maxResults)
-	case formattedQuery != "" && attrs == "":
-		users, err = usrs.ListAllDomainQuery(ulc, formattedQuery, maxResults)
-	case formattedQuery == "" && attrs != "":
-		users, err = usrs.ListAllDomainAttrs(ulc, fmtAttrs, maxResults)
-	case formattedQuery != "" && attrs != "":
-		users, err = usrs.ListAllDomainQueryAttrs(ulc, formattedQuery, fmtAttrs, maxResults)
-	}
-
-	if err != nil {
-		return nil, err
-	}
-
-	return users, nil
-}
-
-func userDelDomainCall(domain string, ulc *admin.UsersListCall, fmtAttrs string) (*admin.Users, error) {
-	var (
-		err   error
-		users *admin.Users
-	)
-
-	if attrs == "" {
-		users, err = usrs.ListDelDomain(domain, ulc, maxResults)
-	} else {
-		users, err = usrs.ListDelDomainAttrs(domain, ulc, fmtAttrs, maxResults)
-	}
-
-	if err != nil {
-		return nil, err
-	}
-
-	return users, nil
-}
-
-func userDelAllDomainCall(ulc *admin.UsersListCall, fmtAttrs string) (*admin.Users, error) {
-	var (
-		err   error
-		users *admin.Users
-	)
-
-	if attrs == "" {
-		users, err = usrs.ListDelAllDomain(ulc, maxResults)
-	} else {
-		users, err = usrs.ListDelAllDomainAttrs(ulc, fmtAttrs, maxResults)
-	}
-
-	if err != nil {
-		return nil, err
-	}
-
-	return users, nil
-}
-
-func userDomainCall(domain string, ulc *admin.UsersListCall, fmtAttrs string) (*admin.Users, error) {
-	var (
-		err            error
-		formattedQuery string
-		users          *admin.Users
-	)
-
-	if query != "" {
-		formattedQuery, err = usrProcessQuery(query)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	switch true {
-	case formattedQuery == "" && attrs == "":
-		users, err = usrs.ListDomain(domain, ulc, maxResults)
-	case formattedQuery != "" && attrs == "":
-		users, err = usrs.ListDomainQuery(domain, ulc, formattedQuery, maxResults)
-	case formattedQuery == "" && attrs != "":
-		users, err = usrs.ListDomainAttrs(domain, ulc, fmtAttrs, maxResults)
-	case formattedQuery != "" && attrs != "":
-		users, err = usrs.ListDomainQueryAttrs(domain, ulc, formattedQuery, fmtAttrs, maxResults)
-	}
-
-	if err != nil {
-		return nil, err
-	}
-
-	return users, nil
 }
 
 func usrProcessQuery(query string) (string, error) {
