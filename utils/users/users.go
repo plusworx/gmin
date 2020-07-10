@@ -387,6 +387,15 @@ var validNotesContentTypes = []string{
 	"text_plain",
 }
 
+// ValidOrderByStrs provide valid strings to be used to set admin.UsersListCall OrderBy
+var ValidOrderByStrs = []string{
+	"email",
+	"familyname",
+	"firstname",
+	"givenname",
+	"lastname",
+}
+
 var validOrgTypes = []string{
 	"custom",
 	"domain_only",
@@ -497,6 +506,15 @@ func AddListMaxResults(ulc *admin.UsersListCall, maxResults int64) *admin.UsersL
 	return newULC
 }
 
+// AddListOrderBy adds OrderBy to admin.UserListCall
+func AddListOrderBy(ulc *admin.UsersListCall, orderBy string) *admin.UsersListCall {
+	var newULC *admin.UsersListCall
+
+	newULC = ulc.OrderBy(orderBy)
+
+	return newULC
+}
+
 // AddListQuery adds query to admin.UserListCall
 func AddListQuery(ulc *admin.UsersListCall, query string) *admin.UsersListCall {
 	var newULC *admin.UsersListCall
@@ -511,6 +529,15 @@ func AddListShowDeleted(ulc *admin.UsersListCall) *admin.UsersListCall {
 	var newULC *admin.UsersListCall
 
 	newULC = ulc.ShowDeleted("true")
+
+	return newULC
+}
+
+// AddListSortOrder adds SortOrder to admin.UserListCall
+func AddListSortOrder(ulc *admin.UsersListCall, sortorder string) *admin.UsersListCall {
+	var newULC *admin.UsersListCall
+
+	newULC = ulc.SortOrder(sortorder)
 
 	return newULC
 }

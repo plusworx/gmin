@@ -48,6 +48,7 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 		formattedAttrs string
 		users          *admin.Users
 		validAttrs     []string
+		validOrderBy   string
 	)
 
 	if query != "" && deleted {
@@ -95,6 +96,37 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 		ulc = usrs.AddListQuery(ulc, formattedQuery)
 	}
 
+	if orderBy != "" {
+		ob := strings.ToLower(orderBy)
+		ok := cmn.SliceContainsStr(usrs.ValidOrderByStrs, ob)
+		if !ok {
+			err = fmt.Errorf("gmin: error - %v is not a valid order by field", orderBy)
+			return err
+		}
+
+		validOrderBy = ob
+
+		if ob != "email" {
+			validOrderBy, err = cmn.IsValidAttr(ob, usrs.UserAttrMap)
+			if err != nil {
+				return err
+			}
+		}
+
+		ulc = usrs.AddListOrderBy(ulc, validOrderBy)
+
+		if sortOrder != "" {
+			so := strings.ToLower(sortOrder)
+			ok := cmn.SliceContainsStr(cmn.ValidSortOrders, so)
+			if !ok {
+				err = fmt.Errorf("gmin: error - %v is not a valid sort order", sortOrder)
+				return err
+			}
+
+			ulc = usrs.AddListSortOrder(ulc, so)
+		}
+	}
+
 	ulc = usrs.AddListMaxResults(ulc, maxResults)
 
 	users, err = usrs.DoList(ulc)
@@ -118,7 +150,9 @@ func init() {
 	listUsersCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required user attributes (separated by ~)")
 	listUsersCmd.Flags().StringVarP(&domain, "domain", "d", "", "domain from which to get users")
 	listUsersCmd.Flags().Int64VarP(&maxResults, "maxresults", "m", 500, "maximum number of results to return")
+	listUsersCmd.Flags().StringVarP(&orderBy, "orderby", "o", "", "field by which results will be ordered")
 	listUsersCmd.Flags().StringVarP(&query, "query", "q", "", "selection criteria to get users (separated by ~)")
+	listUsersCmd.Flags().StringVarP(&sortOrder, "sortorder", "s", "", "sort order of returned results")
 	listUsersCmd.Flags().BoolVarP(&deleted, "deleted", "x", false, "show deleted users")
 
 }

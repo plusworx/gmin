@@ -44,6 +44,12 @@ const (
 	RepeatTxt string = "**** repeat ****"
 )
 
+// ValidSortOrders provides valid sort order strings
+var ValidSortOrders = []string{
+	"ascending",
+	"descending",
+}
+
 // CreateDirectoryService function creates and returns Admin Service object
 func CreateDirectoryService(scope ...string) (*admin.Service, error) {
 	adminEmail, err := cfg.ReadConfigString("administrator")

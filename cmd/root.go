@@ -50,6 +50,7 @@ var (
 	maxResults       int64
 	noChangePassword bool
 	noGAL            bool
+	orderBy          string
 	orgUnit          string
 	orgUnitDesc      string
 	orgUnitName      string
@@ -60,6 +61,7 @@ var (
 	recoveryPhone    string
 	role             string
 	searchType       string
+	sortOrder        string
 	suspended        bool
 	unblockInherit   bool
 	unSuspended      bool
