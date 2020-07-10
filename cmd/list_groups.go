@@ -25,6 +25,7 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
@@ -46,6 +47,7 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 		formattedAttrs string
 		groups         *admin.Groups
 		validAttrs     []string
+		validOrderBy   string
 	)
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupReadonlyScope)
@@ -84,6 +86,33 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 		glc = grps.AddListQuery(glc, formattedQuery)
 	}
 
+	if orderBy != "" {
+		ob := strings.ToLower(orderBy)
+		ok := cmn.SliceContainsStr(grps.ValidOrderByStrs, ob)
+		if !ok {
+			err = fmt.Errorf("gmin: error - %v is not a valid order by field", orderBy)
+			return err
+		}
+
+		validOrderBy, err = cmn.IsValidAttr(ob, grps.GroupAttrMap)
+		if err != nil {
+			return err
+		}
+
+		glc = grps.AddListOrderBy(glc, validOrderBy)
+
+		if sortOrder != "" {
+			so := strings.ToLower(sortOrder)
+			ok := cmn.SliceContainsStr(cmn.ValidSortOrders, so)
+			if !ok {
+				err = fmt.Errorf("gmin: error - %v is not a valid sort order", sortOrder)
+				return err
+			}
+
+			glc = grps.AddListSortOrder(glc, so)
+		}
+	}
+
 	glc = grps.AddListMaxResults(glc, maxResults)
 
 	groups, err = grps.DoList(glc)
@@ -106,8 +135,11 @@ func init() {
 
 	listGroupsCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required group attributes (separated by ~)")
 	listGroupsCmd.Flags().StringVarP(&domain, "domain", "d", "", "domain from which to get groups")
-	listGroupsCmd.Flags().Int64VarP(&maxResults, "maxresults", "m", 200, "maximum number or results to return")
+	listGroupsCmd.Flags().Int64VarP(&maxResults, "maxresults", "m", 200, "maximum number of results to return")
+	listGroupsCmd.Flags().StringVarP(&orderBy, "orderby", "o", "", "field by which results will be ordered")
 	listGroupsCmd.Flags().StringVarP(&query, "query", "q", "", "selection criteria to get groups (separated by ~)")
+	listGroupsCmd.Flags().StringVarP(&sortOrder, "sortorder", "s", "", "sort order of returned results")
+
 }
 
 func processQuery(query string) (string, error) {

@@ -55,6 +55,11 @@ var QueryAttrMap = map[string]string{
 	"memberkey": "memberKey",
 }
 
+// ValidOrderByStrs provide valid strings to be used to set admin.GroupsListCall OrderBy
+var ValidOrderByStrs = []string{
+	"email",
+}
+
 // AddListCustomer adds customer to admin.GroupsListCall
 func AddListCustomer(glc *admin.GroupsListCall, customerID string) *admin.GroupsListCall {
 	var newGLC *admin.GroupsListCall
@@ -92,11 +97,29 @@ func AddListMaxResults(glc *admin.GroupsListCall, maxResults int64) *admin.Group
 	return newGLC
 }
 
+// AddListOrderBy adds OrderBy to admin.GroupsListCall
+func AddListOrderBy(glc *admin.GroupsListCall, orderBy string) *admin.GroupsListCall {
+	var newGLC *admin.GroupsListCall
+
+	newGLC = glc.OrderBy(orderBy)
+
+	return newGLC
+}
+
 // AddListQuery adds query to admin.GroupsListCall
 func AddListQuery(glc *admin.GroupsListCall, query string) *admin.GroupsListCall {
 	var newGLC *admin.GroupsListCall
 
 	newGLC = glc.Query(query)
+
+	return newGLC
+}
+
+// AddListSortOrder adds SortOrder to admin.GroupsListCall
+func AddListSortOrder(glc *admin.GroupsListCall, sortorder string) *admin.GroupsListCall {
+	var newGLC *admin.GroupsListCall
+
+	newGLC = glc.SortOrder(sortorder)
 
 	return newGLC
 }
