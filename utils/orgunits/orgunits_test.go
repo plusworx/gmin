@@ -22,8 +22,90 @@ THE SOFTWARE.
 
 package orgunits
 
-import "testing"
+import (
+	"testing"
 
+	tsts "github.com/plusworx/gmin/tests"
+	admin "google.golang.org/api/admin/directory/v1"
+)
+
+func TestAddListFields(t *testing.T) {
+	cases := []struct {
+		fields string
+	}{
+		{
+			fields: "name,orgUnitPath",
+		},
+	}
+
+	ds, err := tsts.DummyDirectoryService(admin.AdminDirectoryOrgunitReadonlyScope)
+	if err != nil {
+		t.Error("Error: failed to create dummy admin.Service")
+	}
+
+	oulc := ds.Orgunits.List("my_customer")
+
+	for _, c := range cases {
+
+		newOULC := AddListFields(oulc, c.fields)
+
+		if newOULC == nil {
+			t.Error("Error: failed to add Fields to OrgunitsListCall")
+		}
+	}
+}
+
+func TestAddListOUPath(t *testing.T) {
+	cases := []struct {
+		orgUnitPath string
+	}{
+		{
+			orgUnitPath: "/Sales",
+		},
+	}
+
+	ds, err := tsts.DummyDirectoryService(admin.AdminDirectoryOrgunitReadonlyScope)
+	if err != nil {
+		t.Error("Error: failed to create dummy admin.Service")
+	}
+
+	oulc := ds.Orgunits.List("my_customer")
+
+	for _, c := range cases {
+
+		newOULC := AddListOUPath(oulc, c.orgUnitPath)
+
+		if newOULC == nil {
+			t.Error("Error: failed to add OrgUnitPath to OrgunitsListCall")
+		}
+	}
+}
+
+func TestAddListType(t *testing.T) {
+	cases := []struct {
+		searchType string
+	}{
+		{
+			searchType: "all",
+		},
+	}
+
+	ds, err := tsts.DummyDirectoryService(admin.AdminDirectoryOrgunitReadonlyScope)
+	if err != nil {
+		t.Error("Error: failed to create dummy admin.Service")
+	}
+
+	oulc := ds.Orgunits.List("my_customer")
+
+	for _, c := range cases {
+
+		newOULC := AddListType(oulc, c.searchType)
+
+		if newOULC == nil {
+			t.Error("Error: failed to add Type to OrgunitsListCall")
+		}
+	}
+}
 func TestFormatAttrs(t *testing.T) {
 	attrs := []string{"blockInheritance", "description", "name"}
 	expectedOutput := "organizationUnits(blockInheritance,description,name)"
