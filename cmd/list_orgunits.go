@@ -25,6 +25,7 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
@@ -73,6 +74,8 @@ func doListOUs(cmd *cobra.Command, args []string) error {
 		oulc = ous.AddListOUPath(oulc, orgUnit)
 	}
 
+	searchType = strings.ToLower(searchType)
+
 	ok := cmn.SliceContainsStr(ous.ValidSearchTypes, searchType)
 	if !ok {
 		err := fmt.Errorf("gmin: error - %v is not a valid OrgunitsListCall type", searchType)
@@ -100,5 +103,5 @@ func init() {
 
 	listOUsCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required orgunit attributes separated by (~)")
 	listOUsCmd.Flags().StringVarP(&orgUnit, "orgunitpath", "o", "", "orgunitpath or id of starting orgunit")
-	listOUsCmd.Flags().StringVarP(&searchType, "type", "t", "children", "all sub-organizational unit or only immediate children")
+	listOUsCmd.Flags().StringVarP(&searchType, "type", "t", "children", "all sub-organizational units or only immediate children")
 }
