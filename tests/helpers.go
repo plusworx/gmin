@@ -23,11 +23,14 @@ THE SOFTWARE.
 package tests
 
 import (
+	"context"
 	"fmt"
 	"reflect"
 	"strconv"
 
+	"golang.org/x/oauth2/google"
 	admin "google.golang.org/api/admin/directory/v1"
+	"google.golang.org/api/option"
 )
 
 // AboutCompActualExpected compares actual test results in admin.UserAbout object with expected results
@@ -68,6 +71,41 @@ func AddressCompActualExpected(address *admin.UserAddress, expected map[string]s
 	}
 
 	return nil
+}
+
+// DummyDirectoryService function creates and returns dummy Admin Service object
+func DummyDirectoryService(scope ...string) (*admin.Service, error) {
+	adminEmail := "admin@mycompany.org"
+	credentials := `{
+	"type": "service_account",
+	"project_id": "test",
+	"private_key_id": "1234",
+	"private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkuRIIQqbhw64ORg\naYlc7iqk8tvt+ozuS+ibVsk=\n-----END PRIVATE KEY-----\n",
+	"client_email": "account@gserviceaccount.com",
+	"client_id": "1234",
+	"auth_uri": "https://accounts.google.com/o/oauth2/auth",
+	"token_uri": "https://oauth2.googleapis.com/token",
+	"auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+	"client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/service-account%40gserviceaccount.com"
+  }`
+
+	ctx := context.Background()
+
+	jsonCredentials := []byte(credentials)
+
+	config, err := google.JWTConfigFromJSON(jsonCredentials, scope...)
+	if err != nil {
+		return nil, fmt.Errorf("JWTConfigFromJSON: %v", err)
+	}
+	config.Subject = adminEmail
+
+	ts := config.TokenSource(ctx)
+
+	srv, err := admin.NewService(ctx, option.WithTokenSource(ts))
+	if err != nil {
+		return nil, fmt.Errorf("NewService: %v", err)
+	}
+	return srv, nil
 }
 
 // EmailCompActualExpected compares actual test results in admin.UserEmail object with expected results

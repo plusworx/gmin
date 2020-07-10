@@ -29,6 +29,203 @@ import (
 	admin "google.golang.org/api/admin/directory/v1"
 )
 
+func TestAddListCustomer(t *testing.T) {
+	cases := []struct {
+		customerID string
+	}{
+		{
+			customerID: "my_customer",
+		},
+	}
+
+	ds, err := tsts.DummyDirectoryService(admin.AdminDirectoryUserReadonlyScope)
+	if err != nil {
+		t.Error("Error: failed to create dummy admin.Service")
+	}
+
+	ulc := ds.Users.List()
+
+	for _, c := range cases {
+
+		newULC := AddListCustomer(ulc, c.customerID)
+
+		if newULC == nil {
+			t.Error("Error: failed to add Customer to UsersListCall")
+		}
+	}
+}
+
+func TestAddListDomain(t *testing.T) {
+	cases := []struct {
+		domain string
+	}{
+		{
+			domain: "my_company.org",
+		},
+	}
+
+	ds, err := tsts.DummyDirectoryService(admin.AdminDirectoryUserReadonlyScope)
+	if err != nil {
+		t.Error("Error: failed to create dummy admin.Service")
+	}
+
+	ulc := ds.Users.List()
+
+	for _, c := range cases {
+
+		newULC := AddListCustomer(ulc, c.domain)
+
+		if newULC == nil {
+			t.Error("Error: failed to add Domain to UsersListCall")
+		}
+	}
+}
+
+func TestAddListFields(t *testing.T) {
+	cases := []struct {
+		fields string
+	}{
+		{
+			fields: "name,primaryEmail,id",
+		},
+	}
+
+	ds, err := tsts.DummyDirectoryService(admin.AdminDirectoryUserReadonlyScope)
+	if err != nil {
+		t.Error("Error: failed to create dummy admin.Service")
+	}
+
+	ulc := ds.Users.List()
+
+	for _, c := range cases {
+
+		newULC := AddListFields(ulc, c.fields)
+
+		if newULC == nil {
+			t.Error("Error: failed to add Fields to UsersListCall")
+		}
+	}
+}
+
+func TestAddListMaxResults(t *testing.T) {
+	cases := []struct {
+		maxResults int64
+	}{
+		{
+			maxResults: 150,
+		},
+	}
+
+	ds, err := tsts.DummyDirectoryService(admin.AdminDirectoryUserReadonlyScope)
+	if err != nil {
+		t.Error("Error: failed to create dummy admin.Service")
+	}
+
+	ulc := ds.Users.List()
+
+	for _, c := range cases {
+
+		newULC := AddListMaxResults(ulc, c.maxResults)
+
+		if newULC == nil {
+			t.Error("Error: failed to add MaxResults to UsersListCall")
+		}
+	}
+}
+
+func TestAddListOrderBy(t *testing.T) {
+	cases := []struct {
+		orderBy string
+	}{
+		{
+			orderBy: "givenName",
+		},
+	}
+
+	ds, err := tsts.DummyDirectoryService(admin.AdminDirectoryUserReadonlyScope)
+	if err != nil {
+		t.Error("Error: failed to create dummy admin.Service")
+	}
+
+	ulc := ds.Users.List()
+
+	for _, c := range cases {
+
+		newULC := AddListOrderBy(ulc, c.orderBy)
+
+		if newULC == nil {
+			t.Error("Error: failed to add Fields to UsersListCall")
+		}
+	}
+}
+
+func TestAddListQuery(t *testing.T) {
+	cases := []struct {
+		query string
+	}{
+		{
+			query: "name:Martin",
+		},
+	}
+
+	ds, err := tsts.DummyDirectoryService(admin.AdminDirectoryUserReadonlyScope)
+	if err != nil {
+		t.Error("Error: failed to create dummy admin.Service")
+	}
+
+	ulc := ds.Users.List()
+
+	for _, c := range cases {
+
+		newULC := AddListQuery(ulc, c.query)
+
+		if newULC == nil {
+			t.Error("Error: failed to add Fields to UsersListCall")
+		}
+	}
+}
+
+func TestAddListShowDeleted(t *testing.T) {
+	ds, err := tsts.DummyDirectoryService(admin.AdminDirectoryUserReadonlyScope)
+	if err != nil {
+		t.Error("Error: failed to create dummy admin.Service")
+	}
+
+	ulc := ds.Users.List()
+
+	newULC := AddListShowDeleted(ulc)
+
+	if newULC == nil {
+		t.Error("Error: failed to add ShowDeleted to UsersListCall")
+	}
+}
+
+func TestAddListSortOrder(t *testing.T) {
+	cases := []struct {
+		sortOrder string
+	}{
+		{
+			sortOrder: "descending",
+		},
+	}
+
+	ds, err := tsts.DummyDirectoryService(admin.AdminDirectoryUserReadonlyScope)
+	if err != nil {
+		t.Error("Error: failed to create dummy admin.Service")
+	}
+
+	ulc := ds.Users.List()
+
+	for _, c := range cases {
+
+		newULC := AddListSortOrder(ulc, c.sortOrder)
+
+		if newULC == nil {
+			t.Error("Error: failed to add SortOrder to UsersListCall")
+		}
+	}
+}
+
 func TestDoComposite(t *testing.T) {
 	cases := []struct {
 		attrStack     []string
