@@ -22,8 +22,64 @@ THE SOFTWARE.
 
 package members
 
-import "testing"
+import (
+	"testing"
 
+	tsts "github.com/plusworx/gmin/tests"
+	admin "google.golang.org/api/admin/directory/v1"
+)
+
+func TestAddListFields(t *testing.T) {
+	cases := []struct {
+		fields string
+	}{
+		{
+			fields: "email,role,status",
+		},
+	}
+
+	ds, err := tsts.DummyDirectoryService(admin.AdminDirectoryGroupMemberReadonlyScope)
+	if err != nil {
+		t.Error("Error: failed to create dummy admin.Service")
+	}
+
+	mlc := ds.Members.List("test@company.org")
+
+	for _, c := range cases {
+
+		newMLC := AddListFields(mlc, c.fields)
+
+		if newMLC == nil {
+			t.Error("Error: failed to add Fields to MembersListCall")
+		}
+	}
+}
+
+func TestAddListMaxResults(t *testing.T) {
+	cases := []struct {
+		maxResults int64
+	}{
+		{
+			maxResults: 150,
+		},
+	}
+
+	ds, err := tsts.DummyDirectoryService(admin.AdminDirectoryGroupMemberReadonlyScope)
+	if err != nil {
+		t.Error("Error: failed to create dummy admin.Service")
+	}
+
+	mlc := ds.Members.List("test@company.org")
+
+	for _, c := range cases {
+
+		newMLC := AddListMaxResults(mlc, c.maxResults)
+
+		if newMLC == nil {
+			t.Error("Error: failed to add MaxResults to MembersListCall")
+		}
+	}
+}
 func TestFormatAttrs(t *testing.T) {
 	cases := []struct {
 		attrs          []string
