@@ -73,7 +73,7 @@ func TestAddListDomain(t *testing.T) {
 
 	for _, c := range cases {
 
-		newULC := AddListCustomer(ulc, c.domain)
+		newULC := AddListDomain(ulc, c.domain)
 
 		if newULC == nil {
 			t.Error("Error: failed to add Domain to UsersListCall")
