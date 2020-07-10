@@ -37,6 +37,84 @@ func TestHashPassword(t *testing.T) {
 	}
 }
 
+func TestIsValidAttr(t *testing.T) {
+	var groupAttrMap = map[string]string{
+		"admincreated":       "adminCreated",
+		"description":        "description",
+		"directmemberscount": "directMembersCount",
+		"email":              "email",
+		"etag":               "etag",
+		"id":                 "id",
+		"kind":               "kind",
+		"name":               "name",
+		"noneditablealiases": "nonEditableAliases",
+	}
+
+	cases := []struct {
+		attr          string
+		attrMap       map[string]string
+		expectedErr   string
+		expectedValue string
+	}{
+		{
+			attr:          "admincreated",
+			attrMap:       groupAttrMap,
+			expectedErr:   "",
+			expectedValue: "adminCreated",
+		},
+		{
+			attr:          "nonexistent",
+			attrMap:       groupAttrMap,
+			expectedErr:   "gmin: error - attribute nonexistent is unrecognized",
+			expectedValue: "",
+		},
+	}
+
+	for _, c := range cases {
+
+		output, err := IsValidAttr(c.attr, c.attrMap)
+
+		if err != nil {
+			if err.Error() != c.expectedErr {
+				t.Errorf("Got error: %v - expected error: %v", err.Error(), c.expectedErr)
+			}
+
+			continue
+		}
+
+		if output != c.expectedValue {
+			t.Errorf("Got output: %v - expected: %v", output, c.expectedValue)
+		}
+
+	}
+}
+
+func TestSliceContainsStr(t *testing.T) {
+	cases := []struct {
+		expectedResult bool
+		input          string
+		sl             []string
+	}{
+		{
+			expectedResult: true,
+			input:          "Hello",
+			sl:             []string{"Hello", "brave", "new", "world"},
+		},
+		{
+			expectedResult: false,
+			input:          "Goodbye",
+			sl:             []string{"Hello", "brave", "new", "world"},
+		},
+	}
+
+	for _, c := range cases {
+		res := SliceContainsStr(c.sl, c.input)
+		if res != c.expectedResult {
+			t.Errorf("Got result: %v - expected result: %v", res, c.expectedResult)
+		}
+	}
+}
+
 func TestValidateAttrs(t *testing.T) {
 	var userAttrMap = map[string]string{
 		"addresses":                  "addresses",
@@ -149,6 +227,71 @@ func TestValidateAttrs(t *testing.T) {
 	for _, c := range cases {
 
 		output, err := ValidateAttrs(c.attrs, c.attrMap)
+
+		if err != nil {
+			if err.Error() != c.expectedErr {
+				t.Errorf("Got error: %v - expected error: %v", err.Error(), c.expectedErr)
+			}
+
+			continue
+		}
+
+		ok := reflect.DeepEqual(output, c.expectedValue)
+
+		if !ok {
+			t.Errorf("Expected output: %v got: %v", c.expectedValue, output)
+		}
+	}
+}
+
+func TestValidateQuery(t *testing.T) {
+	var queryAttrMap = map[string]string{
+		"email":     "email",
+		"name":      "name",
+		"memberkey": "memberKey",
+	}
+
+	cases := []struct {
+		attrMap       map[string]string
+		expectedErr   string
+		expectedValue []string
+		query         string
+	}{
+		{
+			query:         "email=finance@mycompany.org",
+			attrMap:       queryAttrMap,
+			expectedErr:   "",
+			expectedValue: []string{"email=finance@mycompany.org"},
+		},
+		{
+			query:         "EmaIl=marketing@mycompany.org",
+			attrMap:       queryAttrMap,
+			expectedErr:   "",
+			expectedValue: []string{"email=marketing@mycompany.org"},
+		},
+		{
+			query:         "name:Fin*",
+			attrMap:       queryAttrMap,
+			expectedErr:   "",
+			expectedValue: []string{"name:Fin*"},
+		},
+		{
+			query:         "email:fin*~name:Finance*",
+			attrMap:       queryAttrMap,
+			expectedErr:   "",
+			expectedValue: []string{"email:fin*", "name:Finance*"},
+		},
+		{
+			query:         "groupemail=engineering@mycompany.org",
+			attrMap:       queryAttrMap,
+			expectedErr:   "gmin: error - query attribute groupemail is unrecognized",
+			expectedValue: []string{"email=malcolmx@mycompany.org"},
+		},
+	}
+
+	for _, c := range cases {
+
+		output, err := ValidateQuery(c.query, c.attrMap)
 
 		if err != nil {
 			if err.Error() != c.expectedErr {
