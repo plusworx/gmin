@@ -64,7 +64,7 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 	ulc := ds.Users.List()
 
 	if attrs != "" {
-		validAttrs, err = cmn.ValidateAttrs(attrs, usrs.UserAttrMap)
+		validAttrs, err = cmn.ValidateArgs(attrs, usrs.UserAttrMap, cmn.AttrStr)
 		if err != nil {
 			return err
 		}

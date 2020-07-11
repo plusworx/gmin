@@ -58,7 +58,7 @@ func doGetGroup(cmd *cobra.Command, args []string) error {
 	ggc := ds.Groups.Get(args[0])
 
 	if attrs != "" {
-		validAttrs, err = cmn.ValidateAttrs(attrs, grps.GroupAttrMap)
+		validAttrs, err = cmn.ValidateArgs(attrs, grps.GroupAttrMap, cmn.AttrStr)
 		if err != nil {
 			return err
 		}

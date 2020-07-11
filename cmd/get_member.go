@@ -83,7 +83,7 @@ func processGroupMember(memID string, attrs string, groupEmail string) ([]byte, 
 	mgc := ds.Members.Get(groupEmail, memID)
 
 	if attrs != "" {
-		validAttrs, err = cmn.ValidateAttrs(attrs, mems.MemberAttrMap)
+		validAttrs, err = cmn.ValidateArgs(attrs, mems.MemberAttrMap, cmn.AttrStr)
 		if err != nil {
 			return nil, err
 		}

@@ -115,7 +115,7 @@ func TestSliceContainsStr(t *testing.T) {
 	}
 }
 
-func TestValidateAttrs(t *testing.T) {
+func TestValidateArgs(t *testing.T) {
 	var userAttrMap = map[string]string{
 		"addresses":                  "addresses",
 		"addresses(country)":         "addresses(country)",
@@ -193,32 +193,32 @@ func TestValidateAttrs(t *testing.T) {
 	}
 
 	cases := []struct {
-		attrs         string
-		attrMap       map[string]string
+		args          string
+		argMap        map[string]string
 		expectedErr   string
 		expectedValue []string
 	}{
 		{
-			attrs:         "name(firstname)~name(lastname)~primaryemail",
-			attrMap:       userAttrMap,
+			args:          "name(firstname)~name(lastname)~primaryemail",
+			argMap:        userAttrMap,
 			expectedErr:   "",
 			expectedValue: []string{"name(givenName)", "name(familyName)", "primaryEmail"},
 		},
 		{
-			attrs:       "name(firstname)~name(lastname)~primaryemail~addresses(streetaddress)~addresses(postalcode)",
-			attrMap:     userAttrMap,
+			args:        "name(firstname)~name(lastname)~primaryemail~addresses(streetaddress)~addresses(postalcode)",
+			argMap:      userAttrMap,
 			expectedErr: "",
 			expectedValue: []string{"name(givenName)", "name(familyName)", "primaryEmail", "addresses(streetAddress)",
 				"addresses(postalCode)"},
 		},
 		{
-			attrs:       "itain'tright~name(firstname)~name(lastname)~primaryemail",
-			attrMap:     userAttrMap,
+			args:        "itain'tright~name(firstname)~name(lastname)~primaryemail",
+			argMap:      userAttrMap,
 			expectedErr: "gmin: error - attribute itain'tright is unrecognized",
 		},
 		{
-			attrs:         "firstname~lastname~primaryemail",
-			attrMap:       userAttrMap,
+			args:          "firstname~lastname~primaryemail",
+			argMap:        userAttrMap,
 			expectedErr:   "",
 			expectedValue: []string{"givenName", "familyName", "primaryEmail"},
 		},
@@ -226,7 +226,7 @@ func TestValidateAttrs(t *testing.T) {
 
 	for _, c := range cases {
 
-		output, err := ValidateAttrs(c.attrs, c.attrMap)
+		output, err := ValidateArgs(c.args, c.argMap, AttrStr)
 
 		if err != nil {
 			if err.Error() != c.expectedErr {

@@ -61,7 +61,7 @@ func doListOUs(cmd *cobra.Command, args []string) error {
 	oulc := ds.Orgunits.List(customerID)
 
 	if attrs != "" {
-		validAttrs, err = cmn.ValidateAttrs(attrs, ous.OrgUnitAttrMap)
+		validAttrs, err = cmn.ValidateArgs(attrs, ous.OrgUnitAttrMap, cmn.AttrStr)
 		if err != nil {
 			return err
 		}

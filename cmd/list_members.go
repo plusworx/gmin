@@ -57,7 +57,7 @@ func doListMembers(cmd *cobra.Command, args []string) error {
 	mlc := ds.Members.List(args[0])
 
 	if attrs != "" {
-		validAttrs, err = cmn.ValidateAttrs(attrs, mems.MemberAttrMap)
+		validAttrs, err = cmn.ValidateArgs(attrs, mems.MemberAttrMap, cmn.AttrStr)
 		if err != nil {
 			return err
 		}
@@ -67,7 +67,7 @@ func doListMembers(cmd *cobra.Command, args []string) error {
 	}
 
 	if role != "" {
-		validRoles, err = cmn.ValidateAttrs(role, mems.RoleMap)
+		validRoles, err = cmn.ValidateArgs(role, mems.RoleMap, cmn.RoleStr)
 		if err != nil {
 			return err
 		}

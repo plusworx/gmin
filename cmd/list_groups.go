@@ -58,7 +58,7 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 	glc := ds.Groups.List()
 
 	if attrs != "" {
-		validAttrs, err = cmn.ValidateAttrs(attrs, grps.GroupAttrMap)
+		validAttrs, err = cmn.ValidateArgs(attrs, grps.GroupAttrMap, cmn.AttrStr)
 		if err != nil {
 			return err
 		}

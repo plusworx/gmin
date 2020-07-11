@@ -57,7 +57,7 @@ func doGetUser(cmd *cobra.Command, args []string) error {
 	ugc := ds.Users.Get(args[0])
 
 	if attrs != "" {
-		validAttrs, err = cmn.ValidateAttrs(attrs, usrs.UserAttrMap)
+		validAttrs, err = cmn.ValidateArgs(attrs, usrs.UserAttrMap, cmn.AttrStr)
 		if err != nil {
 			return err
 		}

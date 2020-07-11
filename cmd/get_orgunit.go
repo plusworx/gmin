@@ -64,7 +64,7 @@ func doGetOrgUnit(cmd *cobra.Command, args []string) error {
 	ougc := ds.Orgunits.Get(customerID, args)
 
 	if attrs != "" {
-		validAttrs, err = cmn.ValidateAttrs(attrs, ous.OrgUnitAttrMap)
+		validAttrs, err = cmn.ValidateArgs(attrs, ous.OrgUnitAttrMap, cmn.AttrStr)
 		if err != nil {
 			return err
 		}
