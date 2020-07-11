@@ -65,6 +65,10 @@ func TestDoBatchDelMember(t *testing.T) {
 			expectedErr: "gmin: error - group email address or id must be provided",
 		},
 		{
+			expectedErr: "gmin: error - group email address or id must be provided",
+			infile:      "/home/me/infile",
+		},
+		{
 			expectedErr: "gmin: error - must provide inputfile",
 			group:       "test@mycompany.org",
 		},
