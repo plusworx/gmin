@@ -124,6 +124,15 @@ func AddListSortOrder(glc *admin.GroupsListCall, sortorder string) *admin.Groups
 	return newGLC
 }
 
+// AddListUserKey adds UserKey to admin.GroupsListCall
+func AddListUserKey(glc *admin.GroupsListCall, key string) *admin.GroupsListCall {
+	var newGLC *admin.GroupsListCall
+
+	newGLC = glc.UserKey(key)
+
+	return newGLC
+}
+
 // DoList calls the .Do() function on the admin.GroupsListCall
 func DoList(glc *admin.GroupsListCall) (*admin.Groups, error) {
 	groups, err := glc.Do()

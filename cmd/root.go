@@ -66,6 +66,7 @@ var (
 	unblockInherit   bool
 	unSuspended      bool
 	userEmail        string
+	userKey          string
 )
 
 var rootCmd = &cobra.Command{

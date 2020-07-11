@@ -210,3 +210,29 @@ func TestAddListSortOrder(t *testing.T) {
 		}
 	}
 }
+
+func TestAddListUserKey(t *testing.T) {
+	cases := []struct {
+		key string
+	}{
+		{
+			key: "a.user@company.org",
+		},
+	}
+
+	ds, err := tsts.DummyDirectoryService(admin.AdminDirectoryGroupReadonlyScope)
+	if err != nil {
+		t.Error("Error: failed to create dummy admin.Service")
+	}
+
+	glc := ds.Groups.List()
+
+	for _, c := range cases {
+
+		newGLC := AddListUserKey(glc, c.key)
+
+		if newGLC == nil {
+			t.Error("Error: failed to add UserKey to GroupsListCall")
+		}
+	}
+}
