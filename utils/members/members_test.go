@@ -106,3 +106,71 @@ func TestFormatAttrs(t *testing.T) {
 		}
 	}
 }
+
+func TestValidateDeliverySetting(t *testing.T) {
+	cases := []struct {
+		delSetting      string
+		expectedErr     string
+		expectedSetting string
+	}{
+		{
+			delSetting:      "All_Mail",
+			expectedErr:     "",
+			expectedSetting: "ALL_MAIL",
+		},
+		{
+			delSetting:      "Unknown",
+			expectedErr:     "gmin: error - Unknown is not a valid delivery setting",
+			expectedSetting: "",
+		},
+	}
+
+	for _, c := range cases {
+		output, err := ValidateDeliverySetting(c.delSetting)
+
+		if err != nil {
+			if err.Error() != c.expectedErr {
+				t.Errorf("Expected error: %v  Got: %v", c.expectedErr, err.Error())
+			}
+			continue
+		}
+
+		if output != c.expectedSetting {
+			t.Errorf("Expected output: %v  Got: %v", c.expectedSetting, output)
+		}
+	}
+}
+
+func TestValidateRole(t *testing.T) {
+	cases := []struct {
+		role         string
+		expectedErr  string
+		expectedRole string
+	}{
+		{
+			role:         "Owner",
+			expectedErr:  "",
+			expectedRole: "OWNER",
+		},
+		{
+			role:         "Unknown",
+			expectedErr:  "gmin: error - Unknown is not a valid role",
+			expectedRole: "",
+		},
+	}
+
+	for _, c := range cases {
+		output, err := ValidateRole(c.role)
+
+		if err != nil {
+			if err.Error() != c.expectedErr {
+				t.Errorf("Expected error: %v  Got: %v", c.expectedErr, err.Error())
+			}
+			continue
+		}
+
+		if output != c.expectedRole {
+			t.Errorf("Expected output: %v  Got: %v", c.expectedRole, output)
+		}
+	}
+}
