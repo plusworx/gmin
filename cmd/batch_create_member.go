@@ -46,11 +46,6 @@ var batchCrtMemberCmd = &cobra.Command{
 }
 
 func doBatchCrtMember(cmd *cobra.Command, args []string) error {
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupMemberScope)
-	if err != nil {
-		return err
-	}
-
 	if group == "" {
 		err := errors.New("gmin: error - group must be provided")
 		return err
@@ -76,7 +71,7 @@ func doBatchCrtMember(cmd *cobra.Command, args []string) error {
 
 		err = backoff.Retry(func() error {
 			var err error
-			err = createMember(ds, jsonData)
+			err = createMember(jsonData)
 			if err == nil {
 				return err
 			}
@@ -101,13 +96,18 @@ func doBatchCrtMember(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func createMember(ds *admin.Service, jsonData string) error {
+func createMember(jsonData string) error {
 	var member *admin.Member
 
 	member = new(admin.Member)
 	jsonBytes := []byte(jsonData)
 
 	err := json.Unmarshal(jsonBytes, &member)
+	if err != nil {
+		return err
+	}
+
+	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupMemberScope)
 	if err != nil {
 		return err
 	}
