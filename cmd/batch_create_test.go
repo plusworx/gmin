@@ -55,6 +55,42 @@ func TestDoBatchCrtGroup(t *testing.T) {
 	}
 }
 
+func TestDoBatchCrtMember(t *testing.T) {
+	cases := []struct {
+		expectedErr string
+		group       string
+		infile      string
+	}{
+		{
+			expectedErr: "gmin: error - group must be provided",
+		},
+		{
+			infile:      "/home/me/nonexistentfile",
+			expectedErr: "gmin: error - group must be provided",
+		},
+		{
+			group:       "testgroup@mycompany.org",
+			infile:      "/home/me/nonexistentfile",
+			expectedErr: "open /home/me/nonexistentfile: no such file or directory",
+		},
+	}
+
+	for _, c := range cases {
+		inputFile = ""
+
+		if c.infile != "" {
+			group = c.group
+			inputFile = c.infile
+		}
+
+		err := doBatchCrtMember(nil, nil)
+		if err.Error() != c.expectedErr {
+			t.Errorf("Expected error %v, got %v", c.expectedErr, err)
+
+		}
+	}
+}
+
 func TestDoBatchCrtOrgUnit(t *testing.T) {
 	cases := []struct {
 		expectedErr string
