@@ -117,13 +117,12 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 
 		if sortOrder != "" {
 			so := strings.ToLower(sortOrder)
-			ok := cmn.SliceContainsStr(cmn.ValidSortOrders, so)
-			if !ok {
-				err = fmt.Errorf("gmin: error - %v is not a valid sort order", sortOrder)
+			validSortOrder, err := cmn.IsValidAttr(so, cmn.ValidSortOrders)
+			if err != nil {
 				return err
 			}
 
-			ulc = usrs.AddListSortOrder(ulc, so)
+			ulc = usrs.AddListSortOrder(ulc, validSortOrder)
 		}
 	}
 

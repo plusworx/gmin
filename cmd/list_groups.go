@@ -103,13 +103,12 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 
 		if sortOrder != "" {
 			so := strings.ToLower(sortOrder)
-			ok := cmn.SliceContainsStr(cmn.ValidSortOrders, so)
-			if !ok {
-				err = fmt.Errorf("gmin: error - %v is not a valid sort order", sortOrder)
+			validSortOrder, err := cmn.IsValidAttr(so, cmn.ValidSortOrders)
+			if err != nil {
 				return err
 			}
 
-			glc = grps.AddListSortOrder(glc, so)
+			glc = grps.AddListSortOrder(glc, validSortOrder)
 		}
 	}
 

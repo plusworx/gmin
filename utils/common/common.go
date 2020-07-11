@@ -45,9 +45,11 @@ const (
 )
 
 // ValidSortOrders provides valid sort order strings
-var ValidSortOrders = []string{
-	"ascending",
-	"descending",
+var ValidSortOrders = map[string]string{
+	"asc":        "ascending",
+	"ascending":  "ascending",
+	"desc":       "descending",
+	"descending": "descending",
 }
 
 // CreateDirectoryService function creates and returns Admin Service object
