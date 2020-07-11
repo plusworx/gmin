@@ -63,22 +63,28 @@ func TestDoBatchDelMember(t *testing.T) {
 	}{
 		{
 			expectedErr: "gmin: error - group email address or id must be provided",
+			group:       "",
+			infile:      "",
 		},
 		{
 			expectedErr: "gmin: error - group email address or id must be provided",
+			group:       "",
 			infile:      "/home/me/infile",
 		},
 		{
 			expectedErr: "gmin: error - must provide inputfile",
 			group:       "test@mycompany.org",
+			infile:      "",
 		},
 		{
-			infile:      "/home/me/nonexistentfile",
 			expectedErr: "open /home/me/nonexistentfile: no such file or directory",
+			group:       "test@mycompany.org",
+			infile:      "/home/me/nonexistentfile",
 		},
 	}
 
 	for _, c := range cases {
+		group = ""
 		inputFile = ""
 
 		if c.group != "" {
