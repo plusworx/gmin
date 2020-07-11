@@ -56,8 +56,8 @@ var MemberAttrMap = map[string]string{
 	"type":             "type",
 }
 
-// roleMap provides lowercase mappings to valid admin.Member roles
-var roleMap = map[string]string{
+// RoleMap provides lowercase mappings to valid admin.Member roles
+var RoleMap = map[string]string{
 	"owner":   "OWNER",
 	"manager": "MANAGER",
 	"member":  "MEMBER",
@@ -82,6 +82,15 @@ func AddListMaxResults(mlc *admin.MembersListCall, maxResults int64) *admin.Memb
 	return newMLC
 }
 
+// AddListRoles adds Roles to admin.MembersListCall
+func AddListRoles(mlc *admin.MembersListCall, roles string) *admin.MembersListCall {
+	var newMLC *admin.MembersListCall
+
+	newMLC = mlc.Roles(roles)
+
+	return newMLC
+}
+
 // DoList calls the .Do() function on the admin.MembersListCall
 func DoList(mlc *admin.MembersListCall) (*admin.Members, error) {
 	members, err := mlc.Do()
@@ -92,7 +101,7 @@ func DoList(mlc *admin.MembersListCall) (*admin.Members, error) {
 	return members, nil
 }
 
-// FormatAttrs formats attributes for admin.MembersListCall.Fields and admin.MembersGetCall.Fields call
+// FormatAttrs formats attributes for admin.MembersListCall.Fields, admin.MembersListCall.Roles and admin.MembersGetCall.Fields calls
 func FormatAttrs(attrs []string, get bool) string {
 	var (
 		outputStr    string
@@ -150,7 +159,7 @@ func ValidateDeliverySetting(ds string) (string, error) {
 func ValidateRole(role string) (string, error) {
 	lowerRole := strings.ToLower(role)
 
-	validRole := roleMap[lowerRole]
+	validRole := RoleMap[lowerRole]
 	if validRole == "" {
 		return "", fmt.Errorf("gmin: error - %v is not a valid role", role)
 	}

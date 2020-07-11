@@ -46,6 +46,7 @@ func doListMembers(cmd *cobra.Command, args []string) error {
 		jsonData   []byte
 		members    *admin.Members
 		validAttrs []string
+		validRoles []string
 	)
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupMemberReadonlyScope)
@@ -63,6 +64,16 @@ func doListMembers(cmd *cobra.Command, args []string) error {
 
 		formattedAttrs := mems.FormatAttrs(validAttrs, false)
 		mlc = mems.AddListFields(mlc, formattedAttrs)
+	}
+
+	if role != "" {
+		validRoles, err = cmn.ValidateAttrs(role, mems.RoleMap)
+		if err != nil {
+			return err
+		}
+
+		formattedRoles := mems.FormatAttrs(validRoles, true)
+		mlc = mems.AddListRoles(mlc, formattedRoles)
 	}
 
 	mlc = mems.AddListMaxResults(mlc, maxResults)
@@ -87,4 +98,5 @@ func init() {
 
 	listMembersCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required member attributes (separated by ~)")
 	listMembersCmd.Flags().Int64VarP(&maxResults, "maxresults", "m", 200, "maximum number or results to return")
+	listMembersCmd.Flags().StringVarP(&role, "roles", "r", "", "roles to filter results by (separated by ~)")
 }
