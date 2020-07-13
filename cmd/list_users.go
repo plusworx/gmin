@@ -70,21 +70,21 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 		}
 
 		formattedAttrs = usrs.FormatAttrs(validAttrs, false)
-		ulc = usrs.AddListFields(ulc, formattedAttrs)
+		ulc = usrs.AddFields(ulc, formattedAttrs)
 	}
 
 	if deleted {
-		ulc = usrs.AddListShowDeleted(ulc)
+		ulc = usrs.AddShowDeleted(ulc)
 	}
 
 	if domain != "" {
-		ulc = usrs.AddListDomain(ulc, domain)
+		ulc = usrs.AddDomain(ulc, domain)
 	} else {
 		customerID, err := cfg.ReadConfigString("customerid")
 		if err != nil {
 			return err
 		}
-		ulc = usrs.AddListCustomer(ulc, customerID)
+		ulc = usrs.AddCustomer(ulc, customerID)
 	}
 
 	if projection != "" {
@@ -94,7 +94,7 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("gmin: error - %v is not a valid projection type", projection)
 		}
 
-		ulc = usrs.AddListProjection(ulc, proj)
+		ulc = usrs.AddProjection(ulc, proj)
 	}
 
 	if query != "" {
@@ -103,7 +103,7 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
-		ulc = usrs.AddListQuery(ulc, formattedQuery)
+		ulc = usrs.AddQuery(ulc, formattedQuery)
 	}
 
 	if orderBy != "" {
@@ -123,7 +123,7 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 			}
 		}
 
-		ulc = usrs.AddListOrderBy(ulc, validOrderBy)
+		ulc = usrs.AddOrderBy(ulc, validOrderBy)
 
 		if sortOrder != "" {
 			so := strings.ToLower(sortOrder)
@@ -132,7 +132,7 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 				return err
 			}
 
-			ulc = usrs.AddListSortOrder(ulc, validSortOrder)
+			ulc = usrs.AddSortOrder(ulc, validSortOrder)
 		}
 	}
 
@@ -143,10 +143,10 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("gmin: error - %v is not a valid view type", viewType)
 		}
 
-		ulc = usrs.AddListViewType(ulc, vt)
+		ulc = usrs.AddViewType(ulc, vt)
 	}
 
-	ulc = usrs.AddListMaxResults(ulc, maxResults)
+	ulc = usrs.AddMaxResults(ulc, maxResults)
 
 	users, err = usrs.DoList(ulc)
 	if err != nil {

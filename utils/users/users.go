@@ -559,8 +559,8 @@ var validWebsiteTypes = []string{
 	"work",
 }
 
-// AddListCustomer adds customer to admin.UserListCall
-func AddListCustomer(ulc *admin.UsersListCall, customerID string) *admin.UsersListCall {
+// AddCustomer adds Customer to admin calls
+func AddCustomer(ulc *admin.UsersListCall, customerID string) *admin.UsersListCall {
 	var newULC *admin.UsersListCall
 
 	newULC = ulc.Customer(customerID)
@@ -568,8 +568,8 @@ func AddListCustomer(ulc *admin.UsersListCall, customerID string) *admin.UsersLi
 	return newULC
 }
 
-// AddListDomain adds domain to admin.UserListCall
-func AddListDomain(ulc *admin.UsersListCall, domain string) *admin.UsersListCall {
+// AddDomain adds domain to admin calls
+func AddDomain(ulc *admin.UsersListCall, domain string) *admin.UsersListCall {
 	var newULC *admin.UsersListCall
 
 	newULC = ulc.Domain(domain)
@@ -577,8 +577,8 @@ func AddListDomain(ulc *admin.UsersListCall, domain string) *admin.UsersListCall
 	return newULC
 }
 
-// AddListFields adds fields to be returned to admin.UserListCall
-func AddListFields(ulc *admin.UsersListCall, attrs string) *admin.UsersListCall {
+// AddFields adds fields to be returned from admin calls
+func AddFields(ulc *admin.UsersListCall, attrs string) *admin.UsersListCall {
 	var fields googleapi.Field = googleapi.Field(attrs)
 	var newULC *admin.UsersListCall
 
@@ -587,8 +587,8 @@ func AddListFields(ulc *admin.UsersListCall, attrs string) *admin.UsersListCall 
 	return newULC
 }
 
-// AddListMaxResults adds MaxResults to admin.UserListCall
-func AddListMaxResults(ulc *admin.UsersListCall, maxResults int64) *admin.UsersListCall {
+// AddMaxResults adds MaxResults to admin calls
+func AddMaxResults(ulc *admin.UsersListCall, maxResults int64) *admin.UsersListCall {
 	var newULC *admin.UsersListCall
 
 	newULC = ulc.MaxResults(maxResults)
@@ -596,8 +596,8 @@ func AddListMaxResults(ulc *admin.UsersListCall, maxResults int64) *admin.UsersL
 	return newULC
 }
 
-// AddListOrderBy adds OrderBy to admin.UserListCall
-func AddListOrderBy(ulc *admin.UsersListCall, orderBy string) *admin.UsersListCall {
+// AddOrderBy adds OrderBy to admin calls
+func AddOrderBy(ulc *admin.UsersListCall, orderBy string) *admin.UsersListCall {
 	var newULC *admin.UsersListCall
 
 	newULC = ulc.OrderBy(orderBy)
@@ -605,8 +605,8 @@ func AddListOrderBy(ulc *admin.UsersListCall, orderBy string) *admin.UsersListCa
 	return newULC
 }
 
-// AddListProjection adds Projection to admin.UserListCall
-func AddListProjection(ulc *admin.UsersListCall, projection string) *admin.UsersListCall {
+// AddProjection adds Projection to admin calls
+func AddProjection(ulc *admin.UsersListCall, projection string) *admin.UsersListCall {
 	var newULC *admin.UsersListCall
 
 	newULC = ulc.Projection(projection)
@@ -614,8 +614,8 @@ func AddListProjection(ulc *admin.UsersListCall, projection string) *admin.Users
 	return newULC
 }
 
-// AddListQuery adds query to admin.UserListCall
-func AddListQuery(ulc *admin.UsersListCall, query string) *admin.UsersListCall {
+// AddQuery adds query to admin calls
+func AddQuery(ulc *admin.UsersListCall, query string) *admin.UsersListCall {
 	var newULC *admin.UsersListCall
 
 	newULC = ulc.Query(query)
@@ -623,8 +623,8 @@ func AddListQuery(ulc *admin.UsersListCall, query string) *admin.UsersListCall {
 	return newULC
 }
 
-// AddListShowDeleted adds ShowDeleted to admin.UserListCall
-func AddListShowDeleted(ulc *admin.UsersListCall) *admin.UsersListCall {
+// AddShowDeleted adds ShowDeleted to admin calls
+func AddShowDeleted(ulc *admin.UsersListCall) *admin.UsersListCall {
 	var newULC *admin.UsersListCall
 
 	newULC = ulc.ShowDeleted("true")
@@ -632,8 +632,8 @@ func AddListShowDeleted(ulc *admin.UsersListCall) *admin.UsersListCall {
 	return newULC
 }
 
-// AddListSortOrder adds SortOrder to admin.UserListCall
-func AddListSortOrder(ulc *admin.UsersListCall, sortorder string) *admin.UsersListCall {
+// AddSortOrder adds SortOrder to admin calls
+func AddSortOrder(ulc *admin.UsersListCall, sortorder string) *admin.UsersListCall {
 	var newULC *admin.UsersListCall
 
 	newULC = ulc.SortOrder(sortorder)
@@ -641,8 +641,8 @@ func AddListSortOrder(ulc *admin.UsersListCall, sortorder string) *admin.UsersLi
 	return newULC
 }
 
-// AddListViewType adds ViewType to admin.UserListCall
-func AddListViewType(ulc *admin.UsersListCall, viewType string) *admin.UsersListCall {
+// AddViewType adds ViewType to admin calls
+func AddViewType(ulc *admin.UsersListCall, viewType string) *admin.UsersListCall {
 	var newULC *admin.UsersListCall
 
 	newULC = ulc.ViewType(viewType)

@@ -29,7 +29,7 @@ import (
 	admin "google.golang.org/api/admin/directory/v1"
 )
 
-func TestAddListCustomer(t *testing.T) {
+func TestAddCustomer(t *testing.T) {
 	cases := []struct {
 		customerID string
 	}{
@@ -47,7 +47,7 @@ func TestAddListCustomer(t *testing.T) {
 
 	for _, c := range cases {
 
-		newULC := AddListCustomer(ulc, c.customerID)
+		newULC := AddCustomer(ulc, c.customerID)
 
 		if newULC == nil {
 			t.Error("Error: failed to add Customer to UsersListCall")
@@ -55,7 +55,7 @@ func TestAddListCustomer(t *testing.T) {
 	}
 }
 
-func TestAddListDomain(t *testing.T) {
+func TestAddDomain(t *testing.T) {
 	cases := []struct {
 		domain string
 	}{
@@ -73,7 +73,7 @@ func TestAddListDomain(t *testing.T) {
 
 	for _, c := range cases {
 
-		newULC := AddListDomain(ulc, c.domain)
+		newULC := AddDomain(ulc, c.domain)
 
 		if newULC == nil {
 			t.Error("Error: failed to add Domain to UsersListCall")
@@ -81,7 +81,7 @@ func TestAddListDomain(t *testing.T) {
 	}
 }
 
-func TestAddListFields(t *testing.T) {
+func TestAddFields(t *testing.T) {
 	cases := []struct {
 		fields string
 	}{
@@ -99,7 +99,7 @@ func TestAddListFields(t *testing.T) {
 
 	for _, c := range cases {
 
-		newULC := AddListFields(ulc, c.fields)
+		newULC := AddFields(ulc, c.fields)
 
 		if newULC == nil {
 			t.Error("Error: failed to add Fields to UsersListCall")
@@ -107,7 +107,7 @@ func TestAddListFields(t *testing.T) {
 	}
 }
 
-func TestAddListMaxResults(t *testing.T) {
+func TestAddMaxResults(t *testing.T) {
 	cases := []struct {
 		maxResults int64
 	}{
@@ -125,7 +125,7 @@ func TestAddListMaxResults(t *testing.T) {
 
 	for _, c := range cases {
 
-		newULC := AddListMaxResults(ulc, c.maxResults)
+		newULC := AddMaxResults(ulc, c.maxResults)
 
 		if newULC == nil {
 			t.Error("Error: failed to add MaxResults to UsersListCall")
@@ -133,7 +133,7 @@ func TestAddListMaxResults(t *testing.T) {
 	}
 }
 
-func TestAddListOrderBy(t *testing.T) {
+func TestAddOrderBy(t *testing.T) {
 	cases := []struct {
 		orderBy string
 	}{
@@ -151,7 +151,7 @@ func TestAddListOrderBy(t *testing.T) {
 
 	for _, c := range cases {
 
-		newULC := AddListOrderBy(ulc, c.orderBy)
+		newULC := AddOrderBy(ulc, c.orderBy)
 
 		if newULC == nil {
 			t.Error("Error: failed to add Fields to UsersListCall")
@@ -159,7 +159,7 @@ func TestAddListOrderBy(t *testing.T) {
 	}
 }
 
-func TestAddListProjection(t *testing.T) {
+func TestAddProjection(t *testing.T) {
 	cases := []struct {
 		projection string
 	}{
@@ -177,7 +177,7 @@ func TestAddListProjection(t *testing.T) {
 
 	for _, c := range cases {
 
-		newULC := AddListProjection(ulc, c.projection)
+		newULC := AddProjection(ulc, c.projection)
 
 		if newULC == nil {
 			t.Error("Error: failed to add Projection to UsersListCall")
@@ -185,7 +185,7 @@ func TestAddListProjection(t *testing.T) {
 	}
 }
 
-func TestAddListQuery(t *testing.T) {
+func TestAddQuery(t *testing.T) {
 	cases := []struct {
 		query string
 	}{
@@ -203,7 +203,7 @@ func TestAddListQuery(t *testing.T) {
 
 	for _, c := range cases {
 
-		newULC := AddListQuery(ulc, c.query)
+		newULC := AddQuery(ulc, c.query)
 
 		if newULC == nil {
 			t.Error("Error: failed to add Fields to UsersListCall")
@@ -211,7 +211,7 @@ func TestAddListQuery(t *testing.T) {
 	}
 }
 
-func TestAddListShowDeleted(t *testing.T) {
+func TestAddShowDeleted(t *testing.T) {
 	ds, err := tsts.DummyDirectoryService(admin.AdminDirectoryUserReadonlyScope)
 	if err != nil {
 		t.Error("Error: failed to create dummy admin.Service")
@@ -219,14 +219,14 @@ func TestAddListShowDeleted(t *testing.T) {
 
 	ulc := ds.Users.List()
 
-	newULC := AddListShowDeleted(ulc)
+	newULC := AddShowDeleted(ulc)
 
 	if newULC == nil {
 		t.Error("Error: failed to add ShowDeleted to UsersListCall")
 	}
 }
 
-func TestAddListSortOrder(t *testing.T) {
+func TestAddSortOrder(t *testing.T) {
 	cases := []struct {
 		sortOrder string
 	}{
@@ -244,7 +244,7 @@ func TestAddListSortOrder(t *testing.T) {
 
 	for _, c := range cases {
 
-		newULC := AddListSortOrder(ulc, c.sortOrder)
+		newULC := AddSortOrder(ulc, c.sortOrder)
 
 		if newULC == nil {
 			t.Error("Error: failed to add SortOrder to UsersListCall")
@@ -252,7 +252,7 @@ func TestAddListSortOrder(t *testing.T) {
 	}
 }
 
-func TestAddListViewType(t *testing.T) {
+func TestAddViewType(t *testing.T) {
 	cases := []struct {
 		viewType string
 	}{
@@ -270,7 +270,7 @@ func TestAddListViewType(t *testing.T) {
 
 	for _, c := range cases {
 
-		newULC := AddListViewType(ulc, c.viewType)
+		newULC := AddViewType(ulc, c.viewType)
 
 		if newULC == nil {
 			t.Error("Error: failed to add ViewType to UsersListCall")
