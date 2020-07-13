@@ -68,6 +68,7 @@ var (
 	unSuspended      bool
 	userEmail        string
 	userKey          string
+	viewType         string
 )
 
 var rootCmd = &cobra.Command{

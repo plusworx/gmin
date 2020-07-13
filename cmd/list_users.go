@@ -136,6 +136,16 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 		}
 	}
 
+	if viewType != "" {
+		vt := strings.ToLower(viewType)
+		ok := cmn.SliceContainsStr(usrs.ValidViewTypes, vt)
+		if !ok {
+			return fmt.Errorf("gmin: error - %v is not a valid view type", viewType)
+		}
+
+		ulc = usrs.AddListViewType(ulc, vt)
+	}
+
 	ulc = usrs.AddListMaxResults(ulc, maxResults)
 
 	users, err = usrs.DoList(ulc)
@@ -163,6 +173,7 @@ func init() {
 	listUsersCmd.Flags().StringVarP(&projection, "projection", "p", "", "type of projection")
 	listUsersCmd.Flags().StringVarP(&query, "query", "q", "", "selection criteria to get users (separated by ~)")
 	listUsersCmd.Flags().StringVarP(&sortOrder, "sortorder", "s", "", "sort order of returned results")
+	listUsersCmd.Flags().StringVarP(&viewType, "viewtype", "v", "", "data view type")
 	listUsersCmd.Flags().BoolVarP(&deleted, "deleted", "x", false, "show deleted users")
 
 }

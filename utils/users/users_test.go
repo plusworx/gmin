@@ -252,6 +252,32 @@ func TestAddListSortOrder(t *testing.T) {
 	}
 }
 
+func TestAddListViewType(t *testing.T) {
+	cases := []struct {
+		viewType string
+	}{
+		{
+			viewType: "domain_public",
+		},
+	}
+
+	ds, err := tsts.DummyDirectoryService(admin.AdminDirectoryUserReadonlyScope)
+	if err != nil {
+		t.Error("Error: failed to create dummy admin.Service")
+	}
+
+	ulc := ds.Users.List()
+
+	for _, c := range cases {
+
+		newULC := AddListViewType(ulc, c.viewType)
+
+		if newULC == nil {
+			t.Error("Error: failed to add ViewType to UsersListCall")
+		}
+	}
+}
+
 func TestDoComposite(t *testing.T) {
 	cases := []struct {
 		attrStack     []string

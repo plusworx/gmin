@@ -539,6 +539,12 @@ var validRelationTypes = []string{
 	"spouse",
 }
 
+// ValidViewTypes provide valid strings to be used to set admin.UsersListCall ViewType
+var ValidViewTypes = []string{
+	"admin_view",
+	"domain_public",
+}
+
 var validWebsiteTypes = []string{
 	"app_install_page",
 	"blog",
@@ -631,6 +637,15 @@ func AddListSortOrder(ulc *admin.UsersListCall, sortorder string) *admin.UsersLi
 	var newULC *admin.UsersListCall
 
 	newULC = ulc.SortOrder(sortorder)
+
+	return newULC
+}
+
+// AddListViewType adds ViewType to admin.UserListCall
+func AddListViewType(ulc *admin.UsersListCall, viewType string) *admin.UsersListCall {
+	var newULC *admin.UsersListCall
+
+	newULC = ulc.ViewType(viewType)
 
 	return newULC
 }
