@@ -29,7 +29,7 @@ import (
 	admin "google.golang.org/api/admin/directory/v1"
 )
 
-func TestAddListFields(t *testing.T) {
+func TestAddFields(t *testing.T) {
 	cases := []struct {
 		fields string
 	}{
@@ -47,7 +47,7 @@ func TestAddListFields(t *testing.T) {
 
 	for _, c := range cases {
 
-		newOULC := AddListFields(oulc, c.fields)
+		newOULC := AddFields(oulc, c.fields)
 
 		if newOULC == nil {
 			t.Error("Error: failed to add Fields to OrgunitsListCall")
@@ -55,7 +55,7 @@ func TestAddListFields(t *testing.T) {
 	}
 }
 
-func TestAddListOUPath(t *testing.T) {
+func TestAddOUPath(t *testing.T) {
 	cases := []struct {
 		orgUnitPath string
 	}{
@@ -73,7 +73,7 @@ func TestAddListOUPath(t *testing.T) {
 
 	for _, c := range cases {
 
-		newOULC := AddListOUPath(oulc, c.orgUnitPath)
+		newOULC := AddOUPath(oulc, c.orgUnitPath)
 
 		if newOULC == nil {
 			t.Error("Error: failed to add OrgUnitPath to OrgunitsListCall")
@@ -81,7 +81,7 @@ func TestAddListOUPath(t *testing.T) {
 	}
 }
 
-func TestAddListType(t *testing.T) {
+func TestAddType(t *testing.T) {
 	cases := []struct {
 		searchType string
 	}{
@@ -99,7 +99,7 @@ func TestAddListType(t *testing.T) {
 
 	for _, c := range cases {
 
-		newOULC := AddListType(oulc, c.searchType)
+		newOULC := AddType(oulc, c.searchType)
 
 		if newOULC == nil {
 			t.Error("Error: failed to add Type to OrgunitsListCall")

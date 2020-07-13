@@ -67,11 +67,11 @@ func doListOUs(cmd *cobra.Command, args []string) error {
 		}
 
 		formattedAttrs := ous.FormatAttrs(validAttrs)
-		oulc = ous.AddListFields(oulc, formattedAttrs)
+		oulc = ous.AddFields(oulc, formattedAttrs)
 	}
 
 	if orgUnit != "" {
-		oulc = ous.AddListOUPath(oulc, orgUnit)
+		oulc = ous.AddOUPath(oulc, orgUnit)
 	}
 
 	searchType = strings.ToLower(searchType)
@@ -81,7 +81,7 @@ func doListOUs(cmd *cobra.Command, args []string) error {
 		err := fmt.Errorf("gmin: error - %v is not a valid OrgunitsListCall type", searchType)
 		return err
 	}
-	oulc = ous.AddListType(oulc, searchType)
+	oulc = ous.AddType(oulc, searchType)
 
 	orgUnits, err = ous.DoList(oulc)
 	if err != nil {

@@ -53,8 +53,8 @@ var ValidSearchTypes = []string{
 	"children",
 }
 
-// AddListFields adds fields to be returned to admin.OrgunitsListCall
-func AddListFields(oulc *admin.OrgunitsListCall, attrs string) *admin.OrgunitsListCall {
+// AddFields adds fields to be returned to admin calls
+func AddFields(oulc *admin.OrgunitsListCall, attrs string) *admin.OrgunitsListCall {
 	var fields googleapi.Field = googleapi.Field(attrs)
 	var newOULC *admin.OrgunitsListCall
 
@@ -63,8 +63,8 @@ func AddListFields(oulc *admin.OrgunitsListCall, attrs string) *admin.OrgunitsLi
 	return newOULC
 }
 
-// AddListOUPath adds OrgUnitPath or ID to admin.OrgunitsListCall
-func AddListOUPath(oulc *admin.OrgunitsListCall, path string) *admin.OrgunitsListCall {
+// AddOUPath adds OrgUnitPath or ID to admin calls
+func AddOUPath(oulc *admin.OrgunitsListCall, path string) *admin.OrgunitsListCall {
 	var newOULC *admin.OrgunitsListCall
 
 	newOULC = oulc.OrgUnitPath(path)
@@ -72,8 +72,8 @@ func AddListOUPath(oulc *admin.OrgunitsListCall, path string) *admin.OrgunitsLis
 	return newOULC
 }
 
-// AddListType adds Type to admin.OrgunitsListCall
-func AddListType(oulc *admin.OrgunitsListCall, searchType string) *admin.OrgunitsListCall {
+// AddType adds Type to admin calls
+func AddType(oulc *admin.OrgunitsListCall, searchType string) *admin.OrgunitsListCall {
 	var newOULC *admin.OrgunitsListCall
 
 	newOULC = oulc.Type(searchType)
