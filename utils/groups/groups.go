@@ -60,8 +60,8 @@ var ValidOrderByStrs = []string{
 	"email",
 }
 
-// AddListCustomer adds customer to admin.GroupsListCall
-func AddListCustomer(glc *admin.GroupsListCall, customerID string) *admin.GroupsListCall {
+// AddCustomer adds Customer to admin calls
+func AddCustomer(glc *admin.GroupsListCall, customerID string) *admin.GroupsListCall {
 	var newGLC *admin.GroupsListCall
 
 	newGLC = glc.Customer(customerID)
@@ -69,8 +69,8 @@ func AddListCustomer(glc *admin.GroupsListCall, customerID string) *admin.Groups
 	return newGLC
 }
 
-// AddListDomain adds domain to admin.GroupsListCall
-func AddListDomain(glc *admin.GroupsListCall, domain string) *admin.GroupsListCall {
+// AddDomain adds domain to admin calls
+func AddDomain(glc *admin.GroupsListCall, domain string) *admin.GroupsListCall {
 	var newGLC *admin.GroupsListCall
 
 	newGLC = glc.Domain(domain)
@@ -78,8 +78,8 @@ func AddListDomain(glc *admin.GroupsListCall, domain string) *admin.GroupsListCa
 	return newGLC
 }
 
-// AddListFields adds fields to be returned to admin.GroupsListCall
-func AddListFields(glc *admin.GroupsListCall, attrs string) *admin.GroupsListCall {
+// AddFields adds fields to be returned from admin calls
+func AddFields(glc *admin.GroupsListCall, attrs string) *admin.GroupsListCall {
 	var fields googleapi.Field = googleapi.Field(attrs)
 	var newGLC *admin.GroupsListCall
 
@@ -88,8 +88,8 @@ func AddListFields(glc *admin.GroupsListCall, attrs string) *admin.GroupsListCal
 	return newGLC
 }
 
-// AddListMaxResults adds MaxResults to admin.GroupsListCall
-func AddListMaxResults(glc *admin.GroupsListCall, maxResults int64) *admin.GroupsListCall {
+// AddMaxResults adds MaxResults to admin calls
+func AddMaxResults(glc *admin.GroupsListCall, maxResults int64) *admin.GroupsListCall {
 	var newGLC *admin.GroupsListCall
 
 	newGLC = glc.MaxResults(maxResults)
@@ -97,8 +97,8 @@ func AddListMaxResults(glc *admin.GroupsListCall, maxResults int64) *admin.Group
 	return newGLC
 }
 
-// AddListOrderBy adds OrderBy to admin.GroupsListCall
-func AddListOrderBy(glc *admin.GroupsListCall, orderBy string) *admin.GroupsListCall {
+// AddOrderBy adds OrderBy to admin calls
+func AddOrderBy(glc *admin.GroupsListCall, orderBy string) *admin.GroupsListCall {
 	var newGLC *admin.GroupsListCall
 
 	newGLC = glc.OrderBy(orderBy)
@@ -106,8 +106,8 @@ func AddListOrderBy(glc *admin.GroupsListCall, orderBy string) *admin.GroupsList
 	return newGLC
 }
 
-// AddListQuery adds query to admin.GroupsListCall
-func AddListQuery(glc *admin.GroupsListCall, query string) *admin.GroupsListCall {
+// AddQuery adds query to admin calls
+func AddQuery(glc *admin.GroupsListCall, query string) *admin.GroupsListCall {
 	var newGLC *admin.GroupsListCall
 
 	newGLC = glc.Query(query)
@@ -115,8 +115,8 @@ func AddListQuery(glc *admin.GroupsListCall, query string) *admin.GroupsListCall
 	return newGLC
 }
 
-// AddListSortOrder adds SortOrder to admin.GroupsListCall
-func AddListSortOrder(glc *admin.GroupsListCall, sortorder string) *admin.GroupsListCall {
+// AddSortOrder adds SortOrder to admin calls
+func AddSortOrder(glc *admin.GroupsListCall, sortorder string) *admin.GroupsListCall {
 	var newGLC *admin.GroupsListCall
 
 	newGLC = glc.SortOrder(sortorder)
@@ -124,8 +124,8 @@ func AddListSortOrder(glc *admin.GroupsListCall, sortorder string) *admin.Groups
 	return newGLC
 }
 
-// AddListUserKey adds UserKey to admin.GroupsListCall
-func AddListUserKey(glc *admin.GroupsListCall, key string) *admin.GroupsListCall {
+// AddUserKey adds UserKey to admin calls
+func AddUserKey(glc *admin.GroupsListCall, key string) *admin.GroupsListCall {
 	var newGLC *admin.GroupsListCall
 
 	newGLC = glc.UserKey(key)

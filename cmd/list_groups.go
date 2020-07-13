@@ -64,17 +64,17 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 		}
 
 		formattedAttrs = grps.FormatAttrs(validAttrs, false)
-		glc = grps.AddListFields(glc, formattedAttrs)
+		glc = grps.AddFields(glc, formattedAttrs)
 	}
 
 	if domain != "" {
-		glc = grps.AddListDomain(glc, domain)
+		glc = grps.AddDomain(glc, domain)
 	} else {
 		customerID, err := cfg.ReadConfigString("customerid")
 		if err != nil {
 			return err
 		}
-		glc = grps.AddListCustomer(glc, customerID)
+		glc = grps.AddCustomer(glc, customerID)
 	}
 
 	if query != "" {
@@ -83,7 +83,7 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
-		glc = grps.AddListQuery(glc, formattedQuery)
+		glc = grps.AddQuery(glc, formattedQuery)
 	}
 
 	if orderBy != "" {
@@ -99,7 +99,7 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
-		glc = grps.AddListOrderBy(glc, validOrderBy)
+		glc = grps.AddOrderBy(glc, validOrderBy)
 
 		if sortOrder != "" {
 			so := strings.ToLower(sortOrder)
@@ -108,15 +108,15 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 				return err
 			}
 
-			glc = grps.AddListSortOrder(glc, validSortOrder)
+			glc = grps.AddSortOrder(glc, validSortOrder)
 		}
 	}
 
 	if userKey != "" {
-		glc = grps.AddListUserKey(glc, userKey)
+		glc = grps.AddUserKey(glc, userKey)
 	}
 
-	glc = grps.AddListMaxResults(glc, maxResults)
+	glc = grps.AddMaxResults(glc, maxResults)
 
 	groups, err = grps.DoList(glc)
 	if err != nil {

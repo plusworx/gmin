@@ -29,7 +29,7 @@ import (
 	admin "google.golang.org/api/admin/directory/v1"
 )
 
-func TestAddListCustomer(t *testing.T) {
+func TestAddCustomer(t *testing.T) {
 	cases := []struct {
 		customerID string
 	}{
@@ -47,7 +47,7 @@ func TestAddListCustomer(t *testing.T) {
 
 	for _, c := range cases {
 
-		newGLC := AddListCustomer(glc, c.customerID)
+		newGLC := AddCustomer(glc, c.customerID)
 
 		if newGLC == nil {
 			t.Error("Error: failed to add Customer to GroupsListCall")
@@ -55,7 +55,7 @@ func TestAddListCustomer(t *testing.T) {
 	}
 }
 
-func TestAddListDomain(t *testing.T) {
+func TestAddDomain(t *testing.T) {
 	cases := []struct {
 		domain string
 	}{
@@ -73,7 +73,7 @@ func TestAddListDomain(t *testing.T) {
 
 	for _, c := range cases {
 
-		newGLC := AddListDomain(glc, c.domain)
+		newGLC := AddDomain(glc, c.domain)
 
 		if newGLC == nil {
 			t.Error("Error: failed to add Domain to GroupsListCall")
@@ -81,7 +81,7 @@ func TestAddListDomain(t *testing.T) {
 	}
 }
 
-func TestAddListFields(t *testing.T) {
+func TestAddFields(t *testing.T) {
 	cases := []struct {
 		fields string
 	}{
@@ -99,7 +99,7 @@ func TestAddListFields(t *testing.T) {
 
 	for _, c := range cases {
 
-		newGLC := AddListFields(glc, c.fields)
+		newGLC := AddFields(glc, c.fields)
 
 		if newGLC == nil {
 			t.Error("Error: failed to add Fields to GroupsListCall")
@@ -107,7 +107,7 @@ func TestAddListFields(t *testing.T) {
 	}
 }
 
-func TestAddListMaxResults(t *testing.T) {
+func TestAddMaxResults(t *testing.T) {
 	cases := []struct {
 		maxResults int64
 	}{
@@ -125,7 +125,7 @@ func TestAddListMaxResults(t *testing.T) {
 
 	for _, c := range cases {
 
-		newGLC := AddListMaxResults(glc, c.maxResults)
+		newGLC := AddMaxResults(glc, c.maxResults)
 
 		if newGLC == nil {
 			t.Error("Error: failed to add MaxResults to GroupsListCall")
@@ -133,7 +133,7 @@ func TestAddListMaxResults(t *testing.T) {
 	}
 }
 
-func TestAddListOrderBy(t *testing.T) {
+func TestAddOrderBy(t *testing.T) {
 	cases := []struct {
 		orderBy string
 	}{
@@ -151,7 +151,7 @@ func TestAddListOrderBy(t *testing.T) {
 
 	for _, c := range cases {
 
-		newGLC := AddListOrderBy(glc, c.orderBy)
+		newGLC := AddOrderBy(glc, c.orderBy)
 
 		if newGLC == nil {
 			t.Error("Error: failed to add OrderBy to GroupsListCall")
@@ -159,7 +159,7 @@ func TestAddListOrderBy(t *testing.T) {
 	}
 }
 
-func TestAddListQuery(t *testing.T) {
+func TestAddQuery(t *testing.T) {
 	cases := []struct {
 		query string
 	}{
@@ -177,7 +177,7 @@ func TestAddListQuery(t *testing.T) {
 
 	for _, c := range cases {
 
-		newGLC := AddListQuery(glc, c.query)
+		newGLC := AddQuery(glc, c.query)
 
 		if newGLC == nil {
 			t.Error("Error: failed to add Query to GroupsListCall")
@@ -185,7 +185,7 @@ func TestAddListQuery(t *testing.T) {
 	}
 }
 
-func TestAddListSortOrder(t *testing.T) {
+func TestAddSortOrder(t *testing.T) {
 	cases := []struct {
 		sortOrder string
 	}{
@@ -203,7 +203,7 @@ func TestAddListSortOrder(t *testing.T) {
 
 	for _, c := range cases {
 
-		newGLC := AddListSortOrder(glc, c.sortOrder)
+		newGLC := AddSortOrder(glc, c.sortOrder)
 
 		if newGLC == nil {
 			t.Error("Error: failed to add SortOrder to GroupsListCall")
@@ -211,7 +211,7 @@ func TestAddListSortOrder(t *testing.T) {
 	}
 }
 
-func TestAddListUserKey(t *testing.T) {
+func TestAddUserKey(t *testing.T) {
 	cases := []struct {
 		key string
 	}{
@@ -229,7 +229,7 @@ func TestAddListUserKey(t *testing.T) {
 
 	for _, c := range cases {
 
-		newGLC := AddListUserKey(glc, c.key)
+		newGLC := AddUserKey(glc, c.key)
 
 		if newGLC == nil {
 			t.Error("Error: failed to add UserKey to GroupsListCall")
