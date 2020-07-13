@@ -87,6 +87,16 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 		ulc = usrs.AddListCustomer(ulc, customerID)
 	}
 
+	if projection != "" {
+		proj := strings.ToLower(projection)
+		ok := cmn.SliceContainsStr(usrs.ValidProjections, proj)
+		if !ok {
+			return fmt.Errorf("gmin: error - %v is not a valid projection type", projection)
+		}
+
+		ulc = usrs.AddListProjection(ulc, proj)
+	}
+
 	if query != "" {
 		formattedQuery, err := usrProcessQuery(query)
 		if err != nil {
@@ -150,6 +160,7 @@ func init() {
 	listUsersCmd.Flags().StringVarP(&domain, "domain", "d", "", "domain from which to get users")
 	listUsersCmd.Flags().Int64VarP(&maxResults, "maxresults", "m", 500, "maximum number of results to return")
 	listUsersCmd.Flags().StringVarP(&orderBy, "orderby", "o", "", "field by which results will be ordered")
+	listUsersCmd.Flags().StringVarP(&projection, "projection", "p", "", "type of projection")
 	listUsersCmd.Flags().StringVarP(&query, "query", "q", "", "selection criteria to get users (separated by ~)")
 	listUsersCmd.Flags().StringVarP(&sortOrder, "sortorder", "s", "", "sort order of returned results")
 	listUsersCmd.Flags().BoolVarP(&deleted, "deleted", "x", false, "show deleted users")

@@ -511,6 +511,13 @@ var validPhoneTypes = []string{
 	"work_pager",
 }
 
+// ValidProjections provide valid strings to be used to set admin.UsersListCall Projection
+var ValidProjections = []string{
+	"basic",
+	"custom",
+	"full",
+}
+
 var validRelationTypes = []string{
 	"admin_assistant",
 	"assistant",
@@ -588,6 +595,15 @@ func AddListOrderBy(ulc *admin.UsersListCall, orderBy string) *admin.UsersListCa
 	var newULC *admin.UsersListCall
 
 	newULC = ulc.OrderBy(orderBy)
+
+	return newULC
+}
+
+// AddListProjection adds Projection to admin.UserListCall
+func AddListProjection(ulc *admin.UsersListCall, projection string) *admin.UsersListCall {
+	var newULC *admin.UsersListCall
+
+	newULC = ulc.Projection(projection)
 
 	return newULC
 }

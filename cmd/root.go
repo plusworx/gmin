@@ -56,6 +56,7 @@ var (
 	orgUnitName      string
 	parentOUPath     string
 	password         string
+	projection       string
 	query            string
 	recoveryEmail    string
 	recoveryPhone    string

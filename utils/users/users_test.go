@@ -159,6 +159,32 @@ func TestAddListOrderBy(t *testing.T) {
 	}
 }
 
+func TestAddListProjection(t *testing.T) {
+	cases := []struct {
+		projection string
+	}{
+		{
+			projection: "basic",
+		},
+	}
+
+	ds, err := tsts.DummyDirectoryService(admin.AdminDirectoryUserReadonlyScope)
+	if err != nil {
+		t.Error("Error: failed to create dummy admin.Service")
+	}
+
+	ulc := ds.Users.List()
+
+	for _, c := range cases {
+
+		newULC := AddListProjection(ulc, c.projection)
+
+		if newULC == nil {
+			t.Error("Error: failed to add Projection to UsersListCall")
+		}
+	}
+}
+
 func TestAddListQuery(t *testing.T) {
 	cases := []struct {
 		query string
