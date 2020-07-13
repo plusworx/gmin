@@ -47,6 +47,11 @@ var batchCrtOrgUnitCmd = &cobra.Command{
 }
 
 func doBatchCrtOrgUnit(cmd *cobra.Command, args []string) error {
+	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryOrgunitScope)
+	if err != nil {
+		return err
+	}
+
 	if inputFile == "" {
 		err := errors.New("gmin: error - must provide inputfile")
 		return err
@@ -67,7 +72,7 @@ func doBatchCrtOrgUnit(cmd *cobra.Command, args []string) error {
 
 		err = backoff.Retry(func() error {
 			var err error
-			err = createOrgUnit(jsonData)
+			err = createOrgUnit(ds, jsonData)
 			if err == nil {
 				return err
 			}
@@ -92,18 +97,13 @@ func doBatchCrtOrgUnit(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func createOrgUnit(jsonData string) error {
+func createOrgUnit(ds *admin.Service, jsonData string) error {
 	var orgunit *admin.OrgUnit
 
 	orgunit = new(admin.OrgUnit)
 	jsonBytes := []byte(jsonData)
 
 	err := json.Unmarshal(jsonBytes, &orgunit)
-	if err != nil {
-		return err
-	}
-
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryOrgunitScope)
 	if err != nil {
 		return err
 	}
