@@ -46,6 +46,11 @@ var batchCrtGroupCmd = &cobra.Command{
 }
 
 func doBatchCrtGroup(cmd *cobra.Command, args []string) error {
+	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupScope)
+	if err != nil {
+		return err
+	}
+
 	if inputFile == "" {
 		err := errors.New("gmin: error - must provide inputfile")
 		return err
@@ -66,7 +71,7 @@ func doBatchCrtGroup(cmd *cobra.Command, args []string) error {
 
 		err = backoff.Retry(func() error {
 			var err error
-			err = createGroup(jsonData)
+			err = createGroup(ds, jsonData)
 			if err == nil {
 				return err
 			}
@@ -91,18 +96,13 @@ func doBatchCrtGroup(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func createGroup(jsonData string) error {
+func createGroup(ds *admin.Service, jsonData string) error {
 	var group *admin.Group
 
 	group = new(admin.Group)
 	jsonBytes := []byte(jsonData)
 
 	err := json.Unmarshal(jsonBytes, &group)
-	if err != nil {
-		return err
-	}
-
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupScope)
 	if err != nil {
 		return err
 	}
