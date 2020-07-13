@@ -63,8 +63,8 @@ var RoleMap = map[string]string{
 	"member":  "MEMBER",
 }
 
-// AddListFields adds fields to be returned to admin.MembersListCall
-func AddListFields(mlc *admin.MembersListCall, attrs string) *admin.MembersListCall {
+// AddFields adds fields to be returned to admin calls
+func AddFields(mlc *admin.MembersListCall, attrs string) *admin.MembersListCall {
 	var fields googleapi.Field = googleapi.Field(attrs)
 	var newMLC *admin.MembersListCall
 
@@ -73,8 +73,8 @@ func AddListFields(mlc *admin.MembersListCall, attrs string) *admin.MembersListC
 	return newMLC
 }
 
-// AddListMaxResults adds MaxResults to admin.MembersListCall
-func AddListMaxResults(mlc *admin.MembersListCall, maxResults int64) *admin.MembersListCall {
+// AddMaxResults adds MaxResults to admin calls
+func AddMaxResults(mlc *admin.MembersListCall, maxResults int64) *admin.MembersListCall {
 	var newMLC *admin.MembersListCall
 
 	newMLC = mlc.MaxResults(maxResults)
@@ -82,8 +82,8 @@ func AddListMaxResults(mlc *admin.MembersListCall, maxResults int64) *admin.Memb
 	return newMLC
 }
 
-// AddListRoles adds Roles to admin.MembersListCall
-func AddListRoles(mlc *admin.MembersListCall, roles string) *admin.MembersListCall {
+// AddRoles adds Roles to admin calls
+func AddRoles(mlc *admin.MembersListCall, roles string) *admin.MembersListCall {
 	var newMLC *admin.MembersListCall
 
 	newMLC = mlc.Roles(roles)

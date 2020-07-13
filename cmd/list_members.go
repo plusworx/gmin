@@ -63,7 +63,7 @@ func doListMembers(cmd *cobra.Command, args []string) error {
 		}
 
 		formattedAttrs := mems.FormatAttrs(validAttrs, false)
-		mlc = mems.AddListFields(mlc, formattedAttrs)
+		mlc = mems.AddFields(mlc, formattedAttrs)
 	}
 
 	if role != "" {
@@ -73,10 +73,10 @@ func doListMembers(cmd *cobra.Command, args []string) error {
 		}
 
 		formattedRoles := mems.FormatAttrs(validRoles, true)
-		mlc = mems.AddListRoles(mlc, formattedRoles)
+		mlc = mems.AddRoles(mlc, formattedRoles)
 	}
 
-	mlc = mems.AddListMaxResults(mlc, maxResults)
+	mlc = mems.AddMaxResults(mlc, maxResults)
 
 	members, err = mems.DoList(mlc)
 	if err != nil {

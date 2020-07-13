@@ -29,7 +29,7 @@ import (
 	admin "google.golang.org/api/admin/directory/v1"
 )
 
-func TestAddListFields(t *testing.T) {
+func TestAddFields(t *testing.T) {
 	cases := []struct {
 		fields string
 	}{
@@ -47,7 +47,7 @@ func TestAddListFields(t *testing.T) {
 
 	for _, c := range cases {
 
-		newMLC := AddListFields(mlc, c.fields)
+		newMLC := AddFields(mlc, c.fields)
 
 		if newMLC == nil {
 			t.Error("Error: failed to add Fields to MembersListCall")
@@ -55,7 +55,7 @@ func TestAddListFields(t *testing.T) {
 	}
 }
 
-func TestAddListMaxResults(t *testing.T) {
+func TestAddMaxResults(t *testing.T) {
 	cases := []struct {
 		maxResults int64
 	}{
@@ -73,7 +73,7 @@ func TestAddListMaxResults(t *testing.T) {
 
 	for _, c := range cases {
 
-		newMLC := AddListMaxResults(mlc, c.maxResults)
+		newMLC := AddMaxResults(mlc, c.maxResults)
 
 		if newMLC == nil {
 			t.Error("Error: failed to add MaxResults to MembersListCall")
