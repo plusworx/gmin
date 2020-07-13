@@ -38,16 +38,17 @@ import (
 )
 
 var batchCrtMemberCmd = &cobra.Command{
-	Use:     "group-members -g <group email address or id> -i <input file path>",
+	Use:     "group-members <group email address or id> -i <input file path>",
 	Aliases: []string{"group-member", "grp-members", "grp-member", "gmembers", "gmember", "gmems", "gmem"},
+	Args:    cobra.ExactArgs(1),
 	Short:   "Creates a batch of group members",
 	Long:    `Creates a batch of group members.`,
 	RunE:    doBatchCrtMember,
 }
 
 func doBatchCrtMember(cmd *cobra.Command, args []string) error {
-	if group == "" {
-		err := errors.New("gmin: error - group must be provided")
+	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupMemberScope)
+	if err != nil {
 		return err
 	}
 
@@ -71,14 +72,15 @@ func doBatchCrtMember(cmd *cobra.Command, args []string) error {
 
 		err = backoff.Retry(func() error {
 			var err error
-			err = createMember(jsonData)
+			err = createMember(ds, args[0], jsonData)
 			if err == nil {
 				return err
 			}
 
 			if strings.Contains(err.Error(), "Missing required field") ||
 				strings.Contains(err.Error(), "invalid") ||
-				strings.Contains(err.Error(), "Member already exists") {
+				strings.Contains(err.Error(), "Member already exists") ||
+				strings.Contains(err.Error(), "Resource Not Found") {
 				return backoff.Permanent(err)
 			}
 
@@ -96,18 +98,13 @@ func doBatchCrtMember(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func createMember(jsonData string) error {
+func createMember(ds *admin.Service, group string, jsonData string) error {
 	var member *admin.Member
 
 	member = new(admin.Member)
 	jsonBytes := []byte(jsonData)
 
 	err := json.Unmarshal(jsonBytes, &member)
-	if err != nil {
-		return err
-	}
-
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupMemberScope)
 	if err != nil {
 		return err
 	}
@@ -126,6 +123,5 @@ func createMember(jsonData string) error {
 func init() {
 	batchCreateCmd.AddCommand(batchCrtMemberCmd)
 
-	batchCrtMemberCmd.Flags().StringVarP(&group, "group", "g", "", "email address or id of group")
 	batchCrtMemberCmd.Flags().StringVarP(&inputFile, "inputfile", "i", "", "filepath to group member data file")
 }
