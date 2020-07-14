@@ -30,7 +30,7 @@ func TestDoCreateUser(t *testing.T) {
 	cases := []struct {
 		args          []string
 		attributes    string
-		expected      string
+		expectedErr   string
 		firstname     string
 		lastname      string
 		password      string
@@ -39,34 +39,34 @@ func TestDoCreateUser(t *testing.T) {
 		{
 			args:          []string{"mickey.mouse"},
 			recoveryPhone: "988787686",
-			expected:      "gmin: error - invalid email address",
+			expectedErr:   "gmin: error - invalid email address",
 		},
 		{
 			args:          []string{"mickey.mouse@disney.com"},
 			recoveryPhone: "988787686",
-			expected:      "gmin: error - recovery phone number 988787686 must start with '+'",
+			expectedErr:   "gmin: error - recovery phone number 988787686 must start with '+'",
 		},
 		{
-			args:      []string{"mickey.mouse@disney.com"},
-			firstname: "Mickey",
-			lastname:  "Mouse",
-			expected:  "gmin: error - firstname, lastname and password must all be provided",
+			args:        []string{"mickey.mouse@disney.com"},
+			firstname:   "Mickey",
+			lastname:    "Mouse",
+			expectedErr: "gmin: error - firstname, lastname and password must all be provided",
 		},
 		{
-			args:       []string{"mickey.mouse@disney.com"},
-			attributes: "email",
-			firstname:  "Mickey",
-			lastname:   "Mouse",
-			password:   "SuperStrongPassword",
-			expected:   "gmin: error - malformed attribute string",
+			args:        []string{"mickey.mouse@disney.com"},
+			attributes:  "email",
+			firstname:   "Mickey",
+			lastname:    "Mouse",
+			password:    "SuperStrongPassword",
+			expectedErr: "gmin: error - malformed attribute string",
 		},
 		{
-			args:       []string{"mickey.mouse@disney.com"},
-			attributes: "jklkjf:kljkjf",
-			firstname:  "Mickey",
-			lastname:   "Mouse",
-			password:   "SuperStrongPassword",
-			expected:   "gmin: error - attribute jklkjf not recognized",
+			args:        []string{"mickey.mouse@disney.com"},
+			attributes:  "jklkjf:kljkjf",
+			firstname:   "Mickey",
+			lastname:    "Mouse",
+			password:    "SuperStrongPassword",
+			expectedErr: "gmin: error - attribute jklkjf not recognized",
 		},
 	}
 
@@ -79,8 +79,33 @@ func TestDoCreateUser(t *testing.T) {
 
 		got := doCreateUser(createUserCmd, c.args)
 
-		if got.Error() != c.expected {
-			t.Errorf("Expected error %v, got %v", c.expected, got.Error())
+		if got.Error() != c.expectedErr {
+			t.Errorf("Expected error %v, got %v", c.expectedErr, got.Error())
+		}
+	}
+}
+
+func TestDoCreateMember(t *testing.T) {
+	cases := []struct {
+		args        []string
+		attributes  string
+		expectedErr string
+		group       string
+	}{
+		{
+			args:        []string{"mister.miyagi@mycompany.org"},
+			expectedErr: "gmin: error - group must be provided",
+		},
+	}
+
+	for _, c := range cases {
+		attrs = c.attributes
+		group = c.group
+
+		got := doCreateMember(createMemberCmd, c.args)
+
+		if got.Error() != c.expectedErr {
+			t.Errorf("Expected error %v, got %v", c.expectedErr, got.Error())
 		}
 	}
 }
