@@ -1,10 +1,10 @@
 ![Go](https://github.com/plusworx/gmin/workflows/Go/badge.svg)  [![Go Report Card](https://goreportcard.com/badge/github.com/plusworx/gmin)](https://goreportcard.com/report/github.com/plusworx/gmin)
 
 # gmin
-Administration CLI (command line interface) for Google G Suite written in Go (aka Golang). gmin performs actions by using credentials of a service account that has delegated domain-wide authority and the email address of a user with administrative authority.
+gmin is a Google G Suite administration CLI (command line interface) written in Go (aka Golang). gmin performs actions by using credentials of a service account that has delegated domain-wide authority and the email address of a user with administrative authority in the G Suite domain.
 
 ## Installing gmin
-gmin is intended to run on Linux, Windows and MacOS for which pre-compiled binaries will be made available. gmin may run on other operating systems, but it is up to the user to test.
+gmin is intended to run on Linux, Windows and MacOS for which pre-compiled binaries are available. gmin may run on other operating systems, but it is up to the user to test.
 
 At present, there is no automated installation. Users should obtain a pre-compiled binary for their particular operating system or compile it themselves if they have a Go environment set up.
 
@@ -15,7 +15,7 @@ The following steps should get you a working gmin installation -
 3. Create a service account, create and download a JSON key for the service account and enable G Suite domain-wide delegation.
 4. In the G Suite admin console of the domain with which you want to use gmin, go to Security > API Permissions > Manage Domain-wide Delegation and add a new record (or update an existing one). The scopes that you will need to add to the record for full functionality are as follows -
 ```
-Readonly scopes are needed for get and list functions. The other scopes are needed for create, delete, update
+Readonly scopes are needed for get and list functions. The other more permissive scopes are needed for create, delete, update
 and undelete functions.
 
 https://www.googleapis.com/auth/admin.directory.group
@@ -29,7 +29,7 @@ https://www.googleapis.com/auth/admin.directory.group.member
 ```
 
 5. Copy/move the gmin binary to a convenient directory/folder and rename the JSON key file, downloaded earlier, to gmin_credentials and place in the same directory/folder as the gmin binary.
-6. Run the command `gmin init` inputting the email address of the admin whose privileges will be used and optionally, the path where you would like the config file, .gmin.yaml, to be written. By default the config file is written to the current user's home directory. If you choose a different installation path then that path will need to be given with each gmin command by using the --config flag.
+6. Run the command `gmin init` and enter the required information. The email address of the admin whose privileges will be used is mandatory. Customer ID and the path where you would like the config file, .gmin.yaml, to be written are optional. By default the config file is written to the current user's home directory and the string 'my_customer' is used for the customer ID. If you choose a different installation path for the config file then that path will need to be given with each gmin command by using the --config flag.
 7. To see the version number of your gmin binary, run the command `gmin -v` or `gmin --version`.
 8. To get help from gmin itself, enter `gmin -h` or `gmin --help` and go from there.
 
@@ -41,6 +41,8 @@ Commands usually take the form of `gmin <verb> <object> <flags>`. Although there
 Command flags look like -x or --longnameforx. Flags that relate to boolean values (true/false) just need the flag to be provided and no value. For example, the `-c or --changepassword` flag when creating a user.
 
 Type `gmin <command> -h or --help` to get help about a particular command. For example, to get help about creating a new user you could enter `gmin create user -h`. Help text will be improved over time.
+
+### Some usage examples
 
 **Create a new user**
 
@@ -137,7 +139,7 @@ https://developers.google.com/admin-sdk/directory/v1/get-start/getting-started i
 * Maybe there are other people who might benefit from gmin
 
 ## Project Status
-gmin is pretty young which means that it is liable to rapid change, although the command syntax is unlikely to change much (if at all) over time. The functionality is currently limited to users, groups, members and organisation units but additional functionality will be added when it is ready.
+gmin is pretty young which means that it is liable to rapid change, although the command syntax is unlikely to change much (if at all) over time. The functionality is currently limited to the Admin SDK API and the user, group, group member and organisation unit objects but additional functionality will be added when it is ready.
 
 All output is in JSON format apart from informational and error messages. Output in other formats such as CSV is on the roadmap, however, I have found the use of the jq utility (https://stedolan.github.io/jq/) can be a great help in working with JSON.
 
