@@ -45,22 +45,30 @@ var (
 	groupDesc        string
 	groupEmail       string
 	groupName        string
+	inputFile        string
 	lastName         string
+	maxResults       int64
 	noChangePassword bool
 	noGAL            bool
+	orderBy          string
 	orgUnit          string
 	orgUnitDesc      string
 	orgUnitName      string
 	parentOUPath     string
 	password         string
+	projection       string
 	query            string
 	recoveryEmail    string
 	recoveryPhone    string
 	role             string
+	searchType       string
+	sortOrder        string
 	suspended        bool
 	unblockInherit   bool
 	unSuspended      bool
 	userEmail        string
+	userKey          string
+	viewType         string
 )
 
 var rootCmd = &cobra.Command{
@@ -69,7 +77,7 @@ var rootCmd = &cobra.Command{
 	Long: `gmin is a commandline interface (CLI) that enables the 
 	administration of G Suite domains. It aims to provide tools that
 	make G Suite administration from the commandline more manageable.`,
-	Version: "v0.1.1",
+	Version: "v0.2.0",
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.

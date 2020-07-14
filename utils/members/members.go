@@ -23,7 +23,6 @@ THE SOFTWARE.
 package members
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 
@@ -57,18 +56,66 @@ var MemberAttrMap = map[string]string{
 	"type":             "type",
 }
 
-// roleMap provides lowercase mappings to valid admin.Member roles
-var roleMap = map[string]string{
+// RoleMap provides lowercase mappings to valid admin.Member roles
+var RoleMap = map[string]string{
 	"owner":   "OWNER",
 	"manager": "MANAGER",
 	"member":  "MEMBER",
 }
 
-// Attrs fetches specified attributes for members
-func Attrs(mlc *admin.MembersListCall, attrs string) (*admin.Members, error) {
+// AddFields adds fields to be returned to admin calls
+func AddFields(callObj interface{}, attrs string) interface{} {
 	var fields googleapi.Field = googleapi.Field(attrs)
 
-	members, err := mlc.Fields(fields).Do()
+	switch callObj.(type) {
+	case *admin.MembersListCall:
+		var newMLC *admin.MembersListCall
+		mlc := callObj.(*admin.MembersListCall)
+		newMLC = mlc.Fields(fields)
+
+		return newMLC
+	case *admin.MembersGetCall:
+		var newMGC *admin.MembersGetCall
+		mgc := callObj.(*admin.MembersGetCall)
+		newMGC = mgc.Fields(fields)
+
+		return newMGC
+	}
+
+	return nil
+}
+
+// AddMaxResults adds MaxResults to admin calls
+func AddMaxResults(mlc *admin.MembersListCall, maxResults int64) *admin.MembersListCall {
+	var newMLC *admin.MembersListCall
+
+	newMLC = mlc.MaxResults(maxResults)
+
+	return newMLC
+}
+
+// AddRoles adds Roles to admin calls
+func AddRoles(mlc *admin.MembersListCall, roles string) *admin.MembersListCall {
+	var newMLC *admin.MembersListCall
+
+	newMLC = mlc.Roles(roles)
+
+	return newMLC
+}
+
+// DoGet calls the .Do() function on the admin.MembersGetCall
+func DoGet(mgc *admin.MembersGetCall) (*admin.Member, error) {
+	member, err := mgc.Do()
+	if err != nil {
+		return nil, err
+	}
+
+	return member, nil
+}
+
+// DoList calls the .Do() function on the admin.MembersListCall
+func DoList(mlc *admin.MembersListCall) (*admin.Members, error) {
+	members, err := mlc.Do()
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +123,7 @@ func Attrs(mlc *admin.MembersListCall, attrs string) (*admin.Members, error) {
 	return members, nil
 }
 
-// FormatAttrs formats attributes for admin.MembersListCall.Fields and admin.MembersGetCall.Fields call
+// FormatAttrs formats attributes for admin.MembersListCall.Fields, admin.MembersListCall.Roles and admin.MembersGetCall.Fields calls
 func FormatAttrs(attrs []string, get bool) string {
 	var (
 		outputStr    string
@@ -96,38 +143,6 @@ func FormatAttrs(attrs []string, get bool) string {
 	return outputStr
 }
 
-// Members fetches members of a particular group
-func Members(mlc *admin.MembersListCall) (*admin.Members, error) {
-	members, err := mlc.Do()
-	if err != nil {
-		return nil, err
-	}
-
-	return members, nil
-}
-
-// Single fetches member of a particular group
-func Single(mgc *admin.MembersGetCall) (*admin.Member, error) {
-	member, err := mgc.Do()
-	if err != nil {
-		return nil, err
-	}
-
-	return member, nil
-}
-
-// SingleAttrs fetches specified attributes for member
-func SingleAttrs(mgc *admin.MembersGetCall, attrs string) (*admin.Member, error) {
-	var fields googleapi.Field = googleapi.Field(attrs)
-
-	member, err := mgc.Fields(fields).Do()
-	if err != nil {
-		return nil, err
-	}
-
-	return member, nil
-}
-
 // ValidateDeliverySetting checks that a valid delivery setting has been provided
 func ValidateDeliverySetting(ds string) (string, error) {
 	lowerDS := strings.ToLower(ds)
@@ -140,26 +155,11 @@ func ValidateDeliverySetting(ds string) (string, error) {
 	return validSetting, nil
 }
 
-// ValidateFlags checks that a valid flag combination exists
-func ValidateFlags(groupEmail string, orgUnitPath string) error {
-	var err error
-
-	if groupEmail != "" && orgUnitPath != "" {
-		err = errors.New("gmin: error - cannot specify both a group and an organization unit")
-	}
-
-	if groupEmail == "" && orgUnitPath == "" {
-		err = errors.New("gmin: error - must specify a group or an organization unit")
-	}
-
-	return err
-}
-
 // ValidateRole checks that a valid role has been provided
 func ValidateRole(role string) (string, error) {
 	lowerRole := strings.ToLower(role)
 
-	validRole := roleMap[lowerRole]
+	validRole := RoleMap[lowerRole]
 	if validRole == "" {
 		return "", fmt.Errorf("gmin: error - %v is not a valid role", role)
 	}

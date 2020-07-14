@@ -28,8 +28,9 @@ import (
 	"fmt"
 	"strings"
 
-	cmn "github.com/plusworx/gmin/common"
-	usrs "github.com/plusworx/gmin/users"
+	cmn "github.com/plusworx/gmin/utils/common"
+	cfg "github.com/plusworx/gmin/utils/config"
+	usrs "github.com/plusworx/gmin/utils/users"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 )
@@ -47,6 +48,7 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 		formattedAttrs string
 		users          *admin.Users
 		validAttrs     []string
+		validOrderBy   string
 	)
 
 	if query != "" && deleted {
@@ -62,25 +64,94 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 	ulc := ds.Users.List()
 
 	if attrs != "" {
-		validAttrs, err = cmn.ValidateAttrs(attrs, usrs.UserAttrMap)
+		validAttrs, err = cmn.ValidateArgs(attrs, usrs.UserAttrMap, cmn.AttrStr)
 		if err != nil {
 			return err
 		}
 
 		formattedAttrs = usrs.FormatAttrs(validAttrs, false)
+		listCall := usrs.AddFields(ulc, formattedAttrs)
+		ulc = listCall.(*admin.UsersListCall)
 	}
 
-	switch true {
-	case domain != "" && !deleted:
-		users, err = userDomainCall(domain, ulc, formattedAttrs)
-	case domain != "" && deleted:
-		users, err = userDelDomainCall(domain, ulc, formattedAttrs)
-	case domain == "" && !deleted:
-		users, err = userAllDomainCall(ulc, formattedAttrs)
-	case domain == "" && deleted:
-		users, err = userDelAllDomainCall(ulc, formattedAttrs)
+	if deleted {
+		ulc = usrs.AddShowDeleted(ulc)
 	}
 
+	if domain != "" {
+		ulc = usrs.AddDomain(ulc, domain)
+	} else {
+		customerID, err := cfg.ReadConfigString("customerid")
+		if err != nil {
+			return err
+		}
+		ulc = usrs.AddCustomer(ulc, customerID)
+	}
+
+	if projection != "" {
+		proj := strings.ToLower(projection)
+		ok := cmn.SliceContainsStr(usrs.ValidProjections, proj)
+		if !ok {
+			return fmt.Errorf("gmin: error - %v is not a valid projection type", projection)
+		}
+
+		listCall := usrs.AddProjection(ulc, proj)
+		ulc = listCall.(*admin.UsersListCall)
+	}
+
+	if query != "" {
+		formattedQuery, err := usrProcessQuery(query)
+		if err != nil {
+			return err
+		}
+
+		ulc = usrs.AddQuery(ulc, formattedQuery)
+	}
+
+	if orderBy != "" {
+		ob := strings.ToLower(orderBy)
+		ok := cmn.SliceContainsStr(usrs.ValidOrderByStrs, ob)
+		if !ok {
+			err = fmt.Errorf("gmin: error - %v is not a valid order by field", orderBy)
+			return err
+		}
+
+		validOrderBy = ob
+
+		if ob != "email" {
+			validOrderBy, err = cmn.IsValidAttr(ob, usrs.UserAttrMap)
+			if err != nil {
+				return err
+			}
+		}
+
+		ulc = usrs.AddOrderBy(ulc, validOrderBy)
+
+		if sortOrder != "" {
+			so := strings.ToLower(sortOrder)
+			validSortOrder, err := cmn.IsValidAttr(so, cmn.ValidSortOrders)
+			if err != nil {
+				return err
+			}
+
+			ulc = usrs.AddSortOrder(ulc, validSortOrder)
+		}
+	}
+
+	if viewType != "" {
+		vt := strings.ToLower(viewType)
+		ok := cmn.SliceContainsStr(usrs.ValidViewTypes, vt)
+		if !ok {
+			return fmt.Errorf("gmin: error - %v is not a valid view type", viewType)
+		}
+
+		listCall := usrs.AddViewType(ulc, vt)
+		ulc = listCall.(*admin.UsersListCall)
+	}
+
+	ulc = usrs.AddMaxResults(ulc, maxResults)
+
+	users, err = usrs.DoList(ulc)
 	if err != nil {
 		return err
 	}
@@ -98,122 +169,25 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 func init() {
 	listCmd.AddCommand(listUsersCmd)
 
+	listUsersCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required user attributes (separated by ~)")
 	listUsersCmd.Flags().StringVarP(&domain, "domain", "d", "", "domain from which to get users")
-	listUsersCmd.Flags().StringVarP(&attrs, "attrs", "a", "", "required user attributes (separated by ~)")
+	listUsersCmd.Flags().Int64VarP(&maxResults, "maxresults", "m", 500, "maximum number of results to return")
+	listUsersCmd.Flags().StringVarP(&orderBy, "orderby", "o", "", "field by which results will be ordered")
+	listUsersCmd.Flags().StringVarP(&projection, "projection", "p", "", "type of projection")
 	listUsersCmd.Flags().StringVarP(&query, "query", "q", "", "selection criteria to get users (separated by ~)")
+	listUsersCmd.Flags().StringVarP(&sortOrder, "sortorder", "s", "", "sort order of returned results")
+	listUsersCmd.Flags().StringVarP(&viewType, "viewtype", "v", "", "data view type")
 	listUsersCmd.Flags().BoolVarP(&deleted, "deleted", "x", false, "show deleted users")
 
 }
 
-func userAllDomainCall(ulc *admin.UsersListCall, fmtAttrs string) (*admin.Users, error) {
-	var (
-		err   error
-		users *admin.Users
-	)
-
-	formattedQuery, err := usrProcessQuery(query)
-	if err != nil {
-		return nil, err
-	}
-
-	switch true {
-	case formattedQuery == "" && attrs == "":
-		users, err = usrs.AllDomain(ulc)
-	case formattedQuery != "" && attrs == "":
-		users, err = usrs.AllDomainQuery(ulc, formattedQuery)
-	case formattedQuery == "" && attrs != "":
-		users, err = usrs.AllDomainAttrs(ulc, fmtAttrs)
-	case formattedQuery != "" && attrs != "":
-		users, err = usrs.AllDomainQueryAttrs(ulc, formattedQuery, fmtAttrs)
-	}
-
-	if err != nil {
-		return nil, err
-	}
-
-	return users, nil
-}
-
-func userDelDomainCall(domain string, ulc *admin.UsersListCall, fmtAttrs string) (*admin.Users, error) {
-	var (
-		err   error
-		users *admin.Users
-	)
-
-	if attrs == "" {
-		users, err = usrs.DelDomain(domain, ulc)
-	} else {
-		users, err = usrs.DelDomainAttrs(domain, ulc, fmtAttrs)
-	}
-
-	if err != nil {
-		return nil, err
-	}
-
-	return users, nil
-}
-
-func userDelAllDomainCall(ulc *admin.UsersListCall, fmtAttrs string) (*admin.Users, error) {
-	var (
-		err   error
-		users *admin.Users
-	)
-
-	if attrs == "" {
-		users, err = usrs.DelAllDomain(ulc)
-	} else {
-		users, err = usrs.DelAllDomainAttrs(ulc, fmtAttrs)
-	}
-
-	if err != nil {
-		return nil, err
-	}
-
-	return users, nil
-}
-
-func userDomainCall(domain string, ulc *admin.UsersListCall, fmtAttrs string) (*admin.Users, error) {
-	var (
-		err   error
-		users *admin.Users
-	)
-
-	formattedQuery, err := usrProcessQuery(query)
-	if err != nil {
-		return nil, err
-	}
-
-	switch true {
-	case formattedQuery == "" && attrs == "":
-		users, err = usrs.Domain(domain, ulc)
-	case formattedQuery != "" && attrs == "":
-		users, err = usrs.DomainQuery(domain, ulc, formattedQuery)
-	case formattedQuery == "" && attrs != "":
-		users, err = usrs.DomainAttrs(domain, ulc, fmtAttrs)
-	case formattedQuery != "" && attrs != "":
-		users, err = usrs.DomainQueryAttrs(domain, ulc, formattedQuery, fmtAttrs)
-	}
-
-	if err != nil {
-		return nil, err
-	}
-
-	return users, nil
-}
-
 func usrProcessQuery(query string) (string, error) {
-	var formattedQuery string
-
-	if query != "" {
-		queryParts, err := cmn.ValidateQuery(query, usrs.QueryAttrMap)
-		if err != nil {
-			return "", err
-		}
-
-		formattedQuery = strings.Join(queryParts, " ")
-	} else {
-		formattedQuery = ""
+	queryParts, err := cmn.ValidateQuery(query, usrs.QueryAttrMap)
+	if err != nil {
+		return "", err
 	}
+
+	formattedQuery := strings.Join(queryParts, " ")
 
 	return formattedQuery, nil
 }

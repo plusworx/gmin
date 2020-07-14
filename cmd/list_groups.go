@@ -25,10 +25,11 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
-	"log"
+	"strings"
 
-	cmn "github.com/plusworx/gmin/common"
-	grps "github.com/plusworx/gmin/groups"
+	cmn "github.com/plusworx/gmin/utils/common"
+	cfg "github.com/plusworx/gmin/utils/config"
+	grps "github.com/plusworx/gmin/utils/groups"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 )
@@ -46,6 +47,7 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 		formattedAttrs string
 		groups         *admin.Groups
 		validAttrs     []string
+		validOrderBy   string
 	)
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupReadonlyScope)
@@ -56,24 +58,70 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 	glc := ds.Groups.List()
 
 	if attrs != "" {
-		validAttrs, err = cmn.ValidateAttrs(attrs, grps.GroupAttrMap)
+		validAttrs, err = cmn.ValidateArgs(attrs, grps.GroupAttrMap, cmn.AttrStr)
 		if err != nil {
 			return err
 		}
 
 		formattedAttrs = grps.FormatAttrs(validAttrs, false)
+		listCall := grps.AddFields(glc, formattedAttrs)
+		glc = listCall.(*admin.GroupsListCall)
 	}
 
 	if domain != "" {
-		groups, err = groupDomainCall(domain, glc, formattedAttrs)
-		if err != nil {
-			return err
-		}
+		glc = grps.AddDomain(glc, domain)
 	} else {
-		groups, err = groupAllDomainCall(glc, formattedAttrs)
+		customerID, err := cfg.ReadConfigString("customerid")
 		if err != nil {
 			return err
 		}
+		glc = grps.AddCustomer(glc, customerID)
+	}
+
+	if query != "" {
+		formattedQuery, err := processQuery(query)
+		if err != nil {
+			return err
+		}
+
+		glc = grps.AddQuery(glc, formattedQuery)
+	}
+
+	if orderBy != "" {
+		ob := strings.ToLower(orderBy)
+		ok := cmn.SliceContainsStr(grps.ValidOrderByStrs, ob)
+		if !ok {
+			err = fmt.Errorf("gmin: error - %v is not a valid order by field", orderBy)
+			return err
+		}
+
+		validOrderBy, err = cmn.IsValidAttr(ob, grps.GroupAttrMap)
+		if err != nil {
+			return err
+		}
+
+		glc = grps.AddOrderBy(glc, validOrderBy)
+
+		if sortOrder != "" {
+			so := strings.ToLower(sortOrder)
+			validSortOrder, err := cmn.IsValidAttr(so, cmn.ValidSortOrders)
+			if err != nil {
+				return err
+			}
+
+			glc = grps.AddSortOrder(glc, validSortOrder)
+		}
+	}
+
+	if userKey != "" {
+		glc = grps.AddUserKey(glc, userKey)
+	}
+
+	glc = grps.AddMaxResults(glc, maxResults)
+
+	groups, err = grps.DoList(glc)
+	if err != nil {
+		return err
 	}
 
 	jsonData, err := json.MarshalIndent(groups, "", "    ")
@@ -86,74 +134,30 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func groupAllDomainCall(glc *admin.GroupsListCall, fmtAttrs string) (*admin.Groups, error) {
-	var (
-		err    error
-		groups *admin.Groups
-	)
-
-	formattedQuery := processQuery(query)
-
-	switch true {
-	case formattedQuery == "" && attrs == "":
-		groups, err = grps.AllDomain(glc)
-	case formattedQuery != "" && attrs == "":
-		groups, err = grps.AllDomainQuery(glc, formattedQuery)
-	case formattedQuery == "" && attrs != "":
-		groups, err = grps.AllDomainAttrs(glc, fmtAttrs)
-	case formattedQuery != "" && attrs != "":
-		groups, err = grps.AllDomainQueryAttrs(glc, formattedQuery, fmtAttrs)
-	}
-
-	return groups, err
-}
-
-func groupDomainCall(domain string, glc *admin.GroupsListCall, fmtAttrs string) (*admin.Groups, error) {
-	var (
-		err    error
-		groups *admin.Groups
-	)
-
-	formattedQuery := processQuery(query)
-
-	switch true {
-	case formattedQuery == "" && attrs == "":
-		groups, err = grps.Domain(domain, glc)
-	case formattedQuery != "" && attrs == "":
-		groups, err = grps.DomainQuery(domain, glc, formattedQuery)
-	case formattedQuery == "" && attrs != "":
-		groups, err = grps.DomainAttrs(domain, glc, fmtAttrs)
-	case formattedQuery != "" && attrs != "":
-		groups, err = grps.DomainQueryAttrs(domain, glc, formattedQuery, fmtAttrs)
-	}
-
-	return groups, err
-}
-
 func init() {
 	listCmd.AddCommand(listGroupsCmd)
 
+	listGroupsCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required group attributes (separated by ~)")
 	listGroupsCmd.Flags().StringVarP(&domain, "domain", "d", "", "domain from which to get groups")
-	listGroupsCmd.Flags().StringVarP(&attrs, "attrs", "a", "", "required group attributes (separated by ~)")
+	listGroupsCmd.Flags().Int64VarP(&maxResults, "maxresults", "m", 200, "maximum number of results to return")
+	listGroupsCmd.Flags().StringVarP(&orderBy, "orderby", "o", "", "field by which results will be ordered")
 	listGroupsCmd.Flags().StringVarP(&query, "query", "q", "", "selection criteria to get groups (separated by ~)")
+	listGroupsCmd.Flags().StringVarP(&sortOrder, "sortorder", "s", "", "sort order of returned results")
+	listGroupsCmd.Flags().StringVarP(&userKey, "userkey", "u", "", "email address or id of user who belongs to returned groups")
 }
 
-func processQuery(query string) string {
+func processQuery(query string) (string, error) {
 	var formattedQuery string
 
-	if query != "" {
-		validQuery, err := cmn.ValidateQuery(query, grps.QueryAttrMap)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		formattedQuery, err = grps.FormatQuery(validQuery)
-		if err != nil {
-			log.Fatal(err)
-		}
-	} else {
-		formattedQuery = ""
+	validQuery, err := cmn.ValidateQuery(query, grps.QueryAttrMap)
+	if err != nil {
+		return "", err
 	}
 
-	return formattedQuery
+	formattedQuery, err = grps.FormatQuery(validQuery)
+	if err != nil {
+		return "", err
+	}
+
+	return formattedQuery, nil
 }

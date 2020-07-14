@@ -25,8 +25,8 @@ package cmd
 import (
 	"fmt"
 
-	cmn "github.com/plusworx/gmin/common"
-	usrs "github.com/plusworx/gmin/users"
+	cmn "github.com/plusworx/gmin/utils/common"
+	usrs "github.com/plusworx/gmin/utils/users"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 )

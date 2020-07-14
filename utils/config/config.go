@@ -20,51 +20,35 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-package cmd
+package config
 
 import (
-	"errors"
 	"fmt"
 
-	cmn "github.com/plusworx/gmin/utils/common"
-	"github.com/spf13/cobra"
-	admin "google.golang.org/api/admin/directory/v1"
+	"github.com/spf13/viper"
 )
 
-var deleteMemberCmd = &cobra.Command{
-	Use:     "group-member <member email address or id> -g <group email address or id>",
-	Aliases: []string{"grp-member", "grp-mem", "gmember", "gmem"},
-	Args:    cobra.ExactArgs(1),
-	Short:   "Deletes member of a group",
-	Long:    `Deletes member of a group.`,
-	RunE:    doDeleteMember,
+const (
+	// CredentialsFile holds service account credentials
+	CredentialsFile string = "gmin_credentials"
+	// FileName is configuration file name
+	FileName string = ".gmin.yaml"
+)
+
+// File holds configuration data
+type File struct {
+	Administrator string `yaml:"administrator"`
+	CustomerID    string `yaml:"customerid"`
 }
 
-func doDeleteMember(cmd *cobra.Command, args []string) error {
-	if group == "" {
-		err := errors.New("gmin: error - group email address or id must be provided")
-		return err
+// ReadConfigString gets a string item from config file
+func ReadConfigString(s string) (string, error) {
+	var err error
+
+	str := viper.GetString(s)
+	if str == "" {
+		err = fmt.Errorf("gmin: error - %v not found in config file", s)
 	}
 
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupMemberScope)
-	if err != nil {
-		return err
-	}
-
-	mdc := ds.Members.Delete(group, args[0])
-
-	err = mdc.Do()
-	if err != nil {
-		return err
-	}
-
-	fmt.Printf("**** gmin: member %s of group %s deleted ****\n", args[0], group)
-
-	return nil
-}
-
-func init() {
-	deleteCmd.AddCommand(deleteMemberCmd)
-
-	deleteMemberCmd.Flags().StringVarP(&group, "group", "g", "", "email address or id of group")
+	return str, err
 }

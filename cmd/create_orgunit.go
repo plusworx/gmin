@@ -25,8 +25,8 @@ package cmd
 import (
 	"fmt"
 
-	cmn "github.com/plusworx/gmin/common"
-	cfg "github.com/plusworx/gmin/config"
+	cmn "github.com/plusworx/gmin/utils/common"
+	cfg "github.com/plusworx/gmin/utils/config"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 )
@@ -69,7 +69,12 @@ func doCreateOU(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	ouic := ds.Orgunits.Insert(cfg.CustomerID, orgunit)
+	customerID, err := cfg.ReadConfigString("customerid")
+	if err != nil {
+		return err
+	}
+
+	ouic := ds.Orgunits.Insert(customerID, orgunit)
 	newOrgUnit, err := ouic.Do()
 	if err != nil {
 		return err

@@ -26,9 +26,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	cmn "github.com/plusworx/gmin/common"
-	grps "github.com/plusworx/gmin/groups"
-	usrs "github.com/plusworx/gmin/users"
+	cmn "github.com/plusworx/gmin/utils/common"
+	grps "github.com/plusworx/gmin/utils/groups"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 )
@@ -59,21 +58,19 @@ func doGetGroup(cmd *cobra.Command, args []string) error {
 	ggc := ds.Groups.Get(args[0])
 
 	if attrs != "" {
-		validAttrs, err = cmn.ValidateAttrs(attrs, grps.GroupAttrMap)
+		validAttrs, err = cmn.ValidateArgs(attrs, grps.GroupAttrMap, cmn.AttrStr)
 		if err != nil {
 			return err
 		}
 
-		formattedAttrs := usrs.FormatAttrs(validAttrs, true)
-		group, err = grps.SingleAttrs(ggc, formattedAttrs)
-		if err != nil {
-			return err
-		}
-	} else {
-		group, err = grps.Single(ggc)
-		if err != nil {
-			return err
-		}
+		formattedAttrs := grps.FormatAttrs(validAttrs, true)
+		getCall := grps.AddFields(ggc, formattedAttrs)
+		ggc = getCall.(*admin.GroupsGetCall)
+	}
+
+	group, err = grps.DoGet(ggc)
+	if err != nil {
+		return err
 	}
 
 	jsonData, err := json.MarshalIndent(group, "", "    ")
@@ -89,5 +86,5 @@ func doGetGroup(cmd *cobra.Command, args []string) error {
 func init() {
 	getCmd.AddCommand(getGroupCmd)
 
-	getGroupCmd.Flags().StringVarP(&attrs, "attrs", "a", "", "required group attributes (separated by ~)")
+	getGroupCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required group attributes (separated by ~)")
 }

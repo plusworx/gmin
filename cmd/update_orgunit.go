@@ -25,8 +25,8 @@ package cmd
 import (
 	"fmt"
 
-	cmn "github.com/plusworx/gmin/common"
-	cfg "github.com/plusworx/gmin/config"
+	cmn "github.com/plusworx/gmin/utils/common"
+	cfg "github.com/plusworx/gmin/utils/config"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 )
@@ -77,7 +77,12 @@ func doUpdateOU(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	ouuc := ds.Orgunits.Update(cfg.CustomerID, ouPath, orgunit)
+	customerID, err := cfg.ReadConfigString("customerid")
+	if err != nil {
+		return err
+	}
+
+	ouuc := ds.Orgunits.Update(customerID, ouPath, orgunit)
 	_, err = ouuc.Do()
 	if err != nil {
 		return err

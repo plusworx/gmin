@@ -20,36 +20,23 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-package config
+package cmd
 
 import (
-	"fmt"
-
-	"github.com/spf13/viper"
+	"github.com/spf13/cobra"
 )
 
-const (
-	// CredentialsFile holds service account credentials
-	CredentialsFile string = "gmin_credentials"
-	// CustomerID is G Suite customer ID
-	CustomerID string = "my_customer"
-	// FileName is configuration file name
-	FileName string = ".gmin.yaml"
-)
-
-// File holds configuration data
-type File struct {
-	Administrator string `yaml:"administrator"`
+var batchCreateCmd = &cobra.Command{
+	Use:     "batch-create",
+	Aliases: []string{"bcreate", "bcrt"},
+	Short:   "Creates a batch of G Suite entities",
+	Run:     doBatchCreate,
 }
 
-// ReadConfigString gets a string item from config file
-func ReadConfigString(s string) (string, error) {
-	var err error
+func doBatchCreate(cmd *cobra.Command, args []string) {
+	cmd.Help()
+}
 
-	str := viper.GetString(s)
-	if str == "" {
-		err = fmt.Errorf("gmin: error - %v not found in config file", s)
-	}
-
-	return str, err
+func init() {
+	rootCmd.AddCommand(batchCreateCmd)
 }

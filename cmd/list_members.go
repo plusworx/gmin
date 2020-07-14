@@ -26,42 +26,67 @@ import (
 	"encoding/json"
 	"fmt"
 
-	cmn "github.com/plusworx/gmin/common"
-	mems "github.com/plusworx/gmin/members"
-	usrs "github.com/plusworx/gmin/users"
+	cmn "github.com/plusworx/gmin/utils/common"
+	mems "github.com/plusworx/gmin/utils/members"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 )
 
 var listMembersCmd = &cobra.Command{
-	Use:     "members",
-	Aliases: []string{"member", "mem", "mems"},
-	Short:   "Outputs a list of group/orgunit members",
-	Long: `Outputs a list of group/orgunit members. Must specify a group
-	or an organization unit.`,
-	RunE: doListMembers,
+	Use:     "group-members <group email address or id>",
+	Aliases: []string{"group-member", "grp-members", "grp-member", "grp-mems", "grp-mem", "gmembers", "gmember", "gmems", "gmem"},
+	Args:    cobra.ExactArgs(1),
+	Short:   "Outputs a list of group members",
+	Long:    `Outputs a list of group members. Must specify a group email address or id.`,
+	RunE:    doListMembers,
 }
 
 func doListMembers(cmd *cobra.Command, args []string) error {
-	var jsonData []byte
+	var (
+		jsonData   []byte
+		members    *admin.Members
+		validAttrs []string
+		validRoles []string
+	)
 
-	err := mems.ValidateFlags(group, orgUnit)
+	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupMemberReadonlyScope)
 	if err != nil {
 		return err
 	}
 
-	if group != "" {
-		jsonData, err = processGroupMembers(attrs, group)
+	mlc := ds.Members.List(args[0])
+
+	if attrs != "" {
+		validAttrs, err = cmn.ValidateArgs(attrs, mems.MemberAttrMap, cmn.AttrStr)
 		if err != nil {
 			return err
 		}
+
+		formattedAttrs := mems.FormatAttrs(validAttrs, false)
+		listCall := mems.AddFields(mlc, formattedAttrs)
+		mlc = listCall.(*admin.MembersListCall)
 	}
 
-	if orgUnit != "" {
-		jsonData, err = processOrgUnitMembers(attrs, orgUnit)
+	if role != "" {
+		validRoles, err = cmn.ValidateArgs(role, mems.RoleMap, cmn.RoleStr)
 		if err != nil {
 			return err
 		}
+
+		formattedRoles := mems.FormatAttrs(validRoles, true)
+		mlc = mems.AddRoles(mlc, formattedRoles)
+	}
+
+	mlc = mems.AddMaxResults(mlc, maxResults)
+
+	members, err = mems.DoList(mlc)
+	if err != nil {
+		return err
+	}
+
+	jsonData, err = json.MarshalIndent(members, "", "    ")
+	if err != nil {
+		return err
 	}
 
 	fmt.Println(string(jsonData))
@@ -72,89 +97,7 @@ func doListMembers(cmd *cobra.Command, args []string) error {
 func init() {
 	listCmd.AddCommand(listMembersCmd)
 
-	listMembersCmd.Flags().StringVarP(&attrs, "attrs", "a", "", "required member attributes (separated by ~)")
-	listMembersCmd.Flags().StringVarP(&group, "group", "g", "", "email address of group")
-	listMembersCmd.Flags().StringVarP(&orgUnit, "orgunit", "o", "", "path of orgunit")
-
-}
-
-func processGroupMembers(attrs string, groupEmail string) ([]byte, error) {
-	var (
-		members    *admin.Members
-		validAttrs []string
-	)
-
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupMemberReadonlyScope)
-	if err != nil {
-		return nil, err
-	}
-
-	mlc := ds.Members.List(groupEmail)
-
-	if attrs != "" {
-		validAttrs, err = cmn.ValidateAttrs(attrs, mems.MemberAttrMap)
-		if err != nil {
-			return nil, err
-		}
-
-		formattedAttrs := mems.FormatAttrs(validAttrs, false)
-		members, err = mems.Attrs(mlc, formattedAttrs)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		members, err = mems.Members(mlc)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	jsonData, err := json.MarshalIndent(members, "", "    ")
-	if err != nil {
-		return nil, err
-	}
-
-	return jsonData, nil
-}
-
-func processOrgUnitMembers(attrs string, orgUnit string) ([]byte, error) {
-	var (
-		users      *admin.Users
-		validAttrs []string
-	)
-
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserReadonlyScope)
-	if err != nil {
-		return nil, err
-	}
-
-	ulc := ds.Users.List()
-
-	query := "orgUnitPath=" + orgUnit
-
-	if attrs != "" {
-		validAttrs, err = cmn.ValidateAttrs(attrs, usrs.UserAttrMap)
-		if err != nil {
-			return nil, err
-		}
-
-		formattedAttrs := usrs.FormatAttrs(validAttrs, false)
-
-		users, err = usrs.AllDomainQueryAttrs(ulc, query, formattedAttrs)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		users, err = usrs.AllDomainQuery(ulc, query)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	jsonData, err := json.MarshalIndent(users, "", "    ")
-	if err != nil {
-		return nil, err
-	}
-
-	return jsonData, nil
+	listMembersCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required member attributes (separated by ~)")
+	listMembersCmd.Flags().Int64VarP(&maxResults, "maxresults", "m", 200, "maximum number or results to return")
+	listMembersCmd.Flags().StringVarP(&role, "roles", "r", "", "roles to filter results by (separated by ~)")
 }

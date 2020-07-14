@@ -26,10 +26,9 @@ import (
 	"encoding/json"
 	"fmt"
 
-	cmn "github.com/plusworx/gmin/common"
-	cfg "github.com/plusworx/gmin/config"
-	ous "github.com/plusworx/gmin/orgunits"
-	usrs "github.com/plusworx/gmin/users"
+	cmn "github.com/plusworx/gmin/utils/common"
+	cfg "github.com/plusworx/gmin/utils/config"
+	ous "github.com/plusworx/gmin/utils/orgunits"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 )
@@ -57,25 +56,27 @@ func doGetOrgUnit(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	ougc := ds.Orgunits.Get(cfg.CustomerID, args)
+	customerID, err := cfg.ReadConfigString("customerid")
+	if err != nil {
+		return err
+	}
+
+	ougc := ds.Orgunits.Get(customerID, args)
 
 	if attrs != "" {
-		validAttrs, err = cmn.ValidateAttrs(attrs, ous.OrgUnitAttrMap)
+		validAttrs, err = cmn.ValidateArgs(attrs, ous.OrgUnitAttrMap, cmn.AttrStr)
 		if err != nil {
 			return err
 		}
 
-		formattedAttrs := usrs.FormatAttrs(validAttrs, true)
+		formattedAttrs := ous.FormatAttrs(validAttrs, true)
+		getCall := ous.AddFields(ougc, formattedAttrs)
+		ougc = getCall.(*admin.OrgunitsGetCall)
+	}
 
-		orgUnit, err = ous.SingleAttrs(ougc, formattedAttrs)
-		if err != nil {
-			return err
-		}
-	} else {
-		orgUnit, err = ous.Single(ougc)
-		if err != nil {
-			return err
-		}
+	orgUnit, err = ous.DoGet(ougc)
+	if err != nil {
+		return err
 	}
 
 	jsonData, err := json.MarshalIndent(orgUnit, "", "    ")
@@ -91,5 +92,5 @@ func doGetOrgUnit(cmd *cobra.Command, args []string) error {
 func init() {
 	getCmd.AddCommand(getOrgUnitCmd)
 
-	getOrgUnitCmd.Flags().StringVarP(&attrs, "attrs", "a", "", "required orgunit attributes (separated by ~)")
+	getOrgUnitCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required orgunit attributes (separated by ~)")
 }

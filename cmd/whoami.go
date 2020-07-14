@@ -25,7 +25,7 @@ package cmd
 import (
 	"fmt"
 
-	cfg "github.com/plusworx/gmin/config"
+	cfg "github.com/plusworx/gmin/utils/config"
 	"github.com/spf13/cobra"
 )
 

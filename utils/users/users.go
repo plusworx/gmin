@@ -28,8 +28,7 @@ import (
 	"strconv"
 	"strings"
 
-	cmn "github.com/plusworx/gmin/common"
-	cfg "github.com/plusworx/gmin/config"
+	cmn "github.com/plusworx/gmin/utils/common"
 	admin "google.golang.org/api/admin/directory/v1"
 	"google.golang.org/api/googleapi"
 )
@@ -39,6 +38,22 @@ const (
 	startUsersField = "users("
 	startNameField  = "name("
 )
+
+// addressAttrs contains names of all the addressable admin.UserAddress attributes
+var addressAttrs = []string{
+	"country",
+	"countrycode",
+	"customtype",
+	"extendedaddress",
+	"formatted",
+	"locality",
+	"pobox",
+	"postalcode",
+	"primary",
+	"region",
+	"streetaddress",
+	"type",
+}
 
 // compositeAttrs contains names all admin.User attributes that are composite types
 var compositeAttrs = []string{
@@ -119,9 +134,11 @@ var locationAttrs = []string{
 
 // nameAttrs contains names of all the addressable admin.UserName attributes
 var nameAttrs = []string{
-	"familyName",
-	"fullName",
-	"givenName",
+	"familyname",
+	"firstname",
+	"fullname",
+	"givenname",
+	"lastname",
 }
 
 // notesAttrs contains names of all the addressable admin.UserAbout attributes
@@ -189,22 +206,6 @@ var websiteAttrs = []string{
 	"value",
 }
 
-// AddressAttrMap provides lowercase mappings to valid admin.UserAddress attributes
-var AddressAttrMap = map[string]string{
-	"country":         "country",
-	"countrycode":     "countryCode",
-	"customtype":      "customType",
-	"extendedaddress": "extendedAddress",
-	"formatted":       "formatted",
-	"locality":        "locality",
-	"pobox":           "poBox",
-	"postalcode":      "postalCode",
-	"primary":         "primary",
-	"region":          "region",
-	"streetaddress":   "streetAddress",
-	"type":            "type",
-}
-
 // QueryAttrMap provides lowercase mappings to valid admin.User query attributes
 var QueryAttrMap = map[string]string{
 	"address":           "address",
@@ -243,79 +244,156 @@ var QueryAttrMap = map[string]string{
 
 // UserAttrMap provides lowercase mappings to valid admin.User attributes
 var UserAttrMap = map[string]string{
-	"addresses":                  "addresses",
-	"addresses(country)":         "addresses(country)",
-	"addresses(countrycode)":     "addresses(countryCode)",
-	"addresses(customtype)":      "addresses(customType)",
-	"addresses(extendedaddress)": "addresses(extendedAddress)",
-	"addresses(formatted)":       "addresses(formatted)",
-	"addresses(pobox)":           "addresses(poBox)",
-	"addresses(postalcode)":      "addresses(postalCode)",
-	"addresses(primary)":         "addresses(primary)",
-	"addresses(region)":          "addresses(region)",
-	"addresses(streetaddress)":   "addresses(streetAddress)",
-	"addresses(type)":            "addresses(type)",
-	"agreedtoterms":              "agreedToTerms",
-	"aliases":                    "aliases",
-	"archived":                   "archived",
-	"changepasswordatnextlogin":  "changePasswordAtNextLogin",
-	"christianname":              "givenName",
-	"creationtime":               "creationTime",
-	"customschemas":              "customSchemas",
-	"customerid":                 "customerId",
-	"deletiontime":               "deletionTime",
-	"emails":                     "emails",
-	"emails(address)":            "emails(address)",
-	"emails(customtype)":         "emails(customType)",
-	"emails(primary)":            "emails(primary)",
-	"emails(type)":               "emails(type)",
-	"etag":                       "etag",
-	"externalids":                "externalIds",
-	"familyname":                 "familyName",
-	"firstname":                  "givenName",
-	"fullname":                   "fullName",
-	"gender":                     "gender",
-	"givenname":                  "givenName",
-	"hashfunction":               "hashFunction",
-	"id":                         "id",
-	"ims":                        "ims",
-	"includeinglobaladdresslist": "includeInGlobalAddressList",
-	"ipwhitelisted":              "ipWhiteListed",
-	"isadmin":                    "isAdmin",
-	"isdelegatedadmin":           "isDelegatedAdmin",
-	"isenforcedin2sv":            "isEnforcedIn2Sv",
-	"isenrolledin2sv":            "isEnrolledIn2Sv",
-	"ismailboxsetup":             "isMailboxSetup",
-	"keywords":                   "keywords",
-	"kind":                       "kind",
-	"languages":                  "languages",
-	"lastlogintime":              "lastLoginTime",
-	"lastname":                   "familyName",
-	"locations":                  "locations",
-	"name":                       "name",
-	"name(familyname)":           "name(familyName)",
-	"name(firstname)":            "name(givenName)",
-	"name(fullname)":             "name(fullName)",
-	"name(givenname)":            "name(givenName)",
-	"name(lastname)":             "name(familyName)",
-	"notes":                      "notes",
-	"noneditablealiases":         "nonEditableAliases",
-	"orgunitpath":                "orgUnitPath",
-	"password":                   "password",
-	"phones":                     "phones",
-	"posixaccounts":              "posixAccounts",
-	"primaryemail":               "primaryEmail",
-	"recoveryemail":              "recoveryEmail",
-	"recoveryphone":              "recoveryPhone",
-	"relations":                  "relations",
-	"sshpublickeys":              "sshPublicKeys",
-	"surname":                    "familyName",
-	"suspended":                  "suspended",
-	"suspensionreason":           "suspensionReason",
-	"thumbnailphotoetag":         "thumbnailPhotoEtag",
-	"thumbnailphotourl":          "thumbnailPhotoUrl",
-	"type":                       "type",
-	"websites":                   "websites",
+	"addresses":                          "addresses",
+	"addresses(country)":                 "addresses(country)",
+	"addresses(countrycode)":             "addresses(countryCode)",
+	"addresses(customtype)":              "addresses(customType)",
+	"addresses(extendedaddress)":         "addresses(extendedAddress)",
+	"addresses(formatted)":               "addresses(formatted)",
+	"addresses(locality)":                "addresses(locality)",
+	"addresses(pobox)":                   "addresses(poBox)",
+	"addresses(postalcode)":              "addresses(postalCode)",
+	"addresses(primary)":                 "addresses(primary)",
+	"addresses(region)":                  "addresses(region)",
+	"addresses(streetaddress)":           "addresses(streetAddress)",
+	"addresses(type)":                    "addresses(type)",
+	"agreedtoterms":                      "agreedToTerms",
+	"aliases":                            "aliases",
+	"archived":                           "archived",
+	"changepasswordatnextlogin":          "changePasswordAtNextLogin",
+	"christianname":                      "givenName",
+	"creationtime":                       "creationTime",
+	"customschemas":                      "customSchemas",
+	"customerid":                         "customerId",
+	"deletiontime":                       "deletionTime",
+	"emails":                             "emails",
+	"emails(address)":                    "emails(address)",
+	"emails(customtype)":                 "emails(customType)",
+	"emails(primary)":                    "emails(primary)",
+	"emails(type)":                       "emails(type)",
+	"etag":                               "etag",
+	"externalids":                        "externalIds",
+	"externalids(customtype)":            "externalIds(customType)",
+	"externalids(type)":                  "externalIds(type)",
+	"externalids(value)":                 "externalIds(value)",
+	"familyname":                         "familyName",
+	"firstname":                          "givenName",
+	"fullname":                           "fullName",
+	"gender":                             "gender",
+	"gender(addressmeas)":                "gender(addressMeAs)",
+	"gender(customgender)":               "gender(customGender)",
+	"gender(type)":                       "gender(type)",
+	"givenname":                          "givenName",
+	"hashfunction":                       "hashFunction",
+	"id":                                 "id",
+	"ims":                                "ims",
+	"ims(customprotocol)":                "ims(customProtocol)",
+	"ims(customtype)":                    "ims(customType)",
+	"ims(im)":                            "ims(im)",
+	"ims(primary)":                       "ims(primary)",
+	"ims(protocol)":                      "ims(protocol)",
+	"ims(type)":                          "ims(type)",
+	"includeinglobaladdresslist":         "includeInGlobalAddressList",
+	"ipwhitelisted":                      "ipWhiteListed",
+	"isadmin":                            "isAdmin",
+	"isdelegatedadmin":                   "isDelegatedAdmin",
+	"isenforcedin2sv":                    "isEnforcedIn2Sv",
+	"isenrolledin2sv":                    "isEnrolledIn2Sv",
+	"ismailboxsetup":                     "isMailboxSetup",
+	"keywords":                           "keywords",
+	"keywords(customtype)":               "keywords(customType)",
+	"keywords(type)":                     "keywords(type)",
+	"keywords(value)":                    "keywords(value)",
+	"kind":                               "kind",
+	"languages":                          "languages",
+	"languages(customlanguage)":          "languages(customLanguage)",
+	"languages(languagecode)":            "languages(languageCode)",
+	"lastlogintime":                      "lastLoginTime",
+	"lastname":                           "familyName",
+	"locations":                          "locations",
+	"locations(area)":                    "locations(area)",
+	"locations(buildingid)":              "locations(buildingId)",
+	"locations(customtype)":              "locations(customType)",
+	"locations(deskcode)":                "locations(deskCode)",
+	"locations(floorname)":               "locations(floorName)",
+	"locations(floorsection)":            "locations(floorSection)",
+	"locations(type)":                    "locations(type)",
+	"name":                               "name",
+	"name(familyname)":                   "name(familyName)",
+	"name(firstname)":                    "name(givenName)",
+	"name(fullname)":                     "name(fullName)",
+	"name(givenname)":                    "name(givenName)",
+	"name(lastname)":                     "name(familyName)",
+	"notes":                              "notes",
+	"notes(contenttype)":                 "notes(contentType)",
+	"notes(value)":                       "notes(value)",
+	"noneditablealiases":                 "nonEditableAliases",
+	"organisations":                      "organizations",
+	"organisations(costcenter)":          "organizations(costCenter)",
+	"organisations(customtype)":          "organizations(customType)",
+	"organisations(department)":          "organizations(department)",
+	"organisations(description)":         "organizations(description)",
+	"organisations(domain)":              "organizations(domain)",
+	"organisations(fulltimeequivalent)":  "organizations(fullTimeEquivalent)",
+	"organisations(location)":            "organizations(location)",
+	"organisations(name)":                "organizations(name)",
+	"organisations(primary)":             "organizations(primary)",
+	"organisations(symbol)":              "organizations(symbol)",
+	"organisations(title)":               "organizations(title)",
+	"organisations(type)":                "organizations(type)",
+	"organizations":                      "organizations",
+	"organizations(costcenter)":          "organizations(costCenter)",
+	"organizations(customtype)":          "organizations(customType)",
+	"organizations(department)":          "organizations(department)",
+	"organizations(description)":         "organizations(description)",
+	"organizations(domain)":              "organizations(domain)",
+	"organizations(fulltimeequivalent)":  "organizations(fullTimeEquivalent)",
+	"organizations(location)":            "organizations(location)",
+	"organizations(name)":                "organizations(name)",
+	"organizations(primary)":             "organizations(primary)",
+	"organizations(symbol)":              "organizations(symbol)",
+	"organizations(title)":               "organizations(title)",
+	"organizations(type)":                "organizations(type)",
+	"orgunitpath":                        "orgUnitPath",
+	"password":                           "password",
+	"phones":                             "phones",
+	"phones(customtype)":                 "phones(customType)",
+	"phones(primary)":                    "phones(primary)",
+	"phones(type)":                       "phones(type)",
+	"phones(value)":                      "phones(value)",
+	"posixaccounts":                      "posixAccounts",
+	"posixaccounts(accountid)":           "posixaccounts(accountId)",
+	"posixaccounts(gecos)":               "posixaccounts(gecos)",
+	"posixaccounts(gid)":                 "posixaccounts(gid)",
+	"posixaccounts(homedirectory)":       "posixaccounts(homeDirectory)",
+	"posixaccounts(operatingsystemtype)": "posixaccounts(operatingSystemType)",
+	"posixaccounts(primary)":             "posixaccounts(primary)",
+	"posixaccounts(shell)":               "posixaccounts(shell)",
+	"posixaccounts(systemid)":            "posixaccounts(systemId)",
+	"posixaccounts(uid)":                 "posixaccounts(uid)",
+	"posixaccounts(username)":            "posixaccounts(username)",
+	"primaryemail":                       "primaryEmail",
+	"recoveryemail":                      "recoveryEmail",
+	"recoveryphone":                      "recoveryPhone",
+	"relations":                          "relations",
+	"relations(customtype)":              "relations(customType)",
+	"relations(type)":                    "relations(type)",
+	"relations(value)":                   "relations(value)",
+	"sshpublickeys":                      "sshPublicKeys",
+	"sshpublickeys(expirationtimeusec)":  "sshPublicKeys(expirationTimeUsec)",
+	"sshpublickeys(fingerprint)":         "sshPublicKeys(fingerprint)",
+	"sshpublickeys(key)":                 "sshPublicKeys(key)",
+	"surname":                            "familyName",
+	"suspended":                          "suspended",
+	"suspensionreason":                   "suspensionReason",
+	"thumbnailphotoetag":                 "thumbnailPhotoEtag",
+	"thumbnailphotourl":                  "thumbnailPhotoUrl",
+	"type":                               "type",
+	"websites":                           "websites",
+	"websites(customtype)":               "websites(customType)",
+	"websites(primary)":                  "websites(primary)",
+	"websites(type)":                     "websites(type)",
+	"websites(value)":                    "websites(value)",
 }
 
 var validAddressTypes = []string{
@@ -386,6 +464,15 @@ var validNotesContentTypes = []string{
 	"text_plain",
 }
 
+// ValidOrderByStrs provide valid strings to be used to set admin.UsersListCall OrderBy
+var ValidOrderByStrs = []string{
+	"email",
+	"familyname",
+	"firstname",
+	"givenname",
+	"lastname",
+}
+
 var validOrgTypes = []string{
 	"custom",
 	"domain_only",
@@ -424,6 +511,13 @@ var validPhoneTypes = []string{
 	"work_pager",
 }
 
+// ValidProjections provide valid strings to be used to set admin.UsersListCall Projection
+var ValidProjections = []string{
+	"basic",
+	"custom",
+	"full",
+}
+
 var validRelationTypes = []string{
 	"admin_assistant",
 	"assistant",
@@ -445,6 +539,12 @@ var validRelationTypes = []string{
 	"spouse",
 }
 
+// ValidViewTypes provide valid strings to be used to set admin.UsersListCall ViewType
+var ValidViewTypes = []string{
+	"admin_view",
+	"domain_public",
+}
+
 var validWebsiteTypes = []string{
 	"app_install_page",
 	"blog",
@@ -459,92 +559,129 @@ var validWebsiteTypes = []string{
 	"work",
 }
 
-// AllDomain fetches users for all domains
-func AllDomain(ulc *admin.UsersListCall) (*admin.Users, error) {
-	users, err := ulc.Customer(cfg.CustomerID).Do()
-	if err != nil {
-		return nil, err
-	}
+// AddCustomer adds Customer to admin calls
+func AddCustomer(ulc *admin.UsersListCall, customerID string) *admin.UsersListCall {
+	var newULC *admin.UsersListCall
 
-	return users, nil
+	newULC = ulc.Customer(customerID)
+
+	return newULC
 }
 
-// AllDomainAttrs fetches specified attributes for all domain users
-func AllDomainAttrs(ulc *admin.UsersListCall, attrs string) (*admin.Users, error) {
+// AddDomain adds domain to admin calls
+func AddDomain(ulc *admin.UsersListCall, domain string) *admin.UsersListCall {
+	var newULC *admin.UsersListCall
+
+	newULC = ulc.Domain(domain)
+
+	return newULC
+}
+
+// AddFields adds fields to be returned from admin calls
+func AddFields(callObj interface{}, attrs string) interface{} {
 	var fields googleapi.Field = googleapi.Field(attrs)
 
-	users, err := ulc.Customer(cfg.CustomerID).Fields(fields).Do()
-	if err != nil {
-		return nil, err
+	switch callObj.(type) {
+	case *admin.UsersListCall:
+		var newULC *admin.UsersListCall
+		ulc := callObj.(*admin.UsersListCall)
+		newULC = ulc.Fields(fields)
+
+		return newULC
+	case *admin.UsersGetCall:
+		var newUGC *admin.UsersGetCall
+		ugc := callObj.(*admin.UsersGetCall)
+		newUGC = ugc.Fields(fields)
+
+		return newUGC
 	}
 
-	return users, nil
+	return nil
 }
 
-// AllDomainQuery fetches users for all domains that satisfy query arguments
-func AllDomainQuery(ulc *admin.UsersListCall, query string) (*admin.Users, error) {
-	users, err := ulc.Customer(cfg.CustomerID).Query(query).Do()
-	if err != nil {
-		return nil, err
-	}
+// AddMaxResults adds MaxResults to admin calls
+func AddMaxResults(ulc *admin.UsersListCall, maxResults int64) *admin.UsersListCall {
+	var newULC *admin.UsersListCall
 
-	return users, nil
+	newULC = ulc.MaxResults(maxResults)
+
+	return newULC
 }
 
-// AllDomainQueryAttrs fetches specified attributes for all domain users that satisfy query arguments
-func AllDomainQueryAttrs(ulc *admin.UsersListCall, query string, attrs string) (*admin.Users, error) {
-	var fields googleapi.Field = googleapi.Field(attrs)
+// AddOrderBy adds OrderBy to admin calls
+func AddOrderBy(ulc *admin.UsersListCall, orderBy string) *admin.UsersListCall {
+	var newULC *admin.UsersListCall
 
-	users, err := ulc.Customer(cfg.CustomerID).Query(query).Fields(fields).Do()
-	if err != nil {
-		return nil, err
-	}
+	newULC = ulc.OrderBy(orderBy)
 
-	return users, nil
+	return newULC
 }
 
-// DelAllDomain fetches deleted users for all domains
-func DelAllDomain(ulc *admin.UsersListCall) (*admin.Users, error) {
-	users, err := ulc.Customer(cfg.CustomerID).ShowDeleted("true").Do()
-	if err != nil {
-		return nil, err
+// AddProjection adds Projection to admin calls
+func AddProjection(callObj interface{}, projection string) interface{} {
+	switch callObj.(type) {
+	case *admin.UsersListCall:
+		var newULC *admin.UsersListCall
+		ulc := callObj.(*admin.UsersListCall)
+		newULC = ulc.Projection(projection)
+
+		return newULC
+	case *admin.UsersGetCall:
+		var newUGC *admin.UsersGetCall
+		ugc := callObj.(*admin.UsersGetCall)
+		newUGC = ugc.Projection(projection)
+
+		return newUGC
 	}
 
-	return users, nil
+	return nil
 }
 
-// DelAllDomainAttrs fetches specified attributes for all deleted domain users
-func DelAllDomainAttrs(ulc *admin.UsersListCall, attrs string) (*admin.Users, error) {
-	var fields googleapi.Field = googleapi.Field(attrs)
+// AddQuery adds query to admin calls
+func AddQuery(ulc *admin.UsersListCall, query string) *admin.UsersListCall {
+	var newULC *admin.UsersListCall
 
-	users, err := ulc.Customer(cfg.CustomerID).Fields(fields).ShowDeleted("true").Do()
-	if err != nil {
-		return nil, err
-	}
+	newULC = ulc.Query(query)
 
-	return users, nil
+	return newULC
 }
 
-// DelDomain fetches deleted users for a particular domain
-func DelDomain(domain string, ulc *admin.UsersListCall) (*admin.Users, error) {
-	users, err := ulc.Domain(domain).ShowDeleted("true").Do()
-	if err != nil {
-		return nil, err
-	}
+// AddShowDeleted adds ShowDeleted to admin calls
+func AddShowDeleted(ulc *admin.UsersListCall) *admin.UsersListCall {
+	var newULC *admin.UsersListCall
 
-	return users, nil
+	newULC = ulc.ShowDeleted("true")
+
+	return newULC
 }
 
-// DelDomainAttrs fetches specified attributes for deleted domain users
-func DelDomainAttrs(domain string, ulc *admin.UsersListCall, attrs string) (*admin.Users, error) {
-	var fields googleapi.Field = googleapi.Field(attrs)
+// AddSortOrder adds SortOrder to admin calls
+func AddSortOrder(ulc *admin.UsersListCall, sortorder string) *admin.UsersListCall {
+	var newULC *admin.UsersListCall
 
-	users, err := ulc.Domain(domain).Fields(fields).ShowDeleted("true").Do()
-	if err != nil {
-		return nil, err
+	newULC = ulc.SortOrder(sortorder)
+
+	return newULC
+}
+
+// AddViewType adds ViewType to admin calls
+func AddViewType(callObj interface{}, viewType string) interface{} {
+	switch callObj.(type) {
+	case *admin.UsersListCall:
+		var newULC *admin.UsersListCall
+		ulc := callObj.(*admin.UsersListCall)
+		newULC = ulc.ViewType(viewType)
+
+		return newULC
+	case *admin.UsersGetCall:
+		var newUGC *admin.UsersGetCall
+		ugc := callObj.(*admin.UsersGetCall)
+		newUGC = ugc.ViewType(viewType)
+
+		return newUGC
 	}
 
-	return users, nil
+	return nil
 }
 
 // doComposite processes composite admin.UserName attributes
@@ -598,43 +735,19 @@ func doComposite(user *admin.User, attrStack []string) ([]string, error) {
 	return nil, err
 }
 
-// Domain fetches users for a particular domain
-func Domain(domain string, ulc *admin.UsersListCall) (*admin.Users, error) {
-	users, err := ulc.Domain(domain).Do()
+// DoGet calls the .Do() function on the admin.UsersGetCall
+func DoGet(ugc *admin.UsersGetCall) (*admin.User, error) {
+	user, err := ugc.Do()
 	if err != nil {
 		return nil, err
 	}
 
-	return users, nil
+	return user, nil
 }
 
-// DomainAttrs fetches specified attributes for domain users
-func DomainAttrs(domain string, ulc *admin.UsersListCall, attrs string) (*admin.Users, error) {
-	var fields googleapi.Field = googleapi.Field(attrs)
-
-	users, err := ulc.Domain(domain).Fields(fields).Do()
-	if err != nil {
-		return nil, err
-	}
-
-	return users, nil
-}
-
-// DomainQuery fetches users for specified domain that satisfy query arguments
-func DomainQuery(domain string, ulc *admin.UsersListCall, query string) (*admin.Users, error) {
-	users, err := ulc.Domain(domain).Query(query).Do()
-	if err != nil {
-		return nil, err
-	}
-
-	return users, nil
-}
-
-// DomainQueryAttrs fetches specified attributes for domain users that satisfy query arguments
-func DomainQueryAttrs(domain string, ulc *admin.UsersListCall, query string, attrs string) (*admin.Users, error) {
-	var fields googleapi.Field = googleapi.Field(attrs)
-
-	users, err := ulc.Domain(domain).Query(query).Fields(fields).Do()
+// DoList calls the .Do() function on the admin.UsersListCall
+func DoList(ulc *admin.UsersListCall) (*admin.Users, error) {
+	users, err := ulc.Do()
 	if err != nil {
 		return nil, err
 	}
@@ -671,7 +784,17 @@ func doName(name *admin.UserName, attrStack []string) ([]string, error) {
 				return nil, err
 			}
 
-			PopulateNameAttr(name, newName)
+			if newName.FamilyName != "" {
+				name.FamilyName = newName.FamilyName
+			}
+
+			if newName.FullName != "" {
+				name.FullName = newName.FullName
+			}
+
+			if newName.GivenName != "" {
+				name.GivenName = newName.GivenName
+			}
 
 			if idx == len(processStack)-1 {
 				return nil, nil
@@ -762,15 +885,17 @@ func doNonComposite(user *admin.User, attrStack []string) ([]string, error) {
 // FormatAttrs formats attributes for admin.UsersListCall.Fields or admin.UsersGetCall.Fields call
 func FormatAttrs(attrs []string, get bool) string {
 	var (
-		nameRequired bool
-		outputName   string
-		outputStr    string
-		name         []string
-		userFields   []string
+		nameRequired    bool
+		outputName      string
+		outputOtherFlds string
+		outputStr       string
+		name            []string
+		userFields      []string
 	)
 
 	for _, a := range attrs {
-		if cmn.SliceContainsStr(nameAttrs, a) {
+		lowerA := strings.ToLower(a)
+		if cmn.SliceContainsStr(nameAttrs, lowerA) {
 			nameRequired = true
 			name = append(name, a)
 			continue
@@ -779,16 +904,26 @@ func FormatAttrs(attrs []string, get bool) string {
 		userFields = append(userFields, a)
 	}
 
+	if len(userFields) > 0 {
+		outputOtherFlds = strings.Join(userFields, ",")
+	}
+
+	outputStr = outputOtherFlds
+
 	if nameRequired {
 		outputName = startNameField + strings.Join(name, ",") + endField
+	}
+
+	if outputName != "" && outputStr != "" {
 		outputStr = outputStr + "," + outputName
 	}
 
-	if get {
-		outputStr = strings.Join(userFields, ",")
-	} else {
-		outputStr = startUsersField + strings.Join(userFields, ",")
-		outputStr = outputStr + endField
+	if outputName != "" && outputStr == "" {
+		outputStr = outputName
+	}
+
+	if !get {
+		outputStr = startUsersField + outputStr + endField
 	}
 
 	return outputStr
@@ -810,6 +945,11 @@ func makeAbout(aboutParts []string) (*admin.UserAbout, error) {
 		err      error
 		newAbout *admin.UserAbout
 	)
+
+	if len(aboutParts)%2 != 0 {
+		err := errors.New("gmin: error - malformed attribute string")
+		return nil, err
+	}
 
 	newAbout = new(admin.UserAbout)
 
@@ -845,13 +985,19 @@ func makeAddress(addrParts []string) (*admin.UserAddress, error) {
 		attrName   string
 	)
 
+	if len(addrParts)%2 != 0 {
+		err := errors.New("gmin: error - malformed attribute string")
+		return nil, err
+	}
+
 	newAddress = new(admin.UserAddress)
 
 	for idx, part := range addrParts {
 		if idx%2 == 0 {
 			attrName = strings.ToLower(part)
-			_, err := cmn.IsValidAttr(attrName, AddressAttrMap)
-			if err != nil {
+			ok := cmn.SliceContainsStr(addressAttrs, attrName)
+			if !ok {
+				err := fmt.Errorf("gmin: error - %v is not a valid UserAddress attribute", part)
 				return nil, err
 			}
 		} else {
@@ -873,7 +1019,7 @@ func makeAddress(addrParts []string) (*admin.UserAddress, error) {
 			case attrName == "postalcode":
 				newAddress.PostalCode = part
 			case attrName == "primary":
-				if part == "true" {
+				if strings.ToLower(part) == "true" {
 					newAddress.Primary = true
 				} else {
 					newAddress.Primary = false
@@ -904,6 +1050,11 @@ func makeEmail(emailParts []string) (*admin.UserEmail, error) {
 		newEmail *admin.UserEmail
 	)
 
+	if len(emailParts)%2 != 0 {
+		err := errors.New("gmin: error - malformed attribute string")
+		return nil, err
+	}
+
 	newEmail = new(admin.UserEmail)
 
 	for idx, part := range emailParts {
@@ -921,7 +1072,7 @@ func makeEmail(emailParts []string) (*admin.UserEmail, error) {
 			case attrName == "customtype":
 				newEmail.CustomType = part
 			case attrName == "primary":
-				if part == "true" {
+				if strings.ToLower(part) == "true" {
 					newEmail.Primary = true
 				} else {
 					newEmail.Primary = false
@@ -947,6 +1098,11 @@ func makeExtID(extIDParts []string) (*admin.UserExternalId, error) {
 		err      error
 		newExtID *admin.UserExternalId
 	)
+
+	if len(extIDParts)%2 != 0 {
+		err := errors.New("gmin: error - malformed attribute string")
+		return nil, err
+	}
 
 	newExtID = new(admin.UserExternalId)
 
@@ -985,6 +1141,11 @@ func makeGender(genParts []string) (*admin.UserGender, error) {
 		newGender *admin.UserGender
 	)
 
+	if len(genParts)%2 != 0 {
+		err := errors.New("gmin: error - malformed attribute string")
+		return nil, err
+	}
+
 	newGender = new(admin.UserGender)
 
 	for idx, part := range genParts {
@@ -1022,6 +1183,11 @@ func makeIm(imParts []string) (*admin.UserIm, error) {
 		newIm    *admin.UserIm
 	)
 
+	if len(imParts)%2 != 0 {
+		err := errors.New("gmin: error - malformed attribute string")
+		return nil, err
+	}
+
 	newIm = new(admin.UserIm)
 
 	for idx, part := range imParts {
@@ -1041,7 +1207,7 @@ func makeIm(imParts []string) (*admin.UserIm, error) {
 			case attrName == "im":
 				newIm.Im = part
 			case attrName == "primary":
-				if part == "true" {
+				if strings.ToLower(part) == "true" {
 					newIm.Primary = true
 				} else {
 					newIm.Primary = false
@@ -1074,6 +1240,11 @@ func makeKeyword(keyParts []string) (*admin.UserKeyword, error) {
 		err        error
 		newKeyword *admin.UserKeyword
 	)
+
+	if len(keyParts)%2 != 0 {
+		err := errors.New("gmin: error - malformed attribute string")
+		return nil, err
+	}
 
 	newKeyword = new(admin.UserKeyword)
 
@@ -1112,6 +1283,11 @@ func makeLanguage(langParts []string) (*admin.UserLanguage, error) {
 		newLanguage *admin.UserLanguage
 	)
 
+	if len(langParts)%2 != 0 {
+		err := errors.New("gmin: error - malformed attribute string")
+		return nil, err
+	}
+
 	newLanguage = new(admin.UserLanguage)
 
 	for idx, part := range langParts {
@@ -1141,6 +1317,11 @@ func makeLocation(locParts []string) (*admin.UserLocation, error) {
 		err         error
 		newLocation *admin.UserLocation
 	)
+
+	if len(locParts)%2 != 0 {
+		err := errors.New("gmin: error - malformed attribute string")
+		return nil, err
+	}
 
 	newLocation = new(admin.UserLocation)
 
@@ -1182,30 +1363,33 @@ func makeLocation(locParts []string) (*admin.UserLocation, error) {
 
 func makeName(nameParts []string) (*admin.UserName, error) {
 	var (
-		attrName  string
-		err       error
-		newName   *admin.UserName
-		validName string
+		attrName string
+		err      error
+		newName  *admin.UserName
 	)
+
+	if len(nameParts)%2 != 0 {
+		err := errors.New("gmin: error - malformed attribute string")
+		return nil, err
+	}
 
 	newName = new(admin.UserName)
 
 	for idx, part := range nameParts {
 		if idx%2 == 0 {
 			attrName = strings.ToLower(part)
-			validName, err = cmn.IsValidAttr(attrName, UserAttrMap)
-			if err != nil {
+			ok := cmn.SliceContainsStr(nameAttrs, attrName)
+			if !ok {
+				err = fmt.Errorf("gmin: error - %v is not a valid UserName attribute", part)
 				return nil, err
 			}
 		} else {
-			lwrValidName := strings.ToLower(validName)
-
 			switch true {
-			case lwrValidName == "familyname":
+			case attrName == "familyname" || attrName == "lastname":
 				newName.FamilyName = part
-			case lwrValidName == "givenname":
+			case attrName == "givenname" || attrName == "firstname":
 				newName.GivenName = part
-			case lwrValidName == "fullname":
+			case attrName == "fullname":
 				newName.FullName = part
 			}
 		}
@@ -1220,6 +1404,11 @@ func makeOrganization(orgParts []string) (*admin.UserOrganization, error) {
 		err      error
 		newOrg   *admin.UserOrganization
 	)
+
+	if len(orgParts)%2 != 0 {
+		err := errors.New("gmin: error - malformed attribute string")
+		return nil, err
+	}
 
 	newOrg = new(admin.UserOrganization)
 
@@ -1255,7 +1444,7 @@ func makeOrganization(orgParts []string) (*admin.UserOrganization, error) {
 			case attrName == "name":
 				newOrg.Name = part
 			case attrName == "primary":
-				if part == "true" {
+				if strings.ToLower(part) == "true" {
 					newOrg.Primary = true
 				} else {
 					newOrg.Primary = false
@@ -1286,6 +1475,11 @@ func makePhone(phoneParts []string) (*admin.UserPhone, error) {
 		newPhone *admin.UserPhone
 	)
 
+	if len(phoneParts)%2 != 0 {
+		err := errors.New("gmin: error - malformed attribute string")
+		return nil, err
+	}
+
 	newPhone = new(admin.UserPhone)
 
 	for idx, part := range phoneParts {
@@ -1301,7 +1495,7 @@ func makePhone(phoneParts []string) (*admin.UserPhone, error) {
 			case attrName == "customtype":
 				newPhone.CustomType = part
 			case attrName == "primary":
-				if part == "true" {
+				if strings.ToLower(part) == "true" {
 					newPhone.Primary = true
 				} else {
 					newPhone.Primary = false
@@ -1329,6 +1523,11 @@ func makePosAcct(posParts []string) (*admin.UserPosixAccount, error) {
 		err        error
 		newPosAcct *admin.UserPosixAccount
 	)
+
+	if len(posParts)%2 != 0 {
+		err := errors.New("gmin: error - malformed attribute string")
+		return nil, err
+	}
 
 	newPosAcct = new(admin.UserPosixAccount)
 
@@ -1363,7 +1562,7 @@ func makePosAcct(posParts []string) (*admin.UserPosixAccount, error) {
 				}
 				newPosAcct.OperatingSystemType = part
 			case attrName == "primary":
-				if part == "true" {
+				if strings.ToLower(part) == "true" {
 					newPosAcct.Primary = true
 				} else {
 					newPosAcct.Primary = false
@@ -1395,6 +1594,11 @@ func makeRelation(relParts []string) (*admin.UserRelation, error) {
 		err         error
 		newRelation *admin.UserRelation
 	)
+
+	if len(relParts)%2 != 0 {
+		err := errors.New("gmin: error - malformed attribute string")
+		return nil, err
+	}
 
 	newRelation = new(admin.UserRelation)
 
@@ -1433,6 +1637,11 @@ func makeSSHPubKey(pKeyParts []string) (*admin.UserSshPublicKey, error) {
 		newPubKey *admin.UserSshPublicKey
 	)
 
+	if len(pKeyParts)%2 != 0 {
+		err := errors.New("gmin: error - malformed attribute string")
+		return nil, err
+	}
+
 	newPubKey = new(admin.UserSshPublicKey)
 
 	for idx, part := range pKeyParts {
@@ -1468,6 +1677,11 @@ func makeWebsite(webParts []string) (*admin.UserWebsite, error) {
 		newWebsite *admin.UserWebsite
 	)
 
+	if len(webParts)%2 != 0 {
+		err := errors.New("gmin: error - malformed attribute string")
+		return nil, err
+	}
+
 	newWebsite = new(admin.UserWebsite)
 
 	for idx, part := range webParts {
@@ -1483,7 +1697,7 @@ func makeWebsite(webParts []string) (*admin.UserWebsite, error) {
 			case attrName == "customtype":
 				newWebsite.CustomType = part
 			case attrName == "primary":
-				if part == "true" {
+				if strings.ToLower(part) == "true" {
 					newWebsite.Primary = true
 				} else {
 					newWebsite.Primary = false
@@ -1496,26 +1710,13 @@ func makeWebsite(webParts []string) (*admin.UserWebsite, error) {
 					return nil, err
 				}
 				newWebsite.Type = part
+			case attrName == "value":
+				newWebsite.Value = part
 			}
 		}
 	}
 
 	return newWebsite, nil
-}
-
-// PopulateNameAttr populates admin.UserName attributes
-func PopulateNameAttr(name *admin.UserName, newName *admin.UserName) {
-	if newName.FamilyName != "" {
-		name.FamilyName = newName.FamilyName
-	}
-
-	if newName.FullName != "" {
-		name.FullName = newName.FullName
-	}
-
-	if newName.GivenName != "" {
-		name.GivenName = newName.GivenName
-	}
 }
 
 func processAttrStack(user *admin.User, name *admin.UserName, attrStack []string) error {
@@ -1654,7 +1855,7 @@ func processCompStack(user *admin.User, compStack []string, attrName string) err
 			case attrName == "posixaccount":
 				newPosAcct = newAttr.(*admin.UserPosixAccount)
 				posixaccts = append(posixaccts, newPosAcct)
-				user.Phones = phones
+				user.PosixAccounts = posixaccts
 			case attrName == "relation":
 				newRelation = newAttr.(*admin.UserRelation)
 				relations = append(relations, newRelation)
@@ -1799,26 +2000,4 @@ func ProcessFreeformAttrs(user *admin.User, name *admin.UserName, ffAttrs string
 	}
 
 	return nil
-}
-
-// Single fetches a user
-func Single(ugc *admin.UsersGetCall) (*admin.User, error) {
-	user, err := ugc.Do()
-	if err != nil {
-		return nil, err
-	}
-
-	return user, nil
-}
-
-// SingleAttrs fetches specified attributes for user
-func SingleAttrs(ugc *admin.UsersGetCall, attrs string) (*admin.User, error) {
-	var fields googleapi.Field = googleapi.Field(attrs)
-
-	user, err := ugc.Fields(fields).Do()
-	if err != nil {
-		return nil, err
-	}
-
-	return user, nil
 }

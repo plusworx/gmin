@@ -25,10 +25,11 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
-	cmn "github.com/plusworx/gmin/common"
-	cfg "github.com/plusworx/gmin/config"
-	ous "github.com/plusworx/gmin/orgunits"
+	cmn "github.com/plusworx/gmin/utils/common"
+	cfg "github.com/plusworx/gmin/utils/config"
+	ous "github.com/plusworx/gmin/utils/orgunits"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 )
@@ -52,25 +53,40 @@ func doListOUs(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	oulc := ds.Orgunits.List(cfg.CustomerID)
+	customerID, err := cfg.ReadConfigString("customerid")
+	if err != nil {
+		return err
+	}
+
+	oulc := ds.Orgunits.List(customerID)
 
 	if attrs != "" {
-		validAttrs, err = cmn.ValidateAttrs(attrs, ous.OrgUnitAttrMap)
+		validAttrs, err = cmn.ValidateArgs(attrs, ous.OrgUnitAttrMap, cmn.AttrStr)
 		if err != nil {
 			return err
 		}
 
-		formattedAttrs := ous.FormatAttrs(validAttrs)
+		formattedAttrs := ous.FormatAttrs(validAttrs, false)
+		listCall := ous.AddFields(oulc, formattedAttrs)
+		oulc = listCall.(*admin.OrgunitsListCall)
+	}
 
-		orgUnits, err = ous.Attrs(oulc, formattedAttrs)
-		if err != nil {
-			return err
-		}
-	} else {
-		orgUnits, err = ous.OrgUnits(oulc)
-		if err != nil {
-			return err
-		}
+	if orgUnit != "" {
+		oulc = ous.AddOUPath(oulc, orgUnit)
+	}
+
+	searchType = strings.ToLower(searchType)
+
+	ok := cmn.SliceContainsStr(ous.ValidSearchTypes, searchType)
+	if !ok {
+		err := fmt.Errorf("gmin: error - %v is not a valid OrgunitsListCall type", searchType)
+		return err
+	}
+	oulc = ous.AddType(oulc, searchType)
+
+	orgUnits, err = ous.DoList(oulc)
+	if err != nil {
+		return err
 	}
 
 	jsonData, err := json.MarshalIndent(orgUnits, "", "    ")
@@ -86,5 +102,7 @@ func doListOUs(cmd *cobra.Command, args []string) error {
 func init() {
 	listCmd.AddCommand(listOUsCmd)
 
-	listOUsCmd.Flags().StringVarP(&attrs, "attrs", "a", "", "required orgunit attributes separated by ~)")
+	listOUsCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required orgunit attributes separated by (~)")
+	listOUsCmd.Flags().StringVarP(&orgUnit, "orgunitpath", "o", "", "orgunitpath or id of starting orgunit")
+	listOUsCmd.Flags().StringVarP(&searchType, "type", "t", "children", "all sub-organizational units or only immediate children")
 }

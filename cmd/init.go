@@ -30,7 +30,7 @@ import (
 
 	valid "github.com/asaskevich/govalidator"
 	"github.com/mitchellh/go-homedir"
-	cfg "github.com/plusworx/gmin/config"
+	cfg "github.com/plusworx/gmin/utils/config"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
 )
@@ -47,7 +47,7 @@ var initCmd = &cobra.Command{
 func askForConfigPath() string {
 	var response string
 
-	fmt.Print("Please enter a config file path (must be full path): ")
+	fmt.Print("Please enter a full config file path\n(Press <Enter> for default value): ")
 
 	_, err := fmt.Scanln(&response)
 	if response == "" {
@@ -57,6 +57,24 @@ func askForConfigPath() string {
 	if err != nil {
 		fmt.Println(err)
 		return askForConfigPath()
+	}
+
+	return response
+}
+
+func askForCustomerID() string {
+	var response string
+
+	fmt.Print("Please enter customer ID\n(Press <Enter> for default value): ")
+
+	_, err := fmt.Scanln(&response)
+	if response == "" {
+		return response
+	}
+
+	if err != nil {
+		fmt.Println(err)
+		return askForCustomerID()
 	}
 
 	return response
@@ -86,10 +104,12 @@ func doInit(cmd *cobra.Command, args []string) error {
 	answers := struct {
 		AdminEmail string
 		ConfigPath string
+		CustomerID string
 	}{}
 
 	answers.AdminEmail = askForEmail()
 	answers.ConfigPath = askForConfigPath()
+	answers.CustomerID = askForCustomerID()
 
 	if answers.ConfigPath == "" {
 		hmDir, err := homedir.Dir()
@@ -100,7 +120,11 @@ func doInit(cmd *cobra.Command, args []string) error {
 		answers.ConfigPath = hmDir
 	}
 
-	cfgFile := cfg.File{Administrator: answers.AdminEmail}
+	if answers.CustomerID == "" {
+		answers.CustomerID = "my_customer"
+	}
+
+	cfgFile := cfg.File{Administrator: answers.AdminEmail, CustomerID: answers.CustomerID}
 
 	path := filepath.Join(filepath.ToSlash(answers.ConfigPath), cfg.FileName)
 

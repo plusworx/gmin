@@ -23,48 +23,75 @@ THE SOFTWARE.
 package cmd
 
 import (
+	"bufio"
 	"errors"
-	"fmt"
+	"os"
+	"strings"
+	"time"
 
-	cmn "github.com/plusworx/gmin/utils/common"
+	"github.com/cenkalti/backoff/v4"
 	"github.com/spf13/cobra"
-	admin "google.golang.org/api/admin/directory/v1"
 )
 
-var deleteMemberCmd = &cobra.Command{
-	Use:     "group-member <member email address or id> -g <group email address or id>",
-	Aliases: []string{"grp-member", "grp-mem", "gmember", "gmem"},
-	Args:    cobra.ExactArgs(1),
-	Short:   "Deletes member of a group",
-	Long:    `Deletes member of a group.`,
-	RunE:    doDeleteMember,
+var batchDelUserCmd = &cobra.Command{
+	Use:     "users -i <input file path>",
+	Aliases: []string{"user"},
+	Short:   "Deletes a batch of users",
+	Long:    `Deletes a batch of users.`,
+	RunE:    doBatchDelUser,
 }
 
-func doDeleteMember(cmd *cobra.Command, args []string) error {
-	if group == "" {
-		err := errors.New("gmin: error - group email address or id must be provided")
+func doBatchDelUser(cmd *cobra.Command, args []string) error {
+	var users []string
+
+	if inputFile == "" {
+		err := errors.New("gmin: error - must provide inputfile")
 		return err
 	}
 
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupMemberScope)
+	file, err := os.Open(inputFile)
 	if err != nil {
 		return err
 	}
+	defer file.Close()
 
-	mdc := ds.Members.Delete(group, args[0])
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		users = []string{}
 
-	err = mdc.Do()
-	if err != nil {
-		return err
+		users = append(users, scanner.Text())
+
+		b := backoff.NewExponentialBackOff()
+		b.MaxElapsedTime = 30 * time.Second
+
+		err = backoff.Retry(func() error {
+			var err error
+			err = doDeleteUser(nil, users)
+			if err == nil {
+				return err
+			}
+
+			if strings.Contains(err.Error(), "Resource Not Found") ||
+				strings.Contains(err.Error(), "Bad Request") {
+				return backoff.Permanent(err)
+			}
+
+			return err
+		}, b)
+		if err != nil {
+			return err
+		}
 	}
 
-	fmt.Printf("**** gmin: member %s of group %s deleted ****\n", args[0], group)
+	if err := scanner.Err(); err != nil {
+		return err
+	}
 
 	return nil
 }
 
 func init() {
-	deleteCmd.AddCommand(deleteMemberCmd)
+	batchDelCmd.AddCommand(batchDelUserCmd)
 
-	deleteMemberCmd.Flags().StringVarP(&group, "group", "g", "", "email address or id of group")
+	batchDelUserCmd.Flags().StringVarP(&inputFile, "inputfile", "i", "", "filepath to user data text file")
 }

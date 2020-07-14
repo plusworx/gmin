@@ -23,48 +23,34 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"errors"
-	"fmt"
-
-	cmn "github.com/plusworx/gmin/utils/common"
-	"github.com/spf13/cobra"
-	admin "google.golang.org/api/admin/directory/v1"
+	"testing"
 )
 
-var deleteMemberCmd = &cobra.Command{
-	Use:     "group-member <member email address or id> -g <group email address or id>",
-	Aliases: []string{"grp-member", "grp-mem", "gmember", "gmem"},
-	Args:    cobra.ExactArgs(1),
-	Short:   "Deletes member of a group",
-	Long:    `Deletes member of a group.`,
-	RunE:    doDeleteMember,
-}
-
-func doDeleteMember(cmd *cobra.Command, args []string) error {
-	if group == "" {
-		err := errors.New("gmin: error - group email address or id must be provided")
-		return err
+func TestDoBatchUndelUser(t *testing.T) {
+	cases := []struct {
+		expectedErr string
+		infile      string
+	}{
+		{
+			expectedErr: "gmin: error - must provide inputfile",
+		},
+		{
+			infile:      "/home/me/nonexistentfile",
+			expectedErr: "open /home/me/nonexistentfile: no such file or directory",
+		},
 	}
 
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupMemberScope)
-	if err != nil {
-		return err
+	for _, c := range cases {
+		inputFile = ""
+
+		if c.infile != "" {
+			inputFile = c.infile
+		}
+
+		err := doBatchUndelUser(nil, nil)
+		if err.Error() != c.expectedErr {
+			t.Errorf("Expected error %v, got %v", c.expectedErr, err)
+
+		}
 	}
-
-	mdc := ds.Members.Delete(group, args[0])
-
-	err = mdc.Do()
-	if err != nil {
-		return err
-	}
-
-	fmt.Printf("**** gmin: member %s of group %s deleted ****\n", args[0], group)
-
-	return nil
-}
-
-func init() {
-	deleteCmd.AddCommand(deleteMemberCmd)
-
-	deleteMemberCmd.Flags().StringVarP(&group, "group", "g", "", "email address or id of group")
 }

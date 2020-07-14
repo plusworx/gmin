@@ -25,7 +25,7 @@ package cmd
 import (
 	"fmt"
 
-	cmn "github.com/plusworx/gmin/common"
+	cmn "github.com/plusworx/gmin/utils/common"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 )
@@ -33,9 +33,8 @@ import (
 var createGroupCmd = &cobra.Command{
 	Use:     "group <group email address>",
 	Aliases: []string{"grp"},
-
-	Args:  cobra.ExactArgs(1),
-	Short: "Creates a group",
+	Args:    cobra.ExactArgs(1),
+	Short:   "Creates a group",
 	Long: `Creates a group .
 	
 	Examples: gmin create group office@mycompany.com

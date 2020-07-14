@@ -47,20 +47,74 @@ var OrgUnitAttrMap = map[string]string{
 	"parentorgunitpath": "parentOrgUnitPath",
 }
 
-// Attrs fetches specified attributes for orgunits
-func Attrs(oulc *admin.OrgunitsListCall, attrs string) (*admin.OrgUnits, error) {
+// ValidSearchTypes provides list of valid types for admin.OrgunitsListCall
+var ValidSearchTypes = []string{
+	"all",
+	"children",
+}
+
+// AddFields adds fields to be returned to admin calls
+func AddFields(callObj interface{}, attrs string) interface{} {
 	var fields googleapi.Field = googleapi.Field(attrs)
 
-	orgUnits, err := oulc.Fields(fields).Do()
+	switch callObj.(type) {
+	case *admin.OrgunitsListCall:
+		var newOULC *admin.OrgunitsListCall
+		oulc := callObj.(*admin.OrgunitsListCall)
+		newOULC = oulc.Fields(fields)
+
+		return newOULC
+	case *admin.OrgunitsGetCall:
+		var newOUGC *admin.OrgunitsGetCall
+		ougc := callObj.(*admin.OrgunitsGetCall)
+		newOUGC = ougc.Fields(fields)
+
+		return newOUGC
+	}
+
+	return nil
+}
+
+// AddOUPath adds OrgUnitPath or ID to admin calls
+func AddOUPath(oulc *admin.OrgunitsListCall, path string) *admin.OrgunitsListCall {
+	var newOULC *admin.OrgunitsListCall
+
+	newOULC = oulc.OrgUnitPath(path)
+
+	return newOULC
+}
+
+// AddType adds Type to admin calls
+func AddType(oulc *admin.OrgunitsListCall, searchType string) *admin.OrgunitsListCall {
+	var newOULC *admin.OrgunitsListCall
+
+	newOULC = oulc.Type(searchType)
+
+	return newOULC
+}
+
+// DoGet calls the .Do() function on the admin.OrgunitsGetCall
+func DoGet(ougc *admin.OrgunitsGetCall) (*admin.OrgUnit, error) {
+	orgUnit, err := ougc.Do()
 	if err != nil {
 		return nil, err
 	}
 
-	return orgUnits, nil
+	return orgUnit, nil
 }
 
-// FormatAttrs formats attributes for admin.MembersListCall.Fields call
-func FormatAttrs(attrs []string) string {
+// DoList calls the .Do() function on the admin.OrgunitsListCall
+func DoList(oulc *admin.OrgunitsListCall) (*admin.OrgUnits, error) {
+	orgunits, err := oulc.Do()
+	if err != nil {
+		return nil, err
+	}
+
+	return orgunits, nil
+}
+
+// FormatAttrs formats attributes for admin.OrgunitsListCall.Fields call
+func FormatAttrs(attrs []string, get bool) string {
 	var (
 		outputStr string
 		ouFields  []string
@@ -70,39 +124,11 @@ func FormatAttrs(attrs []string) string {
 		ouFields = append(ouFields, a)
 	}
 
-	outputStr = startOrgUnitsField + strings.Join(ouFields, ",") + endField
+	if get {
+		outputStr = strings.Join(ouFields, ",")
+	} else {
+		outputStr = startOrgUnitsField + strings.Join(ouFields, ",") + endField
+	}
 
 	return outputStr
-}
-
-// OrgUnits fetches all orgunits
-func OrgUnits(oulc *admin.OrgunitsListCall) (*admin.OrgUnits, error) {
-	orgUnits, err := oulc.Do()
-	if err != nil {
-		return nil, err
-	}
-
-	return orgUnits, nil
-}
-
-// Single fetches an orgunit
-func Single(ougc *admin.OrgunitsGetCall) (*admin.OrgUnit, error) {
-	orgUnit, err := ougc.Do()
-	if err != nil {
-		return nil, err
-	}
-
-	return orgUnit, nil
-}
-
-// SingleAttrs fetches specified attributes for group
-func SingleAttrs(ougc *admin.OrgunitsGetCall, attrs string) (*admin.OrgUnit, error) {
-	var fields googleapi.Field = googleapi.Field(attrs)
-
-	orgUnit, err := ougc.Fields(fields).Do()
-	if err != nil {
-		return nil, err
-	}
-
-	return orgUnit, nil
 }
