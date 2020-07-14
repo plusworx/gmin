@@ -63,7 +63,8 @@ func doListMembers(cmd *cobra.Command, args []string) error {
 		}
 
 		formattedAttrs := mems.FormatAttrs(validAttrs, false)
-		mlc = mems.AddFields(mlc, formattedAttrs)
+		listCall := mems.AddFields(mlc, formattedAttrs)
+		mlc = listCall.(*admin.MembersListCall)
 	}
 
 	if role != "" {

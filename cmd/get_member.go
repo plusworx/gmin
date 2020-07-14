@@ -89,15 +89,13 @@ func processGroupMember(memID string, attrs string, groupEmail string) ([]byte, 
 		}
 
 		formattedAttrs := mems.FormatAttrs(validAttrs, true)
-		member, err = mems.GetAttrs(mgc, formattedAttrs)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		member, err = mems.Get(mgc)
-		if err != nil {
-			return nil, err
-		}
+		getCall := mems.AddFields(mgc, formattedAttrs)
+		mgc = getCall.(*admin.MembersGetCall)
+	}
+
+	member, err = mems.DoGet(mgc)
+	if err != nil {
+		return nil, err
 	}
 
 	jsonData, err := json.MarshalIndent(member, "", "    ")

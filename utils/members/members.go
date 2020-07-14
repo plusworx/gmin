@@ -64,13 +64,25 @@ var RoleMap = map[string]string{
 }
 
 // AddFields adds fields to be returned to admin calls
-func AddFields(mlc *admin.MembersListCall, attrs string) *admin.MembersListCall {
+func AddFields(callObj interface{}, attrs string) interface{} {
 	var fields googleapi.Field = googleapi.Field(attrs)
-	var newMLC *admin.MembersListCall
 
-	newMLC = mlc.Fields(fields)
+	switch callObj.(type) {
+	case *admin.MembersListCall:
+		var newMLC *admin.MembersListCall
+		mlc := callObj.(*admin.MembersListCall)
+		newMLC = mlc.Fields(fields)
 
-	return newMLC
+		return newMLC
+	case *admin.MembersGetCall:
+		var newMGC *admin.MembersGetCall
+		mgc := callObj.(*admin.MembersGetCall)
+		newMGC = mgc.Fields(fields)
+
+		return newMGC
+	}
+
+	return nil
 }
 
 // AddMaxResults adds MaxResults to admin calls
@@ -89,6 +101,16 @@ func AddRoles(mlc *admin.MembersListCall, roles string) *admin.MembersListCall {
 	newMLC = mlc.Roles(roles)
 
 	return newMLC
+}
+
+// DoGet calls the .Do() function on the admin.MembersGetCall
+func DoGet(mgc *admin.MembersGetCall) (*admin.Member, error) {
+	member, err := mgc.Do()
+	if err != nil {
+		return nil, err
+	}
+
+	return member, nil
 }
 
 // DoList calls the .Do() function on the admin.MembersListCall
@@ -119,28 +141,6 @@ func FormatAttrs(attrs []string, get bool) string {
 	}
 
 	return outputStr
-}
-
-// Get fetches member of a particular group
-func Get(mgc *admin.MembersGetCall) (*admin.Member, error) {
-	member, err := mgc.Do()
-	if err != nil {
-		return nil, err
-	}
-
-	return member, nil
-}
-
-// GetAttrs fetches specified attributes for member
-func GetAttrs(mgc *admin.MembersGetCall, attrs string) (*admin.Member, error) {
-	var fields googleapi.Field = googleapi.Field(attrs)
-
-	member, err := mgc.Fields(fields).Do()
-	if err != nil {
-		return nil, err
-	}
-
-	return member, nil
 }
 
 // ValidateDeliverySetting checks that a valid delivery setting has been provided
