@@ -64,15 +64,13 @@ func doGetGroup(cmd *cobra.Command, args []string) error {
 		}
 
 		formattedAttrs := grps.FormatAttrs(validAttrs, true)
-		group, err = grps.GetAttrs(ggc, formattedAttrs)
-		if err != nil {
-			return err
-		}
-	} else {
-		group, err = grps.Get(ggc)
-		if err != nil {
-			return err
-		}
+		getCall := grps.AddFields(ggc, formattedAttrs)
+		ggc = getCall.(*admin.GroupsGetCall)
+	}
+
+	group, err = grps.DoGet(ggc)
+	if err != nil {
+		return err
 	}
 
 	jsonData, err := json.MarshalIndent(group, "", "    ")

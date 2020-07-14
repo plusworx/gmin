@@ -64,7 +64,8 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 		}
 
 		formattedAttrs = grps.FormatAttrs(validAttrs, false)
-		glc = grps.AddFields(glc, formattedAttrs)
+		listCall := grps.AddFields(glc, formattedAttrs)
+		glc = listCall.(*admin.GroupsListCall)
 	}
 
 	if domain != "" {

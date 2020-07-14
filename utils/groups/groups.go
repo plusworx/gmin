@@ -79,13 +79,25 @@ func AddDomain(glc *admin.GroupsListCall, domain string) *admin.GroupsListCall {
 }
 
 // AddFields adds fields to be returned from admin calls
-func AddFields(glc *admin.GroupsListCall, attrs string) *admin.GroupsListCall {
+func AddFields(callObj interface{}, attrs string) interface{} {
 	var fields googleapi.Field = googleapi.Field(attrs)
-	var newGLC *admin.GroupsListCall
 
-	newGLC = glc.Fields(fields)
+	switch callObj.(type) {
+	case *admin.GroupsListCall:
+		var newGLC *admin.GroupsListCall
+		glc := callObj.(*admin.GroupsListCall)
+		newGLC = glc.Fields(fields)
 
-	return newGLC
+		return newGLC
+	case *admin.GroupsGetCall:
+		var newGGC *admin.GroupsGetCall
+		ggc := callObj.(*admin.GroupsGetCall)
+		newGGC = ggc.Fields(fields)
+
+		return newGGC
+	}
+
+	return nil
 }
 
 // AddMaxResults adds MaxResults to admin calls
@@ -133,6 +145,16 @@ func AddUserKey(glc *admin.GroupsListCall, key string) *admin.GroupsListCall {
 	return newGLC
 }
 
+// DoGet calls the .Do() function on the admin.GroupsGetCall
+func DoGet(ggc *admin.GroupsGetCall) (*admin.Group, error) {
+	group, err := ggc.Do()
+	if err != nil {
+		return nil, err
+	}
+
+	return group, nil
+}
+
 // DoList calls the .Do() function on the admin.GroupsListCall
 func DoList(glc *admin.GroupsListCall) (*admin.Groups, error) {
 	groups, err := glc.Do()
@@ -175,26 +197,4 @@ func FormatQuery(queryParts []string) (string, error) {
 	}
 
 	return formattedQuery, nil
-}
-
-// Get fetches a group
-func Get(ggc *admin.GroupsGetCall) (*admin.Group, error) {
-	group, err := ggc.Do()
-	if err != nil {
-		return nil, err
-	}
-
-	return group, nil
-}
-
-// GetAttrs fetches specified attributes for group
-func GetAttrs(ggc *admin.GroupsGetCall, attrs string) (*admin.Group, error) {
-	var fields googleapi.Field = googleapi.Field(attrs)
-
-	group, err := ggc.Fields(fields).Do()
-	if err != nil {
-		return nil, err
-	}
-
-	return group, nil
 }
