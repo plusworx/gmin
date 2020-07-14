@@ -54,13 +54,25 @@ var ValidSearchTypes = []string{
 }
 
 // AddFields adds fields to be returned to admin calls
-func AddFields(oulc *admin.OrgunitsListCall, attrs string) *admin.OrgunitsListCall {
+func AddFields(callObj interface{}, attrs string) interface{} {
 	var fields googleapi.Field = googleapi.Field(attrs)
-	var newOULC *admin.OrgunitsListCall
 
-	newOULC = oulc.Fields(fields)
+	switch callObj.(type) {
+	case *admin.OrgunitsListCall:
+		var newOULC *admin.OrgunitsListCall
+		oulc := callObj.(*admin.OrgunitsListCall)
+		newOULC = oulc.Fields(fields)
 
-	return newOULC
+		return newOULC
+	case *admin.OrgunitsGetCall:
+		var newOUGC *admin.OrgunitsGetCall
+		ougc := callObj.(*admin.OrgunitsGetCall)
+		newOUGC = ougc.Fields(fields)
+
+		return newOUGC
+	}
+
+	return nil
 }
 
 // AddOUPath adds OrgUnitPath or ID to admin calls
@@ -79,6 +91,16 @@ func AddType(oulc *admin.OrgunitsListCall, searchType string) *admin.OrgunitsLis
 	newOULC = oulc.Type(searchType)
 
 	return newOULC
+}
+
+// DoGet calls the .Do() function on the admin.OrgunitsGetCall
+func DoGet(ougc *admin.OrgunitsGetCall) (*admin.OrgUnit, error) {
+	orgUnit, err := ougc.Do()
+	if err != nil {
+		return nil, err
+	}
+
+	return orgUnit, nil
 }
 
 // DoList calls the .Do() function on the admin.OrgunitsListCall
@@ -105,26 +127,4 @@ func FormatAttrs(attrs []string) string {
 	outputStr = startOrgUnitsField + strings.Join(ouFields, ",") + endField
 
 	return outputStr
-}
-
-// Get fetches an orgunit
-func Get(ougc *admin.OrgunitsGetCall) (*admin.OrgUnit, error) {
-	orgUnit, err := ougc.Do()
-	if err != nil {
-		return nil, err
-	}
-
-	return orgUnit, nil
-}
-
-// GetAttrs fetches specified attributes for orgunit
-func GetAttrs(ougc *admin.OrgunitsGetCall, attrs string) (*admin.OrgUnit, error) {
-	var fields googleapi.Field = googleapi.Field(attrs)
-
-	orgUnit, err := ougc.Fields(fields).Do()
-	if err != nil {
-		return nil, err
-	}
-
-	return orgUnit, nil
 }

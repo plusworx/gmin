@@ -70,16 +70,13 @@ func doGetOrgUnit(cmd *cobra.Command, args []string) error {
 		}
 
 		formattedAttrs := ous.FormatAttrs(validAttrs)
+		getCall := ous.AddFields(ougc, formattedAttrs)
+		ougc = getCall.(*admin.OrgunitsGetCall)
+	}
 
-		orgUnit, err = ous.GetAttrs(ougc, formattedAttrs)
-		if err != nil {
-			return err
-		}
-	} else {
-		orgUnit, err = ous.Get(ougc)
-		if err != nil {
-			return err
-		}
+	orgUnit, err = ous.DoGet(ougc)
+	if err != nil {
+		return err
 	}
 
 	jsonData, err := json.MarshalIndent(orgUnit, "", "    ")
