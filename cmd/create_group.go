@@ -33,9 +33,8 @@ import (
 var createGroupCmd = &cobra.Command{
 	Use:     "group <group email address>",
 	Aliases: []string{"grp"},
-
-	Args:  cobra.ExactArgs(1),
-	Short: "Creates a group",
+	Args:    cobra.ExactArgs(1),
+	Short:   "Creates a group",
 	Long: `Creates a group .
 	
 	Examples: gmin create group office@mycompany.com
