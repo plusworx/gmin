@@ -70,7 +70,8 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 		}
 
 		formattedAttrs = usrs.FormatAttrs(validAttrs, false)
-		ulc = usrs.AddFields(ulc, formattedAttrs)
+		listCall := usrs.AddFields(ulc, formattedAttrs)
+		ulc = listCall.(*admin.UsersListCall)
 	}
 
 	if deleted {
@@ -94,7 +95,8 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("gmin: error - %v is not a valid projection type", projection)
 		}
 
-		ulc = usrs.AddProjection(ulc, proj)
+		listCall := usrs.AddProjection(ulc, proj)
+		ulc = listCall.(*admin.UsersListCall)
 	}
 
 	if query != "" {
@@ -143,7 +145,8 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("gmin: error - %v is not a valid view type", viewType)
 		}
 
-		ulc = usrs.AddViewType(ulc, vt)
+		listCall := usrs.AddViewType(ulc, vt)
+		ulc = listCall.(*admin.UsersListCall)
 	}
 
 	ulc = usrs.AddMaxResults(ulc, maxResults)

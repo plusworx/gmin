@@ -25,6 +25,7 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	cmn "github.com/plusworx/gmin/utils/common"
 	usrs "github.com/plusworx/gmin/utils/users"
@@ -63,16 +64,35 @@ func doGetUser(cmd *cobra.Command, args []string) error {
 		}
 
 		formattedAttrs := usrs.FormatAttrs(validAttrs, true)
+		getCall := usrs.AddFields(ugc, formattedAttrs)
+		ugc = getCall.(*admin.UsersGetCall)
+	}
 
-		user, err = usrs.GetAttrs(ugc, formattedAttrs)
-		if err != nil {
-			return err
+	if projection != "" {
+		proj := strings.ToLower(projection)
+		ok := cmn.SliceContainsStr(usrs.ValidProjections, proj)
+		if !ok {
+			return fmt.Errorf("gmin: error - %v is not a valid projection type", projection)
 		}
-	} else {
-		user, err = usrs.Get(ugc)
-		if err != nil {
-			return err
+
+		getCall := usrs.AddProjection(ugc, proj)
+		ugc = getCall.(*admin.UsersGetCall)
+	}
+
+	if viewType != "" {
+		vt := strings.ToLower(viewType)
+		ok := cmn.SliceContainsStr(usrs.ValidViewTypes, vt)
+		if !ok {
+			return fmt.Errorf("gmin: error - %v is not a valid view type", viewType)
 		}
+
+		getCall := usrs.AddViewType(ugc, vt)
+		ugc = getCall.(*admin.UsersGetCall)
+	}
+
+	user, err = usrs.DoGet(ugc)
+	if err != nil {
+		return err
 	}
 
 	jsonData, err := json.MarshalIndent(user, "", "    ")
@@ -89,4 +109,6 @@ func init() {
 	getCmd.AddCommand(getUserCmd)
 
 	getUserCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required user attributes (separated by ~)")
+	getUserCmd.Flags().StringVarP(&projection, "projection", "p", "", "type of projection")
+	getUserCmd.Flags().StringVarP(&viewType, "viewtype", "v", "", "data view type")
 }

@@ -578,13 +578,25 @@ func AddDomain(ulc *admin.UsersListCall, domain string) *admin.UsersListCall {
 }
 
 // AddFields adds fields to be returned from admin calls
-func AddFields(ulc *admin.UsersListCall, attrs string) *admin.UsersListCall {
+func AddFields(callObj interface{}, attrs string) interface{} {
 	var fields googleapi.Field = googleapi.Field(attrs)
-	var newULC *admin.UsersListCall
 
-	newULC = ulc.Fields(fields)
+	switch callObj.(type) {
+	case *admin.UsersListCall:
+		var newULC *admin.UsersListCall
+		ulc := callObj.(*admin.UsersListCall)
+		newULC = ulc.Fields(fields)
 
-	return newULC
+		return newULC
+	case *admin.UsersGetCall:
+		var newUGC *admin.UsersGetCall
+		ugc := callObj.(*admin.UsersGetCall)
+		newUGC = ugc.Fields(fields)
+
+		return newUGC
+	}
+
+	return nil
 }
 
 // AddMaxResults adds MaxResults to admin calls
@@ -606,12 +618,23 @@ func AddOrderBy(ulc *admin.UsersListCall, orderBy string) *admin.UsersListCall {
 }
 
 // AddProjection adds Projection to admin calls
-func AddProjection(ulc *admin.UsersListCall, projection string) *admin.UsersListCall {
-	var newULC *admin.UsersListCall
+func AddProjection(callObj interface{}, projection string) interface{} {
+	switch callObj.(type) {
+	case *admin.UsersListCall:
+		var newULC *admin.UsersListCall
+		ulc := callObj.(*admin.UsersListCall)
+		newULC = ulc.Projection(projection)
 
-	newULC = ulc.Projection(projection)
+		return newULC
+	case *admin.UsersGetCall:
+		var newUGC *admin.UsersGetCall
+		ugc := callObj.(*admin.UsersGetCall)
+		newUGC = ugc.Projection(projection)
 
-	return newULC
+		return newUGC
+	}
+
+	return nil
 }
 
 // AddQuery adds query to admin calls
@@ -642,12 +665,23 @@ func AddSortOrder(ulc *admin.UsersListCall, sortorder string) *admin.UsersListCa
 }
 
 // AddViewType adds ViewType to admin calls
-func AddViewType(ulc *admin.UsersListCall, viewType string) *admin.UsersListCall {
-	var newULC *admin.UsersListCall
+func AddViewType(callObj interface{}, viewType string) interface{} {
+	switch callObj.(type) {
+	case *admin.UsersListCall:
+		var newULC *admin.UsersListCall
+		ulc := callObj.(*admin.UsersListCall)
+		newULC = ulc.ViewType(viewType)
 
-	newULC = ulc.ViewType(viewType)
+		return newULC
+	case *admin.UsersGetCall:
+		var newUGC *admin.UsersGetCall
+		ugc := callObj.(*admin.UsersGetCall)
+		newUGC = ugc.ViewType(viewType)
 
-	return newULC
+		return newUGC
+	}
+
+	return nil
 }
 
 // doComposite processes composite admin.UserName attributes
@@ -699,6 +733,16 @@ func doComposite(user *admin.User, attrStack []string) ([]string, error) {
 
 	err := errors.New("gmin: error - malformed attribute string")
 	return nil, err
+}
+
+// DoGet calls the .Do() function on the admin.UsersGetCall
+func DoGet(ugc *admin.UsersGetCall) (*admin.User, error) {
+	user, err := ugc.Do()
+	if err != nil {
+		return nil, err
+	}
+
+	return user, nil
 }
 
 // DoList calls the .Do() function on the admin.UsersListCall
@@ -883,28 +927,6 @@ func FormatAttrs(attrs []string, get bool) string {
 	}
 
 	return outputStr
-}
-
-// Get fetches a user
-func Get(ugc *admin.UsersGetCall) (*admin.User, error) {
-	user, err := ugc.Do()
-	if err != nil {
-		return nil, err
-	}
-
-	return user, nil
-}
-
-// GetAttrs fetches specified attributes for user
-func GetAttrs(ugc *admin.UsersGetCall, attrs string) (*admin.User, error) {
-	var fields googleapi.Field = googleapi.Field(attrs)
-
-	user, err := ugc.Fields(fields).Do()
-	if err != nil {
-		return nil, err
-	}
-
-	return user, nil
 }
 
 // isCompositeAttr checks whether or not an attribute is a composite type
