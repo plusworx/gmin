@@ -69,7 +69,7 @@ func doGetOrgUnit(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
-		formattedAttrs := ous.FormatAttrs(validAttrs)
+		formattedAttrs := ous.FormatAttrs(validAttrs, true)
 		getCall := ous.AddFields(ougc, formattedAttrs)
 		ougc = getCall.(*admin.OrgunitsGetCall)
 	}

@@ -114,7 +114,7 @@ func DoList(oulc *admin.OrgunitsListCall) (*admin.OrgUnits, error) {
 }
 
 // FormatAttrs formats attributes for admin.OrgunitsListCall.Fields call
-func FormatAttrs(attrs []string) string {
+func FormatAttrs(attrs []string, get bool) string {
 	var (
 		outputStr string
 		ouFields  []string
@@ -124,7 +124,11 @@ func FormatAttrs(attrs []string) string {
 		ouFields = append(ouFields, a)
 	}
 
-	outputStr = startOrgUnitsField + strings.Join(ouFields, ",") + endField
+	if get {
+		outputStr = strings.Join(ouFields, ",")
+	} else {
+		outputStr = startOrgUnitsField + strings.Join(ouFields, ",") + endField
+	}
 
 	return outputStr
 }

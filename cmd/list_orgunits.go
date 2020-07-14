@@ -66,7 +66,7 @@ func doListOUs(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
-		formattedAttrs := ous.FormatAttrs(validAttrs)
+		formattedAttrs := ous.FormatAttrs(validAttrs, false)
 		listCall := ous.AddFields(oulc, formattedAttrs)
 		oulc = listCall.(*admin.OrgunitsListCall)
 	}
