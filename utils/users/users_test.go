@@ -577,10 +577,17 @@ func TestDoName(t *testing.T) {
 			expectedLastName:  "Dent",
 		},
 		{
-			attrStack:         []string{"name", "{firstname", "Arthur", "fullname", "Algernon", "lastname", "Dent}"},
+			attrStack:         []string{"name", "{christianname", "Arthur", "surname", "Dent}"},
 			expectedErr:       "",
 			expectedFirstName: "Arthur",
-			expectedFullName:  "Algernon",
+			expectedFullName:  "",
+			expectedLastName:  "Dent",
+		},
+		{
+			attrStack:         []string{"name", "{firstname", "Arthur", "fullname", "Arthur Dent", "lastname", "Dent}"},
+			expectedErr:       "",
+			expectedFirstName: "Arthur",
+			expectedFullName:  "Arthur Dent",
 			expectedLastName:  "Dent",
 		},
 		{
@@ -595,10 +602,10 @@ func TestDoName(t *testing.T) {
 			expectedErr: "gmin: error - malformed name attribute",
 		},
 		{
-			attrStack:         []string{"name", "{FirstName", "Arthur", "FullName", "Algernon", "LASTNAME", "Dent}"},
+			attrStack:         []string{"name", "{FirstName", "Arthur", "FullName", "Arthur Dent", "LASTNAME", "Dent}"},
 			expectedErr:       "",
 			expectedFirstName: "Arthur",
-			expectedFullName:  "Algernon",
+			expectedFullName:  "Arthur Dent",
 			expectedLastName:  "Dent",
 		},
 		{

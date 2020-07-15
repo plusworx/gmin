@@ -148,11 +148,13 @@ var locationAttrs = []string{
 
 // nameAttrs contains names of all the addressable admin.UserName attributes
 var nameAttrs = []string{
+	"christianname",
 	"familyname",
 	"firstname",
 	"fullname",
 	"givenname",
 	"lastname",
+	"surname",
 }
 
 // notesAttrs contains names of all the addressable admin.UserAbout attributes
@@ -1399,9 +1401,9 @@ func makeName(nameParts []string) (*admin.UserName, error) {
 			}
 		} else {
 			switch true {
-			case attrName == "familyname" || attrName == "lastname":
+			case attrName == "familyname" || attrName == "lastname" || attrName == "surname":
 				newName.FamilyName = part
-			case attrName == "givenname" || attrName == "firstname":
+			case attrName == "givenname" || attrName == "firstname" || attrName == "christianname":
 				newName.GivenName = part
 			case attrName == "fullname":
 				newName.FullName = part
