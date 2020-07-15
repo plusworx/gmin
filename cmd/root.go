@@ -54,6 +54,7 @@ var (
 	orgUnit          string
 	orgUnitDesc      string
 	orgUnitName      string
+	pages            string
 	parentOUPath     string
 	password         string
 	projection       string

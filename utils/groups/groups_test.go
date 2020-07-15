@@ -159,6 +159,32 @@ func TestAddOrderBy(t *testing.T) {
 	}
 }
 
+func TestAddPageToken(t *testing.T) {
+	cases := []struct {
+		token string
+	}{
+		{
+			token: "token_string",
+		},
+	}
+
+	ds, err := tsts.DummyDirectoryService(admin.AdminDirectoryGroupReadonlyScope)
+	if err != nil {
+		t.Error("Error: failed to create dummy admin.Service")
+	}
+
+	glc := ds.Groups.List()
+
+	for _, c := range cases {
+
+		newGLC := AddPageToken(glc, c.token)
+
+		if newGLC == nil {
+			t.Error("Error: failed to add PageToken to GroupsListCall")
+		}
+	}
+}
+
 func TestAddQuery(t *testing.T) {
 	cases := []struct {
 		query string

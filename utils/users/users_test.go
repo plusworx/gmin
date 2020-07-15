@@ -154,7 +154,33 @@ func TestAddOrderBy(t *testing.T) {
 		newULC := AddOrderBy(ulc, c.orderBy)
 
 		if newULC == nil {
-			t.Error("Error: failed to add Fields to UsersListCall")
+			t.Error("Error: failed to add OrderBy to UsersListCall")
+		}
+	}
+}
+
+func TestAddPageToken(t *testing.T) {
+	cases := []struct {
+		token string
+	}{
+		{
+			token: "token_string",
+		},
+	}
+
+	ds, err := tsts.DummyDirectoryService(admin.AdminDirectoryUserReadonlyScope)
+	if err != nil {
+		t.Error("Error: failed to create dummy admin.Service")
+	}
+
+	ulc := ds.Users.List()
+
+	for _, c := range cases {
+
+		newULC := AddPageToken(ulc, c.token)
+
+		if newULC == nil {
+			t.Error("Error: failed to add PageToken to UsersListCall")
 		}
 	}
 }

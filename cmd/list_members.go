@@ -24,7 +24,9 @@ package cmd
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"strconv"
 
 	cmn "github.com/plusworx/gmin/utils/common"
 	mems "github.com/plusworx/gmin/utils/members"
@@ -84,6 +86,13 @@ func doListMembers(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	if pages != "" {
+		err = doMemPages(mlc, members, pages)
+		if err != nil {
+			return err
+		}
+	}
+
 	jsonData, err = json.MarshalIndent(members, "", "    ")
 	if err != nil {
 		return err
@@ -94,10 +103,72 @@ func doListMembers(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
+func doMemAllPages(mlc *admin.MembersListCall, members *admin.Members) error {
+	if members.NextPageToken != "" {
+		mlc = mems.AddPageToken(mlc, members.NextPageToken)
+		nxtMems, err := mems.DoList(mlc)
+		if err != nil {
+			return err
+		}
+		members.Members = append(members.Members, nxtMems.Members...)
+		members.Etag = nxtMems.Etag
+		members.NextPageToken = nxtMems.NextPageToken
+
+		if nxtMems.NextPageToken != "" {
+			doMemAllPages(mlc, members)
+		}
+	}
+
+	return nil
+}
+
+func doMemNumPages(mlc *admin.MembersListCall, members *admin.Members, numPages int) error {
+	if members.NextPageToken != "" && numPages > 0 {
+		mlc = mems.AddPageToken(mlc, members.NextPageToken)
+		nxtMems, err := mems.DoList(mlc)
+		if err != nil {
+			return err
+		}
+		members.Members = append(members.Members, nxtMems.Members...)
+		members.Etag = nxtMems.Etag
+		members.NextPageToken = nxtMems.NextPageToken
+
+		if nxtMems.NextPageToken != "" {
+			doMemNumPages(mlc, members, numPages-1)
+		}
+	}
+
+	return nil
+}
+
+func doMemPages(mlc *admin.MembersListCall, members *admin.Members, pages string) error {
+	if pages == "all" {
+		err := doMemAllPages(mlc, members)
+		if err != nil {
+			return err
+		}
+	} else {
+		numPages, err := strconv.Atoi(pages)
+		if err != nil {
+			return errors.New("gmin: error - pages must be 'all' or a number")
+		}
+
+		if numPages > 1 {
+			err = doMemNumPages(mlc, members, numPages-1)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
 func init() {
 	listCmd.AddCommand(listMembersCmd)
 
 	listMembersCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required member attributes (separated by ~)")
 	listMembersCmd.Flags().Int64VarP(&maxResults, "maxresults", "m", 200, "maximum number or results to return")
+	listMembersCmd.Flags().StringVarP(&pages, "pages", "p", "", "number of pages of results to be returned")
 	listMembersCmd.Flags().StringVarP(&role, "roles", "r", "", "roles to filter results by (separated by ~)")
 }

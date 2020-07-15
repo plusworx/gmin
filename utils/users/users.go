@@ -635,6 +635,15 @@ func AddOrderBy(ulc *admin.UsersListCall, orderBy string) *admin.UsersListCall {
 	return newULC
 }
 
+// AddPageToken adds PageToken to admin calls
+func AddPageToken(ulc *admin.UsersListCall, token string) *admin.UsersListCall {
+	var newULC *admin.UsersListCall
+
+	newULC = ulc.PageToken(token)
+
+	return newULC
+}
+
 // AddProjection adds Projection to admin calls
 func AddProjection(callObj interface{}, projection string) interface{} {
 	switch callObj.(type) {

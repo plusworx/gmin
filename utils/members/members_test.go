@@ -55,6 +55,32 @@ func TestAddFields(t *testing.T) {
 	}
 }
 
+func TestAddPageToken(t *testing.T) {
+	cases := []struct {
+		token string
+	}{
+		{
+			token: "token_string",
+		},
+	}
+
+	ds, err := tsts.DummyDirectoryService(admin.AdminDirectoryGroupMemberReadonlyScope)
+	if err != nil {
+		t.Error("Error: failed to create dummy admin.Service")
+	}
+
+	mlc := ds.Members.List("test@company.org")
+
+	for _, c := range cases {
+
+		newMLC := AddPageToken(mlc, c.token)
+
+		if newMLC == nil {
+			t.Error("Error: failed to add PageToken to MembersListCall")
+		}
+	}
+}
+
 func TestAddMaxResults(t *testing.T) {
 	cases := []struct {
 		maxResults int64

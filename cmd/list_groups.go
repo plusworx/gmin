@@ -24,7 +24,9 @@ package cmd
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 
 	cmn "github.com/plusworx/gmin/utils/common"
@@ -124,12 +126,80 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	if pages != "" {
+		err = doGrpPages(glc, groups, pages)
+		if err != nil {
+			return err
+		}
+	}
+
 	jsonData, err := json.MarshalIndent(groups, "", "    ")
 	if err != nil {
 		return err
 	}
 
 	fmt.Println(string(jsonData))
+
+	return nil
+}
+
+func doGrpAllPages(glc *admin.GroupsListCall, groups *admin.Groups) error {
+	if groups.NextPageToken != "" {
+		glc = grps.AddPageToken(glc, groups.NextPageToken)
+		nxtGroups, err := grps.DoList(glc)
+		if err != nil {
+			return err
+		}
+		groups.Groups = append(groups.Groups, nxtGroups.Groups...)
+		groups.Etag = nxtGroups.Etag
+		groups.NextPageToken = nxtGroups.NextPageToken
+
+		if nxtGroups.NextPageToken != "" {
+			doGrpAllPages(glc, groups)
+		}
+	}
+
+	return nil
+}
+
+func doGrpNumPages(glc *admin.GroupsListCall, groups *admin.Groups, numPages int) error {
+	if groups.NextPageToken != "" && numPages > 0 {
+		glc = grps.AddPageToken(glc, groups.NextPageToken)
+		nxtGroups, err := grps.DoList(glc)
+		if err != nil {
+			return err
+		}
+		groups.Groups = append(groups.Groups, nxtGroups.Groups...)
+		groups.Etag = nxtGroups.Etag
+		groups.NextPageToken = nxtGroups.NextPageToken
+
+		if nxtGroups.NextPageToken != "" {
+			doGrpNumPages(glc, groups, numPages-1)
+		}
+	}
+
+	return nil
+}
+
+func doGrpPages(glc *admin.GroupsListCall, groups *admin.Groups, pages string) error {
+	if pages == "all" {
+		err := doGrpAllPages(glc, groups)
+		if err != nil {
+			return err
+		}
+	} else {
+		numPages, err := strconv.Atoi(pages)
+		if err != nil {
+			return errors.New("gmin: error - pages must be 'all' or a number")
+		}
+
+		if numPages > 1 {
+			err = doGrpNumPages(glc, groups, numPages-1)
+			if err != nil {
+				return err
+			}
+		}
+	}
 
 	return nil
 }
@@ -141,6 +211,7 @@ func init() {
 	listGroupsCmd.Flags().StringVarP(&domain, "domain", "d", "", "domain from which to get groups")
 	listGroupsCmd.Flags().Int64VarP(&maxResults, "maxresults", "m", 200, "maximum number of results to return")
 	listGroupsCmd.Flags().StringVarP(&orderBy, "orderby", "o", "", "field by which results will be ordered")
+	listGroupsCmd.Flags().StringVarP(&pages, "pages", "p", "", "number of pages of results to be returned")
 	listGroupsCmd.Flags().StringVarP(&query, "query", "q", "", "selection criteria to get groups (separated by ~)")
 	listGroupsCmd.Flags().StringVarP(&sortOrder, "sortorder", "s", "", "sort order of returned results")
 	listGroupsCmd.Flags().StringVarP(&userKey, "userkey", "u", "", "email address or id of user who belongs to returned groups")

@@ -26,6 +26,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 
 	cmn "github.com/plusworx/gmin/utils/common"
@@ -156,12 +157,80 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	if pages != "" {
+		err = doUserPages(ulc, users, pages)
+		if err != nil {
+			return err
+		}
+	}
+
 	jsonData, err := json.MarshalIndent(users, "", "    ")
 	if err != nil {
 		return err
 	}
 
 	fmt.Println(string(jsonData))
+
+	return nil
+}
+
+func doUserAllPages(ulc *admin.UsersListCall, users *admin.Users) error {
+	if users.NextPageToken != "" {
+		ulc = usrs.AddPageToken(ulc, users.NextPageToken)
+		nxtUsers, err := usrs.DoList(ulc)
+		if err != nil {
+			return err
+		}
+		users.Users = append(users.Users, nxtUsers.Users...)
+		users.Etag = nxtUsers.Etag
+		users.NextPageToken = nxtUsers.NextPageToken
+
+		if nxtUsers.NextPageToken != "" {
+			doUserAllPages(ulc, users)
+		}
+	}
+
+	return nil
+}
+
+func doUserNumPages(ulc *admin.UsersListCall, users *admin.Users, numPages int) error {
+	if users.NextPageToken != "" && numPages > 0 {
+		ulc = usrs.AddPageToken(ulc, users.NextPageToken)
+		nxtUsers, err := usrs.DoList(ulc)
+		if err != nil {
+			return err
+		}
+		users.Users = append(users.Users, nxtUsers.Users...)
+		users.Etag = nxtUsers.Etag
+		users.NextPageToken = nxtUsers.NextPageToken
+
+		if nxtUsers.NextPageToken != "" {
+			doUserNumPages(ulc, users, numPages-1)
+		}
+	}
+
+	return nil
+}
+
+func doUserPages(ulc *admin.UsersListCall, users *admin.Users, pages string) error {
+	if pages == "all" {
+		err := doUserAllPages(ulc, users)
+		if err != nil {
+			return err
+		}
+	} else {
+		numPages, err := strconv.Atoi(pages)
+		if err != nil {
+			return errors.New("gmin: error - pages must be 'all' or a number")
+		}
+
+		if numPages > 1 {
+			err = doUserNumPages(ulc, users, numPages-1)
+			if err != nil {
+				return err
+			}
+		}
+	}
 
 	return nil
 }
@@ -173,6 +242,7 @@ func init() {
 	listUsersCmd.Flags().StringVarP(&domain, "domain", "d", "", "domain from which to get users")
 	listUsersCmd.Flags().Int64VarP(&maxResults, "maxresults", "m", 500, "maximum number of results to return")
 	listUsersCmd.Flags().StringVarP(&orderBy, "orderby", "o", "", "field by which results will be ordered")
+	listUsersCmd.Flags().StringVarP(&pages, "pages", "p", "", "number of pages of results to be returned")
 	listUsersCmd.Flags().StringVarP(&projection, "projection", "j", "", "type of projection")
 	listUsersCmd.Flags().StringVarP(&query, "query", "q", "", "selection criteria to get users (separated by ~)")
 	listUsersCmd.Flags().StringVarP(&sortOrder, "sortorder", "s", "", "sort order of returned results")
