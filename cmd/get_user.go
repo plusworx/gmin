@@ -109,6 +109,6 @@ func init() {
 	getCmd.AddCommand(getUserCmd)
 
 	getUserCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required user attributes (separated by ~)")
-	getUserCmd.Flags().StringVarP(&projection, "projection", "p", "", "type of projection")
+	getUserCmd.Flags().StringVarP(&projection, "projection", "j", "", "type of projection")
 	getUserCmd.Flags().StringVarP(&viewType, "viewtype", "v", "", "data view type")
 }

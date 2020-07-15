@@ -118,6 +118,15 @@ func AddOrderBy(glc *admin.GroupsListCall, orderBy string) *admin.GroupsListCall
 	return newGLC
 }
 
+// AddPageToken adds PageToken to admin calls
+func AddPageToken(glc *admin.GroupsListCall, token string) *admin.GroupsListCall {
+	var newGLC *admin.GroupsListCall
+
+	newGLC = glc.PageToken(token)
+
+	return newGLC
+}
+
 // AddQuery adds query to admin calls
 func AddQuery(glc *admin.GroupsListCall, query string) *admin.GroupsListCall {
 	var newGLC *admin.GroupsListCall

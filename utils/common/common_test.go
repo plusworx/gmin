@@ -246,9 +246,13 @@ func TestValidateArgs(t *testing.T) {
 
 func TestValidateQuery(t *testing.T) {
 	var queryAttrMap = map[string]string{
-		"email":     "email",
-		"name":      "name",
-		"memberkey": "memberKey",
+		"christianname": "givenName",
+		"email":         "email",
+		"firstname":     "givenName",
+		"lastname":      "familyName",
+		"name":          "name",
+		"memberkey":     "memberKey",
+		"surname":       "familyName",
 	}
 
 	cases := []struct {
@@ -274,6 +278,12 @@ func TestValidateQuery(t *testing.T) {
 			attrMap:       queryAttrMap,
 			expectedErr:   "",
 			expectedValue: []string{"name:Fin*"},
+		},
+		{
+			query:         "christianname:Bri*",
+			attrMap:       queryAttrMap,
+			expectedErr:   "",
+			expectedValue: []string{"givenName:Bri*"},
 		},
 		{
 			query:         "email:fin*~name:Finance*",

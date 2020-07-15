@@ -94,6 +94,15 @@ func AddMaxResults(mlc *admin.MembersListCall, maxResults int64) *admin.MembersL
 	return newMLC
 }
 
+// AddPageToken adds PageToken to admin calls
+func AddPageToken(mlc *admin.MembersListCall, token string) *admin.MembersListCall {
+	var newMLC *admin.MembersListCall
+
+	newMLC = mlc.PageToken(token)
+
+	return newMLC
+}
+
 // AddRoles adds Roles to admin calls
 func AddRoles(mlc *admin.MembersListCall, roles string) *admin.MembersListCall {
 	var newMLC *admin.MembersListCall

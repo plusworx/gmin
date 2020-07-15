@@ -154,7 +154,33 @@ func TestAddOrderBy(t *testing.T) {
 		newULC := AddOrderBy(ulc, c.orderBy)
 
 		if newULC == nil {
-			t.Error("Error: failed to add Fields to UsersListCall")
+			t.Error("Error: failed to add OrderBy to UsersListCall")
+		}
+	}
+}
+
+func TestAddPageToken(t *testing.T) {
+	cases := []struct {
+		token string
+	}{
+		{
+			token: "token_string",
+		},
+	}
+
+	ds, err := tsts.DummyDirectoryService(admin.AdminDirectoryUserReadonlyScope)
+	if err != nil {
+		t.Error("Error: failed to create dummy admin.Service")
+	}
+
+	ulc := ds.Users.List()
+
+	for _, c := range cases {
+
+		newULC := AddPageToken(ulc, c.token)
+
+		if newULC == nil {
+			t.Error("Error: failed to add PageToken to UsersListCall")
 		}
 	}
 }
@@ -291,6 +317,20 @@ func TestDoComposite(t *testing.T) {
 			noElems:   1,
 		},
 		{
+			attrStack: []string{"address", "{streetaddress", "201 Arbour Avenue", "locality", "Leeds", "postalcode", "LS2 1ND", "type", "home",
+				"**** repeat ****", "streetaddress", "15 Stavely Gardens", "locality", "Leeds", "postalcode", "LS1 3BB", "type", "work}"},
+			noElems: 2,
+		},
+		{
+			attrStack: []string{"addresses", "{streetaddress", "201 Arbour Avenue", "locality", "Leeds", "postalcode", "LS2 1ND", "type", "home}"},
+			noElems:   1,
+		},
+		{
+			attrStack: []string{"addresses", "{streetaddress", "201 Arbour Avenue", "locality", "Leeds", "postalcode", "LS2 1ND", "type", "home",
+				"**** repeat ****", "streetaddress", "15 Stavely Gardens", "locality", "Leeds", "postalcode", "LS1 3BB", "type", "work}"},
+			noElems: 2,
+		},
+		{
 			attrStack:   []string{"address", "{streetaddress", "201 Arbour Avenue", "locality", "Leeds", "postalcode", "LS2 1ND", "type}"},
 			expectedErr: "gmin: error - malformed attribute string",
 		},
@@ -324,7 +364,15 @@ func TestDoComposite(t *testing.T) {
 			noElems:   1,
 		},
 		{
+			attrStack: []string{"emails", "{address", "chief.exec@mycorp.com", "primary", "true", "type", "work}"},
+			noElems:   1,
+		},
+		{
 			attrStack: []string{"externalid", "{customtype", "GitHubID", "type", "custom", "value", "1234567890}"},
+			noElems:   1,
+		},
+		{
+			attrStack: []string{"externalids", "{customtype", "GitHubID", "type", "custom", "value", "1234567890}"},
 			noElems:   1,
 		},
 		{
@@ -336,7 +384,16 @@ func TestDoComposite(t *testing.T) {
 			noElems: 1,
 		},
 		{
+			attrStack: []string{"ims", "{customprotocol", "plusworx", "customtype", "experimental", "im", "@mistered",
+				"primary", "true", "protocol", "custom_protocol", "type", "custom}"},
+			noElems: 1,
+		},
+		{
 			attrStack: []string{"keyword", "{customtype", "workhours", "type", "custom", "value", "part-time}"},
+			noElems:   1,
+		},
+		{
+			attrStack: []string{"keywords", "{customtype", "workhours", "type", "custom", "value", "part-time}"},
 			noElems:   1,
 		},
 		{
@@ -344,7 +401,16 @@ func TestDoComposite(t *testing.T) {
 			noElems:   1,
 		},
 		{
+			attrStack: []string{"languages", "{languagecode", "en-GB}"},
+			noElems:   1,
+		},
+		{
 			attrStack: []string{"location", "{area", "Shoreditch", "buildingid", "Grebe House", "deskcode", "D12", "floorname", "12",
+				"floorsection", "Marketing", "type", "desk}"},
+			noElems: 1,
+		},
+		{
+			attrStack: []string{"locations", "{area", "Shoreditch", "buildingid", "Grebe House", "deskcode", "D12", "floorname", "12",
 				"floorsection", "Marketing", "type", "desk}"},
 			noElems: 1,
 		},
@@ -358,7 +424,19 @@ func TestDoComposite(t *testing.T) {
 			noElems: 1,
 		},
 		{
+			attrStack: []string{"organisations", "{costcenter", "104", "department", "Finance", "description", "Head Office Finance Department",
+				"domain", "majestic.co.uk", "fulltimeequivalent", "100000", "location", "Newcastle", "name", "Majestic Film Ltd",
+				"primary", "true", "symbol", "MAJ", "title", "CFO", "type", "work}"},
+			noElems: 1,
+		},
+		{
 			attrStack: []string{"organization", "{costcenter", "105", "customtype", "acquisition", "department", "Sales", "description", "Head Office Sales Department",
+				"domain", "majestic.co.uk", "fulltimeequivalent", "90000", "location", "Newcastle", "name", "Majestic Film Ltd",
+				"primary", "false", "symbol", "MAJ", "title", "Head of Sales", "type", "custom}"},
+			noElems: 1,
+		},
+		{
+			attrStack: []string{"organizations", "{costcenter", "105", "customtype", "acquisition", "department", "Sales", "description", "Head Office Sales Department",
 				"domain", "majestic.co.uk", "fulltimeequivalent", "90000", "location", "Newcastle", "name", "Majestic Film Ltd",
 				"primary", "false", "symbol", "MAJ", "title", "Head of Sales", "type", "custom}"},
 			noElems: 1,
@@ -368,7 +446,17 @@ func TestDoComposite(t *testing.T) {
 			noElems:   1,
 		},
 		{
+			attrStack: []string{"phones", "{primary", "false", "type", "mobile", "value", "05467983211}"},
+			noElems:   1,
+		},
+		{
 			attrStack: []string{"posixaccount", "{accountid", "1000", "gecos", "Brian Phelps", "gid", "1000", "homedirectory", "/home/brian",
+				"operatingsystemtype", "linux", "primary", "true", "shell", "/bin/bash", "systemid", "2000",
+				"uid", "1000", "username", "brian}"},
+			noElems: 1,
+		},
+		{
+			attrStack: []string{"posixaccounts", "{accountid", "1000", "gecos", "Brian Phelps", "gid", "1000", "homedirectory", "/home/brian",
 				"operatingsystemtype", "linux", "primary", "true", "shell", "/bin/bash", "systemid", "2000",
 				"uid", "1000", "username", "brian}"},
 			noElems: 1,
@@ -378,11 +466,23 @@ func TestDoComposite(t *testing.T) {
 			noElems:   1,
 		},
 		{
+			attrStack: []string{"relations", "{type", "partner", "value", "David Letterman}"},
+			noElems:   1,
+		},
+		{
 			attrStack: []string{"sshpublickey", "{expirationtimeusec", "1625123095000", "key", "id-rsaxxxxxxxxxxxxxxxxxxxxxxxxxx}"},
 			noElems:   1,
 		},
 		{
+			attrStack: []string{"sshpublickeys", "{expirationtimeusec", "1625123095000", "key", "id-rsaxxxxxxxxxxxxxxxxxxxxxxxxxx}"},
+			noElems:   1,
+		},
+		{
 			attrStack: []string{"website", "{primary", "true", "type", "blog", "value", "blm.org}"},
+			noElems:   1,
+		},
+		{
+			attrStack: []string{"websites", "{primary", "true", "type", "blog", "value", "blm.org}"},
 			noElems:   1,
 		},
 	}
@@ -407,17 +507,17 @@ func TestDoComposite(t *testing.T) {
 		}
 
 		switch true {
-		case attrStack[0] == "address":
+		case attrStack[0] == "address" || attrStack[0] == "addresses":
 			addresses := user.Addresses.([]*admin.UserAddress)
 			if len(addresses) != c.noElems {
 				t.Errorf("Address error - expected %v address got %v", c.noElems, len(addresses))
 			}
-		case attrStack[0] == "email":
+		case attrStack[0] == "email" || attrStack[0] == "emails":
 			emails := user.Emails.([]*admin.UserEmail)
 			if len(emails) != c.noElems {
 				t.Errorf("Email error - expected %v email got %v", c.noElems, len(emails))
 			}
-		case attrStack[0] == "externalid":
+		case attrStack[0] == "externalid" || attrStack[0] == "externalids":
 			externalids := user.ExternalIds.([]*admin.UserExternalId)
 			if len(externalids) != c.noElems {
 				t.Errorf("ExternalID error - expected %v external id got %v", c.noElems, len(externalids))
@@ -427,22 +527,22 @@ func TestDoComposite(t *testing.T) {
 			if gender.AddressMeAs == "" || gender.CustomGender == "" || gender.Type == "" {
 				t.Error("Gender error: Fields not populated")
 			}
-		case attrStack[0] == "im":
+		case attrStack[0] == "im" || attrStack[0] == "ims":
 			ims := user.Ims.([]*admin.UserIm)
 			if len(ims) != c.noElems {
 				t.Errorf("Im error - expected %v im got %v", c.noElems, len(ims))
 			}
-		case attrStack[0] == "keyword":
+		case attrStack[0] == "keyword" || attrStack[0] == "keywords":
 			keywords := user.Keywords.([]*admin.UserKeyword)
 			if len(keywords) != c.noElems {
 				t.Errorf("Keyword error - expected %v keyword got %v", c.noElems, len(keywords))
 			}
-		case attrStack[0] == "language":
+		case attrStack[0] == "language" || attrStack[0] == "languages":
 			languages := user.Languages.([]*admin.UserLanguage)
 			if len(languages) != c.noElems {
 				t.Errorf("Language error - expected %v language got %v", c.noElems, len(languages))
 			}
-		case attrStack[0] == "location":
+		case attrStack[0] == "location" || attrStack[0] == "locations":
 			locations := user.Locations.([]*admin.UserLocation)
 			if len(locations) != c.noElems {
 				t.Errorf("Location error - expected %v location got %v", c.noElems, len(locations))
@@ -452,32 +552,32 @@ func TestDoComposite(t *testing.T) {
 			if about.ContentType == "" || about.Value == "" {
 				t.Error("Notes error: Fields not populated")
 			}
-		case attrStack[0] == "organisation" || attrStack[0] == "organization":
+		case attrStack[0] == "organisation" || attrStack[0] == "organisations" || attrStack[0] == "organizations" || attrStack[0] == "organization":
 			organizations := user.Organizations.([]*admin.UserOrganization)
 			if len(organizations) != c.noElems {
 				t.Errorf("Organization error - expected %v organization got %v", c.noElems, len(organizations))
 			}
-		case attrStack[0] == "phone":
+		case attrStack[0] == "phone" || attrStack[0] == "phones":
 			phones := user.Phones.([]*admin.UserPhone)
 			if len(phones) != c.noElems {
 				t.Errorf("Phone error - expected %v phone got %v", c.noElems, len(phones))
 			}
-		case attrStack[0] == "posixaccount":
+		case attrStack[0] == "posixaccount" || attrStack[0] == "posixaccounts":
 			posixaccounts := user.PosixAccounts.([]*admin.UserPosixAccount)
 			if len(posixaccounts) != c.noElems {
 				t.Errorf("PosixAccount error - expected %v posixaccount got %v", c.noElems, len(posixaccounts))
 			}
-		case attrStack[0] == "relation":
+		case attrStack[0] == "relation" || attrStack[0] == "relations":
 			relations := user.Relations.([]*admin.UserRelation)
 			if len(relations) != c.noElems {
 				t.Errorf("Relation error - expected %v relation got %v", c.noElems, len(relations))
 			}
-		case attrStack[0] == "sshpublickey":
+		case attrStack[0] == "sshpublickey" || attrStack[0] == "sshpublickeys":
 			sshpublickeys := user.SshPublicKeys.([]*admin.UserSshPublicKey)
 			if len(sshpublickeys) != c.noElems {
 				t.Errorf("SshPublicKey error - expected %v sshpublickey got %v", c.noElems, len(sshpublickeys))
 			}
-		case attrStack[0] == "website":
+		case attrStack[0] == "website" || attrStack[0] == "websites":
 			websites := user.Websites.([]*admin.UserWebsite)
 			if len(websites) != c.noElems {
 				t.Errorf("Website error - expected %v website got %v", c.noElems, len(websites))
@@ -503,10 +603,17 @@ func TestDoName(t *testing.T) {
 			expectedLastName:  "Dent",
 		},
 		{
-			attrStack:         []string{"name", "{firstname", "Arthur", "fullname", "Algernon", "lastname", "Dent}"},
+			attrStack:         []string{"name", "{christianname", "Arthur", "surname", "Dent}"},
 			expectedErr:       "",
 			expectedFirstName: "Arthur",
-			expectedFullName:  "Algernon",
+			expectedFullName:  "",
+			expectedLastName:  "Dent",
+		},
+		{
+			attrStack:         []string{"name", "{firstname", "Arthur", "fullname", "Arthur Dent", "lastname", "Dent}"},
+			expectedErr:       "",
+			expectedFirstName: "Arthur",
+			expectedFullName:  "Arthur Dent",
 			expectedLastName:  "Dent",
 		},
 		{
@@ -521,10 +628,10 @@ func TestDoName(t *testing.T) {
 			expectedErr: "gmin: error - malformed name attribute",
 		},
 		{
-			attrStack:         []string{"name", "{FirstName", "Arthur", "FullName", "Algernon", "LASTNAME", "Dent}"},
+			attrStack:         []string{"name", "{FirstName", "Arthur", "FullName", "Arthur Dent", "LASTNAME", "Dent}"},
 			expectedErr:       "",
 			expectedFirstName: "Arthur",
-			expectedFullName:  "Algernon",
+			expectedFullName:  "Arthur Dent",
 			expectedLastName:  "Dent",
 		},
 		{
@@ -702,11 +809,23 @@ func TestIsCompositeAttr(t *testing.T) {
 			expectedReturn: true,
 		},
 		{
+			attr:           "addresses",
+			expectedReturn: true,
+		},
+		{
 			attr:           "email",
 			expectedReturn: true,
 		},
 		{
+			attr:           "emails",
+			expectedReturn: true,
+		},
+		{
 			attr:           "externalid",
+			expectedReturn: true,
+		},
+		{
+			attr:           "externalids",
 			expectedReturn: true,
 		},
 		{
@@ -718,7 +837,15 @@ func TestIsCompositeAttr(t *testing.T) {
 			expectedReturn: true,
 		},
 		{
+			attr:           "ims",
+			expectedReturn: true,
+		},
+		{
 			attr:           "keyword",
+			expectedReturn: true,
+		},
+		{
+			attr:           "keywords",
 			expectedReturn: true,
 		},
 		{
@@ -726,7 +853,15 @@ func TestIsCompositeAttr(t *testing.T) {
 			expectedReturn: true,
 		},
 		{
+			attr:           "languages",
+			expectedReturn: true,
+		},
+		{
 			attr:           "location",
+			expectedReturn: true,
+		},
+		{
+			attr:           "locations",
 			expectedReturn: true,
 		},
 		{
@@ -742,7 +877,15 @@ func TestIsCompositeAttr(t *testing.T) {
 			expectedReturn: true,
 		},
 		{
+			attr:           "organisations",
+			expectedReturn: true,
+		},
+		{
 			attr:           "organization",
+			expectedReturn: true,
+		},
+		{
+			attr:           "organizations",
 			expectedReturn: true,
 		},
 		{
@@ -750,7 +893,15 @@ func TestIsCompositeAttr(t *testing.T) {
 			expectedReturn: true,
 		},
 		{
+			attr:           "phones",
+			expectedReturn: true,
+		},
+		{
 			attr:           "posixaccount",
+			expectedReturn: true,
+		},
+		{
+			attr:           "posixaccounts",
 			expectedReturn: true,
 		},
 		{
@@ -758,11 +909,23 @@ func TestIsCompositeAttr(t *testing.T) {
 			expectedReturn: true,
 		},
 		{
+			attr:           "relations",
+			expectedReturn: true,
+		},
+		{
 			attr:           "sshpublickey",
 			expectedReturn: true,
 		},
 		{
+			attr:           "sshpublickeys",
+			expectedReturn: true,
+		},
+		{
 			attr:           "website",
+			expectedReturn: true,
+		},
+		{
+			attr:           "websites",
 			expectedReturn: true,
 		},
 		{
