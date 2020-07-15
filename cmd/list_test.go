@@ -30,7 +30,6 @@ func TestDoListUser(t *testing.T) {
 	cases := []struct {
 		deleted     bool
 		expectedErr string
-		orderBy     string
 		query       string
 	}{
 		{
@@ -42,7 +41,6 @@ func TestDoListUser(t *testing.T) {
 
 	for _, c := range cases {
 		deleted = c.deleted
-		orderBy = c.orderBy
 		query = c.query
 
 		got := doListUsers(listUsersCmd, nil)
