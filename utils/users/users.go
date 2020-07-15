@@ -232,6 +232,7 @@ var QueryAttrMap = map[string]string{
 	"addressregion":     "addressRegion",
 	"addresspostalcode": "addressPostalCode",
 	"addresscountry":    "addressCountry",
+	"christianname":     "givenName",
 	"directmanager":     "directManager",
 	"directmanagerid":   "directManagerId",
 	"email":             "email",
@@ -256,6 +257,7 @@ var QueryAttrMap = map[string]string{
 	"orgtitle":          "orgTitle",
 	"orgunitpath":       "orgUnitPath",
 	"phone":             "phone",
+	"surname":           "familyName",
 }
 
 // UserAttrMap provides lowercase mappings to valid admin.User attributes
