@@ -58,22 +58,36 @@ var addressAttrs = []string{
 // compositeAttrs contains names all admin.User attributes that are composite types
 var compositeAttrs = []string{
 	"address",
+	"addresses",
 	"email",
+	"emails",
 	"externalid",
+	"externalids",
 	"gender",
 	"im",
+	"ims",
 	"keyword",
+	"keywords",
 	"language",
+	"languages",
 	"location",
+	"locations",
 	"name",
 	"notes",
 	"organisation",
+	"organisations",
 	"organization",
+	"organizations",
 	"phone",
+	"phones",
 	"posixaccount",
+	"posixaccounts",
 	"relation",
+	"relations",
 	"sshpublickey",
+	"sshpublickeys",
 	"website",
+	"websites",
 }
 
 // emailAttrs contains names of all the addressable admin.UserEmail attributes
@@ -1810,61 +1824,61 @@ func processCompStack(user *admin.User, compStack []string, attrName string) err
 			}
 
 			switch true {
-			case attrName == "address":
+			case attrName == "address" || attrName == "addresses":
 				newAddr = newAttr.(*admin.UserAddress)
 				addresses = append(addresses, newAddr)
 				user.Addresses = addresses
-			case attrName == "email":
+			case attrName == "email" || attrName == "emails":
 				newEmail = newAttr.(*admin.UserEmail)
 				emails = append(emails, newEmail)
 				user.Emails = emails
-			case attrName == "externalid":
+			case attrName == "externalid" || attrName == "externalids":
 				newExtID = newAttr.(*admin.UserExternalId)
 				externalids = append(externalids, newExtID)
 				user.ExternalIds = externalids
 			case attrName == "gender":
 				newGender = newAttr.(*admin.UserGender)
 				user.Gender = newGender
-			case attrName == "im":
+			case attrName == "im" || attrName == "ims":
 				newIm = newAttr.(*admin.UserIm)
 				ims = append(ims, newIm)
 				user.Ims = ims
-			case attrName == "keyword":
+			case attrName == "keyword" || attrName == "keywords":
 				newKeyword = newAttr.(*admin.UserKeyword)
 				keywords = append(keywords, newKeyword)
 				user.Keywords = keywords
-			case attrName == "language":
+			case attrName == "language" || attrName == "languages":
 				newLanguage = newAttr.(*admin.UserLanguage)
 				languages = append(languages, newLanguage)
 				user.Languages = languages
-			case attrName == "location":
+			case attrName == "location" || attrName == "locations":
 				newLocation = newAttr.(*admin.UserLocation)
 				locations = append(locations, newLocation)
 				user.Locations = locations
 			case attrName == "notes":
 				newAbout = newAttr.(*admin.UserAbout)
 				user.Notes = newAbout
-			case attrName == "organization" || attrName == "organisation":
+			case attrName == "organization" || attrName == "organisation" || attrName == "organizations" || attrName == "organisations":
 				newOrganization = newAttr.(*admin.UserOrganization)
 				organizations = append(organizations, newOrganization)
 				user.Organizations = organizations
-			case attrName == "phone":
+			case attrName == "phone" || attrName == "phones":
 				newPhone = newAttr.(*admin.UserPhone)
 				phones = append(phones, newPhone)
 				user.Phones = phones
-			case attrName == "posixaccount":
+			case attrName == "posixaccount" || attrName == "posixaccounts":
 				newPosAcct = newAttr.(*admin.UserPosixAccount)
 				posixaccts = append(posixaccts, newPosAcct)
 				user.PosixAccounts = posixaccts
-			case attrName == "relation":
+			case attrName == "relation" || attrName == "relations":
 				newRelation = newAttr.(*admin.UserRelation)
 				relations = append(relations, newRelation)
 				user.Relations = relations
-			case attrName == "sshpublickey":
+			case attrName == "sshpublickey" || attrName == "sshpublickeys":
 				newPubKey = newAttr.(*admin.UserSshPublicKey)
 				sshpubkeys = append(sshpubkeys, newPubKey)
 				user.SshPublicKeys = sshpubkeys
-			case attrName == "website":
+			case attrName == "website" || attrName == "websites":
 				newWebsite = newAttr.(*admin.UserWebsite)
 				websites = append(websites, newWebsite)
 				user.Websites = websites
@@ -1888,17 +1902,17 @@ func processElementStack(user *admin.User, elementStack []string, attrName strin
 	)
 
 	switch true {
-	case attrName == "address":
+	case attrName == "address" || attrName == "addresses":
 		newElem, err = makeAddress(elementStack)
 		if err != nil {
 			return nil, err
 		}
-	case attrName == "email":
+	case attrName == "email" || attrName == "emails":
 		newElem, err = makeEmail(elementStack)
 		if err != nil {
 			return nil, err
 		}
-	case attrName == "externalid":
+	case attrName == "externalid" || attrName == "externalids":
 		newElem, err = makeExtID(elementStack)
 		if err != nil {
 			return nil, err
@@ -1908,22 +1922,22 @@ func processElementStack(user *admin.User, elementStack []string, attrName strin
 		if err != nil {
 			return nil, err
 		}
-	case attrName == "im":
+	case attrName == "im" || attrName == "ims":
 		newElem, err = makeIm(elementStack)
 		if err != nil {
 			return nil, err
 		}
-	case attrName == "keyword":
+	case attrName == "keyword" || attrName == "keywords":
 		newElem, err = makeKeyword(elementStack)
 		if err != nil {
 			return nil, err
 		}
-	case attrName == "language":
+	case attrName == "language" || attrName == "languages":
 		newElem, err = makeLanguage(elementStack)
 		if err != nil {
 			return nil, err
 		}
-	case attrName == "location":
+	case attrName == "location" || attrName == "locations":
 		newElem, err = makeLocation(elementStack)
 		if err != nil {
 			return nil, err
@@ -1933,32 +1947,32 @@ func processElementStack(user *admin.User, elementStack []string, attrName strin
 		if err != nil {
 			return nil, err
 		}
-	case attrName == "organization" || attrName == "organisation":
+	case attrName == "organization" || attrName == "organizations" || attrName == "organisation" || attrName == "organisations":
 		newElem, err = makeOrganization(elementStack)
 		if err != nil {
 			return nil, err
 		}
-	case attrName == "phone":
+	case attrName == "phone" || attrName == "phones":
 		newElem, err = makePhone(elementStack)
 		if err != nil {
 			return nil, err
 		}
-	case attrName == "posixaccount":
+	case attrName == "posixaccount" || attrName == "posixaccounts":
 		newElem, err = makePosAcct(elementStack)
 		if err != nil {
 			return nil, err
 		}
-	case attrName == "relation":
+	case attrName == "relation" || attrName == "relations":
 		newElem, err = makeRelation(elementStack)
 		if err != nil {
 			return nil, err
 		}
-	case attrName == "sshpublickey":
+	case attrName == "sshpublickey" || attrName == "sshpublickeys":
 		newElem, err = makeSSHPubKey(elementStack)
 		if err != nil {
 			return nil, err
 		}
-	case attrName == "website":
+	case attrName == "website" || attrName == "websites":
 		newElem, err = makeWebsite(elementStack)
 		if err != nil {
 			return nil, err
