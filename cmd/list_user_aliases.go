@@ -34,7 +34,7 @@ import (
 
 var listUserAliasesCmd = &cobra.Command{
 	Use:     "user-aliases <user email address or id>",
-	Aliases: []string{"user_alias", "ualiases", "ualias", "uas", "ua"},
+	Aliases: []string{"user-alias", "ualiases", "ualias", "uas", "ua"},
 	Args:    cobra.ExactArgs(1),
 	Short:   "Outputs a list of user aliases",
 	Long:    `Outputs a list of user aliases.`,
