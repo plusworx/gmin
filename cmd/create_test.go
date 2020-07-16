@@ -109,3 +109,26 @@ func TestDoCreateMember(t *testing.T) {
 		}
 	}
 }
+
+func TestDoCreateUserAlias(t *testing.T) {
+	cases := []struct {
+		args        []string
+		expectedErr string
+		userKey     string
+	}{
+		{
+			args:        []string{"my.alias@mycompany.org"},
+			expectedErr: "gmin: error - user must be provided",
+		},
+	}
+
+	for _, c := range cases {
+		userKey = c.userKey
+
+		got := doCreateUserAlias(createUserAliasCmd, c.args)
+
+		if got.Error() != c.expectedErr {
+			t.Errorf("Expected error %v, got %v", c.expectedErr, got.Error())
+		}
+	}
+}

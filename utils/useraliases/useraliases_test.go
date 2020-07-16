@@ -20,54 +20,37 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-package cmd
+package useraliases
 
 import (
 	"testing"
+
+	tsts "github.com/plusworx/gmin/tests"
+	admin "google.golang.org/api/admin/directory/v1"
 )
 
-func TestDoDeleteMember(t *testing.T) {
+func TestAddFields(t *testing.T) {
 	cases := []struct {
-		args        []string
-		expectedErr string
-		group       string
+		fields string
 	}{
 		{
-			args:        []string{"mister.miyagi@mycompany.org"},
-			expectedErr: "gmin: error - group email address or id must be provided",
+			fields: "alias,id,primaryEmail",
 		},
 	}
 
-	for _, c := range cases {
-		group = c.group
-
-		got := doDeleteMember(deleteMemberCmd, c.args)
-
-		if got.Error() != c.expectedErr {
-			t.Errorf("Expected error %v, got %v", c.expectedErr, got.Error())
-		}
-	}
-}
-
-func TestDoDeleteUserAlias(t *testing.T) {
-	cases := []struct {
-		args        []string
-		expectedErr string
-		userKey     string
-	}{
-		{
-			args:        []string{"my.alias@mycompany.org"},
-			expectedErr: "gmin: error - user email address or id must be provided",
-		},
+	ds, err := tsts.DummyDirectoryService(admin.AdminDirectoryUserAliasReadonlyScope)
+	if err != nil {
+		t.Error("Error: failed to create dummy admin.Service")
 	}
 
+	ualc := ds.Users.Aliases.List("test.user@company.org")
+
 	for _, c := range cases {
-		userKey = c.userKey
 
-		got := doDeleteUserAlias(deleteUserAliasCmd, c.args)
+		newUALC := AddFields(ualc, c.fields)
 
-		if got.Error() != c.expectedErr {
-			t.Errorf("Expected error %v, got %v", c.expectedErr, got.Error())
+		if newUALC == nil {
+			t.Error("Error: failed to add Fields to UsersAliasesListCall")
 		}
 	}
 }

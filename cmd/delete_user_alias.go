@@ -23,51 +23,48 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"testing"
+	"errors"
+	"fmt"
+
+	cmn "github.com/plusworx/gmin/utils/common"
+	"github.com/spf13/cobra"
+	admin "google.golang.org/api/admin/directory/v1"
 )
 
-func TestDoDeleteMember(t *testing.T) {
-	cases := []struct {
-		args        []string
-		expectedErr string
-		group       string
-	}{
-		{
-			args:        []string{"mister.miyagi@mycompany.org"},
-			expectedErr: "gmin: error - group email address or id must be provided",
-		},
-	}
-
-	for _, c := range cases {
-		group = c.group
-
-		got := doDeleteMember(deleteMemberCmd, c.args)
-
-		if got.Error() != c.expectedErr {
-			t.Errorf("Expected error %v, got %v", c.expectedErr, got.Error())
-		}
-	}
+var deleteUserAliasCmd = &cobra.Command{
+	Use:     "user-alias <alias email address> -u <user email address or id>",
+	Aliases: []string{"ualias", "ua"},
+	Args:    cobra.ExactArgs(1),
+	Short:   "Deletes user alias",
+	Long:    `Deletes user alias.`,
+	RunE:    doDeleteUserAlias,
 }
 
-func TestDoDeleteUserAlias(t *testing.T) {
-	cases := []struct {
-		args        []string
-		expectedErr string
-		userKey     string
-	}{
-		{
-			args:        []string{"my.alias@mycompany.org"},
-			expectedErr: "gmin: error - user email address or id must be provided",
-		},
+func doDeleteUserAlias(cmd *cobra.Command, args []string) error {
+	if userKey == "" {
+		err := errors.New("gmin: error - user email address or id must be provided")
+		return err
 	}
 
-	for _, c := range cases {
-		userKey = c.userKey
-
-		got := doDeleteUserAlias(deleteUserAliasCmd, c.args)
-
-		if got.Error() != c.expectedErr {
-			t.Errorf("Expected error %v, got %v", c.expectedErr, got.Error())
-		}
+	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserAliasScope)
+	if err != nil {
+		return err
 	}
+
+	uadc := ds.Users.Aliases.Delete(userKey, args[0])
+
+	err = uadc.Do()
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("**** gmin: user alias %s for user %s deleted ****\n", args[0], userKey)
+
+	return nil
+}
+
+func init() {
+	deleteCmd.AddCommand(deleteUserAliasCmd)
+
+	deleteUserAliasCmd.Flags().StringVarP(&userKey, "user", "u", "", "email address or id of user")
 }
