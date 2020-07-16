@@ -126,7 +126,7 @@ func doInit(cmd *cobra.Command, args []string) error {
 
 	cfgFile := cfg.File{Administrator: answers.AdminEmail, CustomerID: answers.CustomerID}
 
-	path := filepath.Join(filepath.ToSlash(answers.ConfigPath), cfg.FileName)
+	path := filepath.Join(filepath.ToSlash(answers.ConfigPath), cfg.ConfigFile)
 
 	cfgYaml, err := yaml.Marshal(&cfgFile)
 	if err != nil {

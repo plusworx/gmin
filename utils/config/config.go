@@ -31,8 +31,8 @@ import (
 const (
 	// CredentialsFile holds service account credentials
 	CredentialsFile string = "gmin_credentials"
-	// FileName is configuration file name
-	FileName string = ".gmin.yaml"
+	// ConfigFile is configuration file name
+	ConfigFile string = ".gmin.yaml"
 )
 
 // File holds configuration data
