@@ -31,11 +31,13 @@ import (
 )
 
 var (
+	adminEmail       string
 	attrs            string
 	archived         bool
 	blockInherit     bool
 	cfgFile          string
 	changePassword   bool
+	customerID       string
 	deleted          bool
 	deliverySetting  string
 	domain           string
