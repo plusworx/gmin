@@ -20,36 +20,51 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-package config
+package cmd
 
 import (
+	"errors"
 	"fmt"
 
-	"github.com/spf13/viper"
+	cmn "github.com/plusworx/gmin/utils/common"
+	"github.com/spf13/cobra"
+	admin "google.golang.org/api/admin/directory/v1"
 )
 
-const (
-	// CredentialFile holds service account credentials
-	CredentialFile string = "gmin_credentials"
-	// ConfigFile is configuration file name
-	ConfigFile string = ".gmin.yaml"
-)
-
-// File holds configuration data
-type File struct {
-	Administrator  string `yaml:"administrator"`
-	CredentialPath string `yaml:"credentialpath"`
-	CustomerID     string `yaml:"customerid"`
+var deleteUserAliasCmd = &cobra.Command{
+	Use:     "user-alias <alias email address> -u <user email address or id>",
+	Aliases: []string{"ualias", "ua"},
+	Args:    cobra.ExactArgs(1),
+	Short:   "Deletes user alias",
+	Long:    `Deletes user alias.`,
+	RunE:    doDeleteUserAlias,
 }
 
-// ReadConfigString gets a string item from config file
-func ReadConfigString(s string) (string, error) {
-	var err error
-
-	str := viper.GetString(s)
-	if str == "" {
-		err = fmt.Errorf("gmin: error - %v not found in config file", s)
+func doDeleteUserAlias(cmd *cobra.Command, args []string) error {
+	if userKey == "" {
+		err := errors.New("gmin: error - user email address or id must be provided")
+		return err
 	}
 
-	return str, err
+	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserAliasScope)
+	if err != nil {
+		return err
+	}
+
+	uadc := ds.Users.Aliases.Delete(userKey, args[0])
+
+	err = uadc.Do()
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("**** gmin: user alias %s for user %s deleted ****\n", args[0], userKey)
+
+	return nil
+}
+
+func init() {
+	deleteCmd.AddCommand(deleteUserAliasCmd)
+
+	deleteUserAliasCmd.Flags().StringVarP(&userKey, "user", "u", "", "email address or id of user")
 }

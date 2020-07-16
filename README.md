@@ -15,25 +15,33 @@ The following steps should get you a working gmin installation -
 3. Create a service account, create and download a JSON key for the service account and enable G Suite domain-wide delegation.
 4. In the G Suite admin console of the domain with which you want to use gmin, go to Security > API Permissions > Manage Domain-wide Delegation and add a new record (or update an existing one). The scopes that you will need to add to the record for full functionality are as follows -
 ```
-Readonly scopes are needed for get and list functions. The other more permissive scopes are needed for create, delete, update
-and undelete functions.
+Readonly scopes are needed for get and list functions. The other more permissive scopes are needed for
+create, delete, update and undelete functions.
 
 https://www.googleapis.com/auth/admin.directory.group
 https://www.googleapis.com/auth/admin.directory.group.member.readonly
 https://www.googleapis.com/auth/admin.directory.orgunit
 https://www.googleapis.com/auth/admin.directory.orgunit.readonly
 https://www.googleapis.com/auth/admin.directory.user
+https://www.googleapis.com/auth/admin.directory.user.alias
+https://www.googleapis.com/auth/admin.directory.user.alias.readonly
 https://www.googleapis.com/auth/admin.directory.user.readonly
 https://www.googleapis.com/auth/admin.directory.group.readonly
 https://www.googleapis.com/auth/admin.directory.group.member
 ```
 
-5. Copy/move the gmin binary to a convenient directory/folder and rename the JSON key file, downloaded earlier, to gmin_credentials and place in the same directory/folder as the gmin binary.
-6. Run the command `gmin init` and enter the required information. The email address of the admin whose privileges will be used is mandatory. Customer ID and the path where you would like the config file, .gmin.yaml, to be written are optional. By default the config file is written to the current user's home directory and the string 'my_customer' is used for the customer ID. If you choose a different installation path for the config file then that path will need to be given with each gmin command by using the --config flag.
+5. Copy/move the gmin binary to a convenient directory/folder and rename the JSON key file, downloaded earlier, to 'gmin_credentials'. Place in a directory/folder suitable for your environment.
+6. Run the command `gmin init` and enter the required information.
+
+* Email address of the admin whose privileges will be used (mandatory).
+* Path where config file, .gmin.yaml, will be written. Default is current user's home directory. If you choose a different installation path to the default for the config file then that path will need to be given with each gmin command by using the --config flag.
+* Path where service account credentials json file is stored. File must be named 'gmin_credentials'. Default is current user's home directory.
+* Customer ID. Default is 'my_customer'.
+
 7. To see the version number of your gmin binary, run the command `gmin -v` or `gmin --version`.
 8. To get help from gmin itself, enter `gmin -h` or `gmin --help` and go from there.
 
-If you already use GAM (https://github.com/jay0lee/GAM) then you will already have a service account and JSON credentials file. In this case you could use the same service account by copying the GAM credentials.json, rename the copy to gmin_credentials and place it in the same directory/folder as the gmin executable.
+If you already use GAM (https://github.com/jay0lee/GAM) then you will already have a service account and JSON credentials file. In this case you could use the same service account by copying the GAM credentials.json, rename the copy to gmin_credentials and place it in the folder/directory that you set for the credentials path when running `gmin init`.
 
 ## Usage
 Commands usually take the form of `gmin <verb> <object> <flags>`. Although there may be the odd exception like `gmin whoami`.
@@ -139,11 +147,11 @@ https://developers.google.com/admin-sdk/directory/v1/get-start/getting-started i
 * Maybe there are other people who might benefit from gmin
 
 ## Project Status
-gmin is pretty young which means that it is liable to rapid change, although the command syntax is unlikely to change much (if at all) over time. The functionality is currently limited to the Admin SDK API and the user, group, group member and organisation unit objects but additional functionality will be added when it is ready.
+gmin is pretty young which means that it is liable to rapid change, although the command syntax is unlikely to change much (if at all) over time. The functionality is currently limited to the Admin SDK API and the group, group alias, group member, organisation unit, user and user alias objects but additional functionality will be added frequently when it is ready.
 
 All output is in JSON format apart from informational and error messages. Output in other formats such as CSV is on the roadmap, however, I have found the use of the jq utility (https://stedolan.github.io/jq/) can be a great help in working with JSON.
 
-I will be publishing a roadmap and welcome any suggestions as to the most important features to add. A Wiki is on the list of tasks on the upcoming roadmap.
+I have published a [development roadmap](https://github.com/plusworx/gmin/wiki/Development-Roadmap) and welcome any suggestions as to the most important features to add. A [wiki](https://github.com/plusworx/gmin/wiki) has also been started which contains the roadmap.
 
 ## Community
 

@@ -20,36 +20,37 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-package config
+package groupaliases
 
 import (
-	"fmt"
+	"testing"
 
-	"github.com/spf13/viper"
+	tsts "github.com/plusworx/gmin/tests"
+	admin "google.golang.org/api/admin/directory/v1"
 )
 
-const (
-	// CredentialFile holds service account credentials
-	CredentialFile string = "gmin_credentials"
-	// ConfigFile is configuration file name
-	ConfigFile string = ".gmin.yaml"
-)
-
-// File holds configuration data
-type File struct {
-	Administrator  string `yaml:"administrator"`
-	CredentialPath string `yaml:"credentialpath"`
-	CustomerID     string `yaml:"customerid"`
-}
-
-// ReadConfigString gets a string item from config file
-func ReadConfigString(s string) (string, error) {
-	var err error
-
-	str := viper.GetString(s)
-	if str == "" {
-		err = fmt.Errorf("gmin: error - %v not found in config file", s)
+func TestAddFields(t *testing.T) {
+	cases := []struct {
+		fields string
+	}{
+		{
+			fields: "alias,id,primaryEmail",
+		},
 	}
 
-	return str, err
+	ds, err := tsts.DummyDirectoryService(admin.AdminDirectoryGroupReadonlyScope)
+	if err != nil {
+		t.Error("Error: failed to create dummy admin.Service")
+	}
+
+	galc := ds.Groups.Aliases.List("testgroup@company.org")
+
+	for _, c := range cases {
+
+		newGALC := AddFields(galc, c.fields)
+
+		if newGALC == nil {
+			t.Error("Error: failed to add Fields to GroupsAliasesListCall")
+		}
+	}
 }

@@ -26,6 +26,29 @@ import (
 	"testing"
 )
 
+func TestDoDeleteGroupAlias(t *testing.T) {
+	cases := []struct {
+		args        []string
+		expectedErr string
+		group       string
+	}{
+		{
+			args:        []string{"group.alias@mycompany.org"},
+			expectedErr: "gmin: error - group email address or id must be provided",
+		},
+	}
+
+	for _, c := range cases {
+		group = c.group
+
+		got := doDeleteGroupAlias(deleteGroupAliasCmd, c.args)
+
+		if got.Error() != c.expectedErr {
+			t.Errorf("Expected error %v, got %v", c.expectedErr, got.Error())
+		}
+	}
+}
+
 func TestDoDeleteMember(t *testing.T) {
 	cases := []struct {
 		args        []string
@@ -42,6 +65,29 @@ func TestDoDeleteMember(t *testing.T) {
 		group = c.group
 
 		got := doDeleteMember(deleteMemberCmd, c.args)
+
+		if got.Error() != c.expectedErr {
+			t.Errorf("Expected error %v, got %v", c.expectedErr, got.Error())
+		}
+	}
+}
+
+func TestDoDeleteUserAlias(t *testing.T) {
+	cases := []struct {
+		args        []string
+		expectedErr string
+		userKey     string
+	}{
+		{
+			args:        []string{"my.alias@mycompany.org"},
+			expectedErr: "gmin: error - user email address or id must be provided",
+		},
+	}
+
+	for _, c := range cases {
+		userKey = c.userKey
+
+		got := doDeleteUserAlias(deleteUserAliasCmd, c.args)
 
 		if got.Error() != c.expectedErr {
 			t.Errorf("Expected error %v, got %v", c.expectedErr, got.Error())

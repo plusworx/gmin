@@ -31,11 +31,14 @@ import (
 )
 
 var (
+	adminEmail       string
 	attrs            string
 	archived         bool
 	blockInherit     bool
 	cfgFile          string
+	credentialPath   string
 	changePassword   bool
+	customerID       string
 	deleted          bool
 	deliverySetting  string
 	domain           string
@@ -78,7 +81,7 @@ var rootCmd = &cobra.Command{
 	Long: `gmin is a commandline interface (CLI) that enables the 
 	administration of G Suite domains. It aims to provide tools that
 	make G Suite administration from the commandline more manageable.`,
-	Version: "v0.3.1",
+	Version: "v0.4.0",
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.

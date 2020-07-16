@@ -20,36 +20,51 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-package config
+package cmd
 
 import (
+	"errors"
 	"fmt"
 
-	"github.com/spf13/viper"
+	cmn "github.com/plusworx/gmin/utils/common"
+	"github.com/spf13/cobra"
+	admin "google.golang.org/api/admin/directory/v1"
 )
 
-const (
-	// CredentialFile holds service account credentials
-	CredentialFile string = "gmin_credentials"
-	// ConfigFile is configuration file name
-	ConfigFile string = ".gmin.yaml"
-)
-
-// File holds configuration data
-type File struct {
-	Administrator  string `yaml:"administrator"`
-	CredentialPath string `yaml:"credentialpath"`
-	CustomerID     string `yaml:"customerid"`
+var deleteGroupAliasCmd = &cobra.Command{
+	Use:     "group-alias <alias email address> -g <group email address or id>",
+	Aliases: []string{"galias", "ga"},
+	Args:    cobra.ExactArgs(1),
+	Short:   "Deletes group alias",
+	Long:    `Deletes group alias.`,
+	RunE:    doDeleteGroupAlias,
 }
 
-// ReadConfigString gets a string item from config file
-func ReadConfigString(s string) (string, error) {
-	var err error
-
-	str := viper.GetString(s)
-	if str == "" {
-		err = fmt.Errorf("gmin: error - %v not found in config file", s)
+func doDeleteGroupAlias(cmd *cobra.Command, args []string) error {
+	if group == "" {
+		err := errors.New("gmin: error - group email address or id must be provided")
+		return err
 	}
 
-	return str, err
+	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupScope)
+	if err != nil {
+		return err
+	}
+
+	gadc := ds.Groups.Aliases.Delete(group, args[0])
+
+	err = gadc.Do()
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("**** gmin: group alias %s for group %s deleted ****\n", args[0], group)
+
+	return nil
+}
+
+func init() {
+	deleteCmd.AddCommand(deleteGroupAliasCmd)
+
+	deleteGroupAliasCmd.Flags().StringVarP(&group, "group", "g", "", "email address or id of group")
 }
