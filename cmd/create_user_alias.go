@@ -33,7 +33,7 @@ import (
 
 var createUserAliasCmd = &cobra.Command{
 	Use:     "user-alias <alias email address> -u <user email address or id>",
-	Aliases: []string{"user-alias", "ualias", "ua"},
+	Aliases: []string{"ualias", "ua"},
 	Args:    cobra.ExactArgs(1),
 	Short:   "Creates a user alias",
 	Long: `Creates a user alias.
