@@ -29,16 +29,17 @@ import (
 )
 
 const (
-	// CredentialsFile holds service account credentials
-	CredentialsFile string = "gmin_credentials"
+	// CredentialFile holds service account credentials
+	CredentialFile string = "gmin_credentials"
 	// ConfigFile is configuration file name
 	ConfigFile string = ".gmin.yaml"
 )
 
 // File holds configuration data
 type File struct {
-	Administrator string `yaml:"administrator"`
-	CustomerID    string `yaml:"customerid"`
+	Administrator  string `yaml:"administrator"`
+	CredentialPath string `yaml:"credentialpath"`
+	CustomerID     string `yaml:"customerid"`
 }
 
 // ReadConfigString gets a string item from config file

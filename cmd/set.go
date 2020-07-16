@@ -58,6 +58,15 @@ func doSet(cmd *cobra.Command, args []string) error {
 		}
 		fmt.Printf("**** gmin: administrator set to %v ****\n", adminEmail)
 	}
+
+	if credentialPath != "" {
+		viper.Set("credentialpath", credentialPath)
+		err := viper.WriteConfig()
+		if err != nil {
+			return err
+		}
+		fmt.Printf("**** gmin: service account credential path set to %v ****\n", credentialPath)
+	}
 	return nil
 }
 
@@ -66,4 +75,5 @@ func init() {
 
 	setCmd.Flags().StringVarP(&adminEmail, "admin", "a", "", "administrator email address")
 	setCmd.Flags().StringVarP(&customerID, "customerid", "c", "", "customer id for domain")
+	setCmd.Flags().StringVarP(&credentialPath, "credentialpath", "p", "", "service account credential file path")
 }

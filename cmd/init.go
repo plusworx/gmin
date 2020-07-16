@@ -50,6 +50,7 @@ func askForConfigPath() string {
 	fmt.Print("Please enter a full config file path\n(Press <Enter> for default value): ")
 
 	_, err := fmt.Scanln(&response)
+
 	if response == "" {
 		return response
 	}
@@ -62,12 +63,32 @@ func askForConfigPath() string {
 	return response
 }
 
+func askForCredentialPath() string {
+	var response string
+
+	fmt.Print("Please enter a full credentials file path\n(Press <Enter> for default value): ")
+
+	_, err := fmt.Scanln(&response)
+
+	if response == "" {
+		return response
+	}
+
+	if err != nil {
+		fmt.Println(err)
+		return askForCredentialPath()
+	}
+
+	return response
+}
+
 func askForCustomerID() string {
 	var response string
 
 	fmt.Print("Please enter customer ID\n(Press <Enter> for default value): ")
 
 	_, err := fmt.Scanln(&response)
+
 	if response == "" {
 		return response
 	}
@@ -102,13 +123,15 @@ func askForEmail() string {
 
 func doInit(cmd *cobra.Command, args []string) error {
 	answers := struct {
-		AdminEmail string
-		ConfigPath string
-		CustomerID string
+		AdminEmail     string
+		ConfigPath     string
+		CredentialPath string
+		CustomerID     string
 	}{}
 
 	answers.AdminEmail = askForEmail()
 	answers.ConfigPath = askForConfigPath()
+	answers.CredentialPath = askForCredentialPath()
 	answers.CustomerID = askForCustomerID()
 
 	if answers.ConfigPath == "" {
@@ -120,11 +143,20 @@ func doInit(cmd *cobra.Command, args []string) error {
 		answers.ConfigPath = hmDir
 	}
 
+	if answers.CredentialPath == "" {
+		hmDir, err := homedir.Dir()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		answers.CredentialPath = hmDir
+	}
+
 	if answers.CustomerID == "" {
 		answers.CustomerID = "my_customer"
 	}
 
-	cfgFile := cfg.File{Administrator: answers.AdminEmail, CustomerID: answers.CustomerID}
+	cfgFile := cfg.File{Administrator: answers.AdminEmail, CredentialPath: answers.CredentialPath, CustomerID: answers.CustomerID}
 
 	path := filepath.Join(filepath.ToSlash(answers.ConfigPath), cfg.ConfigFile)
 

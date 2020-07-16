@@ -36,6 +36,7 @@ var (
 	archived         bool
 	blockInherit     bool
 	cfgFile          string
+	credentialPath   string
 	changePassword   bool
 	customerID       string
 	deleted          bool

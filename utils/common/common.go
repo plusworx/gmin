@@ -27,6 +27,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io/ioutil"
+	"path/filepath"
 	"strings"
 
 	"crypto/sha1"
@@ -63,9 +64,14 @@ func CreateDirectoryService(scope ...string) (*admin.Service, error) {
 		return nil, err
 	}
 
-	var ServiceAccountFilePath = cfg.CredentialsFile
+	credentialPath, err := cfg.ReadConfigString("credentialpath")
+	if err != nil {
+		return nil, err
+	}
 
 	ctx := context.Background()
+
+	ServiceAccountFilePath := filepath.Join(filepath.ToSlash(credentialPath), cfg.CredentialFile)
 
 	jsonCredentials, err := ioutil.ReadFile(ServiceAccountFilePath)
 	if err != nil {
