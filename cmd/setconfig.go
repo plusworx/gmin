@@ -30,13 +30,14 @@ import (
 	"github.com/spf13/viper"
 )
 
-var setCmd = &cobra.Command{
-	Use:   "set",
-	Short: "Sets gmin configuration information",
-	RunE:  doSet,
+var setConfigCmd = &cobra.Command{
+	Use:     "setconfig",
+	Aliases: []string{"scfg"},
+	Short:   "Sets gmin configuration information",
+	RunE:    doSetConfig,
 }
 
-func doSet(cmd *cobra.Command, args []string) error {
+func doSetConfig(cmd *cobra.Command, args []string) error {
 	if customerID != "" {
 		viper.Set("customerid", customerID)
 		err := viper.WriteConfig()
@@ -71,9 +72,9 @@ func doSet(cmd *cobra.Command, args []string) error {
 }
 
 func init() {
-	rootCmd.AddCommand(setCmd)
+	rootCmd.AddCommand(setConfigCmd)
 
-	setCmd.Flags().StringVarP(&adminEmail, "admin", "a", "", "administrator email address")
-	setCmd.Flags().StringVarP(&customerID, "customerid", "c", "", "customer id for domain")
-	setCmd.Flags().StringVarP(&credentialPath, "credentialpath", "p", "", "service account credential file path")
+	setConfigCmd.Flags().StringVarP(&adminEmail, "admin", "a", "", "administrator email address")
+	setConfigCmd.Flags().StringVarP(&customerID, "customerid", "c", "", "customer id for domain")
+	setConfigCmd.Flags().StringVarP(&credentialPath, "credentialpath", "p", "", "service account credential file path")
 }
