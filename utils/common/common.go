@@ -23,12 +23,14 @@ THE SOFTWARE.
 package common
 
 import (
+	"bytes"
 	"context"
 	"encoding/hex"
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
 	"strings"
+	"unicode"
 
 	"crypto/sha1"
 
@@ -48,6 +50,201 @@ const (
 	// RoleStr is role literal
 	RoleStr string = "role"
 )
+
+const (
+	// Special tokens
+
+	// ILLEGAL is an illegal character
+	ILLEGAL Token = iota
+	// EOS is end of string
+	EOS
+	// WS is whitespace
+	WS
+
+	// Literals
+
+	//IDENT is field name
+	IDENT
+
+	// Misc characters
+
+	// ASTERISK IS *
+	ASTERISK
+	// CLOSEBRACK is )
+	CLOSEBRACK
+	// COMMA is ,
+	COMMA
+	// FSLASH is /
+	FSLASH
+	// OPENBRACK is (
+	OPENBRACK
+	// TILDE is ~
+	TILDE
+)
+
+// AttributeStr is a struct to hold list of attribute string parts
+type AttributeStr struct {
+	Fields []string
+}
+
+// Parser represents a parser.
+type Parser struct {
+	s *StrScanner
+}
+
+// scan returns the next token from the underlying scanner
+func (p *Parser) scan() (tok Token, lit string) {
+	// read the next token from the scanner
+	tok, lit = p.s.Scan()
+
+	return tok, lit
+}
+
+// scanIgnoreWhitespace scans the next non-whitespace token
+func (p *Parser) scanIgnoreWhitespace() (tok Token, lit string) {
+	tok, lit = p.scan()
+	if tok == WS {
+		tok, lit = p.scan()
+	}
+	return tok, lit
+}
+
+// Parse is the entry point for the parser
+func (p *Parser) Parse(attrMap map[string]string) (*AttributeStr, error) {
+	attrStr := &AttributeStr{}
+
+	for {
+		tok, lit := p.scanIgnoreWhitespace()
+		if tok == EOS {
+			break
+		}
+
+		if tok != IDENT && tok != ASTERISK && tok != OPENBRACK && tok != CLOSEBRACK &&
+			tok != COMMA && tok != FSLASH && tok != TILDE {
+			return nil, fmt.Errorf("gmin: unexpected character %q found in attribute string", lit)
+		}
+
+		if tok == IDENT {
+			validAttr := attrMap[lit]
+			if validAttr == "" {
+				err := fmt.Errorf("gmin: error - attribute %v is unrecognized", lit)
+				return nil, err
+			}
+			lit = validAttr
+		}
+
+		if tok == TILDE {
+			lit = ","
+		}
+
+		attrStr.Fields = append(attrStr.Fields, lit)
+	}
+	return attrStr, nil
+}
+
+// StrScanner represents a lexical scanner
+type StrScanner struct {
+	strbuf *bytes.Buffer
+}
+
+// read reads the next rune from the string
+func (s *StrScanner) read() rune {
+	ch, _, err := s.strbuf.ReadRune()
+	if err != nil {
+		return eos
+	}
+	return ch
+}
+
+// Scan returns the next token and literal value
+func (s *StrScanner) Scan() (tok Token, lit string) {
+	// Read the next rune
+	ch := s.read()
+
+	// If we see whitespace then consume all contiguous whitespace
+	// If we see a letter then consume as an ident
+	if unicode.IsSpace(ch) {
+		s.unread()
+		return s.scanWhitespace()
+	} else if unicode.IsLetter(ch) {
+		s.unread()
+		return s.scanIdent()
+	}
+
+	// Otherwise read the individual character
+	switch ch {
+	case eos:
+		return EOS, ""
+	case '*':
+		return ASTERISK, string(ch)
+	case ')':
+		return CLOSEBRACK, string(ch)
+	case ',':
+		return COMMA, string(ch)
+	case '/':
+		return FSLASH, string(ch)
+	case '(':
+		return OPENBRACK, string(ch)
+	case '~':
+		return TILDE, string(ch)
+	}
+
+	return ILLEGAL, string(ch)
+}
+
+// scanIdent consumes the current rune and all contiguous ident runes
+func (s *StrScanner) scanIdent() (tok Token, lit string) {
+	// Create a buffer and read the current character into it
+	var buf bytes.Buffer
+	buf.WriteRune(s.read())
+
+	// Read every subsequent ident character into the buffer
+	// Non-ident characters and EOS will cause the loop to exit
+	for {
+		if ch := s.read(); ch == eos {
+			break
+		} else if !unicode.IsLetter(ch) && !unicode.IsDigit(ch) {
+			s.unread()
+			break
+		} else {
+			_, _ = buf.WriteRune(ch)
+		}
+	}
+
+	// Otherwise return as a regular identifier
+	return IDENT, buf.String()
+}
+
+// scanWhitespace consumes the current rune and all contiguous whitespace
+func (s *StrScanner) scanWhitespace() (tok Token, lit string) {
+	// Create a buffer and read the current character into it
+	var buf bytes.Buffer
+	buf.WriteRune(s.read())
+
+	// Read every subsequent whitespace character into the buffer
+	// Non-whitespace characters and EOS will cause the loop to exit
+	for {
+		if ch := s.read(); ch == eos {
+			break
+		} else if !unicode.IsSpace(ch) {
+			s.unread()
+			break
+		} else {
+			buf.WriteRune(ch)
+		}
+	}
+
+	return WS, buf.String()
+}
+
+// unread places the previously read rune back on the reader
+func (s *StrScanner) unread() { _ = s.strbuf.UnreadRune() }
+
+// Token represents a lexical token.
+type Token int
+
+// eos is end of string rune
+var eos = rune(0)
 
 // ValidSortOrders provides valid sort order strings
 var ValidSortOrders = map[string]string{
@@ -119,6 +316,32 @@ func IsValidAttr(attr string, attrMap map[string]string) (string, error) {
 	}
 
 	return validAttr, nil
+}
+
+// NewParser returns a new instance of Parser
+func NewParser(b *bytes.Buffer) *Parser {
+	return &Parser{s: NewStrScanner(b)}
+}
+
+// NewStrScanner returns a new instance of Scanner
+func NewStrScanner(b *bytes.Buffer) *StrScanner {
+	return &StrScanner{strbuf: b}
+}
+
+// ParseOutputAttrs validates attributes string and formats it for Get and List calls
+func ParseOutputAttrs(attrs string, attrMap map[string]string) (string, error) {
+	bb := bytes.NewBufferString(attrs)
+
+	p := NewParser(bb)
+
+	as, err := p.Parse(attrMap)
+	if err != nil {
+		return "", err
+	}
+
+	outputStr := strings.Join(as.Fields, "")
+
+	return outputStr, nil
 }
 
 // SliceContainsStr tells whether strs contains s
