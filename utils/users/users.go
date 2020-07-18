@@ -34,8 +34,10 @@ import (
 )
 
 const (
-	endField        = ")"
-	startUsersField = "users("
+	// EndField is List call attribute string terminator
+	EndField = ")"
+	// StartUsersField is List call attribute string prefix
+	StartUsersField = "users("
 	startNameField  = "name("
 )
 
@@ -262,6 +264,7 @@ var QueryAttrMap = map[string]string{
 
 // UserAttrMap provides lowercase mappings to valid admin.User attributes
 var UserAttrMap = map[string]string{
+	"address":                            "address",
 	"addresses":                          "addresses",
 	"addresses(country)":                 "addresses(country)",
 	"addresses(countrycode)":             "addresses(countryCode)",
@@ -938,7 +941,7 @@ func FormatAttrs(attrs []string, get bool) string {
 	outputStr = outputOtherFlds
 
 	if nameRequired {
-		outputName = startNameField + strings.Join(name, ",") + endField
+		outputName = startNameField + strings.Join(name, ",") + EndField
 	}
 
 	if outputName != "" && outputStr != "" {
@@ -950,7 +953,7 @@ func FormatAttrs(attrs []string, get bool) string {
 	}
 
 	if !get {
-		outputStr = startUsersField + outputStr + endField
+		outputStr = StartUsersField + outputStr + EndField
 	}
 
 	return outputStr
