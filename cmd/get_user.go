@@ -45,10 +45,7 @@ var getUserCmd = &cobra.Command{
 }
 
 func doGetUser(cmd *cobra.Command, args []string) error {
-	var (
-		user       *admin.User
-		validAttrs []string
-	)
+	var user *admin.User
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserReadonlyScope)
 	if err != nil {
@@ -58,12 +55,11 @@ func doGetUser(cmd *cobra.Command, args []string) error {
 	ugc := ds.Users.Get(args[0])
 
 	if attrs != "" {
-		validAttrs, err = cmn.ValidateArgs(attrs, usrs.UserAttrMap, cmn.AttrStr)
+		formattedAttrs, err := cmn.ParseOutputAttrs(attrs, usrs.UserAttrMap)
 		if err != nil {
 			return err
 		}
 
-		formattedAttrs := usrs.FormatAttrs(validAttrs, true)
 		getCall := usrs.AddFields(ugc, formattedAttrs)
 		ugc = getCall.(*admin.UsersGetCall)
 	}

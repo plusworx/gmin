@@ -46,10 +46,8 @@ var listUsersCmd = &cobra.Command{
 
 func doListUsers(cmd *cobra.Command, args []string) error {
 	var (
-		formattedAttrs string
-		users          *admin.Users
-		validAttrs     []string
-		validOrderBy   string
+		users        *admin.Users
+		validOrderBy string
 	)
 
 	if query != "" && deleted {
@@ -65,12 +63,12 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 	ulc := ds.Users.List()
 
 	if attrs != "" {
-		validAttrs, err = cmn.ValidateArgs(attrs, usrs.UserAttrMap, cmn.AttrStr)
+		listAttrs, err := cmn.ParseOutputAttrs(attrs, usrs.UserAttrMap)
 		if err != nil {
 			return err
 		}
+		formattedAttrs := usrs.StartUsersField + listAttrs + usrs.EndField
 
-		formattedAttrs = usrs.FormatAttrs(validAttrs, false)
 		listCall := usrs.AddFields(ulc, formattedAttrs)
 		ulc = listCall.(*admin.UsersListCall)
 	}
