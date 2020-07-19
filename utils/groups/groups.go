@@ -31,8 +31,10 @@ import (
 )
 
 const (
-	endField         string = ")"
-	startGroupsField string = "groups("
+	// EndField is List call attribute string terminator
+	EndField string = ")"
+	// StartGroupsField is List call attribute string prefix
+	StartGroupsField string = "groups("
 )
 
 // GroupAttrMap provides lowercase mappings to valid admin.Group attributes
@@ -172,26 +174,6 @@ func DoList(glc *admin.GroupsListCall) (*admin.Groups, error) {
 	}
 
 	return groups, nil
-}
-
-// FormatAttrs formats attributes for admin.GroupsListCall.Fields and admin.GroupsGetCall.Fields call
-func FormatAttrs(attrs []string, get bool) string {
-	var (
-		outputStr   string
-		groupFields []string
-	)
-
-	for _, a := range attrs {
-		groupFields = append(groupFields, a)
-	}
-
-	if get {
-		outputStr = strings.Join(groupFields, ",")
-	} else {
-		outputStr = startGroupsField + strings.Join(groupFields, ",") + endField
-	}
-
-	return outputStr
 }
 
 // FormatQuery produces a query string from multiple query elements

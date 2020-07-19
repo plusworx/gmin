@@ -42,11 +42,7 @@ var listGroupAliasesCmd = &cobra.Command{
 }
 
 func doListGroupAliases(cmd *cobra.Command, args []string) error {
-	var (
-		formattedAttrs string
-		aliases        *admin.Aliases
-		validAttrs     []string
-	)
+	var aliases *admin.Aliases
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupReadonlyScope)
 	if err != nil {
@@ -56,12 +52,12 @@ func doListGroupAliases(cmd *cobra.Command, args []string) error {
 	galc := ds.Groups.Aliases.List(args[0])
 
 	if attrs != "" {
-		validAttrs, err = cmn.ValidateArgs(attrs, gas.GroupAliasAttrMap, cmn.AttrStr)
+		listAttrs, err := cmn.ParseOutputAttrs(attrs, gas.GroupAliasAttrMap)
 		if err != nil {
 			return err
 		}
+		formattedAttrs := gas.StartAliasesField + listAttrs + gas.EndField
 
-		formattedAttrs = gas.FormatAttrs(validAttrs)
 		galc = gas.AddFields(galc, formattedAttrs)
 	}
 

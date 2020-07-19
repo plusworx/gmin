@@ -23,15 +23,15 @@ THE SOFTWARE.
 package orgunits
 
 import (
-	"strings"
-
 	admin "google.golang.org/api/admin/directory/v1"
 	"google.golang.org/api/googleapi"
 )
 
 const (
-	endField           string = ")"
-	startOrgUnitsField string = "organizationUnits("
+	// EndField is List call attribute string terminator
+	EndField string = ")"
+	// StartOrgUnitsField is List call attribute string prefix
+	StartOrgUnitsField string = "organizationUnits("
 )
 
 // OrgUnitAttrMap provides lowercase mappings to valid admin.OrgUnit attributes
@@ -111,24 +111,4 @@ func DoList(oulc *admin.OrgunitsListCall) (*admin.OrgUnits, error) {
 	}
 
 	return orgunits, nil
-}
-
-// FormatAttrs formats attributes for admin.OrgunitsListCall.Fields call
-func FormatAttrs(attrs []string, get bool) string {
-	var (
-		outputStr string
-		ouFields  []string
-	)
-
-	for _, a := range attrs {
-		ouFields = append(ouFields, a)
-	}
-
-	if get {
-		outputStr = strings.Join(ouFields, ",")
-	} else {
-		outputStr = startOrgUnitsField + strings.Join(ouFields, ",") + endField
-	}
-
-	return outputStr
 }

@@ -23,15 +23,15 @@ THE SOFTWARE.
 package useraliases
 
 import (
-	"strings"
-
 	admin "google.golang.org/api/admin/directory/v1"
 	"google.golang.org/api/googleapi"
 )
 
 const (
-	endField          string = ")"
-	startAliasesField string = "aliases("
+	// EndField is List call attribute string terminator
+	EndField string = ")"
+	// StartAliasesField is List call attribute string prefix
+	StartAliasesField string = "aliases("
 )
 
 // UserAliasAttrMap provides lowercase mappings to valid admin.Alias attributes
@@ -61,20 +61,4 @@ func DoList(ualc *admin.UsersAliasesListCall) (*admin.Aliases, error) {
 	}
 
 	return aliases, nil
-}
-
-// FormatAttrs formats attributes for admin.UsersAliasesListCall.Fields
-func FormatAttrs(attrs []string) string {
-	var (
-		outputStr   string
-		aliasFields []string
-	)
-
-	for _, a := range attrs {
-		aliasFields = append(aliasFields, a)
-	}
-
-	outputStr = startAliasesField + strings.Join(aliasFields, ",") + endField
-
-	return outputStr
 }

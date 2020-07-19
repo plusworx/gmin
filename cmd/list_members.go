@@ -45,10 +45,8 @@ var listMembersCmd = &cobra.Command{
 
 func doListMembers(cmd *cobra.Command, args []string) error {
 	var (
-		jsonData   []byte
-		members    *admin.Members
-		validAttrs []string
-		validRoles []string
+		jsonData []byte
+		members  *admin.Members
 	)
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupMemberReadonlyScope)
@@ -59,23 +57,21 @@ func doListMembers(cmd *cobra.Command, args []string) error {
 	mlc := ds.Members.List(args[0])
 
 	if attrs != "" {
-		validAttrs, err = cmn.ValidateArgs(attrs, mems.MemberAttrMap, cmn.AttrStr)
+		listAttrs, err := cmn.ParseOutputAttrs(attrs, mems.MemberAttrMap)
 		if err != nil {
 			return err
 		}
+		formattedAttrs := mems.StartMembersField + listAttrs + mems.EndField
 
-		formattedAttrs := mems.FormatAttrs(validAttrs, false)
 		listCall := mems.AddFields(mlc, formattedAttrs)
 		mlc = listCall.(*admin.MembersListCall)
 	}
 
 	if role != "" {
-		validRoles, err = cmn.ValidateArgs(role, mems.RoleMap, cmn.RoleStr)
+		formattedRoles, err := cmn.ParseOutputAttrs(role, mems.RoleMap)
 		if err != nil {
 			return err
 		}
-
-		formattedRoles := mems.FormatAttrs(validRoles, true)
 		mlc = mems.AddRoles(mlc, formattedRoles)
 	}
 

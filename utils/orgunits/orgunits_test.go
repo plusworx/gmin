@@ -106,13 +106,3 @@ func TestAddType(t *testing.T) {
 		}
 	}
 }
-func TestFormatAttrs(t *testing.T) {
-	attrs := []string{"blockInheritance", "description", "name"}
-	expectedOutput := "organizationUnits(blockInheritance,description,name)"
-
-	fmtAttrs := FormatAttrs(attrs, false)
-
-	if fmtAttrs != expectedOutput {
-		t.Errorf("Expected output: %v  Got: %v", expectedOutput, fmtAttrs)
-	}
-}

@@ -70,10 +70,7 @@ func init() {
 }
 
 func processGroupMember(memID string, attrs string, groupEmail string) ([]byte, error) {
-	var (
-		member     *admin.Member
-		validAttrs []string
-	)
+	var member *admin.Member
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupMemberReadonlyScope)
 	if err != nil {
@@ -83,12 +80,11 @@ func processGroupMember(memID string, attrs string, groupEmail string) ([]byte, 
 	mgc := ds.Members.Get(groupEmail, memID)
 
 	if attrs != "" {
-		validAttrs, err = cmn.ValidateArgs(attrs, mems.MemberAttrMap, cmn.AttrStr)
+		formattedAttrs, err := cmn.ParseOutputAttrs(attrs, mems.MemberAttrMap)
 		if err != nil {
 			return nil, err
 		}
 
-		formattedAttrs := mems.FormatAttrs(validAttrs, true)
 		getCall := mems.AddFields(mgc, formattedAttrs)
 		mgc = getCall.(*admin.MembersGetCall)
 	}

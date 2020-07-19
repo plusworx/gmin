@@ -41,14 +41,10 @@ import (
 )
 
 const (
-	// AttrStr is attribute literal
-	AttrStr string = "attribute"
 	// HashFunction specifies password hash function
 	HashFunction string = "SHA-1"
 	// RepeatTxt is used to signal a repeated attribute in attribute argument processing
 	RepeatTxt string = "**** repeat ****"
-	// RoleStr is role literal
-	RoleStr string = "role"
 )
 
 const (
@@ -352,25 +348,6 @@ func SliceContainsStr(strs []string, s string) bool {
 		}
 	}
 	return false
-}
-
-// ValidateArgs validates attributes and converts them to correct format
-func ValidateArgs(args string, attrMap map[string]string, argType string) ([]string, error) {
-	convertedArgs := []string{}
-	lowerArgs := strings.ToLower(args)
-	sepArgs := strings.Split(lowerArgs, "~")
-
-	for _, arg := range sepArgs {
-		trimmedArg := strings.TrimSpace(arg)
-		correctArg := attrMap[trimmedArg]
-		if correctArg == "" {
-			err := fmt.Errorf("gmin: error - %v %v is unrecognized", argType, arg)
-			return nil, err
-		}
-		convertedArgs = append(convertedArgs, correctArg)
-	}
-
-	return convertedArgs, nil
 }
 
 // ValidateQuery validates query attributes and converts them to correct format

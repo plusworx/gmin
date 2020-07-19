@@ -46,10 +46,7 @@ var getOrgUnitCmd = &cobra.Command{
 }
 
 func doGetOrgUnit(cmd *cobra.Command, args []string) error {
-	var (
-		orgUnit    *admin.OrgUnit
-		validAttrs []string
-	)
+	var orgUnit *admin.OrgUnit
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryOrgunitReadonlyScope)
 	if err != nil {
@@ -64,12 +61,10 @@ func doGetOrgUnit(cmd *cobra.Command, args []string) error {
 	ougc := ds.Orgunits.Get(customerID, args)
 
 	if attrs != "" {
-		validAttrs, err = cmn.ValidateArgs(attrs, ous.OrgUnitAttrMap, cmn.AttrStr)
+		formattedAttrs, err := cmn.ParseOutputAttrs(attrs, ous.OrgUnitAttrMap)
 		if err != nil {
 			return err
 		}
-
-		formattedAttrs := ous.FormatAttrs(validAttrs, true)
 		getCall := ous.AddFields(ougc, formattedAttrs)
 		ougc = getCall.(*admin.OrgunitsGetCall)
 	}

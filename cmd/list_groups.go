@@ -46,10 +46,8 @@ var listGroupsCmd = &cobra.Command{
 
 func doListGroups(cmd *cobra.Command, args []string) error {
 	var (
-		formattedAttrs string
-		groups         *admin.Groups
-		validAttrs     []string
-		validOrderBy   string
+		groups       *admin.Groups
+		validOrderBy string
 	)
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupReadonlyScope)
@@ -60,12 +58,12 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 	glc := ds.Groups.List()
 
 	if attrs != "" {
-		validAttrs, err = cmn.ValidateArgs(attrs, grps.GroupAttrMap, cmn.AttrStr)
+		listAttrs, err := cmn.ParseOutputAttrs(attrs, grps.GroupAttrMap)
 		if err != nil {
 			return err
 		}
+		formattedAttrs := grps.StartGroupsField + listAttrs + grps.EndField
 
-		formattedAttrs = grps.FormatAttrs(validAttrs, false)
 		listCall := grps.AddFields(glc, formattedAttrs)
 		glc = listCall.(*admin.GroupsListCall)
 	}

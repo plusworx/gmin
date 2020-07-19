@@ -31,8 +31,10 @@ import (
 )
 
 const (
-	endField          string = ")"
-	startMembersField string = "members("
+	// EndField is List call attribute string terminator
+	EndField string = ")"
+	// StartMembersField is List call attribute string prefix
+	StartMembersField string = "members("
 )
 
 // deliverySettingMap provides lowercase mappings to valid admin.Member delivery settings
@@ -130,26 +132,6 @@ func DoList(mlc *admin.MembersListCall) (*admin.Members, error) {
 	}
 
 	return members, nil
-}
-
-// FormatAttrs formats attributes for admin.MembersListCall.Fields, admin.MembersListCall.Roles and admin.MembersGetCall.Fields calls
-func FormatAttrs(attrs []string, get bool) string {
-	var (
-		outputStr    string
-		memberFields []string
-	)
-
-	for _, a := range attrs {
-		memberFields = append(memberFields, a)
-	}
-
-	if get {
-		outputStr = strings.Join(memberFields, ",")
-	} else {
-		outputStr = startMembersField + strings.Join(memberFields, ",") + endField
-	}
-
-	return outputStr
 }
 
 // ValidateDeliverySetting checks that a valid delivery setting has been provided

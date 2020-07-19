@@ -45,10 +45,7 @@ var getGroupCmd = &cobra.Command{
 }
 
 func doGetGroup(cmd *cobra.Command, args []string) error {
-	var (
-		group      *admin.Group
-		validAttrs []string
-	)
+	var group *admin.Group
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupReadonlyScope)
 	if err != nil {
@@ -58,12 +55,11 @@ func doGetGroup(cmd *cobra.Command, args []string) error {
 	ggc := ds.Groups.Get(args[0])
 
 	if attrs != "" {
-		validAttrs, err = cmn.ValidateArgs(attrs, grps.GroupAttrMap, cmn.AttrStr)
+		formattedAttrs, err := cmn.ParseOutputAttrs(attrs, grps.GroupAttrMap)
 		if err != nil {
 			return err
 		}
 
-		formattedAttrs := grps.FormatAttrs(validAttrs, true)
 		getCall := grps.AddFields(ggc, formattedAttrs)
 		ggc = getCall.(*admin.GroupsGetCall)
 	}

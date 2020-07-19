@@ -43,10 +43,7 @@ var listOUsCmd = &cobra.Command{
 }
 
 func doListOUs(cmd *cobra.Command, args []string) error {
-	var (
-		orgUnits   *admin.OrgUnits
-		validAttrs []string
-	)
+	var orgUnits *admin.OrgUnits
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryOrgunitReadonlyScope)
 	if err != nil {
@@ -61,12 +58,12 @@ func doListOUs(cmd *cobra.Command, args []string) error {
 	oulc := ds.Orgunits.List(customerID)
 
 	if attrs != "" {
-		validAttrs, err = cmn.ValidateArgs(attrs, ous.OrgUnitAttrMap, cmn.AttrStr)
+		listAttrs, err := cmn.ParseOutputAttrs(attrs, ous.OrgUnitAttrMap)
 		if err != nil {
 			return err
 		}
+		formattedAttrs := ous.StartOrgUnitsField + listAttrs + ous.EndField
 
-		formattedAttrs := ous.FormatAttrs(validAttrs, false)
 		listCall := ous.AddFields(oulc, formattedAttrs)
 		oulc = listCall.(*admin.OrgunitsListCall)
 	}
