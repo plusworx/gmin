@@ -912,53 +912,6 @@ func doNonComposite(user *admin.User, attrStack []string) ([]string, error) {
 	return newStack, nil
 }
 
-// FormatAttrs formats attributes for admin.UsersListCall.Fields or admin.UsersGetCall.Fields call
-func FormatAttrs(attrs []string, get bool) string {
-	var (
-		nameRequired    bool
-		outputName      string
-		outputOtherFlds string
-		outputStr       string
-		name            []string
-		userFields      []string
-	)
-
-	for _, a := range attrs {
-		lowerA := strings.ToLower(a)
-		if cmn.SliceContainsStr(nameAttrs, lowerA) {
-			nameRequired = true
-			name = append(name, a)
-			continue
-		}
-
-		userFields = append(userFields, a)
-	}
-
-	if len(userFields) > 0 {
-		outputOtherFlds = strings.Join(userFields, ",")
-	}
-
-	outputStr = outputOtherFlds
-
-	if nameRequired {
-		outputName = startNameField + strings.Join(name, ",") + EndField
-	}
-
-	if outputName != "" && outputStr != "" {
-		outputStr = outputStr + "," + outputName
-	}
-
-	if outputName != "" && outputStr == "" {
-		outputStr = outputName
-	}
-
-	if !get {
-		outputStr = StartUsersField + outputStr + EndField
-	}
-
-	return outputStr
-}
-
 // isCompositeAttr checks whether or not an attribute is a composite type
 func isCompositeAttr(attr string) bool {
 

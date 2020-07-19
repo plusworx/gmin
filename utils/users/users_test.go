@@ -763,42 +763,6 @@ func TestDoNonComposite(t *testing.T) {
 	}
 }
 
-func TestFormatAttrs(t *testing.T) {
-	cases := []struct {
-		attrs         []string
-		expectedValue string
-		get           bool
-	}{
-		{
-			attrs:         []string{"name(givenName)", "name(familyName)", "primaryEmail"},
-			expectedValue: "name(givenName),name(familyName),primaryEmail",
-			get:           true,
-		},
-		{
-			attrs:         []string{"name(givenName)", "name(familyName)", "primaryEmail"},
-			expectedValue: "users(name(givenName),name(familyName),primaryEmail)",
-			get:           false,
-		},
-		{
-			attrs:         []string{"givenName", "familyName", "primaryEmail"},
-			expectedValue: "primaryEmail,name(givenName,familyName)",
-			get:           true,
-		},
-		{
-			attrs:         []string{"givenName", "familyName", "primaryEmail"},
-			expectedValue: "users(primaryEmail,name(givenName,familyName))",
-			get:           false,
-		},
-	}
-
-	for _, c := range cases {
-		output := FormatAttrs(c.attrs, c.get)
-		if output != c.expectedValue {
-			t.Errorf("Expected output: %v - Got: %v", c.expectedValue, output)
-		}
-	}
-}
-
 func TestIsCompositeAttr(t *testing.T) {
 	cases := []struct {
 		attr           string
