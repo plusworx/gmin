@@ -23,9 +23,6 @@ THE SOFTWARE.
 package groups
 
 import (
-	"errors"
-	"strings"
-
 	admin "google.golang.org/api/admin/directory/v1"
 	"google.golang.org/api/googleapi"
 )
@@ -174,18 +171,4 @@ func DoList(glc *admin.GroupsListCall) (*admin.Groups, error) {
 	}
 
 	return groups, nil
-}
-
-// FormatQuery produces a query string from multiple query elements
-func FormatQuery(queryParts []string) (string, error) {
-	formattedQuery := strings.Join(queryParts, " ")
-
-	if strings.Contains(formattedQuery, "memberKey") &&
-		(strings.Contains(formattedQuery, "name") ||
-			strings.Contains(formattedQuery, "email")) {
-		err := errors.New("gmin: error - memberKey must be used on its own in a query")
-		return "", err
-	}
-
-	return formattedQuery, nil
 }

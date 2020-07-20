@@ -79,7 +79,7 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 	}
 
 	if query != "" {
-		formattedQuery, err := processQuery(query)
+		formattedQuery, err := cmn.ParseQuery(query, grps.QueryAttrMap)
 		if err != nil {
 			return err
 		}
@@ -213,20 +213,4 @@ func init() {
 	listGroupsCmd.Flags().StringVarP(&query, "query", "q", "", "selection criteria to get groups (separated by ~)")
 	listGroupsCmd.Flags().StringVarP(&sortOrder, "sortorder", "s", "", "sort order of returned results")
 	listGroupsCmd.Flags().StringVarP(&userKey, "userkey", "u", "", "email address or id of user who belongs to returned groups")
-}
-
-func processQuery(query string) (string, error) {
-	var formattedQuery string
-
-	validQuery, err := cmn.ValidateQuery(query, grps.QueryAttrMap)
-	if err != nil {
-		return "", err
-	}
-
-	formattedQuery, err = grps.FormatQuery(validQuery)
-	if err != nil {
-		return "", err
-	}
-
-	return formattedQuery, nil
 }

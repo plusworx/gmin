@@ -99,7 +99,7 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 	}
 
 	if query != "" {
-		formattedQuery, err := usrProcessQuery(query)
+		formattedQuery, err := cmn.ParseQuery(query, usrs.QueryAttrMap)
 		if err != nil {
 			return err
 		}
@@ -247,15 +247,4 @@ func init() {
 	listUsersCmd.Flags().StringVarP(&viewType, "viewtype", "v", "", "data view type")
 	listUsersCmd.Flags().BoolVarP(&deleted, "deleted", "x", false, "show deleted users")
 
-}
-
-func usrProcessQuery(query string) (string, error) {
-	queryParts, err := cmn.ValidateQuery(query, usrs.QueryAttrMap)
-	if err != nil {
-		return "", err
-	}
-
-	formattedQuery := strings.Join(queryParts, " ")
-
-	return formattedQuery, nil
 }
