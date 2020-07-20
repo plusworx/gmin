@@ -89,6 +89,265 @@ func TestIsValidAttr(t *testing.T) {
 	}
 }
 
+func TestParseOutputAttrs(t *testing.T) {
+	var UserAttrMap = map[string]string{
+		"accountid":                  "accountId",
+		"address":                    "address",
+		"addresses":                  "addresses",
+		"addressmeas":                "addressMeAs",
+		"agreedtoterms":              "agreedToTerms",
+		"aliases":                    "aliases",
+		"archived":                   "archived",
+		"area":                       "area",
+		"buildingid":                 "buildingId",
+		"changepasswordatnextlogin":  "changePasswordAtNextLogin",
+		"christianname":              "givenName",
+		"contenttype":                "contentType",
+		"costcenter":                 "costCenter",
+		"country":                    "country",
+		"countrycode":                "countryCode",
+		"creationtime":               "creationTime",
+		"customerid":                 "customerId",
+		"customgender":               "customGender",
+		"customlanguage":             "customLanguage",
+		"customprotocol":             "customProtocol",
+		"customschemas":              "customSchemas",
+		"customtype":                 "customType",
+		"deletiontime":               "deletionTime",
+		"department":                 "department",
+		"description":                "description",
+		"deskcode":                   "deskCode",
+		"domain":                     "domain",
+		"emails":                     "emails",
+		"etag":                       "etag",
+		"expirationtimeusec":         "expirationTimeUsec",
+		"externalids":                "externalIds",
+		"extendedaddress":            "extendedAddress",
+		"familyname":                 "familyName",
+		"fingerprint":                "fingerprint",
+		"firstname":                  "givenName",
+		"floorname":                  "floorName",
+		"floorsection":               "floorSection",
+		"formatted":                  "formatted",
+		"fullname":                   "fullName",
+		"fulltimeequivalent":         "fullTimeEquivalent",
+		"gecos":                      "gecos",
+		"gender":                     "gender",
+		"gid":                        "gid",
+		"givenname":                  "givenName",
+		"hashfunction":               "hashFunction",
+		"homedirectory":              "homeDirectory",
+		"id":                         "id",
+		"im":                         "im",
+		"ims":                        "ims",
+		"includeinglobaladdresslist": "includeInGlobalAddressList",
+		"ipwhitelisted":              "ipWhiteListed",
+		"isadmin":                    "isAdmin",
+		"isdelegatedadmin":           "isDelegatedAdmin",
+		"isenforcedin2sv":            "isEnforcedIn2Sv",
+		"isenrolledin2sv":            "isEnrolledIn2Sv",
+		"ismailboxsetup":             "isMailboxSetup",
+		"key":                        "key",
+		"keywords":                   "keywords",
+		"kind":                       "kind",
+		"languagecode":               "languageCode",
+		"languages":                  "languages",
+		"lastlogintime":              "lastLoginTime",
+		"lastname":                   "familyName",
+		"locality":                   "locality",
+		"location":                   "location",
+		"locations":                  "locations",
+		"name":                       "name",
+		"noneditablealiases":         "nonEditableAliases",
+		"notes":                      "notes",
+		"operatingsystemtype":        "operatingSystemType",
+		"organisations":              "organizations",
+		"organizations":              "organizations",
+		"orgunitpath":                "orgUnitPath",
+		"password":                   "password",
+		"phones":                     "phones",
+		"pobox":                      "poBox",
+		"posixaccounts":              "posixAccounts",
+		"postalcode":                 "postalCode",
+		"primary":                    "primary",
+		"primaryemail":               "primaryEmail",
+		"protocol":                   "protocol",
+		"recoveryemail":              "recoveryEmail",
+		"recoveryphone":              "recoveryPhone",
+		"region":                     "region",
+		"relations":                  "relations",
+		"shell":                      "shell",
+		"sshpublickeys":              "sshPublicKeys",
+		"streetaddress":              "streetAddress",
+		"surname":                    "familyName",
+		"suspended":                  "suspended",
+		"suspensionreason":           "suspensionReason",
+		"symbol":                     "symbol",
+		"systemid":                   "systemId",
+		"thumbnailphotoetag":         "thumbnailPhotoEtag",
+		"thumbnailphotourl":          "thumbnailPhotoUrl",
+		"title":                      "title",
+		"type":                       "type",
+		"uid":                        "uid",
+		"username":                   "username",
+		"value":                      "value",
+		"websites":                   "websites",
+	}
+
+	cases := []struct {
+		attrs          string
+		expectedErr    string
+		expectedResult string
+	}{
+		{
+			attrs:          "givenname",
+			expectedResult: "givenName",
+		},
+		{
+			attrs:          "primaryEmail",
+			expectedResult: "primaryEmail",
+		},
+		{
+			attrs:          "EmaiLs",
+			expectedResult: "emails",
+		},
+		{
+			attrs:          "isadmin",
+			expectedResult: "isAdmin",
+		},
+		{
+			attrs:          "addresses(region)",
+			expectedResult: "addresses(region)",
+		},
+		{
+			attrs:          "name(firstname,lastname)",
+			expectedResult: "name(givenName,familyName)",
+		},
+		{
+			attrs:          "primaryEMail~emails~name(christianname)",
+			expectedResult: "primaryEmail,emails,name(givenName)",
+		},
+		{
+			attrs:          "directManager",
+			expectedResult: "",
+			expectedErr:    "gmin: error - attribute directManager is unrecognized",
+		},
+	}
+
+	for _, c := range cases {
+		output, err := ParseOutputAttrs(c.attrs, UserAttrMap)
+		if err != nil {
+			if err.Error() != c.expectedErr {
+				t.Errorf("Got error: %v - expected error: %v", err.Error(), c.expectedErr)
+				continue
+			}
+		}
+
+		if output != c.expectedResult {
+			t.Errorf("Got result: %v - expected result: %v", output, c.expectedResult)
+		}
+
+	}
+}
+
+func TestParseQuery(t *testing.T) {
+	var QueryAttrMap = map[string]string{
+		"address":           "address",
+		"addresspobox":      "addressPoBox",
+		"addressextended":   "addressExtended",
+		"addressstreet":     "addressStreet",
+		"addresslocality":   "addressLocality",
+		"addressregion":     "addressRegion",
+		"addresspostalcode": "addressPostalCode",
+		"addresscountry":    "addressCountry",
+		"christianname":     "givenName",
+		"directmanager":     "directManager",
+		"directmanagerid":   "directManagerId",
+		"email":             "email",
+		"externalid":        "externalId",
+		"familyname":        "familyName",
+		"firstname":         "givenName",
+		"givenname":         "givenName",
+		"im":                "im",
+		"isadmin":           "isAdmin",
+		"isdelegatedadmin":  "isDelegatedAdmin",
+		"isenrolledin2sv":   "isEnrolledIn2Sv",
+		"isenforcedin2sv":   "isEnforcedIn2Sv",
+		"issuspended":       "isSuspended",
+		"lastname":          "familyName",
+		"manager":           "manager",
+		"managerid":         "managerId",
+		"name":              "name",
+		"orgcostcenter":     "orgCostCenter",
+		"orgdepartment":     "orgDepartment",
+		"orgdescription":    "orgDescription",
+		"orgname":           "orgName",
+		"orgtitle":          "orgTitle",
+		"orgunitpath":       "orgUnitPath",
+		"phone":             "phone",
+		"surname":           "familyName",
+	}
+
+	cases := []struct {
+		expectedErr    error
+		expectedResult string
+		query          string
+	}{
+		{
+			query:          "givenname=Frank",
+			expectedResult: "givenName=Frank",
+		},
+		{
+			query:          "name='Jane Smith'",
+			expectedResult: "name='Jane Smith'",
+		},
+		{
+			query:          "email:admin*",
+			expectedResult: "email:admin*",
+		},
+		{
+			query:          "isadmin=true",
+			expectedResult: "isAdmin=true",
+		},
+		{
+			query:          "isadmin=True",
+			expectedResult: "isAdmin=true",
+		},
+		{
+			query:          "orgtitle:Manager",
+			expectedResult: "orgTitle:Manager",
+		},
+		{
+			query:          "Orgtitle:Manager",
+			expectedResult: "orgTitle:Manager",
+		},
+		{
+			query:          "directManager='bobjones@example.com'",
+			expectedResult: "directManager='bobjones@example.com'",
+		},
+		{
+			query:          "orgName=Engineering~orgTitle:Manager",
+			expectedResult: "orgName=Engineering orgTitle:Manager",
+		},
+		{
+			query:          "orgdescription:'Some description text.'",
+			expectedResult: "orgDescription:'Some description text.'",
+		},
+	}
+
+	for _, c := range cases {
+		output, err := ParseQuery(c.query, QueryAttrMap)
+		if err != c.expectedErr {
+			t.Errorf("Got error: %v - expected error: %v", err.Error(), c.expectedErr)
+			continue
+		}
+
+		if output != c.expectedResult {
+			t.Errorf("Got result: %v - expected result: %v", output, c.expectedResult)
+		}
+	}
+}
+
 func TestSliceContainsStr(t *testing.T) {
 	cases := []struct {
 		expectedResult bool
