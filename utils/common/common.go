@@ -83,34 +83,34 @@ type AttributeStr struct {
 	Fields []string
 }
 
-// Parser represents a parser.
-type Parser struct {
-	s *StrScanner
+// OutputAttrParser represents a parser of get and list attribute strings
+type OutputAttrParser struct {
+	oas *OutputAttrScanner
 }
 
 // scan returns the next token from the underlying scanner
-func (p *Parser) scan() (tok Token, lit string) {
+func (oap *OutputAttrParser) scan() (tok Token, lit string) {
 	// read the next token from the scanner
-	tok, lit = p.s.Scan()
+	tok, lit = oap.oas.Scan()
 
 	return tok, lit
 }
 
 // scanIgnoreWhitespace scans the next non-whitespace token
-func (p *Parser) scanIgnoreWhitespace() (tok Token, lit string) {
-	tok, lit = p.scan()
+func (oap *OutputAttrParser) scanIgnoreWhitespace() (tok Token, lit string) {
+	tok, lit = oap.scan()
 	if tok == WS {
-		tok, lit = p.scan()
+		tok, lit = oap.scan()
 	}
 	return tok, lit
 }
 
 // Parse is the entry point for the parser
-func (p *Parser) Parse(attrMap map[string]string) (*AttributeStr, error) {
+func (oap *OutputAttrParser) Parse(attrMap map[string]string) (*AttributeStr, error) {
 	attrStr := &AttributeStr{}
 
 	for {
-		tok, lit := p.scanIgnoreWhitespace()
+		tok, lit := oap.scanIgnoreWhitespace()
 		if tok == EOS {
 			break
 		}
@@ -138,33 +138,24 @@ func (p *Parser) Parse(attrMap map[string]string) (*AttributeStr, error) {
 	return attrStr, nil
 }
 
-// StrScanner represents a lexical scanner
-type StrScanner struct {
-	strbuf *bytes.Buffer
-}
-
-// read reads the next rune from the string
-func (s *StrScanner) read() rune {
-	ch, _, err := s.strbuf.ReadRune()
-	if err != nil {
-		return eos
-	}
-	return ch
+// OutputAttrScanner represents a lexical scanner for get and list attribute strings
+type OutputAttrScanner struct {
+	s *Scanner
 }
 
 // Scan returns the next token and literal value
-func (s *StrScanner) Scan() (tok Token, lit string) {
+func (oas *OutputAttrScanner) Scan() (tok Token, lit string) {
 	// Read the next rune
-	ch := s.read()
+	ch := oas.s.read()
 
 	// If we see whitespace then consume all contiguous whitespace
 	// If we see a letter then consume as an ident
 	if unicode.IsSpace(ch) {
-		s.unread()
-		return s.scanWhitespace()
+		oas.s.unread()
+		return oas.s.scanWhitespace()
 	} else if unicode.IsLetter(ch) {
-		s.unread()
-		return s.scanIdent()
+		oas.s.unread()
+		return oas.s.scanIdent()
 	}
 
 	// Otherwise read the individual character
@@ -188,8 +179,22 @@ func (s *StrScanner) Scan() (tok Token, lit string) {
 	return ILLEGAL, string(ch)
 }
 
+// Scanner represents a lexical scanner
+type Scanner struct {
+	strbuf *bytes.Buffer
+}
+
+// read reads the next rune from the string
+func (s *Scanner) read() rune {
+	ch, _, err := s.strbuf.ReadRune()
+	if err != nil {
+		return eos
+	}
+	return ch
+}
+
 // scanIdent consumes the current rune and all contiguous ident runes
-func (s *StrScanner) scanIdent() (tok Token, lit string) {
+func (s *Scanner) scanIdent() (tok Token, lit string) {
 	// Create a buffer and read the current character into it
 	var buf bytes.Buffer
 	buf.WriteRune(s.read())
@@ -212,7 +217,7 @@ func (s *StrScanner) scanIdent() (tok Token, lit string) {
 }
 
 // scanWhitespace consumes the current rune and all contiguous whitespace
-func (s *StrScanner) scanWhitespace() (tok Token, lit string) {
+func (s *Scanner) scanWhitespace() (tok Token, lit string) {
 	// Create a buffer and read the current character into it
 	var buf bytes.Buffer
 	buf.WriteRune(s.read())
@@ -234,7 +239,7 @@ func (s *StrScanner) scanWhitespace() (tok Token, lit string) {
 }
 
 // unread places the previously read rune back on the reader
-func (s *StrScanner) unread() { _ = s.strbuf.UnreadRune() }
+func (s *Scanner) unread() { _ = s.strbuf.UnreadRune() }
 
 // Token represents a lexical token.
 type Token int
@@ -314,21 +319,22 @@ func IsValidAttr(attr string, attrMap map[string]string) (string, error) {
 	return validAttr, nil
 }
 
-// NewParser returns a new instance of Parser
-func NewParser(b *bytes.Buffer) *Parser {
-	return &Parser{s: NewStrScanner(b)}
+// NewOutputAttrParser returns a new instance of OutputAttrParser
+func NewOutputAttrParser(b *bytes.Buffer) *OutputAttrParser {
+	return &OutputAttrParser{oas: NewOutputAttrScanner(b)}
 }
 
-// NewStrScanner returns a new instance of Scanner
-func NewStrScanner(b *bytes.Buffer) *StrScanner {
-	return &StrScanner{strbuf: b}
+// NewOutputAttrScanner returns a new instance of OutputAttrScanner
+func NewOutputAttrScanner(b *bytes.Buffer) *OutputAttrScanner {
+	scanr := &Scanner{strbuf: b}
+	return &OutputAttrScanner{s: scanr}
 }
 
 // ParseOutputAttrs validates attributes string and formats it for Get and List calls
 func ParseOutputAttrs(attrs string, attrMap map[string]string) (string, error) {
 	bb := bytes.NewBufferString(attrs)
 
-	p := NewParser(bb)
+	p := NewOutputAttrParser(bb)
 
 	as, err := p.Parse(attrMap)
 	if err != nil {
