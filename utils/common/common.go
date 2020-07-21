@@ -108,6 +108,44 @@ type OutputAttrParser struct {
 	oas *OutputAttrScanner
 }
 
+// Parse is the entry point for the parser
+func (oap *OutputAttrParser) Parse(attrMap map[string]string) (*AttributeStr, error) {
+	attrStr := &AttributeStr{}
+
+	for {
+		tok, lit := oap.scanIgnoreWhitespace()
+		if tok == EOS {
+			break
+		}
+
+		if tok != IDENT && tok != ASTERISK && tok != OPENBRACK && tok != CLOSEBRACK &&
+			tok != COMMA && tok != FSLASH && tok != TILDE {
+			return nil, fmt.Errorf("gmin: unexpected character %q found in attribute string", lit)
+		}
+
+		if tok == IDENT && oap.oas.bCustomSchema == false {
+			lowerLit := strings.ToLower(lit)
+			validAttr := attrMap[lowerLit]
+			if validAttr == "" {
+				err := fmt.Errorf("gmin: error - attribute %v is unrecognized", lit)
+				return nil, err
+			}
+			lit = validAttr
+			if validAttr == "customSchemas" {
+				oap.oas.bCustomSchema = true
+			}
+		}
+
+		if tok == TILDE {
+			lit = ","
+			oap.oas.bCustomSchema = false
+		}
+
+		attrStr.Fields = append(attrStr.Fields, lit)
+	}
+	return attrStr, nil
+}
+
 // scan returns the next token from the underlying OutputAttrScanner
 func (oap *OutputAttrParser) scan() (tok Token, lit string) {
 	// read the next token from the scanner
@@ -125,43 +163,10 @@ func (oap *OutputAttrParser) scanIgnoreWhitespace() (tok Token, lit string) {
 	return tok, lit
 }
 
-// Parse is the entry point for the parser
-func (oap *OutputAttrParser) Parse(attrMap map[string]string) (*AttributeStr, error) {
-	attrStr := &AttributeStr{}
-
-	for {
-		tok, lit := oap.scanIgnoreWhitespace()
-		if tok == EOS {
-			break
-		}
-
-		if tok != IDENT && tok != ASTERISK && tok != OPENBRACK && tok != CLOSEBRACK &&
-			tok != COMMA && tok != FSLASH && tok != TILDE {
-			return nil, fmt.Errorf("gmin: unexpected character %q found in attribute string", lit)
-		}
-
-		if tok == IDENT {
-			lowerLit := strings.ToLower(lit)
-			validAttr := attrMap[lowerLit]
-			if validAttr == "" {
-				err := fmt.Errorf("gmin: error - attribute %v is unrecognized", lit)
-				return nil, err
-			}
-			lit = validAttr
-		}
-
-		if tok == TILDE {
-			lit = ","
-		}
-
-		attrStr.Fields = append(attrStr.Fields, lit)
-	}
-	return attrStr, nil
-}
-
 // OutputAttrScanner represents a lexical scanner for get and list attribute strings
 type OutputAttrScanner struct {
-	s *Scanner
+	bCustomSchema bool
+	s             *Scanner
 }
 
 // Scan returns the next token and literal value from OutputAttrScanner
@@ -239,7 +244,7 @@ func (qp *QueryParser) Parse(qAttrMap map[string]string) (*QueryStr, error) {
 			return nil, fmt.Errorf("gmin: unexpected character %q found in query string", lit)
 		}
 
-		if tok == IDENT {
+		if tok == IDENT && !strings.Contains(lit, ".") {
 			lowerLit := strings.ToLower(lit)
 			validAttr := qAttrMap[lowerLit]
 			if validAttr == "" {
@@ -287,7 +292,7 @@ func (qs *QueryScanner) Scan() (tok Token, lit string) {
 			return qs.s.scanWhitespace()
 		} else if unicode.IsLetter(ch) {
 			qs.s.unread()
-			tok, lit := qs.s.scanIdent()
+			tok, lit := qs.scanIdent()
 			qs.bConFieldName = false
 			qs.bConOperator = true
 			return tok, lit
@@ -344,6 +349,29 @@ func (qs *QueryScanner) Scan() (tok Token, lit string) {
 	}
 
 	return ILLEGAL, string(ch)
+}
+
+// scanIdent consumes the current rune and all contiguous ident runes for QueryScanner
+func (qs *QueryScanner) scanIdent() (tok Token, lit string) {
+	// Create a buffer and read the current character into it
+	var buf bytes.Buffer
+	buf.WriteRune(qs.s.read())
+
+	// Read every subsequent ident character into the buffer
+	// Non-ident characters and EOS will cause the loop to exit
+	for {
+		if ch := qs.s.read(); ch == eos {
+			break
+		} else if !unicode.IsLetter(ch) && !unicode.IsDigit(ch) && ch != '.' {
+			qs.s.unread()
+			break
+		} else {
+			_, _ = buf.WriteRune(ch)
+		}
+	}
+
+	// Otherwise return as a regular identifier
+	return IDENT, buf.String()
 }
 
 // scanOperator consumes the current rune and all contiguous operator runes

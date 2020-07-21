@@ -235,6 +235,10 @@ func TestParseOutputAttrs(t *testing.T) {
 			attrs:          "name/givenname~primaryemail",
 			expectedResult: "name/givenName,primaryEmail",
 		},
+		{
+			attrs:          "customschemas/EmploymentData/startDate",
+			expectedResult: "customSchemas/EmploymentData/startDate",
+		},
 	}
 
 	for _, c := range cases {
@@ -335,6 +339,10 @@ func TestParseQuery(t *testing.T) {
 		{
 			query:          "orgdescription:'Some description text.'",
 			expectedResult: "orgDescription:'Some description text.'",
+		},
+		{
+			query:          "EmploymentData.projects:'GeneGnomes'",
+			expectedResult: "EmploymentData.projects:'GeneGnomes'",
 		},
 	}
 
