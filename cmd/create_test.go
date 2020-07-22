@@ -81,7 +81,7 @@ func TestDoCreateUser(t *testing.T) {
 			firstname:   "Mickey",
 			lastname:    "Mouse",
 			password:    "SuperStrongPassword",
-			expectedErr: "gmin: error - malformed attribute string",
+			expectedErr: "gmin: error - attribute string is not valid JSON",
 		},
 		{
 			args:        []string{"mickey.mouse@disney.com"},
@@ -89,7 +89,7 @@ func TestDoCreateUser(t *testing.T) {
 			firstname:   "Mickey",
 			lastname:    "Mouse",
 			password:    "SuperStrongPassword",
-			expectedErr: "gmin: error - attribute jklkjf not recognized",
+			expectedErr: "gmin: error - attribute string is not valid JSON",
 		},
 	}
 

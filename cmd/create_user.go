@@ -23,6 +23,7 @@ THE SOFTWARE.
 package cmd
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -30,7 +31,7 @@ import (
 	"github.com/spf13/cobra"
 
 	valid "github.com/asaskevich/govalidator"
-	usrs "github.com/plusworx/gmin/utils/users"
+	"github.com/imdario/mergo"
 	admin "google.golang.org/api/admin/directory/v1"
 )
 
@@ -46,13 +47,8 @@ var createUserCmd = &cobra.Command{
 }
 
 func doCreateUser(cmd *cobra.Command, args []string) error {
-	var (
-		name *admin.UserName
-		user *admin.User
-	)
-
-	user = new(admin.User)
-	name = new(admin.UserName)
+	user := new(admin.User)
+	name := new(admin.UserName)
 
 	ok := valid.IsEmail(args[0])
 	if !ok {
@@ -86,7 +82,7 @@ func doCreateUser(cmd *cobra.Command, args []string) error {
 
 	if noGAL {
 		user.IncludeInGlobalAddressList = false
-		user.ForceSendFields = append(user.ForceSendFields, "IncludeGlobalAddressList")
+		user.ForceSendFields = append(user.ForceSendFields, "IncludeInGlobalAddressList")
 
 	}
 
@@ -110,14 +106,25 @@ func doCreateUser(cmd *cobra.Command, args []string) error {
 		user.Suspended = true
 	}
 
+	user.Name = name
+
 	if attrs != "" {
-		err := usrs.ProcessFreeformAttrs(user, name, attrs)
+		attrUser := new(admin.User)
+		jsonBytes := []byte(attrs)
+		if !json.Valid(jsonBytes) {
+			return errors.New("gmin: error - attribute string is not valid JSON")
+		}
+
+		err := json.Unmarshal(jsonBytes, &attrUser)
+		if err != nil {
+			return err
+		}
+
+		err = mergo.Merge(user, attrUser)
 		if err != nil {
 			return err
 		}
 	}
-
-	user.Name = name
 
 	if user.Name.GivenName == "" || user.Name.FamilyName == "" || user.Password == "" {
 		err := errors.New("gmin: error - firstname, lastname and password must all be provided")
@@ -143,7 +150,7 @@ func doCreateUser(cmd *cobra.Command, args []string) error {
 func init() {
 	createCmd.AddCommand(createUserCmd)
 
-	createUserCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "user's attributes")
+	createUserCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "user's attributes as a JSON string")
 	createUserCmd.Flags().BoolVarP(&changePassword, "changepassword", "c", false, "user must change password on next login")
 	createUserCmd.Flags().StringVarP(&firstName, "firstname", "f", "", "user's first name")
 	createUserCmd.Flags().StringVarP(&lastName, "lastname", "l", "", "user's last name")

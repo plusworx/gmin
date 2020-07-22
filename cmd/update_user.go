@@ -23,10 +23,12 @@ THE SOFTWARE.
 package cmd
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
 
+	"github.com/imdario/mergo"
 	cmn "github.com/plusworx/gmin/utils/common"
-	usrs "github.com/plusworx/gmin/utils/users"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 )
@@ -113,15 +115,26 @@ func doUpdateUser(cmd *cobra.Command, args []string) error {
 		user.ForceSendFields = append(user.ForceSendFields, "Suspended")
 	}
 
+	if name.FamilyName != "" || name.FullName != "" || name.GivenName != "" {
+		user.Name = name
+	}
+
 	if attrs != "" {
-		err := usrs.ProcessFreeformAttrs(user, name, attrs)
+		attrUser := new(admin.User)
+		jsonBytes := []byte(attrs)
+		if !json.Valid(jsonBytes) {
+			return errors.New("gmin: error - attribute string is not valid JSON")
+		}
+
+		err := json.Unmarshal(jsonBytes, &attrUser)
 		if err != nil {
 			return err
 		}
-	}
 
-	if name.FamilyName != "" || name.FullName != "" || name.GivenName != "" {
-		user.Name = name
+		err = mergo.Merge(user, attrUser)
+		if err != nil {
+			return err
+		}
 	}
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserScope)
@@ -143,7 +156,7 @@ func doUpdateUser(cmd *cobra.Command, args []string) error {
 func init() {
 	updateCmd.AddCommand(updateUserCmd)
 
-	updateUserCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "user's attributes")
+	updateUserCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "user's attributes as a JSON string")
 	updateUserCmd.Flags().BoolVarP(&changePassword, "changepassword", "c", false, "user must change password on next login")
 	updateUserCmd.Flags().BoolVarP(&noChangePassword, "nochangepassword", "d", false, "user doesn't have to change password on next login")
 	updateUserCmd.Flags().StringVarP(&userEmail, "email", "e", "", "user's primary email address")
