@@ -98,9 +98,14 @@ const (
 	VALUE
 )
 
-// AttributeStr is a struct to hold list of attribute string parts
-type AttributeStr struct {
+// OutputAttrStr is a struct to hold list of output attribute string parts
+type OutputAttrStr struct {
 	Fields []string
+}
+
+// QueryStr is a struct to hold list of query string parts
+type QueryStr struct {
+	Parts []string
 }
 
 // OutputAttrParser represents a parser of get and list attribute strings
@@ -109,8 +114,8 @@ type OutputAttrParser struct {
 }
 
 // Parse is the entry point for the parser
-func (oap *OutputAttrParser) Parse(attrMap map[string]string) (*AttributeStr, error) {
-	attrStr := &AttributeStr{}
+func (oap *OutputAttrParser) Parse(attrMap map[string]string) (*OutputAttrStr, error) {
+	attrStr := &OutputAttrStr{}
 
 	for {
 		tok, lit := oap.scanIgnoreWhitespace()
@@ -418,11 +423,6 @@ func (qs *QueryScanner) scanValue() (tok Token, lit string) {
 
 	// Otherwise return as a value
 	return VALUE, buf.String()
-}
-
-// QueryStr is a struct to hold list of query string parts
-type QueryStr struct {
-	Parts []string
 }
 
 // Scanner represents a lexical scanner

@@ -24,6 +24,8 @@ package common
 
 import (
 	"testing"
+
+	tsts "github.com/plusworx/gmin/tests"
 )
 
 func TestHashPassword(t *testing.T) {
@@ -37,18 +39,6 @@ func TestHashPassword(t *testing.T) {
 }
 
 func TestIsValidAttr(t *testing.T) {
-	var groupAttrMap = map[string]string{
-		"admincreated":       "adminCreated",
-		"description":        "description",
-		"directmemberscount": "directMembersCount",
-		"email":              "email",
-		"etag":               "etag",
-		"id":                 "id",
-		"kind":               "kind",
-		"name":               "name",
-		"noneditablealiases": "nonEditableAliases",
-	}
-
 	cases := []struct {
 		attr          string
 		attrMap       map[string]string
@@ -57,13 +47,13 @@ func TestIsValidAttr(t *testing.T) {
 	}{
 		{
 			attr:          "admincreated",
-			attrMap:       groupAttrMap,
+			attrMap:       tsts.TestGroupAttrMap,
 			expectedErr:   "",
 			expectedValue: "adminCreated",
 		},
 		{
 			attr:          "nonexistent",
-			attrMap:       groupAttrMap,
+			attrMap:       tsts.TestGroupAttrMap,
 			expectedErr:   "gmin: error - attribute nonexistent is unrecognized",
 			expectedValue: "",
 		},
@@ -89,110 +79,6 @@ func TestIsValidAttr(t *testing.T) {
 }
 
 func TestParseOutputAttrs(t *testing.T) {
-	var UserAttrMap = map[string]string{
-		"accountid":                  "accountId",
-		"address":                    "address",
-		"addresses":                  "addresses",
-		"addressmeas":                "addressMeAs",
-		"agreedtoterms":              "agreedToTerms",
-		"aliases":                    "aliases",
-		"archived":                   "archived",
-		"area":                       "area",
-		"buildingid":                 "buildingId",
-		"changepasswordatnextlogin":  "changePasswordAtNextLogin",
-		"christianname":              "givenName",
-		"contenttype":                "contentType",
-		"costcenter":                 "costCenter",
-		"country":                    "country",
-		"countrycode":                "countryCode",
-		"creationtime":               "creationTime",
-		"customerid":                 "customerId",
-		"customgender":               "customGender",
-		"customlanguage":             "customLanguage",
-		"customprotocol":             "customProtocol",
-		"customschemas":              "customSchemas",
-		"customtype":                 "customType",
-		"deletiontime":               "deletionTime",
-		"department":                 "department",
-		"description":                "description",
-		"deskcode":                   "deskCode",
-		"domain":                     "domain",
-		"emails":                     "emails",
-		"etag":                       "etag",
-		"expirationtimeusec":         "expirationTimeUsec",
-		"externalids":                "externalIds",
-		"extendedaddress":            "extendedAddress",
-		"familyname":                 "familyName",
-		"fingerprint":                "fingerprint",
-		"firstname":                  "givenName",
-		"floorname":                  "floorName",
-		"floorsection":               "floorSection",
-		"formatted":                  "formatted",
-		"fullname":                   "fullName",
-		"fulltimeequivalent":         "fullTimeEquivalent",
-		"gecos":                      "gecos",
-		"gender":                     "gender",
-		"gid":                        "gid",
-		"givenname":                  "givenName",
-		"hashfunction":               "hashFunction",
-		"homedirectory":              "homeDirectory",
-		"id":                         "id",
-		"im":                         "im",
-		"ims":                        "ims",
-		"includeinglobaladdresslist": "includeInGlobalAddressList",
-		"ipwhitelisted":              "ipWhiteListed",
-		"isadmin":                    "isAdmin",
-		"isdelegatedadmin":           "isDelegatedAdmin",
-		"isenforcedin2sv":            "isEnforcedIn2Sv",
-		"isenrolledin2sv":            "isEnrolledIn2Sv",
-		"ismailboxsetup":             "isMailboxSetup",
-		"key":                        "key",
-		"keywords":                   "keywords",
-		"kind":                       "kind",
-		"languagecode":               "languageCode",
-		"languages":                  "languages",
-		"lastlogintime":              "lastLoginTime",
-		"lastname":                   "familyName",
-		"locality":                   "locality",
-		"location":                   "location",
-		"locations":                  "locations",
-		"name":                       "name",
-		"noneditablealiases":         "nonEditableAliases",
-		"notes":                      "notes",
-		"operatingsystemtype":        "operatingSystemType",
-		"organisations":              "organizations",
-		"organizations":              "organizations",
-		"orgunitpath":                "orgUnitPath",
-		"password":                   "password",
-		"phones":                     "phones",
-		"pobox":                      "poBox",
-		"posixaccounts":              "posixAccounts",
-		"postalcode":                 "postalCode",
-		"primary":                    "primary",
-		"primaryemail":               "primaryEmail",
-		"protocol":                   "protocol",
-		"recoveryemail":              "recoveryEmail",
-		"recoveryphone":              "recoveryPhone",
-		"region":                     "region",
-		"relations":                  "relations",
-		"shell":                      "shell",
-		"sshpublickeys":              "sshPublicKeys",
-		"streetaddress":              "streetAddress",
-		"surname":                    "familyName",
-		"suspended":                  "suspended",
-		"suspensionreason":           "suspensionReason",
-		"symbol":                     "symbol",
-		"systemid":                   "systemId",
-		"thumbnailphotoetag":         "thumbnailPhotoEtag",
-		"thumbnailphotourl":          "thumbnailPhotoUrl",
-		"title":                      "title",
-		"type":                       "type",
-		"uid":                        "uid",
-		"username":                   "username",
-		"value":                      "value",
-		"websites":                   "websites",
-	}
-
 	cases := []struct {
 		attrs          string
 		expectedErr    string
@@ -242,7 +128,7 @@ func TestParseOutputAttrs(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		output, err := ParseOutputAttrs(c.attrs, UserAttrMap)
+		output, err := ParseOutputAttrs(c.attrs, tsts.TestUserAttrMap)
 		if err != nil {
 			if err.Error() != c.expectedErr {
 				t.Errorf("Got error: %v - expected error: %v", err.Error(), c.expectedErr)
@@ -258,45 +144,8 @@ func TestParseOutputAttrs(t *testing.T) {
 }
 
 func TestParseQuery(t *testing.T) {
-	var QueryAttrMap = map[string]string{
-		"address":           "address",
-		"addresspobox":      "addressPoBox",
-		"addressextended":   "addressExtended",
-		"addressstreet":     "addressStreet",
-		"addresslocality":   "addressLocality",
-		"addressregion":     "addressRegion",
-		"addresspostalcode": "addressPostalCode",
-		"addresscountry":    "addressCountry",
-		"christianname":     "givenName",
-		"directmanager":     "directManager",
-		"directmanagerid":   "directManagerId",
-		"email":             "email",
-		"externalid":        "externalId",
-		"familyname":        "familyName",
-		"firstname":         "givenName",
-		"givenname":         "givenName",
-		"im":                "im",
-		"isadmin":           "isAdmin",
-		"isdelegatedadmin":  "isDelegatedAdmin",
-		"isenrolledin2sv":   "isEnrolledIn2Sv",
-		"isenforcedin2sv":   "isEnforcedIn2Sv",
-		"issuspended":       "isSuspended",
-		"lastname":          "familyName",
-		"manager":           "manager",
-		"managerid":         "managerId",
-		"name":              "name",
-		"orgcostcenter":     "orgCostCenter",
-		"orgdepartment":     "orgDepartment",
-		"orgdescription":    "orgDescription",
-		"orgname":           "orgName",
-		"orgtitle":          "orgTitle",
-		"orgunitpath":       "orgUnitPath",
-		"phone":             "phone",
-		"surname":           "familyName",
-	}
-
 	cases := []struct {
-		expectedErr    error
+		expectedErr    string
 		expectedResult string
 		query          string
 	}{
@@ -344,13 +193,27 @@ func TestParseQuery(t *testing.T) {
 			query:          "EmploymentData.projects:'GeneGnomes'",
 			expectedResult: "EmploymentData.projects:'GeneGnomes'",
 		},
+		{
+			query:          "EmploymentData.jobLevel>=7",
+			expectedResult: "EmploymentData.jobLevel>=7",
+		},
+		{
+			query:          "EmploymentData.jobLevel:[5,8]",
+			expectedResult: "EmploymentData.jobLevel:[5,8]",
+		},
+		{
+			query:       "wrongattr:Value",
+			expectedErr: "gmin: error - attribute wrongattr is unrecognized",
+		},
 	}
 
 	for _, c := range cases {
-		output, err := ParseQuery(c.query, QueryAttrMap)
-		if err != c.expectedErr {
-			t.Errorf("Got error: %v - expected error: %v", err.Error(), c.expectedErr)
-			continue
+		output, err := ParseQuery(c.query, tsts.TestUserQueryAttrMap)
+		if err != nil {
+			if err.Error() != c.expectedErr {
+				t.Errorf("Got error: %v - expected error: %v", err.Error(), c.expectedErr)
+				continue
+			}
 		}
 
 		if output != c.expectedResult {
