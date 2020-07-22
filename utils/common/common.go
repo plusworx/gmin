@@ -253,7 +253,7 @@ func (qp *QueryParser) Parse(qAttrMap map[string]string) (*QueryStr, error) {
 			lowerLit := strings.ToLower(lit)
 			validAttr := qAttrMap[lowerLit]
 			if validAttr == "" {
-				err := fmt.Errorf("gmin: error - attribute %v is unrecognized", lit)
+				err := fmt.Errorf("gmin: error - query attribute %v is unrecognized", lit)
 				return nil, err
 			}
 			lit = validAttr
