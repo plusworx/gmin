@@ -27,6 +27,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/jinzhu/copier"
 	cmn "github.com/plusworx/gmin/utils/common"
 	usrs "github.com/plusworx/gmin/utils/users"
 	"github.com/spf13/cobra"
@@ -45,7 +46,10 @@ var getUserCmd = &cobra.Command{
 }
 
 func doGetUser(cmd *cobra.Command, args []string) error {
-	var user *admin.User
+	var (
+		newUser = usrs.GminUser{}
+		user    *admin.User
+	)
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserReadonlyScope)
 	if err != nil {
@@ -91,7 +95,9 @@ func doGetUser(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	jsonData, err := json.MarshalIndent(user, "", "    ")
+	copier.Copy(&newUser, user)
+
+	jsonData, err := json.MarshalIndent(newUser, "", "    ")
 	if err != nil {
 		return err
 	}

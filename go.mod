@@ -5,6 +5,8 @@ go 1.14
 require (
 	github.com/asaskevich/govalidator v0.0.0-20200428143746-21a406dcc535
 	github.com/cenkalti/backoff/v4 v4.0.2
+	github.com/imdario/mergo v0.3.10
+	github.com/jinzhu/copier v0.0.0-20190924061706-b57f9002281a
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/viper v1.7.0
