@@ -43,6 +43,7 @@ var (
 	deliverySetting  string
 	domain           string
 	firstName        string
+	forceSend        string
 	gal              bool
 	group            string
 	groupDesc        string

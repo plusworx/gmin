@@ -29,6 +29,7 @@ import (
 
 	"github.com/imdario/mergo"
 	cmn "github.com/plusworx/gmin/utils/common"
+	usrs "github.com/plusworx/gmin/utils/users"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 )
@@ -55,12 +56,31 @@ func doUpdateUser(cmd *cobra.Command, args []string) error {
 	user = new(admin.User)
 	name = new(admin.UserName)
 
+	if changePassword {
+		user.ChangePasswordAtNextLogin = true
+	}
+
 	if firstName != "" {
 		name.GivenName = firstName
 	}
 
+	if forceSend != "" {
+		fields, err := cmn.ParseForceSend(forceSend, usrs.UserAttrMap)
+		if err != nil {
+			return err
+		}
+
+		for _, f := range fields {
+			user.ForceSendFields = append(user.ForceSendFields, f)
+		}
+	}
+
 	if lastName != "" {
 		name.FamilyName = lastName
+	}
+
+	if name.FamilyName != "" || name.FullName != "" || name.GivenName != "" {
+		user.Name = name
 	}
 
 	if password != "" {
@@ -71,14 +91,6 @@ func doUpdateUser(cmd *cobra.Command, args []string) error {
 
 		user.Password = pwd
 		user.HashFunction = cmn.HashFunction
-	}
-
-	if changePassword {
-		user.ChangePasswordAtNextLogin = true
-	}
-
-	if userEmail != "" {
-		user.PrimaryEmail = userEmail
 	}
 
 	if gal {
@@ -115,8 +127,8 @@ func doUpdateUser(cmd *cobra.Command, args []string) error {
 		user.ForceSendFields = append(user.ForceSendFields, "Suspended")
 	}
 
-	if name.FamilyName != "" || name.FullName != "" || name.GivenName != "" {
-		user.Name = name
+	if userEmail != "" {
+		user.PrimaryEmail = userEmail
 	}
 
 	if attrs != "" {
@@ -126,7 +138,17 @@ func doUpdateUser(cmd *cobra.Command, args []string) error {
 			return errors.New("gmin: error - attribute string is not valid JSON")
 		}
 
-		err := json.Unmarshal(jsonBytes, &attrUser)
+		outStr, err := cmn.ParseInputAttrs(jsonBytes)
+		if err != nil {
+			return err
+		}
+
+		err = cmn.ValidateInputAttrs(outStr, usrs.UserAttrMap)
+		if err != nil {
+			return err
+		}
+
+		err = json.Unmarshal(jsonBytes, &attrUser)
 		if err != nil {
 			return err
 		}
@@ -136,6 +158,8 @@ func doUpdateUser(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	}
+
+	fmt.Println(user.ForceSendFields)
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserScope)
 	if err != nil {
@@ -161,6 +185,7 @@ func init() {
 	updateUserCmd.Flags().BoolVarP(&noChangePassword, "nochangepassword", "d", false, "user doesn't have to change password on next login")
 	updateUserCmd.Flags().StringVarP(&userEmail, "email", "e", "", "user's primary email address")
 	updateUserCmd.Flags().StringVarP(&firstName, "firstname", "f", "", "user's first name")
+	updateUserCmd.Flags().StringVarP(&forceSend, "force", "", "", "user's first name")
 	updateUserCmd.Flags().BoolVarP(&gal, "gal", "g", false, "display user in Global Address List")
 	updateUserCmd.Flags().StringVarP(&lastName, "lastname", "l", "", "user's last name")
 	updateUserCmd.Flags().BoolVarP(&noGAL, "nogal", "n", false, "do not display user in Global Address List")

@@ -26,9 +26,11 @@ import (
 	"bytes"
 	"context"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"unicode"
 
@@ -606,6 +608,87 @@ func NewQueryScanner(b *bytes.Buffer) *QueryScanner {
 	return &QueryScanner{s: scanr}
 }
 
+// ParseForceSend parses force send fields arguments
+func ParseForceSend(fStr string, attrMap map[string]string) ([]string, error) {
+	result := []string{}
+
+	fArgs := strings.Split(fStr, "~")
+	for _, a := range fArgs {
+		s, err := IsValidAttr(a, attrMap)
+		if err != nil {
+			return nil, err
+		}
+
+		result = append(result, strings.Title(strings.TrimSpace(s)))
+	}
+	return result, nil
+}
+
+// ParseInputAttrs parses create and update JSON attribute strings
+func ParseInputAttrs(jsonBytes []byte) ([]string, error) {
+	m := map[string]interface{}{}
+	outStr := []string{}
+
+	err := json.Unmarshal(jsonBytes, &m)
+	if err != nil {
+		return nil, err
+	}
+	parseMap(m, &outStr)
+
+	return outStr, nil
+}
+
+func parseMap(attrMap map[string]interface{}, outStr *[]string) {
+	for key, val := range attrMap {
+		if strings.ToLower(key) == "customschemas" {
+			continue
+		}
+		switch concreteVal := val.(type) {
+		case bool:
+			*outStr = append(*outStr, key+": "+strconv.FormatBool(concreteVal))
+		case map[string]interface{}:
+			*outStr = append(*outStr, key)
+			parseMap(val.(map[string]interface{}), outStr)
+		case []interface{}:
+			*outStr = append(*outStr, key)
+			parseArray(val.([]interface{}), outStr)
+		default:
+			parseVal(key+": ", concreteVal, outStr)
+		}
+	}
+}
+
+func parseArray(anArray []interface{}, outStr *[]string) {
+	for i, val := range anArray {
+		iStr := strconv.Itoa(i)
+		switch concreteVal := val.(type) {
+		case bool:
+			*outStr = append(*outStr, "Index"+iStr+": "+strconv.FormatBool(concreteVal))
+		case map[string]interface{}:
+			*outStr = append(*outStr, "Index"+iStr)
+			parseMap(val.(map[string]interface{}), outStr)
+		case []interface{}:
+			*outStr = append(*outStr, "Index"+iStr)
+			parseArray(val.([]interface{}), outStr)
+		default:
+			parseVal("Index"+iStr+": ", concreteVal, outStr)
+		}
+	}
+}
+
+func parseVal(idx string, val interface{}, outStr *[]string) {
+	switch v := val.(type) {
+	case int:
+		*outStr = append(*outStr, idx+strconv.Itoa(v))
+	case float64:
+		*outStr = append(*outStr, idx+fmt.Sprintf("%f", v))
+	case string:
+		*outStr = append(*outStr, idx+v)
+	default:
+		*outStr = append(*outStr, idx+"unknown")
+	}
+}
+
 // ParseOutputAttrs validates attributes string and formats it for Get and List calls
 func ParseOutputAttrs(attrs string, attrMap map[string]string) (string, error) {
 	bb := bytes.NewBufferString(attrs)
@@ -646,4 +729,25 @@ func SliceContainsStr(strs []string, s string) bool {
 		}
 	}
 	return false
+}
+
+// ValidateInputAttrs validates JSON attribute string for create and update calls
+func ValidateInputAttrs(attrs []string, attrMap map[string]string) error {
+	for _, elem := range attrs {
+		if strings.HasPrefix(elem, "Index") {
+			continue
+		}
+
+		keyVal := strings.Split(elem, ":")
+		attrName := keyVal[0]
+		s, err := IsValidAttr(attrName, attrMap)
+		if err != nil {
+			return err
+		}
+
+		if s != attrName {
+			return fmt.Errorf("gmin: error - %v should be %v in attribute string", attrName, s)
+		}
+	}
+	return nil
 }

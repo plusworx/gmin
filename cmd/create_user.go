@@ -28,6 +28,7 @@ import (
 	"fmt"
 
 	cmn "github.com/plusworx/gmin/utils/common"
+	usrs "github.com/plusworx/gmin/utils/users"
 	"github.com/spf13/cobra"
 
 	valid "github.com/asaskevich/govalidator"
@@ -57,28 +58,29 @@ func doCreateUser(cmd *cobra.Command, args []string) error {
 
 	user.PrimaryEmail = args[0]
 
+	if changePassword {
+		user.ChangePasswordAtNextLogin = true
+	}
+
 	if firstName != "" {
 		name.GivenName = firstName
+	}
+
+	if forceSend != "" {
+		fields, err := cmn.ParseForceSend(forceSend, usrs.UserAttrMap)
+		if err != nil {
+			return err
+		}
+		for _, f := range fields {
+			user.ForceSendFields = append(user.ForceSendFields, f)
+		}
 	}
 
 	if lastName != "" {
 		name.FamilyName = lastName
 	}
 
-	if password != "" {
-		pwd, err := cmn.HashPassword(password)
-		if err != nil {
-			return err
-		}
-
-		user.Password = pwd
-	}
-
 	user.HashFunction = cmn.HashFunction
-
-	if changePassword {
-		user.ChangePasswordAtNextLogin = true
-	}
 
 	if noGAL {
 		user.IncludeInGlobalAddressList = false
@@ -88,6 +90,15 @@ func doCreateUser(cmd *cobra.Command, args []string) error {
 
 	if orgUnit != "" {
 		user.OrgUnitPath = orgUnit
+	}
+
+	if password != "" {
+		pwd, err := cmn.HashPassword(password)
+		if err != nil {
+			return err
+		}
+
+		user.Password = pwd
 	}
 
 	if recoveryEmail != "" {
@@ -115,7 +126,17 @@ func doCreateUser(cmd *cobra.Command, args []string) error {
 			return errors.New("gmin: error - attribute string is not valid JSON")
 		}
 
-		err := json.Unmarshal(jsonBytes, &attrUser)
+		outStr, err := cmn.ParseInputAttrs(jsonBytes)
+		if err != nil {
+			return err
+		}
+
+		err = cmn.ValidateInputAttrs(outStr, usrs.UserAttrMap)
+		if err != nil {
+			return err
+		}
+
+		err = json.Unmarshal(jsonBytes, &attrUser)
 		if err != nil {
 			return err
 		}
@@ -153,6 +174,7 @@ func init() {
 	createUserCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "user's attributes as a JSON string")
 	createUserCmd.Flags().BoolVarP(&changePassword, "changepassword", "c", false, "user must change password on next login")
 	createUserCmd.Flags().StringVarP(&firstName, "firstname", "f", "", "user's first name")
+	createUserCmd.Flags().StringVarP(&forceSend, "force", "", "", "force send fields")
 	createUserCmd.Flags().StringVarP(&lastName, "lastname", "l", "", "user's last name")
 	createUserCmd.Flags().BoolVarP(&noGAL, "nogal", "n", false, "do not display user in Global Address List")
 	createUserCmd.Flags().StringVarP(&orgUnit, "orgunit", "o", "", "user's orgunit")

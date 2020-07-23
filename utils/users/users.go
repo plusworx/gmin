@@ -309,7 +309,7 @@ var UserAttrMap = map[string]string{
 	"im":                         "im",
 	"ims":                        "ims",
 	"includeinglobaladdresslist": "includeInGlobalAddressList",
-	"ipwhitelisted":              "ipWhiteListed",
+	"ipwhitelisted":              "ipWhitelisted",
 	"isadmin":                    "isAdmin",
 	"isdelegatedadmin":           "isDelegatedAdmin",
 	"isenforcedin2sv":            "isEnforcedIn2Sv",
