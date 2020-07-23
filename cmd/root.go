@@ -39,6 +39,7 @@ var (
 	credentialPath   string
 	changePassword   bool
 	customerID       string
+	customField      string
 	deleted          bool
 	deliverySetting  string
 	domain           string

@@ -713,6 +713,27 @@ func AddCustomer(ulc *admin.UsersListCall, customerID string) *admin.UsersListCa
 	return newULC
 }
 
+// AddCustomFieldMask adds CustomFieldMask to be used with get and list admin calls with custom projections
+func AddCustomFieldMask(callObj interface{}, attrs string) interface{} {
+
+	switch callObj.(type) {
+	case *admin.UsersListCall:
+		var newULC *admin.UsersListCall
+		ulc := callObj.(*admin.UsersListCall)
+		newULC = ulc.CustomFieldMask(attrs)
+
+		return newULC
+	case *admin.UsersGetCall:
+		var newUGC *admin.UsersGetCall
+		ugc := callObj.(*admin.UsersGetCall)
+		newUGC = ugc.CustomFieldMask(attrs)
+
+		return newUGC
+	}
+
+	return nil
+}
+
 // AddDomain adds domain to admin calls
 func AddDomain(ulc *admin.UsersListCall, domain string) *admin.UsersListCall {
 	var newULC *admin.UsersListCall

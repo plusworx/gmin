@@ -24,6 +24,7 @@ package cmd
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -77,6 +78,17 @@ func doGetUser(cmd *cobra.Command, args []string) error {
 
 		getCall := usrs.AddProjection(ugc, proj)
 		ugc = getCall.(*admin.UsersGetCall)
+
+		if proj == "custom" {
+			if customField != "" {
+				cFields := cmn.ParseCustomField(customField)
+				mask := strings.Join(cFields, ",")
+				getCall := usrs.AddCustomFieldMask(ugc, mask)
+				ugc = getCall.(*admin.UsersGetCall)
+			} else {
+				return errors.New("gmin: error - please provide a custom field mask for custom projection")
+			}
+		}
 	}
 
 	if viewType != "" {
@@ -111,6 +123,7 @@ func init() {
 	getCmd.AddCommand(getUserCmd)
 
 	getUserCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required user attributes (separated by ~)")
+	getUserCmd.Flags().StringVarP(&customField, "customfieldmask", "c", "", "custom field mask schemas (separated by ~)")
 	getUserCmd.Flags().StringVarP(&projection, "projection", "j", "", "type of projection")
 	getUserCmd.Flags().StringVarP(&viewType, "viewtype", "v", "", "data view type")
 }

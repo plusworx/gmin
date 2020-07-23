@@ -96,6 +96,17 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 
 		listCall := usrs.AddProjection(ulc, proj)
 		ulc = listCall.(*admin.UsersListCall)
+
+		if proj == "custom" {
+			if customField != "" {
+				cFields := cmn.ParseCustomField(customField)
+				mask := strings.Join(cFields, ",")
+				listCall := usrs.AddCustomFieldMask(ulc, mask)
+				ulc = listCall.(*admin.UsersListCall)
+			} else {
+				return errors.New("gmin: error - please provide a custom field mask for custom projection")
+			}
+		}
 	}
 
 	if query != "" {
@@ -237,6 +248,7 @@ func init() {
 	listCmd.AddCommand(listUsersCmd)
 
 	listUsersCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required user attributes (separated by ~)")
+	listUsersCmd.Flags().StringVarP(&customField, "customfieldmask", "c", "", "custom field mask schemas (separated by ~)")
 	listUsersCmd.Flags().StringVarP(&domain, "domain", "d", "", "domain from which to get users")
 	listUsersCmd.Flags().Int64VarP(&maxResults, "maxresults", "m", 500, "maximum number of results to return")
 	listUsersCmd.Flags().StringVarP(&orderBy, "orderby", "o", "", "field by which results will be ordered")

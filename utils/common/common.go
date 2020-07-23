@@ -608,6 +608,13 @@ func NewQueryScanner(b *bytes.Buffer) *QueryScanner {
 	return &QueryScanner{s: scanr}
 }
 
+// ParseCustomField parses custom schema names argument
+func ParseCustomField(cStr string) []string {
+	sArgs := strings.Split(cStr, "~")
+
+	return sArgs
+}
+
 // ParseForceSend parses force send fields arguments
 func ParseForceSend(fStr string, attrMap map[string]string) ([]string, error) {
 	result := []string{}
