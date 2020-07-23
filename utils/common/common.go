@@ -641,6 +641,7 @@ func ParseInputAttrs(jsonBytes []byte) ([]string, error) {
 func parseMap(attrMap map[string]interface{}, outStr *[]string) {
 	for key, val := range attrMap {
 		if strings.ToLower(key) == "customschemas" {
+			*outStr = append(*outStr, key)
 			continue
 		}
 		switch concreteVal := val.(type) {
