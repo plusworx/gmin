@@ -117,7 +117,11 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 	}
 
 	if userKey != "" {
-		glc = grps.AddUserKey(glc, userKey)
+		if domain != "" {
+			glc = grps.AddUserKey(glc, userKey)
+		} else {
+			return errors.New("gmin: error - you must provide a domain in addition to userkey")
+		}
 	}
 
 	glc = grps.AddMaxResults(glc, maxResults)
