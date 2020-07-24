@@ -27,6 +27,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/jinzhu/copier"
 	cmn "github.com/plusworx/gmin/utils/common"
 	mems "github.com/plusworx/gmin/utils/members"
 	"github.com/spf13/cobra"
@@ -70,7 +71,11 @@ func init() {
 }
 
 func processGroupMember(memID string, attrs string, groupEmail string) ([]byte, error) {
-	var member *admin.Member
+	var (
+		jsonData  []byte
+		member    *admin.Member
+		newMember = mems.GminMember{}
+	)
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupMemberReadonlyScope)
 	if err != nil {
@@ -94,9 +99,18 @@ func processGroupMember(memID string, attrs string, groupEmail string) ([]byte, 
 		return nil, err
 	}
 
-	jsonData, err := json.MarshalIndent(member, "", "    ")
-	if err != nil {
-		return nil, err
+	if attrs == "" {
+		copier.Copy(&newMember, member)
+
+		jsonData, err = json.MarshalIndent(newMember, "", "    ")
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		jsonData, err = json.MarshalIndent(member, "", "    ")
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return jsonData, nil

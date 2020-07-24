@@ -262,7 +262,7 @@ func init() {
 	listUsersCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required user attributes (separated by ~)")
 	listUsersCmd.Flags().StringVarP(&customField, "customfieldmask", "c", "", "custom field mask schemas (separated by ~)")
 	listUsersCmd.Flags().StringVarP(&domain, "domain", "d", "", "domain from which to get users")
-	listUsersCmd.Flags().Int64VarP(&maxResults, "maxresults", "m", 500, "maximum number of results to return")
+	listUsersCmd.Flags().Int64VarP(&maxResults, "maxresults", "m", 500, "maximum number of results to return per page")
 	listUsersCmd.Flags().StringVarP(&orderBy, "orderby", "o", "", "field by which results will be ordered")
 	listUsersCmd.Flags().StringVarP(&pages, "pages", "p", "", "number of pages of results to be returned")
 	listUsersCmd.Flags().StringVarP(&projection, "projection", "j", "", "type of projection")

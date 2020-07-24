@@ -23,7 +23,6 @@ THE SOFTWARE.
 package users
 
 import (
-	cmn "github.com/plusworx/gmin/utils/common"
 	admin "google.golang.org/api/admin/directory/v1"
 	"google.golang.org/api/googleapi"
 )
@@ -50,41 +49,6 @@ var addressAttrs = []string{
 	"region",
 	"streetaddress",
 	"type",
-}
-
-// compositeAttrs contains names all admin.User attributes that are composite types
-var compositeAttrs = []string{
-	"address",
-	"addresses",
-	"email",
-	"emails",
-	"externalid",
-	"externalids",
-	"gender",
-	"im",
-	"ims",
-	"keyword",
-	"keywords",
-	"language",
-	"languages",
-	"location",
-	"locations",
-	"name",
-	"notes",
-	"organisation",
-	"organisations",
-	"organization",
-	"organizations",
-	"phone",
-	"phones",
-	"posixaccount",
-	"posixaccounts",
-	"relation",
-	"relations",
-	"sshpublickey",
-	"sshpublickeys",
-	"website",
-	"websites",
 }
 
 // emailAttrs contains names of all the addressable admin.UserEmail attributes
@@ -676,6 +640,7 @@ type GminUser struct {
 	NullFields []string `json:"-"`
 }
 
+// GminUsers is custom admin.Users struct containing GminUser
 type GminUsers struct {
 	// Etag: ETag of the resource.
 	Etag string `json:"etag,omitempty"`
@@ -915,14 +880,4 @@ func DoList(ulc *admin.UsersListCall) (*admin.Users, error) {
 	}
 
 	return users, nil
-}
-
-// isCompositeAttr checks whether or not an attribute is a composite type
-func isCompositeAttr(attr string) bool {
-
-	if cmn.SliceContainsStr(compositeAttrs, attr) {
-		return true
-	}
-
-	return false
 }

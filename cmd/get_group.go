@@ -26,6 +26,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/jinzhu/copier"
 	cmn "github.com/plusworx/gmin/utils/common"
 	grps "github.com/plusworx/gmin/utils/groups"
 	"github.com/spf13/cobra"
@@ -45,7 +46,11 @@ var getGroupCmd = &cobra.Command{
 }
 
 func doGetGroup(cmd *cobra.Command, args []string) error {
-	var group *admin.Group
+	var (
+		jsonData []byte
+		group    *admin.Group
+		newGroup = grps.GminGroup{}
+	)
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupReadonlyScope)
 	if err != nil {
@@ -69,9 +74,18 @@ func doGetGroup(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	jsonData, err := json.MarshalIndent(group, "", "    ")
-	if err != nil {
-		return err
+	if attrs == "" {
+		copier.Copy(&newGroup, group)
+
+		jsonData, err = json.MarshalIndent(newGroup, "", "    ")
+		if err != nil {
+			return err
+		}
+	} else {
+		jsonData, err = json.MarshalIndent(group, "", "    ")
+		if err != nil {
+			return err
+		}
 	}
 
 	fmt.Println(string(jsonData))

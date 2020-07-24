@@ -29,6 +29,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/jinzhu/copier"
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
 	grps "github.com/plusworx/gmin/utils/groups"
@@ -47,6 +48,8 @@ var listGroupsCmd = &cobra.Command{
 func doListGroups(cmd *cobra.Command, args []string) error {
 	var (
 		groups       *admin.Groups
+		jsonData     []byte
+		newGroups    = grps.GminGroups{}
 		validOrderBy string
 	)
 
@@ -131,9 +134,18 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	jsonData, err := json.MarshalIndent(groups, "", "    ")
-	if err != nil {
-		return err
+	if attrs == "" {
+		copier.Copy(&newGroups, groups)
+
+		jsonData, err = json.MarshalIndent(newGroups, "", "    ")
+		if err != nil {
+			return err
+		}
+	} else {
+		jsonData, err = json.MarshalIndent(groups, "", "    ")
+		if err != nil {
+			return err
+		}
 	}
 
 	fmt.Println(string(jsonData))
@@ -207,7 +219,7 @@ func init() {
 
 	listGroupsCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required group attributes (separated by ~)")
 	listGroupsCmd.Flags().StringVarP(&domain, "domain", "d", "", "domain from which to get groups")
-	listGroupsCmd.Flags().Int64VarP(&maxResults, "maxresults", "m", 200, "maximum number of results to return")
+	listGroupsCmd.Flags().Int64VarP(&maxResults, "maxresults", "m", 200, "maximum number of results to return per page")
 	listGroupsCmd.Flags().StringVarP(&orderBy, "orderby", "o", "", "field by which results will be ordered")
 	listGroupsCmd.Flags().StringVarP(&pages, "pages", "p", "", "number of pages of results to be returned")
 	listGroupsCmd.Flags().StringVarP(&query, "query", "q", "", "selection criteria to get groups (separated by ~)")
