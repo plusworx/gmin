@@ -29,6 +29,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/jinzhu/copier"
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
 	usrs "github.com/plusworx/gmin/utils/users"
@@ -46,6 +47,8 @@ var listUsersCmd = &cobra.Command{
 
 func doListUsers(cmd *cobra.Command, args []string) error {
 	var (
+		jsonData     []byte
+		newUsers     = usrs.GminUsers{}
 		users        *admin.Users
 		validOrderBy string
 	)
@@ -173,9 +176,18 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	jsonData, err := json.MarshalIndent(users, "", "    ")
-	if err != nil {
-		return err
+	if attrs == "" {
+		copier.Copy(&newUsers, users)
+
+		jsonData, err = json.MarshalIndent(newUsers, "", "    ")
+		if err != nil {
+			return err
+		}
+	} else {
+		jsonData, err = json.MarshalIndent(users, "", "    ")
+		if err != nil {
+			return err
+		}
 	}
 
 	fmt.Println(string(jsonData))
