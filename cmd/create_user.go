@@ -48,6 +48,8 @@ var createUserCmd = &cobra.Command{
 }
 
 func doCreateUser(cmd *cobra.Command, args []string) error {
+	var bPasswordCreated bool
+
 	user := new(admin.User)
 	name := new(admin.UserName)
 
@@ -99,6 +101,7 @@ func doCreateUser(cmd *cobra.Command, args []string) error {
 		}
 
 		user.Password = pwd
+		bPasswordCreated = true
 	}
 
 	if recoveryEmail != "" {
@@ -139,6 +142,17 @@ func doCreateUser(cmd *cobra.Command, args []string) error {
 		err = json.Unmarshal(jsonBytes, &attrUser)
 		if err != nil {
 			return err
+		}
+
+		if !bPasswordCreated {
+			if attrUser.Password != "" {
+				pwd, err := cmn.HashPassword(attrUser.Password)
+				if err != nil {
+					return err
+				}
+
+				attrUser.Password = pwd
+			}
 		}
 
 		err = mergo.Merge(user, attrUser)
