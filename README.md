@@ -31,12 +31,20 @@ https://www.googleapis.com/auth/admin.directory.group.member
 ```
 
 5. Copy/move the gmin binary to a convenient directory/folder and rename the JSON key file, downloaded earlier, to 'gmin_credentials'. Place in a directory/folder suitable for your environment.
-6. Run the command `gmin init` and enter the required information.
+6. Run the command `gmin init` and enter the required information:
 
 * Email address of the admin whose privileges will be used (mandatory).
 * Path where config file, .gmin.yaml, will be written. Default is current user's home directory. If you choose a different installation path to the default for the config file then that path will need to be given with each gmin command by using the --config flag.
 * Path where service account credentials json file is stored. File must be named 'gmin_credentials'. Default is current user's home directory.
 * Customer ID. Default is 'my_customer'.
+
+Alternatively, you can provide the required information with environment variables:
+
+* GMIN_ADMINISTRATOR
+* GMIN_CREDENTIALPATH
+* GMIN_CUSTOMERID
+
+N.B. If both a config file and environment variables exist then the environment variables take precedence.
 
 7. To see the version number of your gmin binary, run the command `gmin -v` or `gmin --version`.
 8. To get help from gmin itself, enter `gmin -h` or `gmin --help` and go from there.
