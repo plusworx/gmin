@@ -107,6 +107,13 @@ func createUser(ds *admin.Service, jsonData string) error {
 		return err
 	}
 
+	user.HashFunction = cmn.HashFunction
+	pwd, err := cmn.HashPassword(user.Password)
+	if err != nil {
+		return err
+	}
+	user.Password = pwd
+
 	uic := ds.Users.Insert(user)
 	newUser, err := uic.Do()
 	if err != nil {
