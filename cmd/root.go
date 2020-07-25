@@ -100,6 +100,8 @@ func init() {
 }
 
 func initConfig() {
+	viper.SetEnvPrefix("GMIN")
+
 	if cfgFile != "" {
 		viper.SetConfigFile(cfgFile)
 	} else {
@@ -112,5 +114,6 @@ func initConfig() {
 		viper.SetConfigName(".gmin")
 	}
 
+	viper.AutomaticEnv()
 	viper.ReadInConfig()
 }
