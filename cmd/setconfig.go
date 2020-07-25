@@ -68,6 +68,11 @@ func doSetConfig(cmd *cobra.Command, args []string) error {
 		}
 		fmt.Printf("**** gmin: service account credential path set to %v ****\n", credentialPath)
 	}
+
+	if adminEmail == "" && customerID == "" && credentialPath == "" {
+		cmd.Help()
+	}
+
 	return nil
 }
 
