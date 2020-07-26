@@ -24,7 +24,6 @@ package cmd
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 
 	"github.com/jinzhu/copier"
@@ -35,25 +34,20 @@ import (
 )
 
 var getMemberCmd = &cobra.Command{
-	Use:     "group-member <member email address or id> -g <group email address or id>",
+	Use:     "group-member <member email address or id> <group email address or id>",
 	Aliases: []string{"grp-member", "grp-mem", "gmember", "gmem"},
-	Args:    cobra.ExactArgs(1),
+	Args:    cobra.ExactArgs(2),
 	Short:   "Outputs information about a member of a group",
 	Long: `Outputs information about a member of a group.
 	
-	Examples: gmin get member 12345678 -g mygroup@mydomain.org -a email`,
+	Examples: gmin get member 12345678 mygroup@mydomain.org -a email`,
 	RunE: doGetMember,
 }
 
 func doGetMember(cmd *cobra.Command, args []string) error {
 	var jsonData []byte
 
-	if group == "" {
-		err := errors.New("gmin: error - group email address must be provided")
-		return err
-	}
-
-	jsonData, err := processGroupMember(args[0], attrs, group)
+	jsonData, err := processGroupMember(args[0], attrs, args[1])
 	if err != nil {
 		return err
 	}
@@ -67,7 +61,6 @@ func init() {
 	getCmd.AddCommand(getMemberCmd)
 
 	getMemberCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required group attributes (separated by ~)")
-	getMemberCmd.Flags().StringVarP(&group, "group", "g", "", "email address of group")
 }
 
 func processGroupMember(memID string, attrs string, groupEmail string) ([]byte, error) {
