@@ -23,7 +23,6 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"errors"
 	"fmt"
 
 	cmn "github.com/plusworx/gmin/utils/common"
@@ -33,14 +32,14 @@ import (
 )
 
 var createMemberCmd = &cobra.Command{
-	Use:     "group-member <user/group email address> -g <group email address or id>",
+	Use:     "group-member <user/group email address> <group email address or id>",
 	Aliases: []string{"grp-member", "grp-mem", "gmember", "gmem"},
-	Args:    cobra.ExactArgs(1),
+	Args:    cobra.ExactArgs(2),
 	Short:   "Makes a user a group member",
 	Long: `Makes a user a group member.
 	
-	Examples: gmin create group-member another.user@mycompany.com  -g office@mycompany.com -d NONE
-	          gmin crt gmem finance.person@mycompany.com -g finance@mycompany.com -r MEMBER`,
+	Examples: gmin create group-member another.user@mycompany.com  office@mycompany.com -d NONE
+	          gmin crt gmem finance.person@mycompany.com finance@mycompany.com -r MEMBER`,
 	RunE: doCreateMember,
 }
 
@@ -59,11 +58,6 @@ func doCreateMember(cmd *cobra.Command, args []string) error {
 		member.DeliverySettings = validDS
 	}
 
-	if group == "" {
-		err := errors.New("gmin: error - group must be provided")
-		return err
-	}
-
 	if role != "" {
 		validRole, err := mems.ValidateRole(role)
 		if err != nil {
@@ -77,13 +71,13 @@ func doCreateMember(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	mic := ds.Members.Insert(group, member)
+	mic := ds.Members.Insert(args[1], member)
 	newMember, err := mic.Do()
 	if err != nil {
 		return err
 	}
 
-	fmt.Println("**** gmin: member " + newMember.Email + " created in group " + group + " ****")
+	fmt.Println("**** gmin: member " + newMember.Email + " created in group " + args[1] + " ****")
 
 	return nil
 }
@@ -92,6 +86,5 @@ func init() {
 	createCmd.AddCommand(createMemberCmd)
 
 	createMemberCmd.Flags().StringVarP(&deliverySetting, "deliverysetting", "d", "", "member delivery setting")
-	createMemberCmd.Flags().StringVarP(&group, "group", "g", "", "email address or id of group")
 	createMemberCmd.Flags().StringVarP(&role, "role", "r", "", "member role")
 }

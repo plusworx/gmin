@@ -23,7 +23,6 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"errors"
 	"fmt"
 
 	cmn "github.com/plusworx/gmin/utils/common"
@@ -32,39 +31,32 @@ import (
 )
 
 var deleteGroupAliasCmd = &cobra.Command{
-	Use:     "group-alias <alias email address> -g <group email address or id>",
+	Use:     "group-alias <alias email address> <group email address or id>",
 	Aliases: []string{"galias", "ga"},
-	Args:    cobra.ExactArgs(1),
+	Args:    cobra.ExactArgs(2),
 	Short:   "Deletes group alias",
 	Long:    `Deletes group alias.`,
 	RunE:    doDeleteGroupAlias,
 }
 
 func doDeleteGroupAlias(cmd *cobra.Command, args []string) error {
-	if group == "" {
-		err := errors.New("gmin: error - group email address or id must be provided")
-		return err
-	}
-
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupScope)
 	if err != nil {
 		return err
 	}
 
-	gadc := ds.Groups.Aliases.Delete(group, args[0])
+	gadc := ds.Groups.Aliases.Delete(args[1], args[0])
 
 	err = gadc.Do()
 	if err != nil {
 		return err
 	}
 
-	fmt.Printf("**** gmin: group alias %s for group %s deleted ****\n", args[0], group)
+	fmt.Printf("**** gmin: group alias %s for group %s deleted ****\n", args[0], args[1])
 
 	return nil
 }
 
 func init() {
 	deleteCmd.AddCommand(deleteGroupAliasCmd)
-
-	deleteGroupAliasCmd.Flags().StringVarP(&group, "group", "g", "", "email address or id of group")
 }

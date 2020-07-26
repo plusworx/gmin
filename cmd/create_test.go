@@ -26,29 +26,6 @@ import (
 	"testing"
 )
 
-func TestDoCreateGroupAlias(t *testing.T) {
-	cases := []struct {
-		args        []string
-		expectedErr string
-		group       string
-	}{
-		{
-			args:        []string{"group.alias@mycompany.org"},
-			expectedErr: "gmin: error - group must be provided",
-		},
-	}
-
-	for _, c := range cases {
-		group = c.group
-
-		got := doCreateGroupAlias(createGroupAliasCmd, c.args)
-
-		if got.Error() != c.expectedErr {
-			t.Errorf("Expected error %v, got %v", c.expectedErr, got.Error())
-		}
-	}
-}
-
 func TestDoCreateUser(t *testing.T) {
 	cases := []struct {
 		args          []string
@@ -101,54 +78,6 @@ func TestDoCreateUser(t *testing.T) {
 		recoveryPhone = c.recoveryPhone
 
 		got := doCreateUser(createUserCmd, c.args)
-
-		if got.Error() != c.expectedErr {
-			t.Errorf("Expected error %v, got %v", c.expectedErr, got.Error())
-		}
-	}
-}
-
-func TestDoCreateMember(t *testing.T) {
-	cases := []struct {
-		args        []string
-		attributes  string
-		expectedErr string
-		group       string
-	}{
-		{
-			args:        []string{"mister.miyagi@mycompany.org"},
-			expectedErr: "gmin: error - group must be provided",
-		},
-	}
-
-	for _, c := range cases {
-		attrs = c.attributes
-		group = c.group
-
-		got := doCreateMember(createMemberCmd, c.args)
-
-		if got.Error() != c.expectedErr {
-			t.Errorf("Expected error %v, got %v", c.expectedErr, got.Error())
-		}
-	}
-}
-
-func TestDoCreateUserAlias(t *testing.T) {
-	cases := []struct {
-		args        []string
-		expectedErr string
-		userKey     string
-	}{
-		{
-			args:        []string{"my.alias@mycompany.org"},
-			expectedErr: "gmin: error - user must be provided",
-		},
-	}
-
-	for _, c := range cases {
-		userKey = c.userKey
-
-		got := doCreateUserAlias(createUserAliasCmd, c.args)
 
 		if got.Error() != c.expectedErr {
 			t.Errorf("Expected error %v, got %v", c.expectedErr, got.Error())

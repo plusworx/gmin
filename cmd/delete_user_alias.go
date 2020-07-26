@@ -23,7 +23,6 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"errors"
 	"fmt"
 
 	cmn "github.com/plusworx/gmin/utils/common"
@@ -32,39 +31,32 @@ import (
 )
 
 var deleteUserAliasCmd = &cobra.Command{
-	Use:     "user-alias <alias email address> -u <user email address or id>",
+	Use:     "user-alias <alias email address> <user email address or id>",
 	Aliases: []string{"ualias", "ua"},
-	Args:    cobra.ExactArgs(1),
+	Args:    cobra.ExactArgs(2),
 	Short:   "Deletes user alias",
 	Long:    `Deletes user alias.`,
 	RunE:    doDeleteUserAlias,
 }
 
 func doDeleteUserAlias(cmd *cobra.Command, args []string) error {
-	if userKey == "" {
-		err := errors.New("gmin: error - user email address or id must be provided")
-		return err
-	}
-
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserAliasScope)
 	if err != nil {
 		return err
 	}
 
-	uadc := ds.Users.Aliases.Delete(userKey, args[0])
+	uadc := ds.Users.Aliases.Delete(args[1], args[0])
 
 	err = uadc.Do()
 	if err != nil {
 		return err
 	}
 
-	fmt.Printf("**** gmin: user alias %s for user %s deleted ****\n", args[0], userKey)
+	fmt.Printf("**** gmin: user alias %s for user %s deleted ****\n", args[0], args[1])
 
 	return nil
 }
 
 func init() {
 	deleteCmd.AddCommand(deleteUserAliasCmd)
-
-	deleteUserAliasCmd.Flags().StringVarP(&userKey, "user", "u", "", "email address or id of user")
 }
