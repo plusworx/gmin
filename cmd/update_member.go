@@ -23,7 +23,6 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"errors"
 	"fmt"
 
 	cmn "github.com/plusworx/gmin/utils/common"
@@ -33,14 +32,14 @@ import (
 )
 
 var updateMemberCmd = &cobra.Command{
-	Use:     "member <user email address, alias or id>",
+	Use:     "member <member email address, alias or id> <group email address, alias or id>",
 	Aliases: []string{"mem"},
-	Args:    cobra.ExactArgs(1),
+	Args:    cobra.ExactArgs(2),
 	Short:   "Updates a group member",
 	Long: `Updates a group member.
 	
-	Examples: gmin update member another.user@mycompany.com  -g office@mycompany.com -d DAILY
-	          gmin upd mem finance.person@mycompany.com -g finance@mycompany.com -r MEMBER`,
+	Examples: gmin update member another.user@mycompany.com office@mycompany.com -d DAILY
+	          gmin upd mem finance.person@mycompany.com finance@mycompany.com -r MEMBER`,
 	RunE: doUpdateMember,
 }
 
@@ -61,11 +60,6 @@ func doUpdateMember(cmd *cobra.Command, args []string) error {
 		member.DeliverySettings = validDS
 	}
 
-	if group == "" {
-		err := errors.New("gmin: error - group must be provided")
-		return err
-	}
-
 	if role != "" {
 		validRole, err := mems.ValidateRole(role)
 		if err != nil {
@@ -79,13 +73,13 @@ func doUpdateMember(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	muc := ds.Members.Update(group, memberKey, member)
+	muc := ds.Members.Update(args[1], memberKey, member)
 	_, err = muc.Do()
 	if err != nil {
 		return err
 	}
 
-	fmt.Println("**** gmin: member " + memberKey + " updated in group " + group + " ****")
+	fmt.Println("**** gmin: member " + memberKey + " updated in group " + args[1] + " ****")
 
 	return nil
 }
@@ -94,6 +88,5 @@ func init() {
 	updateCmd.AddCommand(updateMemberCmd)
 
 	updateMemberCmd.Flags().StringVarP(&deliverySetting, "deliverysetting", "d", "", "member delivery setting")
-	updateMemberCmd.Flags().StringVarP(&group, "group", "g", "", "email address, alias or id of group")
 	updateMemberCmd.Flags().StringVarP(&role, "role", "r", "", "member role")
 }
