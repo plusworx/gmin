@@ -32,6 +32,7 @@ import (
 
 var (
 	adminEmail       string
+	assetID          string
 	attrs            string
 	archived         bool
 	blockInherit     bool
@@ -52,9 +53,11 @@ var (
 	groupName        string
 	inputFile        string
 	lastName         string
+	location         string
 	maxResults       int64
 	noChangePassword bool
 	noGAL            bool
+	notes            string
 	orderBy          string
 	orgUnit          string
 	orgUnitDesc      string
@@ -64,6 +67,7 @@ var (
 	password         string
 	projection       string
 	query            string
+	reason           string
 	recoveryEmail    string
 	recoveryPhone    string
 	role             string
