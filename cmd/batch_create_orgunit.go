@@ -119,7 +119,7 @@ func createOrgUnit(ds *admin.Service, jsonData string) error {
 		return err
 	}
 
-	fmt.Println("**** orgunit " + newOrgUnit.OrgUnitPath + " created ****")
+	fmt.Println("**** gmin: orgunit " + newOrgUnit.OrgUnitPath + " created ****")
 
 	return nil
 }

@@ -177,7 +177,7 @@ func doCreateUser(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Println("**** user " + newUser.PrimaryEmail + " created ****")
+	fmt.Println("**** gmin: user " + newUser.PrimaryEmail + " created ****")
 
 	return nil
 }

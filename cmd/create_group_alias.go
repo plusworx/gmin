@@ -66,7 +66,7 @@ func doCreateGroupAlias(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Println("**** group alias " + newAlias.Alias + " created for group " + group + " ****")
+	fmt.Println("**** gmin: group alias " + newAlias.Alias + " created for group " + group + " ****")
 
 	return nil
 }

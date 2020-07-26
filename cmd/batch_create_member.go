@@ -115,7 +115,7 @@ func createMember(ds *admin.Service, group string, jsonData string) error {
 		return err
 	}
 
-	fmt.Println("**** member " + newMember.Email + " created in group " + group + " ****")
+	fmt.Println("**** gmin: member " + newMember.Email + " created in group " + group + " ****")
 
 	return nil
 }

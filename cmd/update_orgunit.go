@@ -88,7 +88,7 @@ func doUpdateOU(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Println("**** orgunit " + args[0] + " updated ****")
+	fmt.Println("**** gmin: orgunit " + args[0] + " updated ****")
 
 	return nil
 }

@@ -136,7 +136,7 @@ func createUser(ds *admin.Service, jsonData string) error {
 		return err
 	}
 
-	fmt.Println("**** user " + newUser.PrimaryEmail + " created ****")
+	fmt.Println("**** gmin: user " + newUser.PrimaryEmail + " created ****")
 
 	return nil
 }

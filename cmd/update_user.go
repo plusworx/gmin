@@ -172,7 +172,7 @@ func doUpdateUser(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Println("**** user " + userKey + " updated ****")
+	fmt.Println("**** gmin: user " + userKey + " updated ****")
 
 	return nil
 }

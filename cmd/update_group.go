@@ -75,7 +75,7 @@ func doUpdateGroup(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Println("**** group " + groupKey + " updated ****")
+	fmt.Println("**** gmin: group " + groupKey + " updated ****")
 
 	return nil
 }

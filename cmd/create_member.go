@@ -83,7 +83,7 @@ func doCreateMember(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Println("**** member " + newMember.Email + " created in group " + group + " ****")
+	fmt.Println("**** gmin: member " + newMember.Email + " created in group " + group + " ****")
 
 	return nil
 }

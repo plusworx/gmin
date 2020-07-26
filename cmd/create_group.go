@@ -68,7 +68,7 @@ func doCreateGroup(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Println("**** group " + newGroup.Email + " created ****")
+	fmt.Println("**** gmin: group " + newGroup.Email + " created ****")
 
 	return nil
 }
