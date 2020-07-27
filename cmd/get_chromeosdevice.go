@@ -41,8 +41,8 @@ var getCrOSDevCmd = &cobra.Command{
 	Short:   "Outputs information about a ChromeOS device",
 	Long: `Outputs information about a ChromeOS device.
 	
-	Examples: gmin get chromeosdevice 12345678
-	          gmin get cdev 12345678 -a serialnumber`,
+	Examples: gmin get chromeosdevice 5ad9ae43-5996-394e-9c39-12d45a8f10e8
+	          gmin get cdev 5ad9ae43-5996-394e-9c39-12d45a8f10e8 -a serialnumber`,
 	RunE: doGetCrOSDev,
 }
 
