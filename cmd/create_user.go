@@ -188,7 +188,7 @@ func init() {
 	createUserCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "user's attributes as a JSON string")
 	createUserCmd.Flags().BoolVarP(&changePassword, "changepassword", "c", false, "user must change password on next login")
 	createUserCmd.Flags().StringVarP(&firstName, "firstname", "f", "", "user's first name")
-	createUserCmd.Flags().StringVarP(&forceSend, "force", "", "", "force send fields")
+	createUserCmd.Flags().StringVarP(&forceSend, "force", "", "", "field list for ForceSendFields separated by (~)")
 	createUserCmd.Flags().StringVarP(&lastName, "lastname", "l", "", "user's last name")
 	createUserCmd.Flags().BoolVarP(&noGAL, "nogal", "n", false, "do not display user in Global Address List")
 	createUserCmd.Flags().StringVarP(&orgUnit, "orgunit", "o", "", "user's orgunit")
