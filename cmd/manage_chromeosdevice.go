@@ -90,7 +90,7 @@ func doManageCrOSDev(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Println("**** gmin : " + args[1] + "successfully performed on ChromeOS device " + args[0] + "****")
+	fmt.Println("**** gmin : " + args[1] + " successfully performed on ChromeOS device " + args[0] + " ****")
 
 	return nil
 }
