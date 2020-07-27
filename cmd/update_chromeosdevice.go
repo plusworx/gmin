@@ -23,6 +23,7 @@ THE SOFTWARE.
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -100,12 +101,19 @@ func doUpdateCrOSDev(cmd *cobra.Command, args []string) error {
 		cduc = updCall.(*admin.ChromeosdevicesUpdateCall)
 	}
 
-	updCrosDev, err := cduc.Do()
+	updCrOSDev, err := cduc.Do()
 	if err != nil {
 		return err
 	}
 
-	fmt.Println("**** gmin: ChromeOS device " + updCrosDev.DeviceId + " updated ****")
+	fmt.Println("**** gmin: ChromeOS device " + updCrOSDev.DeviceId + " updated ****")
+
+	jsonData, err := json.MarshalIndent(updCrOSDev, "", "    ")
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(string(jsonData))
 
 	return nil
 }
@@ -118,6 +126,6 @@ func init() {
 	updateCrOSDevCmd.Flags().StringVarP(&projection, "projection", "j", "", "type of projection")
 	updateCrOSDevCmd.Flags().StringVarP(&location, "location", "l", "", "device location")
 	updateCrOSDevCmd.Flags().StringVarP(&notes, "notes", "n", "", "notes about device")
-	updateCrOSDevCmd.Flags().StringVarP(&orgUnit, "orgunitpath", "o", "", "orgunit device belongs to")
+	updateCrOSDevCmd.Flags().StringVarP(&orgUnit, "orgunitpath", "t", "", "orgunit device belongs to")
 	updateCrOSDevCmd.Flags().StringVarP(&userKey, "user", "u", "", "device user")
 }
