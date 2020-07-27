@@ -76,7 +76,7 @@ func doMoveCrOSDev(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Println("**** gmin: ChromeOS device " + args[0] + " moved to " + args[1] + "****")
+	fmt.Println("**** gmin: ChromeOS device " + args[0] + " moved to " + args[1] + " ****")
 
 	return nil
 }
