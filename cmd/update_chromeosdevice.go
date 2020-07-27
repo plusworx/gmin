@@ -114,7 +114,7 @@ func init() {
 	updateCmd.AddCommand(updateCrOSDevCmd)
 
 	updateCrOSDevCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required device attributes (separated by ~)")
-	updateCrOSDevCmd.Flags().StringVarP(&assetID, "assetid", "i", "", "device asset id")
+	updateCrOSDevCmd.Flags().StringVarP(&assetID, "assetid", "d", "", "device asset id")
 	updateCrOSDevCmd.Flags().StringVarP(&projection, "projection", "j", "", "type of projection")
 	updateCrOSDevCmd.Flags().StringVarP(&location, "location", "l", "", "device location")
 	updateCrOSDevCmd.Flags().StringVarP(&notes, "notes", "n", "", "notes about device")
