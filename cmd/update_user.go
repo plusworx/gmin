@@ -159,8 +159,6 @@ func doUpdateUser(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	fmt.Println(user.ForceSendFields)
-
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserScope)
 	if err != nil {
 		return err
@@ -185,7 +183,7 @@ func init() {
 	updateUserCmd.Flags().BoolVarP(&noChangePassword, "nochangepassword", "d", false, "user doesn't have to change password on next login")
 	updateUserCmd.Flags().StringVarP(&userEmail, "email", "e", "", "user's primary email address")
 	updateUserCmd.Flags().StringVarP(&firstName, "firstname", "f", "", "user's first name")
-	updateUserCmd.Flags().StringVarP(&forceSend, "force", "", "", "user's first name")
+	updateUserCmd.Flags().StringVarP(&forceSend, "force", "", "", "field list for ForceSendFields separated by (~)")
 	updateUserCmd.Flags().BoolVarP(&gal, "gal", "g", false, "display user in Global Address List")
 	updateUserCmd.Flags().StringVarP(&lastName, "lastname", "l", "", "user's last name")
 	updateUserCmd.Flags().BoolVarP(&noGAL, "nogal", "n", false, "do not display user in Global Address List")
