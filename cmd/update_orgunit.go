@@ -62,6 +62,7 @@ func doUpdateOU(cmd *cobra.Command, args []string) error {
 
 	if unblockInherit {
 		orgunit.BlockInheritance = false
+		orgunit.ForceSendFields = append(orgunit.ForceSendFields, "BlockInheritance")
 	}
 
 	if orgUnitDesc != "" {
