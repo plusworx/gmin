@@ -72,8 +72,7 @@ func doBatchMoveCrOSDev(cmd *cobra.Command, args []string) error {
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		crosDevID := scanner.Text()
-		deviceIDs = append(deviceIDs, crosDevID)
+		deviceIDs = append(deviceIDs, scanner.Text())
 	}
 
 	if err := scanner.Err(); err != nil {
