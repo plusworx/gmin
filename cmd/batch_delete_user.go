@@ -25,12 +25,15 @@ package cmd
 import (
 	"bufio"
 	"errors"
+	"fmt"
 	"os"
 	"strings"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
+	cmn "github.com/plusworx/gmin/utils/common"
 	"github.com/spf13/cobra"
+	admin "google.golang.org/api/admin/directory/v1"
 )
 
 var batchDelUserCmd = &cobra.Command{
@@ -42,7 +45,10 @@ var batchDelUserCmd = &cobra.Command{
 }
 
 func doBatchDelUser(cmd *cobra.Command, args []string) error {
-	var users []string
+	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserScope)
+	if err != nil {
+		return err
+	}
 
 	if inputFile == "" {
 		err := errors.New("gmin: error - must provide inputfile")
@@ -57,16 +63,14 @@ func doBatchDelUser(cmd *cobra.Command, args []string) error {
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		users = []string{}
-
-		users = append(users, scanner.Text())
+		user := scanner.Text()
 
 		b := backoff.NewExponentialBackOff()
 		b.MaxElapsedTime = 30 * time.Second
 
 		err = backoff.Retry(func() error {
 			var err error
-			err = doDeleteUser(nil, users)
+			err = deleteUser(ds, user)
 			if err == nil {
 				return err
 			}
@@ -86,6 +90,19 @@ func doBatchDelUser(cmd *cobra.Command, args []string) error {
 	if err := scanner.Err(); err != nil {
 		return err
 	}
+
+	return nil
+}
+
+func deleteUser(ds *admin.Service, user string) error {
+	udc := ds.Users.Delete(user)
+
+	err := udc.Do()
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("**** gmin: user %s deleted ****\n", user)
 
 	return nil
 }
