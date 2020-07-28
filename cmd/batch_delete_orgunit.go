@@ -25,12 +25,13 @@ package cmd
 import (
 	"bufio"
 	"errors"
+	"fmt"
 	"os"
-	"strings"
-	"time"
 
-	"github.com/cenkalti/backoff/v4"
+	cmn "github.com/plusworx/gmin/utils/common"
+	cfg "github.com/plusworx/gmin/utils/config"
 	"github.com/spf13/cobra"
+	admin "google.golang.org/api/admin/directory/v1"
 )
 
 var batchDelOrgUnitCmd = &cobra.Command{
@@ -42,7 +43,17 @@ var batchDelOrgUnitCmd = &cobra.Command{
 }
 
 func doBatchDelOrgUnit(cmd *cobra.Command, args []string) error {
-	var orgunits []string
+	var ouPaths = []string{}
+
+	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryOrgunitScope)
+	if err != nil {
+		return err
+	}
+
+	customerID, err := cfg.ReadConfigString("customerid")
+	if err != nil {
+		return err
+	}
 
 	if inputFile == "" {
 		err := errors.New("gmin: error - must provide inputfile")
@@ -57,36 +68,30 @@ func doBatchDelOrgUnit(cmd *cobra.Command, args []string) error {
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		orgunits = []string{}
-
-		orgunits = append(orgunits, scanner.Text())
-
-		b := backoff.NewExponentialBackOff()
-		b.MaxElapsedTime = 30 * time.Second
-
-		err = backoff.Retry(func() error {
-			var err error
-			err = doDeleteOU(nil, orgunits)
-			if err == nil {
-				return err
-			}
-
-			if strings.Contains(err.Error(), "Org unit not found") ||
-				strings.Contains(err.Error(), "Cannot delete entity with members") ||
-				strings.Contains(err.Error(), "Bad Request") {
-				return backoff.Permanent(err)
-			}
-
-			return err
-		}, b)
-		if err != nil {
-			return err
-		}
+		ouPaths = append(ouPaths, scanner.Text())
 	}
 
 	if err := scanner.Err(); err != nil {
 		return err
 	}
+
+	err = deleteOU(ds, customerID, ouPaths)
+	if err == nil {
+		return err
+	}
+
+	return nil
+}
+
+func deleteOU(ds *admin.Service, customerID string, ouPaths []string) error {
+	oudc := ds.Orgunits.Delete(customerID, ouPaths)
+
+	err := oudc.Do()
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("**** gmin: orgunits successfully deleted ****")
 
 	return nil
 }
