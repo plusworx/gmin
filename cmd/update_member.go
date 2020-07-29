@@ -32,8 +32,8 @@ import (
 )
 
 var updateMemberCmd = &cobra.Command{
-	Use:     "member <member email address, alias or id> <group email address, alias or id>",
-	Aliases: []string{"mem"},
+	Use:     "group-member <member email address, alias or id> <group email address, alias or id>",
+	Aliases: []string{"grp-member", "gmember", "gmem"},
 	Args:    cobra.ExactArgs(2),
 	Short:   "Updates a group member",
 	Long: `Updates a group member.
