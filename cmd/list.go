@@ -27,9 +27,10 @@ import (
 )
 
 var listCmd = &cobra.Command{
-	Use:   "list",
-	Short: "Outputs list of G Suite entities",
-	Run:   doList,
+	Use:     "list",
+	Aliases: []string{"ls"},
+	Short:   "Outputs list of G Suite entities",
+	Run:     doList,
 }
 
 func doList(cmd *cobra.Command, args []string) {
