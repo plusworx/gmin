@@ -27,7 +27,10 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
+	"time"
 
+	"github.com/cenkalti/backoff/v4"
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
 	"github.com/spf13/cobra"
@@ -68,15 +71,33 @@ func doBatchDelOrgUnit(cmd *cobra.Command, args []string) error {
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
+		ouPaths = []string{}
 		ouPaths = append(ouPaths, scanner.Text())
+
+		b := backoff.NewExponentialBackOff()
+		b.MaxElapsedTime = 30 * time.Second
+
+		err = backoff.Retry(func() error {
+			var err error
+			err = deleteOU(ds, customerID, ouPaths)
+			if err == nil {
+				return err
+			}
+
+			if strings.Contains(err.Error(), "Resource Not Found") ||
+				strings.Contains(err.Error(), "Org unit not found") ||
+				strings.Contains(err.Error(), "Bad Request") {
+				return backoff.Permanent(err)
+			}
+
+			return err
+		}, b)
+		if err != nil {
+			return err
+		}
 	}
 
 	if err := scanner.Err(); err != nil {
-		return err
-	}
-
-	err = deleteOU(ds, customerID, ouPaths)
-	if err == nil {
 		return err
 	}
 
@@ -91,7 +112,7 @@ func deleteOU(ds *admin.Service, customerID string, ouPaths []string) error {
 		return err
 	}
 
-	fmt.Println("**** gmin: orgunits successfully deleted ****")
+	fmt.Println("**** gmin: orgunit " + ouPaths[0] + " deleted ****")
 
 	return nil
 }
