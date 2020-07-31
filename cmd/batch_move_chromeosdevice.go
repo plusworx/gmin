@@ -27,7 +27,10 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
+	"time"
 
+	"github.com/cenkalti/backoff/v4"
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
 	"github.com/spf13/cobra"
@@ -72,15 +75,32 @@ func doBatchMoveCrOSDev(cmd *cobra.Command, args []string) error {
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
+		deviceIDs = []string{}
 		deviceIDs = append(deviceIDs, scanner.Text())
+
+		b := backoff.NewExponentialBackOff()
+		b.MaxElapsedTime = 30 * time.Second
+
+		err = backoff.Retry(func() error {
+			var err error
+			err = moveCrOSDev(ds, customerID, deviceIDs, args[0])
+			if err == nil {
+				return err
+			}
+
+			if strings.Contains(err.Error(), "Resource Not Found") ||
+				strings.Contains(err.Error(), "Bad Request") {
+				return backoff.Permanent(err)
+			}
+
+			return err
+		}, b)
+		if err != nil {
+			return err
+		}
 	}
 
 	if err := scanner.Err(); err != nil {
-		return err
-	}
-
-	err = moveCrOSDev(ds, customerID, deviceIDs, args[0])
-	if err == nil {
 		return err
 	}
 
@@ -90,21 +110,16 @@ func doBatchMoveCrOSDev(cmd *cobra.Command, args []string) error {
 func moveCrOSDev(ds *admin.Service, customerID string, deviceIDs []string, oupath string) error {
 	var move = admin.ChromeOsMoveDevicesToOu{}
 
-	customerID, err := cfg.ReadConfigString("customerid")
-	if err != nil {
-		return err
-	}
-
 	move.DeviceIds = deviceIDs
 
 	cdmc := ds.Chromeosdevices.MoveDevicesToOu(customerID, oupath, &move)
 
-	err = cdmc.Do()
+	err := cdmc.Do()
 	if err != nil {
 		return err
 	}
 
-	fmt.Println("**** gmin: ChromeOS devices moved to " + oupath + " ****")
+	fmt.Println("**** gmin: ChromeOS device " + deviceIDs[0] + " moved to " + oupath + " ****")
 
 	return nil
 }
