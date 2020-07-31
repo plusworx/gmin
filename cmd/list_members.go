@@ -105,7 +105,11 @@ func doListMembers(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	fmt.Println(string(jsonData))
+	if count {
+		fmt.Println(len(members.Members))
+	} else {
+		fmt.Println(string(jsonData))
+	}
 
 	return nil
 }
@@ -175,6 +179,7 @@ func init() {
 	listCmd.AddCommand(listMembersCmd)
 
 	listMembersCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required member attributes (separated by ~)")
+	listMembersCmd.Flags().BoolVarP(&count, "count", "", false, "count number of entities returned")
 	listMembersCmd.Flags().Int64VarP(&maxResults, "maxresults", "m", 200, "maximum number or results to return")
 	listMembersCmd.Flags().StringVarP(&pages, "pages", "p", "", "number of pages of results to be returned")
 	listMembersCmd.Flags().StringVarP(&role, "roles", "r", "", "roles to filter results by (separated by ~)")

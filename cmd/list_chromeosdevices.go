@@ -140,7 +140,11 @@ func doListCrOSDevs(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Println(string(jsonData))
+	if count {
+		fmt.Println(len(crosdevs.Chromeosdevices))
+	} else {
+		fmt.Println(string(jsonData))
+	}
 
 	return nil
 }
@@ -210,6 +214,7 @@ func init() {
 	listCmd.AddCommand(listCrOSDevsCmd)
 
 	listCrOSDevsCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required device attributes (separated by ~)")
+	listCrOSDevsCmd.Flags().BoolVarP(&count, "count", "", false, "count number of entities returned")
 	listCrOSDevsCmd.Flags().Int64VarP(&maxResults, "maxresults", "m", 200, "maximum number of results to return per page")
 	listCrOSDevsCmd.Flags().StringVarP(&orderBy, "orderby", "o", "", "field by which results will be ordered")
 	listCrOSDevsCmd.Flags().StringVarP(&pages, "pages", "p", "", "number of pages of results to be returned")

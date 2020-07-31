@@ -39,6 +39,7 @@ var (
 	cfgFile          string
 	credentialPath   string
 	changePassword   bool
+	count            bool
 	customerID       string
 	customField      string
 	deleted          bool

@@ -190,7 +190,11 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	fmt.Println(string(jsonData))
+	if count {
+		fmt.Println(len(users.Users))
+	} else {
+		fmt.Println(string(jsonData))
+	}
 
 	return nil
 }
@@ -260,6 +264,7 @@ func init() {
 	listCmd.AddCommand(listUsersCmd)
 
 	listUsersCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required user attributes (separated by ~)")
+	listUsersCmd.Flags().BoolVarP(&count, "count", "", false, "count number of entities returned")
 	listUsersCmd.Flags().StringVarP(&customField, "customfieldmask", "c", "", "custom field mask schemas (separated by ~)")
 	listUsersCmd.Flags().StringVarP(&domain, "domain", "d", "", "domain from which to get users")
 	listUsersCmd.Flags().Int64VarP(&maxResults, "maxresults", "m", 500, "maximum number of results to return per page")

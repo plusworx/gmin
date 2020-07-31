@@ -152,7 +152,11 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	fmt.Println(string(jsonData))
+	if count {
+		fmt.Println(len(groups.Groups))
+	} else {
+		fmt.Println(string(jsonData))
+	}
 
 	return nil
 }
@@ -222,6 +226,7 @@ func init() {
 	listCmd.AddCommand(listGroupsCmd)
 
 	listGroupsCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required group attributes (separated by ~)")
+	listGroupsCmd.Flags().BoolVarP(&count, "count", "", false, "count number of entities returned")
 	listGroupsCmd.Flags().StringVarP(&domain, "domain", "d", "", "domain from which to get groups")
 	listGroupsCmd.Flags().Int64VarP(&maxResults, "maxresults", "m", 200, "maximum number of results to return per page")
 	listGroupsCmd.Flags().StringVarP(&orderBy, "orderby", "o", "", "field by which results will be ordered")

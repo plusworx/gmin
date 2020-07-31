@@ -105,7 +105,11 @@ func doListOUs(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	fmt.Println(string(jsonData))
+	if count {
+		fmt.Println(len(orgUnits.OrganizationUnits))
+	} else {
+		fmt.Println(string(jsonData))
+	}
 
 	return nil
 }
@@ -114,6 +118,7 @@ func init() {
 	listCmd.AddCommand(listOUsCmd)
 
 	listOUsCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required orgunit attributes separated by (~)")
+	listOUsCmd.Flags().BoolVarP(&count, "count", "", false, "count number of entities returned")
 	listOUsCmd.Flags().StringVarP(&orgUnit, "orgunitpath", "o", "", "orgunitpath or id of starting orgunit")
 	listOUsCmd.Flags().StringVarP(&searchType, "type", "t", "children", "all sub-organizational units or only immediate children")
 }
