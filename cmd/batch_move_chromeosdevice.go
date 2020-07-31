@@ -42,7 +42,7 @@ var batchMoveCrOSDevCmd = &cobra.Command{
 	Long: `Moves a batch of ChromeOS devices to another orgunit.
 	
 	Examples: gmin batch-move chromeosdevices /Sales -i inputfile.txt
-	          gmin bmng cdev /IT -i inputfile.txt`,
+	          gmin bmove cdev /IT -i inputfile.txt`,
 	RunE: doBatchMoveCrOSDev,
 }
 
