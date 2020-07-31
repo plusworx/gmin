@@ -78,8 +78,8 @@ func doBatchUpdUser(cmd *cobra.Command, args []string) error {
 			}
 
 			if strings.Contains(err.Error(), "Missing required field") ||
-				strings.Contains(err.Error(), "invalid character") ||
-				strings.Contains(err.Error(), "Entity already exists") ||
+				strings.Contains(err.Error(), "not valid") ||
+				strings.Contains(err.Error(), "unrecognized") ||
 				strings.Contains(err.Error(), "should be") {
 				return backoff.Permanent(err)
 			}
