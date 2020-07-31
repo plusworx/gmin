@@ -86,7 +86,11 @@ func doBatchMngCrOSDev(cmd *cobra.Command, args []string) error {
 				return err
 			}
 
-			if strings.Contains(err.Error(), "Missing required field") {
+			if strings.Contains(err.Error(), "Missing required field") ||
+				strings.Contains(err.Error(), "not a valid") ||
+				strings.Contains(err.Error(), "provide a reason") ||
+				strings.Contains(err.Error(), "Resource Not Found") ||
+				strings.Contains(err.Error(), "Illegal") {
 				return backoff.Permanent(err)
 			}
 
@@ -128,7 +132,7 @@ func manageCrOSDev(ds *admin.Service, customerID string, deviceID string, action
 		return err
 	}
 
-	fmt.Println("**** gmin : " + action + " successfully performed on ChromeOS device " + deviceID + " ****")
+	fmt.Println("**** gmin: " + action + " successfully performed on ChromeOS device " + deviceID + " ****")
 
 	return nil
 }
