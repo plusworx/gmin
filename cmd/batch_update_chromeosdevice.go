@@ -84,7 +84,9 @@ func doBatchUpdCrOSDev(cmd *cobra.Command, args []string) error {
 				return err
 			}
 
-			if strings.Contains(err.Error(), "Missing required field") {
+			if strings.Contains(err.Error(), "Missing required field") ||
+				strings.Contains(err.Error(), "Resource Not Found") ||
+				strings.Contains(err.Error(), "INVALID_OU_ID") {
 				return backoff.Permanent(err)
 			}
 
