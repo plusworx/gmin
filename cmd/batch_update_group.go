@@ -80,7 +80,8 @@ func doBatchUpdGrp(cmd *cobra.Command, args []string) error {
 			if strings.Contains(err.Error(), "Missing required field") ||
 				strings.Contains(err.Error(), "not valid") ||
 				strings.Contains(err.Error(), "unrecognized") ||
-				strings.Contains(err.Error(), "should be") {
+				strings.Contains(err.Error(), "should be") ||
+				strings.Contains(err.Error(), "must be included") {
 				return backoff.Permanent(err)
 			}
 
@@ -99,7 +100,10 @@ func doBatchUpdGrp(cmd *cobra.Command, args []string) error {
 }
 
 func updateGroup(ds *admin.Service, jsonData string) error {
-	var group *admin.Group
+	var (
+		group  *admin.Group
+		grpKey = grps.Key{}
+	)
 
 	group = new(admin.Group)
 	jsonBytes := []byte(jsonData)
@@ -118,22 +122,27 @@ func updateGroup(ds *admin.Service, jsonData string) error {
 		return err
 	}
 
+	err = json.Unmarshal(jsonBytes, &grpKey)
+	if err != nil {
+		return err
+	}
+
+	if grpKey.GroupKey == "" {
+		return errors.New("gmin: error - groupKey must be included in the JSON input string")
+	}
+
 	err = json.Unmarshal(jsonBytes, &group)
 	if err != nil {
 		return err
 	}
 
-	if group.Email == "" {
-		return errors.New("gmin: error - group email must be included in the JSON input string")
-	}
-
-	guc := ds.Groups.Update(group.Email, group)
-	updatedGrp, err := guc.Do()
+	guc := ds.Groups.Update(grpKey.GroupKey, group)
+	_, err = guc.Do()
 	if err != nil {
 		return err
 	}
 
-	fmt.Println("**** gmin: group " + updatedGrp.Email + " updated ****")
+	fmt.Println("**** gmin: group " + grpKey.GroupKey + " updated ****")
 
 	return nil
 }

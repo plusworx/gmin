@@ -24,6 +24,7 @@ package cmd
 
 import (
 	"bufio"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -31,6 +32,7 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
+	cdevs "github.com/plusworx/gmin/utils/chromeosdevices"
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
 	"github.com/spf13/cobra"
@@ -43,8 +45,8 @@ var batchUpdCrOSDevCmd = &cobra.Command{
 	Short:   "Updates a batch of ChromeOS devices",
 	Long: `Updates a batch of ChromeOS devices.
 	
-	Examples: gmin batch-update chromeosdevices -i inputfile.txt -l London
-	          gmin bupd cdev -i inputfile.txt -n "New chromebook trial"`,
+	Examples: gmin batch-update chromeosdevices -i inputfile.txt
+	          gmin bupd cdev -i inputfile.txt`,
 	RunE: doBatchUpdCrOSDev,
 }
 
@@ -72,20 +74,24 @@ func doBatchUpdCrOSDev(cmd *cobra.Command, args []string) error {
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		crosDevID := scanner.Text()
+		jsonData := scanner.Text()
 
 		b := backoff.NewExponentialBackOff()
 		b.MaxElapsedTime = 30 * time.Second
 
 		err = backoff.Retry(func() error {
 			var err error
-			err = updateCrOSDev(ds, customerID, crosDevID)
+			err = updateCrOSDev(ds, customerID, jsonData)
 			if err == nil {
 				return err
 			}
 
 			if strings.Contains(err.Error(), "Missing required field") ||
+				strings.Contains(err.Error(), "not valid") ||
+				strings.Contains(err.Error(), "unrecognized") ||
+				strings.Contains(err.Error(), "should be") ||
 				strings.Contains(err.Error(), "Resource Not Found") ||
+				strings.Contains(err.Error(), "must be included") ||
 				strings.Contains(err.Error(), "INVALID_OU_ID") {
 				return backoff.Permanent(err)
 			}
@@ -104,33 +110,42 @@ func doBatchUpdCrOSDev(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func updateCrOSDev(ds *admin.Service, customerID string, deviceID string) error {
+func updateCrOSDev(ds *admin.Service, customerID string, jsonData string) error {
 	var crosdev = admin.ChromeOsDevice{}
 
-	if location != "" {
-		crosdev.AnnotatedLocation = location
+	jsonBytes := []byte(jsonData)
+
+	if !json.Valid(jsonBytes) {
+		return errors.New("gmin: error - attribute string is not valid JSON")
 	}
 
-	if notes != "" {
-		crosdev.Notes = notes
-	}
-
-	if orgUnit != "" {
-		crosdev.OrgUnitPath = orgUnit
-	}
-
-	if userKey != "" {
-		crosdev.AnnotatedUser = userKey
-	}
-
-	cduc := ds.Chromeosdevices.Update(customerID, deviceID, &crosdev)
-
-	updCrosDev, err := cduc.Do()
+	outStr, err := cmn.ParseInputAttrs(jsonBytes)
 	if err != nil {
 		return err
 	}
 
-	fmt.Println("**** gmin: ChromeOS device " + updCrosDev.DeviceId + " updated ****")
+	err = cmn.ValidateInputAttrs(outStr, cdevs.CrOSDevAttrMap)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(jsonBytes, &crosdev)
+	if err != nil {
+		return err
+	}
+
+	if crosdev.DeviceId == "" {
+		return errors.New("gmin: error - deviceId must be included in the JSON input string")
+	}
+
+	cduc := ds.Chromeosdevices.Update(customerID, crosdev.DeviceId, &crosdev)
+
+	_, err = cduc.Do()
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("**** gmin: ChromeOS device " + crosdev.DeviceId + " updated ****")
 
 	return nil
 }
@@ -139,8 +154,4 @@ func init() {
 	batchUpdateCmd.AddCommand(batchUpdCrOSDevCmd)
 
 	batchUpdCrOSDevCmd.Flags().StringVarP(&inputFile, "inputfile", "i", "", "filepath to device data file")
-	batchUpdCrOSDevCmd.Flags().StringVarP(&location, "location", "l", "", "device location")
-	batchUpdCrOSDevCmd.Flags().StringVarP(&notes, "notes", "n", "", "notes about device")
-	batchUpdCrOSDevCmd.Flags().StringVarP(&orgUnit, "orgunitpath", "o", "", "orgunit device belongs to")
-	batchUpdCrOSDevCmd.Flags().StringVarP(&userKey, "user", "u", "", "device user")
 }

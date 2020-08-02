@@ -24,6 +24,7 @@ package cmd
 
 import (
 	"bufio"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -44,8 +45,8 @@ var batchUpdMemberCmd = &cobra.Command{
 	Short:   "Updates a batch of group members",
 	Long: `Updates a batch of group members.
 	
-	Examples: gmin batch-update members anothergroup@mycompany.com -i inputfile.txt -d DAILY
-	          gmin bupd mem finance@mycompany.com -i inputfile.txt -r MEMBER`,
+	Examples: gmin batch-update members anothergroup@mycompany.com -i inputfile.txt
+	          gmin bupd mem finance@mycompany.com -i inputfile.txt`,
 	RunE: doBatchUpdMember,
 }
 
@@ -68,19 +69,22 @@ func doBatchUpdMember(cmd *cobra.Command, args []string) error {
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		memberKey := scanner.Text()
+		jsonData := scanner.Text()
 
 		b := backoff.NewExponentialBackOff()
 		b.MaxElapsedTime = 30 * time.Second
 
 		err = backoff.Retry(func() error {
 			var err error
-			err = updateMember(ds, memberKey, args[0])
+			err = updateMember(ds, jsonData, args[0])
 			if err == nil {
 				return err
 			}
 
-			if strings.Contains(err.Error(), "Missing required field") {
+			if strings.Contains(err.Error(), "Missing required field") ||
+				strings.Contains(err.Error(), "not a valid") ||
+				strings.Contains(err.Error(), "should be") ||
+				strings.Contains(err.Error(), "unrecognized") {
 				return backoff.Permanent(err)
 			}
 
@@ -98,32 +102,57 @@ func doBatchUpdMember(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func updateMember(ds *admin.Service, memberKey string, group string) error {
+func updateMember(ds *admin.Service, jsonData string, group string) error {
 	var member = admin.Member{}
 
-	if deliverySetting != "" {
-		validDS, err := mems.ValidateDeliverySetting(deliverySetting)
+	jsonBytes := []byte(jsonData)
+
+	if !json.Valid(jsonBytes) {
+		return errors.New("gmin: error - attribute string is not valid JSON")
+	}
+
+	outStr, err := cmn.ParseInputAttrs(jsonBytes)
+	if err != nil {
+		return err
+	}
+
+	err = cmn.ValidateInputAttrs(outStr, mems.MemberAttrMap)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(jsonBytes, &member)
+	if err != nil {
+		return err
+	}
+
+	if member.Email == "" {
+		return errors.New("gmin: error - email must be included in the JSON input string")
+	}
+
+	if member.DeliverySettings != "" {
+		validDS, err := mems.ValidateDeliverySetting(member.DeliverySettings)
 		if err != nil {
 			return err
 		}
 		member.DeliverySettings = validDS
 	}
 
-	if role != "" {
-		validRole, err := mems.ValidateRole(role)
+	if member.Role != "" {
+		validRole, err := mems.ValidateRole(member.Role)
 		if err != nil {
 			return err
 		}
 		member.Role = validRole
 	}
 
-	muc := ds.Members.Update(group, memberKey, &member)
-	_, err := muc.Do()
+	muc := ds.Members.Update(group, member.Email, &member)
+	_, err = muc.Do()
 	if err != nil {
 		return err
 	}
 
-	fmt.Println("**** gmin: member " + memberKey + " updated in group " + group + " ****")
+	fmt.Println("**** gmin: member " + member.Email + " updated in group " + group + " ****")
 
 	return nil
 }
@@ -131,7 +160,5 @@ func updateMember(ds *admin.Service, memberKey string, group string) error {
 func init() {
 	batchUpdateCmd.AddCommand(batchUpdMemberCmd)
 
-	batchUpdMemberCmd.Flags().StringVarP(&deliverySetting, "deliverysetting", "d", "", "member delivery setting")
-	batchUpdMemberCmd.Flags().StringVarP(&inputFile, "inputfile", "i", "", "filepath to member data file")
-	batchUpdMemberCmd.Flags().StringVarP(&role, "role", "r", "", "member role")
+	batchUpdMemberCmd.Flags().StringVarP(&inputFile, "inputfile", "i", "", "filepath to group member data file")
 }

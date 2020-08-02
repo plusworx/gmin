@@ -126,6 +126,7 @@ var OrgUnitAttrMap = map[string]string{
 	"name":              "name",
 	"orgunitid":         "orgUnitId",
 	"orgunitpath":       "orgUnitPath",
+	"oukey":             "ouKey", // Used in batch update
 	"parentorgunitid":   "parentOrgUnitId",
 	"parentorgunitpath": "parentOrgUnitPath",
 }
@@ -134,6 +135,11 @@ var OrgUnitAttrMap = map[string]string{
 var ValidSearchTypes = []string{
 	"all",
 	"children",
+}
+
+// Key is struct used to extract ouKey
+type Key struct {
+	OUKey string
 }
 
 // AddFields adds fields to be returned to admin calls

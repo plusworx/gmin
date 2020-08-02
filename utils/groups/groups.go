@@ -122,6 +122,11 @@ type GminGroups struct {
 	NullFields []string `json:"-"`
 }
 
+// Key is struct used to extract groupKey
+type Key struct {
+	GroupKey string
+}
+
 // GroupAttrMap provides lowercase mappings to valid admin.Group attributes
 var GroupAttrMap = map[string]string{
 	"admincreated":       "adminCreated",
@@ -129,6 +134,7 @@ var GroupAttrMap = map[string]string{
 	"directmemberscount": "directMembersCount",
 	"email":              "email",
 	"etag":               "etag",
+	"groupkey":           "groupKey", // Used in batch update
 	"id":                 "id",
 	"kind":               "kind",
 	"name":               "name",

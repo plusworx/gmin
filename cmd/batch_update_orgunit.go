@@ -24,6 +24,7 @@ package cmd
 
 import (
 	"bufio"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -33,6 +34,7 @@ import (
 	"github.com/cenkalti/backoff/v4"
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
+	ous "github.com/plusworx/gmin/utils/orgunits"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 )
@@ -43,9 +45,9 @@ var batchUpdOUCmd = &cobra.Command{
 	Short:   "Updates a batch of orgunits",
 	Long: `Updates a batch of orgunits.
 	
-	Examples: gmin batch-update orgunits -i inputfile.txt -p /Skunkworks/Engineering
-	          gmin bupd ous -i inputfile.txt -b`,
-	RunE: doBatchUpdMember,
+	Examples: gmin batch-update orgunits -i inputfile.txt
+	          gmin bupd ous -i inputfile.txt`,
+	RunE: doBatchUpdOU,
 }
 
 func doBatchUpdOU(cmd *cobra.Command, args []string) error {
@@ -72,19 +74,23 @@ func doBatchUpdOU(cmd *cobra.Command, args []string) error {
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		ouName := scanner.Text()
+		jsonData := scanner.Text()
 
 		b := backoff.NewExponentialBackOff()
 		b.MaxElapsedTime = 30 * time.Second
 
 		err = backoff.Retry(func() error {
 			var err error
-			err = updateOU(ds, customerID, ouName)
+			err = updateOU(ds, customerID, jsonData)
 			if err == nil {
 				return err
 			}
 
-			if strings.Contains(err.Error(), "Missing required field") {
+			if strings.Contains(err.Error(), "Missing required field") ||
+				strings.Contains(err.Error(), "not valid") ||
+				strings.Contains(err.Error(), "unrecognized") ||
+				strings.Contains(err.Error(), "should be") ||
+				strings.Contains(err.Error(), "must be included") {
 				return backoff.Permanent(err)
 			}
 
@@ -102,35 +108,62 @@ func doBatchUpdOU(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func updateOU(ds *admin.Service, customerID string, ouName string) error {
+func updateOU(ds *admin.Service, customerID string, jsonData string) error {
 	var (
 		orgunit *admin.OrgUnit
+		ouKey   = ous.Key{}
 		ouPath  = []string{}
 	)
 
-	ouPath = append(ouPath, ouName)
 	orgunit = new(admin.OrgUnit)
 
-	if blockInherit {
-		orgunit.BlockInheritance = true
+	jsonBytes := []byte(jsonData)
+
+	if !json.Valid(jsonBytes) {
+		return errors.New("gmin: error - attribute string is not valid JSON")
 	}
 
-	if unblockInherit {
-		orgunit.BlockInheritance = false
-		orgunit.ForceSendFields = append(orgunit.ForceSendFields, "BlockInheritance")
-	}
-
-	if parentOUPath != "" {
-		orgunit.ParentOrgUnitPath = parentOUPath
-	}
-
-	ouuc := ds.Orgunits.Update(customerID, ouPath, orgunit)
-	_, err := ouuc.Do()
+	outStr, err := cmn.ParseInputAttrs(jsonBytes)
 	if err != nil {
 		return err
 	}
 
-	fmt.Println("**** gmin: orgunit " + ouName + " updated ****")
+	err = cmn.ValidateInputAttrs(outStr, ous.OrgUnitAttrMap)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(jsonBytes, &ouKey)
+	if err != nil {
+		return err
+	}
+
+	if ouKey.OUKey == "" {
+		return errors.New("gmin: error - ouKey must be included in the JSON input string")
+	}
+
+	err = json.Unmarshal(jsonBytes, &orgunit)
+	if err != nil {
+		return err
+	}
+
+	if orgunit.Name == "" {
+		return errors.New("gmin: error - name must be included in the JSON input string")
+	}
+
+	ouPath = append(ouPath, ouKey.OUKey)
+
+	if !orgunit.BlockInheritance {
+		orgunit.ForceSendFields = append(orgunit.ForceSendFields, "BlockInheritance")
+	}
+
+	ouuc := ds.Orgunits.Update(customerID, ouPath, orgunit)
+	_, err = ouuc.Do()
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("**** gmin: orgunit " + orgunit.Name + " updated ****")
 
 	return nil
 }
@@ -138,8 +171,5 @@ func updateOU(ds *admin.Service, customerID string, ouName string) error {
 func init() {
 	batchUpdateCmd.AddCommand(batchUpdOUCmd)
 
-	batchUpdOUCmd.Flags().BoolVarP(&blockInherit, "blockinherit", "b", false, "block orgunit policy inheritance")
 	batchUpdOUCmd.Flags().StringVarP(&inputFile, "inputfile", "i", "", "filepath to orgunit data file")
-	batchUpdOUCmd.Flags().StringVarP(&parentOUPath, "parentpath", "p", "", "orgunit parent path")
-	batchUpdOUCmd.Flags().BoolVarP(&unblockInherit, "unblockinherit", "u", false, "unblock orgunit policy inheritance")
 }

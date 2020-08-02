@@ -133,14 +133,14 @@ var deliverySettingMap = map[string]string{
 
 // MemberAttrMap provides lowercase mappings to valid admin.Member attributes
 var MemberAttrMap = map[string]string{
-	"deliverysettings": "deliverySettings",
-	"email":            "email",
-	"etag":             "etag",
-	"id":               "id",
-	"kind":             "kind",
-	"role":             "role",
-	"status":           "status",
-	"type":             "type",
+	"delivery_settings": "delivery_settings",
+	"email":             "email",
+	"etag":              "etag",
+	"id":                "id",
+	"kind":              "kind",
+	"role":              "role",
+	"status":            "status",
+	"type":              "type",
 }
 
 // RoleMap provides lowercase mappings to valid admin.Member roles

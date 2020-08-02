@@ -321,6 +321,7 @@ var UserAttrMap = map[string]string{
 	"title":                      "title",
 	"type":                       "type",
 	"uid":                        "uid",
+	"userkey":                    "userKey", // Used in batch update
 	"username":                   "username",
 	"value":                      "value",
 	"websites":                   "websites",
@@ -705,6 +706,11 @@ type GminUserName struct {
 	// null. It is an error if a field in this list has a non-empty value.
 	// This may be used to include null fields in Patch requests.
 	NullFields []string `json:"-"`
+}
+
+// Key is struct used to extract userKey
+type Key struct {
+	UserKey string
 }
 
 // AddCustomer adds Customer to admin calls

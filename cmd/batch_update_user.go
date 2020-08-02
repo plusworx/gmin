@@ -80,7 +80,8 @@ func doBatchUpdUser(cmd *cobra.Command, args []string) error {
 			if strings.Contains(err.Error(), "Missing required field") ||
 				strings.Contains(err.Error(), "not valid") ||
 				strings.Contains(err.Error(), "unrecognized") ||
-				strings.Contains(err.Error(), "should be") {
+				strings.Contains(err.Error(), "should be") ||
+				strings.Contains(err.Error(), "must be included") {
 				return backoff.Permanent(err)
 			}
 
@@ -99,7 +100,10 @@ func doBatchUpdUser(cmd *cobra.Command, args []string) error {
 }
 
 func updateUser(ds *admin.Service, jsonData string) error {
-	var user *admin.User
+	var (
+		user   *admin.User
+		usrKey = usrs.Key{}
+	)
 
 	user = new(admin.User)
 	jsonBytes := []byte(jsonData)
@@ -118,13 +122,18 @@ func updateUser(ds *admin.Service, jsonData string) error {
 		return err
 	}
 
-	err = json.Unmarshal(jsonBytes, &user)
+	err = json.Unmarshal(jsonBytes, &usrKey)
 	if err != nil {
 		return err
 	}
 
-	if user.PrimaryEmail == "" {
-		return errors.New("gmin: error - primary email must be included in the JSON input string")
+	if usrKey.UserKey == "" {
+		return errors.New("gmin: error - userKey must be included in the JSON input string")
+	}
+
+	err = json.Unmarshal(jsonBytes, &user)
+	if err != nil {
+		return err
 	}
 
 	if user.Password != "" {
@@ -136,13 +145,13 @@ func updateUser(ds *admin.Service, jsonData string) error {
 		user.Password = pwd
 	}
 
-	uic := ds.Users.Update(user.PrimaryEmail, user)
-	updatedUser, err := uic.Do()
+	uic := ds.Users.Update(usrKey.UserKey, user)
+	_, err = uic.Do()
 	if err != nil {
 		return err
 	}
 
-	fmt.Println("**** gmin: user " + updatedUser.PrimaryEmail + " updated ****")
+	fmt.Println("**** gmin: user " + usrKey.UserKey + " updated ****")
 
 	return nil
 }
