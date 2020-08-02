@@ -31,8 +31,8 @@ import (
 )
 
 var setConfigCmd = &cobra.Command{
-	Use:     "setconfig",
-	Aliases: []string{"scfg"},
+	Use:     "config",
+	Aliases: []string{"cfg"},
 	Short:   "Sets gmin configuration information",
 	RunE:    doSetConfig,
 }
@@ -77,7 +77,7 @@ func doSetConfig(cmd *cobra.Command, args []string) error {
 }
 
 func init() {
-	rootCmd.AddCommand(setConfigCmd)
+	setCmd.AddCommand(setConfigCmd)
 
 	setConfigCmd.Flags().StringVarP(&adminEmail, "admin", "a", "", "administrator email address")
 	setConfigCmd.Flags().StringVarP(&customerID, "customerid", "c", "", "customer id for domain")
