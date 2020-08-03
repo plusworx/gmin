@@ -163,7 +163,7 @@ func updateOU(ds *admin.Service, customerID string, jsonData string) error {
 		return err
 	}
 
-	fmt.Println("**** gmin: orgunit " + orgunit.Name + " updated ****")
+	fmt.Println("**** gmin: orgunit " + ouKey.OUKey + " updated ****")
 
 	return nil
 }
