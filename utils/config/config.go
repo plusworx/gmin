@@ -29,10 +29,28 @@ import (
 )
 
 const (
+	// ConfigAdmin is config file administrator variable name
+	ConfigAdmin string = "administrator"
+	// ConfigCustID is config file customer id variable name
+	ConfigCustID string = "customerid"
+	// ConfigCredPath is config file credential path variable name
+	ConfigCredPath string = "credentialpath"
+	// ConfigFileName is configuration file name
+	ConfigFileName string = ".gmin.yaml"
+	// ConfigFilePrefix is name of gmin config file without the .yaml suffix
+	ConfigFilePrefix string = ".gmin"
 	// CredentialFile holds service account credentials
 	CredentialFile string = "gmin_credentials"
-	// ConfigFile is configuration file name
-	ConfigFile string = ".gmin.yaml"
+	// DefaultCustID is default customer id value
+	DefaultCustID string = "my_customer"
+	// EnvPrefix is prefix for gmin environment variables
+	EnvPrefix string = "GMIN"
+	// EnvVarAdmin is gmin administrator environment variable suffix
+	EnvVarAdmin string = "_ADMINISTRATOR"
+	// EnvVarCredPath is gmin credential path environment variable suffix
+	EnvVarCredPath string = "_CREDENTIALPATH"
+	// EnvVarCustID is gmin custormer id environment variable suffix
+	EnvVarCustID string = "_CUSTOMERID"
 )
 
 // File holds configuration data

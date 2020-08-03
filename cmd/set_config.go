@@ -26,6 +26,7 @@ import (
 	"fmt"
 
 	valid "github.com/asaskevich/govalidator"
+	cfg "github.com/plusworx/gmin/utils/config"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -39,7 +40,7 @@ var setConfigCmd = &cobra.Command{
 
 func doSetConfig(cmd *cobra.Command, args []string) error {
 	if customerID != "" {
-		viper.Set("customerid", customerID)
+		viper.Set(cfg.ConfigCustID, customerID)
 		err := viper.WriteConfig()
 		if err != nil {
 			return err
@@ -52,7 +53,7 @@ func doSetConfig(cmd *cobra.Command, args []string) error {
 		if !ok {
 			return fmt.Errorf("gmin: error - %v is not a valid email address", adminEmail)
 		}
-		viper.Set("administrator", adminEmail)
+		viper.Set(cfg.ConfigAdmin, adminEmail)
 		err := viper.WriteConfig()
 		if err != nil {
 			return err
@@ -61,7 +62,7 @@ func doSetConfig(cmd *cobra.Command, args []string) error {
 	}
 
 	if credentialPath != "" {
-		viper.Set("credentialpath", credentialPath)
+		viper.Set(cfg.ConfigCredPath, credentialPath)
 		err := viper.WriteConfig()
 		if err != nil {
 			return err

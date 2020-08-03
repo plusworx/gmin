@@ -153,12 +153,12 @@ func doInit(cmd *cobra.Command, args []string) error {
 	}
 
 	if answers.CustomerID == "" {
-		answers.CustomerID = "my_customer"
+		answers.CustomerID = cfg.DefaultCustID
 	}
 
 	cfgFile := cfg.File{Administrator: answers.AdminEmail, CredentialPath: answers.CredentialPath, CustomerID: answers.CustomerID}
 
-	path := filepath.Join(filepath.ToSlash(answers.ConfigPath), cfg.ConfigFile)
+	path := filepath.Join(filepath.ToSlash(answers.ConfigPath), cfg.ConfigFileName)
 
 	cfgYaml, err := yaml.Marshal(&cfgFile)
 	if err != nil {

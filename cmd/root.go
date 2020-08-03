@@ -26,6 +26,7 @@ import (
 	"log"
 
 	"github.com/mitchellh/go-homedir"
+	cfg "github.com/plusworx/gmin/utils/config"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -105,7 +106,7 @@ func init() {
 }
 
 func initConfig() {
-	viper.SetEnvPrefix("GMIN")
+	viper.SetEnvPrefix(cfg.EnvPrefix)
 
 	if cfgFile != "" {
 		viper.SetConfigFile(cfgFile)
@@ -116,7 +117,7 @@ func initConfig() {
 		}
 
 		viper.AddConfigPath(home)
-		viper.SetConfigName(".gmin")
+		viper.SetConfigName(cfg.ConfigFilePrefix)
 	}
 
 	viper.AutomaticEnv()
