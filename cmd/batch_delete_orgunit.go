@@ -41,8 +41,17 @@ var batchDelOrgUnitCmd = &cobra.Command{
 	Use:     "orgunits -i <input file path>",
 	Aliases: []string{"orgunit", "ous", "ou"},
 	Short:   "Deletes a batch of orgunits",
-	Long:    `Deletes a batch of orgunits.`,
-	RunE:    doBatchDelOrgUnit,
+	Long: `Deletes a batch of orgunits where orgunit details are provided in a text input file.
+	
+	Examples:	gmin batch-delete orgunits -i inputfile.txt
+			gmin bdel ous -i inputfile.txt
+			
+	The input file should have the orgunit paths or ids to be deleted on separate lines like this:
+	
+	Engineering/Skunkworx
+	Engineering/SecretOps
+	Engineering/Surplus`,
+	RunE: doBatchDelOrgUnit,
 }
 
 func doBatchDelOrgUnit(cmd *cobra.Command, args []string) error {

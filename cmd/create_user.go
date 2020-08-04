@@ -42,8 +42,8 @@ var createUserCmd = &cobra.Command{
 	Short: "Creates a user",
 	Long: `Creates a user.
 	
-	Examples: gmin create user another.user@mycompany.com  -f Another -l User -p strongpassword
-	          gmin crt user finance.person@mycompany.com -f Finance -l Person -p greatpassword -c`,
+	Examples:	gmin create user another.user@mycompany.com  -f Another -l User -p strongpassword
+			gmin crt user finance.person@mycompany.com -f Finance -l Person -p greatpassword -c`,
 	RunE: doCreateUser,
 }
 

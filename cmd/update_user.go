@@ -40,8 +40,8 @@ var updateUserCmd = &cobra.Command{
 	Short: "Updates a user",
 	Long: `Updates a user.
 	
-	Examples: gmin update user another.user@mycompany.com -p strongpassword -s
-	          gmin upd user finance.person@mycompany.com -l Newlastname`,
+	Examples:	gmin update user another.user@mycompany.com -p strongpassword -s
+			gmin upd user finance.person@mycompany.com -l Newlastname`,
 	RunE: doUpdateUser,
 }
 

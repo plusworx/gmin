@@ -35,8 +35,11 @@ var deleteUserAliasCmd = &cobra.Command{
 	Aliases: []string{"ualias", "ua"},
 	Args:    cobra.ExactArgs(2),
 	Short:   "Deletes user alias",
-	Long:    `Deletes user alias.`,
-	RunE:    doDeleteUserAlias,
+	Long: `Deletes user alias.
+	
+	Examples:	gmin delete user-alias myalias@mycompany.com myuser@mycompany.com
+			gmin del ua myalias@mycompany.com myuser@mycompany.com`,
+	RunE: doDeleteUserAlias,
 }
 
 func doDeleteUserAlias(cmd *cobra.Command, args []string) error {

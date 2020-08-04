@@ -41,8 +41,8 @@ var getOrgUnitCmd = &cobra.Command{
 	Short:   "Outputs information about an orgunit",
 	Long: `Outputs information about an orgunit.
 	
-	Examples: gmin get orgunit Accounts
-	          gmin get orgunit Marketing -a "name orgUnitId"`,
+	Examples:	gmin get orgunit Accounts
+			gmin get ou Marketing -a name~orgUnitId`,
 	RunE: doGetOrgUnit,
 }
 

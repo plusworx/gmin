@@ -38,8 +38,8 @@ var updateGroupCmd = &cobra.Command{
 	Short: "Updates a group",
 	Long: `Updates a group .
 	
-	Examples: gmin update group office@mycompany.com
-	          gmin upd group 1234567890 -e newfinance@mycompany.com -n "New Finance" -d "New Finance Department"`,
+	Examples:	gmin update group office@mycompany.com
+			gmin upd grp 02502m921to3a9m -e newfinance@mycompany.com -n "New Finance" -d "New Finance Department"`,
 	RunE: doUpdateGroup,
 }
 

@@ -38,8 +38,8 @@ var updateOUCmd = &cobra.Command{
 	Short:   "Updates an orgunit",
 	Long: `Updates an orgunit .
 	
-	Examples: gmin update orgunit Sales -n "New Name" -d "New description"
-	          gmin upd ou Engineering/Aerodynamics -p Engineering/Aeronautics`,
+	Examples:	gmin update orgunit Sales -n "New Name" -d "New description"
+			gmin upd ou Engineering/Aerodynamics -p Engineering/Aeronautics`,
 	RunE: doUpdateOU,
 }
 

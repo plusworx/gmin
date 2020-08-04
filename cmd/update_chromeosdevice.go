@@ -41,7 +41,8 @@ var updateCrOSDevCmd = &cobra.Command{
 	Short:   "Updates a ChromeOS device",
 	Long: `Updates a ChromeOS device.
 	
-	Example: gmin update chromeosdevice 4cx07eba348f09b3`,
+	Examples:	gmin update chromeosdevice 4cx07eba348f09b3 --location "Head Office"
+			gmin upd cdev 4cx07eba348f09b3 -u "Mark Zuckerberg"`,
 	RunE: doUpdateCrOSDev,
 }
 

@@ -37,8 +37,8 @@ var createUserAliasCmd = &cobra.Command{
 	Short:   "Creates a user alias",
 	Long: `Creates a user alias.
 	
-	Examples: gmin create user-alias my.alias@mycompany.com brian.cox@mycompany.com
-	          gmin crt ua my.alias@mycompany.com brian.cox@mycompany.com`,
+	Examples:	gmin create user-alias my.alias@mycompany.com brian.cox@mycompany.com
+			gmin crt ua my.alias@mycompany.com brian.cox@mycompany.com`,
 	RunE: doCreateUserAlias,
 }
 

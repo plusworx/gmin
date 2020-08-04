@@ -40,8 +40,17 @@ var batchDelGroupCmd = &cobra.Command{
 	Use:     "groups -i <input file path>",
 	Aliases: []string{"group", "grps", "grp"},
 	Short:   "Deletes a batch of groups",
-	Long:    `Deletes a batch of groups.`,
-	RunE:    doBatchDelGroup,
+	Long: `Deletes a batch of groups where group details are provided in a text input file.
+	
+	Examples:	gmin batch-delete groups -i inputfile.txt
+			gmin bdel grps -i inputfile.txt
+			
+The input file should have the group email addresses, aliases or ids to be deleted on separate lines like this:
+
+oldsales@company.com
+oldaccounts@company.com
+unused_group@company.com`,
+	RunE: doBatchDelGroup,
 }
 
 func doBatchDelGroup(cmd *cobra.Command, args []string) error {

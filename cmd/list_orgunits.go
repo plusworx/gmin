@@ -39,8 +39,11 @@ var listOUsCmd = &cobra.Command{
 	Use:     "orgunits",
 	Aliases: []string{"orgunit", "ou", "ous"},
 	Short:   "Outputs a list of orgunits",
-	Long:    `Outputs a list of orgunits.`,
-	RunE:    doListOUs,
+	Long: `Outputs a list of orgunits.
+	
+	Examples:	gmin list orgunits -a description~orgunitpath
+			gmin ls ous -t all`,
+	RunE: doListOUs,
 }
 
 func doListOUs(cmd *cobra.Command, args []string) error {

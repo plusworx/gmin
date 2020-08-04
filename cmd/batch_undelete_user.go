@@ -40,8 +40,17 @@ var batchUndelUserCmd = &cobra.Command{
 	Use:     "users -i <input file path>",
 	Aliases: []string{"user"},
 	Short:   "Undeletes a batch of users",
-	Long:    `Undeletes a batch of users.`,
-	RunE:    doBatchUndelUser,
+	Long: `Undeletes a batch of users where user details are provided in a text input file.
+	
+	Examples:	gmin batch-undelete users -i inputfile.txt
+			gmin bund user -i inputfile.txt
+			
+	The input file should contain a list of user ids like this:
+	
+	417578192529765228417
+	308127142904731923463
+	107967172367714327529`,
+	RunE: doBatchUndelUser,
 }
 
 func doBatchUndelUser(cmd *cobra.Command, args []string) error {

@@ -40,7 +40,8 @@ var moveCrOSDevCmd = &cobra.Command{
 	Short:   "Moves a ChromeOS device to another orgunit",
 	Long: `Moves a ChromeOS device to another orgunit.
 	
-	Example: gmin move chromeosdevice 4cx07eba348f09b3 /Sales`,
+	Examples:	gmin move chromeosdevice 4cx07eba348f09b3 /Sales
+			gmin mv cdev 4cx07eba348f09b3 /IT`,
 	RunE: doMoveCrOSDev,
 }
 

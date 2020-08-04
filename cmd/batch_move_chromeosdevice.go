@@ -42,10 +42,16 @@ var batchMoveCrOSDevCmd = &cobra.Command{
 	Aliases: []string{"chromeosdevice", "crosdevices", "crosdevice", "cdevs", "cdev"},
 	Args:    cobra.ExactArgs(1),
 	Short:   "Moves a batch of ChromeOS devices to another orgunit",
-	Long: `Moves a batch of ChromeOS devices to another orgunit.
+	Long: `Moves a batch of ChromeOS devices to another orgunit where device details are provided in a text input file.
 	
-	Examples: gmin batch-move chromeosdevices /Sales -i inputfile.txt
-	          gmin bmove cdev /IT -i inputfile.txt`,
+	Examples:	gmin batch-move chromeosdevices /Sales -i inputfile.txt
+			gmin bmove cdev /IT -i inputfile.txt
+			
+	The input file should contain a list of device ids like this:
+	
+	5ac7be73-5996-394e-9c30-62d41a8f10e8
+	6ac9bd33-7095-453e-6c39-22d48a8f13e8
+	6bc4be13-9916-494e-9c39-62d45c8f40e9`,
 	RunE: doBatchMoveCrOSDev,
 }
 

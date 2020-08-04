@@ -37,8 +37,8 @@ var createGroupAliasCmd = &cobra.Command{
 	Short:   "Creates a group alias",
 	Long: `Creates a group alias.
 	
-	Examples: gmin create group-alias group.alias@mycompany.com finance@mycompany.com
-	          gmin crt ga group.alias@mycompany.com sales@mycompany.com`,
+	Examples:	gmin create group-alias group.alias@mycompany.com finance@mycompany.com
+			gmin crt ga group.alias@mycompany.com sales@mycompany.com`,
 	RunE: doCreateGroupAlias,
 }
 

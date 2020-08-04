@@ -41,8 +41,8 @@ var getUserCmd = &cobra.Command{
 	Short: "Outputs information about a user",
 	Long: `Outputs information about a user.
 	
-	Examples: gmin get user auser@mydomain.org
-	          gmin get user 12345678 -a primaryEmail`,
+	Examples:	gmin get user auser@mydomain.org
+			gmin get user 114361578941906491576 -a primaryEmail~name`,
 	RunE: doGetUser,
 }
 

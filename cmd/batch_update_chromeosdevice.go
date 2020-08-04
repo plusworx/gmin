@@ -43,10 +43,16 @@ var batchUpdCrOSDevCmd = &cobra.Command{
 	Use:     "chromeosdevices -i <input file>",
 	Aliases: []string{"chromeosdevice", "crosdevices", "crosdevice", "cdevs", "cdev"},
 	Short:   "Updates a batch of ChromeOS devices",
-	Long: `Updates a batch of ChromeOS devices.
+	Long: `Updates a batch of ChromeOS devices with device details provided by a JSON input file.
 	
-	Examples: gmin batch-update chromeosdevices -i inputfile.txt
-	          gmin bupd cdev -i inputfile.txt`,
+	Examples:	gmin batch-update chromeosdevices -i inputfile.json
+			gmin bupd cdev -i inputfile.json
+			
+	The JSON file should contain device update details like this:
+	
+	{"deviceId":"5ac7be43-5906-394e-7c39-62d45a8f10e8","annotatedAssetId":"CB1","annotatedLocation":"Batcave","annotatedUser":"Bruce Wayne","notes":"Test machine","orgUnitPath":"/Anticrime"}
+	{"deviceId":"4ac7be43-5906-394e-7c39-62d45a8f10e8","annotatedAssetId":"CB2","annotatedLocation":"Wayne Manor","annotatedUser":"Alfred Pennyworth","notes":"Another test machine","orgUnitPath":"/Anticorruption"}
+	{"deviceId":"3ac7be43-5906-394e-7c39-62d45a8f10e8","annotatedAssetId":"CB3","annotatedLocation":"Wayne Towers","annotatedUser":"The Big Enchilada","notes":"Yet another test machine","orgUnitPath":"/Legal"}`,
 	RunE: doBatchUpdCrOSDev,
 }
 

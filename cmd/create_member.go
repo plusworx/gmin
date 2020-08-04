@@ -38,8 +38,8 @@ var createMemberCmd = &cobra.Command{
 	Short:   "Makes a user a group member",
 	Long: `Makes a user a group member.
 	
-	Examples: gmin create group-member another.user@mycompany.com  office@mycompany.com -d NONE
-	          gmin crt gmem finance.person@mycompany.com finance@mycompany.com -r MEMBER`,
+	Examples:	gmin create group-member another.user@mycompany.com  office@mycompany.com -d NONE
+			gmin crt gmem finance.person@mycompany.com finance@mycompany.com -r MEMBER`,
 	RunE: doCreateMember,
 }
 

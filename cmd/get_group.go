@@ -40,8 +40,8 @@ var getGroupCmd = &cobra.Command{
 	Short:   "Outputs information about a group",
 	Long: `Outputs information about a group.
 	
-	Examples: gmin get group agroup@mydomain.org
-	          gmin get group 12345678 -a email`,
+	Examples:	gmin get group agroup@mydomain.org
+			gmin get grp 042yioqz3p5ulpk -a email`,
 	RunE: doGetGroup,
 }
 

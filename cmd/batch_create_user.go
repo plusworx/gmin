@@ -42,8 +42,17 @@ var batchCrtUserCmd = &cobra.Command{
 	Use:     "users -i <input file path>",
 	Aliases: []string{"user"},
 	Short:   "Creates a batch of users",
-	Long:    `Creates a batch of users.`,
-	RunE:    doBatchCrtUser,
+	Long: `Creates a batch of users where user details are provided in a JSON input file.
+	
+	Examples:	gmin batch-create users -i inputfile.json
+			gmin bcrt user -i inputfile.json
+			
+	The contents of the JSON file should look something like this:
+	
+	{"name":{"firstName":"Stan","familyName":"Laurel"},"primaryEmail":"stan.laurel@company.com","password":"SecretPassword","changePasswordAtNextLogin":true}
+	{"name":{"givenName":"Oliver","familyName":"Hardy"},"primaryEmail":"oliver.hardy@company.com","password":"SecretPassword","changePasswordAtNextLogin":true}
+	{"name":{"givenName":"Harold","familyName":"Lloyd"},"primaryEmail":"harold.lloyd@company.com","password":"SecretPassword","changePasswordAtNextLogin":true}`,
+	RunE: doBatchCrtUser,
 }
 
 func doBatchCrtUser(cmd *cobra.Command, args []string) error {

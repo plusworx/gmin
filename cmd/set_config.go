@@ -35,7 +35,11 @@ var setConfigCmd = &cobra.Command{
 	Use:     "config",
 	Aliases: []string{"cfg"},
 	Short:   "Sets gmin configuration information",
-	RunE:    doSetConfig,
+	Long: `Sets gmin configuration information.
+	
+	Examples:	gmin set config --admin my.admin@mycompany.org
+			gmin set cfg -a my.admin@mycompany.org`,
+	RunE: doSetConfig,
 }
 
 func doSetConfig(cmd *cobra.Command, args []string) error {

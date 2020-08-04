@@ -40,7 +40,8 @@ var getMemberCmd = &cobra.Command{
 	Short:   "Outputs information about a member of a group",
 	Long: `Outputs information about a member of a group.
 	
-	Examples: gmin get member 12345678 mygroup@mydomain.org -a email`,
+	Examples:	gmin get group-member 127987192327764327416 mygroup@mydomain.org -a email
+			gmin get gmem jack.black@mydomain.org mygroup@mydomain.org -a email`,
 	RunE: doGetMember,
 }
 

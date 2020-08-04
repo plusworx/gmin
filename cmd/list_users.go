@@ -41,8 +41,11 @@ var listUsersCmd = &cobra.Command{
 	Use:     "users",
 	Aliases: []string{"user"},
 	Short:   "Outputs a list of users",
-	Long:    `Outputs a list of users.`,
-	RunE:    doListUsers,
+	Long: `Outputs a list of users.
+	
+	Examples:	gmin list users -a primaryemail~addresses
+			gmin ls user -q name:Fred`,
+	RunE: doListUsers,
 }
 
 func doListUsers(cmd *cobra.Command, args []string) error {

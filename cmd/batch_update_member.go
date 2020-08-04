@@ -43,10 +43,16 @@ var batchUpdMemberCmd = &cobra.Command{
 	Aliases: []string{"group-member", "grp-members", "grp-member", "gmembers", "gmember", "gmems", "gmem"},
 	Args:    cobra.ExactArgs(1),
 	Short:   "Updates a batch of group members",
-	Long: `Updates a batch of group members.
+	Long: `Updates a batch of group members where group member details are provided in a JSON input file.
 	
-	Examples: gmin batch-update members anothergroup@mycompany.com -i inputfile.txt
-	          gmin bupd mem finance@mycompany.com -i inputfile.txt`,
+	Examples:	gmin batch-update group-members sales@mycompany.com -i inputfile.json
+			gmin bupd gmems engineering@mycompany.com -i inputfile.json
+			  
+	The contents of the JSON file should look something like this:
+	
+	{"email":"rudolph.brown@mycompany.com","delivery_settings":"DIGEST","role":"MANAGER"}
+	{"email":"emily.bronte@mycompany.com","delivery_settings":"DAILY","role":"MEMBER"}
+	{"email":"charles.dickens@mycompany.com","delivery_settings":"NONE","role":"MEMBER"}`,
 	RunE: doBatchUpdMember,
 }
 

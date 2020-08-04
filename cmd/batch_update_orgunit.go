@@ -43,10 +43,18 @@ var batchUpdOUCmd = &cobra.Command{
 	Use:     "orgunits -i <input file path>",
 	Aliases: []string{"orgunit", "ous", "ou"},
 	Short:   "Updates a batch of orgunits",
-	Long: `Updates a batch of orgunits.
+	Long: `Updates a batch of orgunits where orgunit details are provided in a JSON input file.
 	
-	Examples: gmin batch-update orgunits -i inputfile.txt
-	          gmin bupd ous -i inputfile.txt`,
+	Examples:	gmin batch-update orgunits -i inputfile.json
+			gmin bupd ous -i inputfile.json
+			  
+	The contents of the JSON file should look something like this:
+	
+	{"ouKey":"Credit","parentOrgUnitPath":"/Finance","name":"Credit_Control"}
+	{"ouKey":"Audit","parentOrgUnitPath":"/Finance","name":"Audit_Governance"}
+	{"ouKey":"Planning","parentOrgUnitPath":"/Finance","name":"Planning_Reporting"}
+	
+	N.B. ouKey (full orgunit path or id) must be provided`,
 	RunE: doBatchUpdOU,
 }
 

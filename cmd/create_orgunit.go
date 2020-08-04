@@ -36,10 +36,10 @@ var createOUCmd = &cobra.Command{
 	Aliases: []string{"ou"},
 	Args:    cobra.ExactArgs(1),
 	Short:   "Creates an orgunit",
-	Long: `Creates an orgunit .
+	Long: `Creates an orgunit.
 	
-	Examples: gmin create orgunit Sales
-	          gmin crt ou Finance`,
+	Examples:	gmin create orgunit Sales -d "Sales Department"
+			gmin crt ou Finance -d "Finance Department"`,
 	RunE: doCreateOU,
 }
 

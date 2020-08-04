@@ -40,8 +40,17 @@ var batchDelUserCmd = &cobra.Command{
 	Use:     "users -i <input file path>",
 	Aliases: []string{"user"},
 	Short:   "Deletes a batch of users",
-	Long:    `Deletes a batch of users.`,
-	RunE:    doBatchDelUser,
+	Long: `Deletes a batch of users where user details are provided in a text input file.
+	
+	Examples:	gmin batch-delete users -i inputfile.txt
+			gmin bdel user -i inputfile.txt
+			
+	The input file should have the user email addresses, aliases or ids to be deleted on separate lines like this:
+	
+	frank.castle@mycompany.com
+	bruce.wayne@mycompany.com
+	peter.parker@mycompany.com`,
+	RunE: doBatchDelUser,
 }
 
 func doBatchDelUser(cmd *cobra.Command, args []string) error {

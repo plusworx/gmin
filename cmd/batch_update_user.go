@@ -42,8 +42,19 @@ var batchUpdUserCmd = &cobra.Command{
 	Use:     "users -i <input file path>",
 	Aliases: []string{"user"},
 	Short:   "Updates a batch of users",
-	Long:    `Updates a batch of users.`,
-	RunE:    doBatchUpdUser,
+	Long: `Updates a batch of users where user details are provided in a JSON input file.
+	
+	Examples:	gmin batch-update users -i inputfile.json
+			gmin bupd user -i inputfile.json
+			  
+	The contents of the JSON file should look something like this:
+	
+	{"userKey":"stan.laurel@myorg.org","name":{"givenName":"Stanislav","familyName":"Laurelius"},"primaryEmail":"stanislav.laurelius@myorg.org","password":"SuperSuperSecretPassword","changePasswordAtNextLogin":true}
+	{"userKey":"oliver.hardy@myorg.org","name":{"givenName":"Oliviatus","familyName":"Hardium"},"primaryEmail":"oliviatus.hardium@myorg.org","password":"StealthySuperSecretPassword","changePasswordAtNextLogin":true}
+	{"userKey":"harold.lloyd@myorg.org","name":{"givenName":"Haroldus","familyName":"Lloydius"},"primaryEmail":"haroldus.lloydius@myorg.org","password":"MightySuperSecretPassword","changePasswordAtNextLogin":true}
+	
+	N.B. userKey (user email address, alias or id) must be provided.`,
+	RunE: doBatchUpdUser,
 }
 
 func doBatchUpdUser(cmd *cobra.Command, args []string) error {

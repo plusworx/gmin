@@ -38,8 +38,8 @@ var updateMemberCmd = &cobra.Command{
 	Short:   "Updates a group member",
 	Long: `Updates a group member.
 	
-	Examples: gmin update group-member another.user@mycompany.com office@mycompany.com -d DAILY
-	          gmin upd gmem finance.person@mycompany.com finance@mycompany.com -r MEMBER`,
+	Examples:	gmin update group-member another.user@mycompany.com office@mycompany.com -d DAILY
+			gmin upd gmem finance.person@mycompany.com finance@mycompany.com -r MEMBER`,
 	RunE: doUpdateMember,
 }
 

@@ -42,8 +42,19 @@ var batchUpdGrpCmd = &cobra.Command{
 	Use:     "groups -i <input file path>",
 	Aliases: []string{"group", "grps", "grp"},
 	Short:   "Updates a batch of groups",
-	Long:    `Updates a batch of groups.`,
-	RunE:    doBatchUpdGrp,
+	Long: `Updates a batch of groups where group details are provided in a JSON input file.
+	
+	Examples:	gmin batch-update groups -i inputfile.json
+			gmin bupd grps -i inputfile.json
+			  
+	The contents of the JSON file should look something like this:
+	
+	{"groupKey":"034gixby5n7pqal","email":"testgroup@mycompany.com","name":"Testing","description":"This is a testing group for all your testing needs."}
+	{"groupKey":"032hioqz3p4ulyk","email":"info@mycompany.com","name":"Information","description":"Group for responding to general queries."}
+	{"groupKey":"045fijmz6w8nkqc","email":"webmaster@mycompany.com","name":"Webmaster","description":"Group for responding to website queries."}
+
+N.B. groupKey (group email address, alias or id) must be provided.`,
+	RunE: doBatchUpdGrp,
 }
 
 func doBatchUpdGrp(cmd *cobra.Command, args []string) error {

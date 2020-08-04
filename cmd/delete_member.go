@@ -35,8 +35,11 @@ var deleteMemberCmd = &cobra.Command{
 	Aliases: []string{"grp-member", "grp-mem", "gmember", "gmem"},
 	Args:    cobra.ExactArgs(2),
 	Short:   "Deletes member of a group",
-	Long:    `Deletes member of a group.`,
-	RunE:    doDeleteMember,
+	Long: `Deletes member of a group.
+	
+	Examples:	gmin delete group-member mymember@mycompany.org mygroup@mycompany.org
+			gmin del gmem mymember@mycompany.org mygroup@mycompany.org`,
+	RunE: doDeleteMember,
 }
 
 func doDeleteMember(cmd *cobra.Command, args []string) error {

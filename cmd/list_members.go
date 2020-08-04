@@ -40,8 +40,11 @@ var listMembersCmd = &cobra.Command{
 	Aliases: []string{"group-member", "grp-members", "grp-member", "grp-mems", "grp-mem", "gmembers", "gmember", "gmems", "gmem"},
 	Args:    cobra.ExactArgs(1),
 	Short:   "Outputs a list of group members",
-	Long:    `Outputs a list of group members. Must specify a group email address or id.`,
-	RunE:    doListMembers,
+	Long: `Outputs a list of group members. Must specify a group email address or id.
+	
+	Examples:	gmin list group-members mygroup@mycompany.com -r OWNER~MANAGER
+			gmin ls gmems mygroup@mycompany.com -a email`,
+	RunE: doListMembers,
 }
 
 func doListMembers(cmd *cobra.Command, args []string) error {
