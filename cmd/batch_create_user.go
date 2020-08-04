@@ -33,6 +33,7 @@ import (
 
 	"github.com/cenkalti/backoff/v4"
 	cmn "github.com/plusworx/gmin/utils/common"
+	usrs "github.com/plusworx/gmin/utils/users"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 )
@@ -41,8 +42,17 @@ var batchCrtUserCmd = &cobra.Command{
 	Use:     "users -i <input file path>",
 	Aliases: []string{"user"},
 	Short:   "Creates a batch of users",
-	Long:    `Creates a batch of users.`,
-	RunE:    doBatchCrtUser,
+	Long: `Creates a batch of users where user details are provided in a JSON input file.
+	
+	Examples:	gmin batch-create users -i inputfile.json
+			gmin bcrt user -i inputfile.json
+			
+	The contents of the JSON file should look something like this:
+	
+	{"name":{"firstName":"Stan","familyName":"Laurel"},"primaryEmail":"stan.laurel@company.com","password":"SecretPassword","changePasswordAtNextLogin":true}
+	{"name":{"givenName":"Oliver","familyName":"Hardy"},"primaryEmail":"oliver.hardy@company.com","password":"SecretPassword","changePasswordAtNextLogin":true}
+	{"name":{"givenName":"Harold","familyName":"Lloyd"},"primaryEmail":"harold.lloyd@company.com","password":"SecretPassword","changePasswordAtNextLogin":true}`,
+	RunE: doBatchCrtUser,
 }
 
 func doBatchCrtUser(cmd *cobra.Command, args []string) error {
@@ -78,7 +88,8 @@ func doBatchCrtUser(cmd *cobra.Command, args []string) error {
 
 			if strings.Contains(err.Error(), "Missing required field") ||
 				strings.Contains(err.Error(), "invalid character") ||
-				strings.Contains(err.Error(), "Entity already exists") {
+				strings.Contains(err.Error(), "Entity already exists") ||
+				strings.Contains(err.Error(), "should be") {
 				return backoff.Permanent(err)
 			}
 
@@ -102,10 +113,31 @@ func createUser(ds *admin.Service, jsonData string) error {
 	user = new(admin.User)
 	jsonBytes := []byte(jsonData)
 
-	err := json.Unmarshal(jsonBytes, &user)
+	if !json.Valid(jsonBytes) {
+		return errors.New("gmin: error - attribute string is not valid JSON")
+	}
+
+	outStr, err := cmn.ParseInputAttrs(jsonBytes)
 	if err != nil {
 		return err
 	}
+
+	err = cmn.ValidateInputAttrs(outStr, usrs.UserAttrMap)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(jsonBytes, &user)
+	if err != nil {
+		return err
+	}
+
+	user.HashFunction = cmn.HashFunction
+	pwd, err := cmn.HashPassword(user.Password)
+	if err != nil {
+		return err
+	}
+	user.Password = pwd
 
 	uic := ds.Users.Insert(user)
 	newUser, err := uic.Do()
@@ -113,7 +145,7 @@ func createUser(ds *admin.Service, jsonData string) error {
 		return err
 	}
 
-	fmt.Println("**** user " + newUser.PrimaryEmail + " created ****")
+	fmt.Println("**** gmin: user " + newUser.PrimaryEmail + " created ****")
 
 	return nil
 }

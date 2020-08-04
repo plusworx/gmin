@@ -29,6 +29,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/jinzhu/copier"
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
 	usrs "github.com/plusworx/gmin/utils/users"
@@ -40,16 +41,19 @@ var listUsersCmd = &cobra.Command{
 	Use:     "users",
 	Aliases: []string{"user"},
 	Short:   "Outputs a list of users",
-	Long:    `Outputs a list of users.`,
-	RunE:    doListUsers,
+	Long: `Outputs a list of users.
+	
+	Examples:	gmin list users -a primaryemail~addresses
+			gmin ls user -q name:Fred`,
+	RunE: doListUsers,
 }
 
 func doListUsers(cmd *cobra.Command, args []string) error {
 	var (
-		formattedAttrs string
-		users          *admin.Users
-		validAttrs     []string
-		validOrderBy   string
+		jsonData     []byte
+		newUsers     = usrs.GminUsers{}
+		users        *admin.Users
+		validOrderBy string
 	)
 
 	if query != "" && deleted {
@@ -65,12 +69,12 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 	ulc := ds.Users.List()
 
 	if attrs != "" {
-		validAttrs, err = cmn.ValidateArgs(attrs, usrs.UserAttrMap, cmn.AttrStr)
+		listAttrs, err := cmn.ParseOutputAttrs(attrs, usrs.UserAttrMap)
 		if err != nil {
 			return err
 		}
+		formattedAttrs := usrs.StartUsersField + listAttrs + usrs.EndField
 
-		formattedAttrs = usrs.FormatAttrs(validAttrs, false)
 		listCall := usrs.AddFields(ulc, formattedAttrs)
 		ulc = listCall.(*admin.UsersListCall)
 	}
@@ -98,10 +102,21 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 
 		listCall := usrs.AddProjection(ulc, proj)
 		ulc = listCall.(*admin.UsersListCall)
+
+		if proj == "custom" {
+			if customField != "" {
+				cFields := cmn.ParseCustomField(customField)
+				mask := strings.Join(cFields, ",")
+				listCall := usrs.AddCustomFieldMask(ulc, mask)
+				ulc = listCall.(*admin.UsersListCall)
+			} else {
+				return errors.New("gmin: error - please provide a custom field mask for custom projection")
+			}
+		}
 	}
 
 	if query != "" {
-		formattedQuery, err := usrProcessQuery(query)
+		formattedQuery, err := cmn.ParseQuery(query, usrs.QueryAttrMap)
 		if err != nil {
 			return err
 		}
@@ -164,12 +179,25 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	jsonData, err := json.MarshalIndent(users, "", "    ")
-	if err != nil {
-		return err
+	if attrs == "" {
+		copier.Copy(&newUsers, users)
+
+		jsonData, err = json.MarshalIndent(newUsers, "", "    ")
+		if err != nil {
+			return err
+		}
+	} else {
+		jsonData, err = json.MarshalIndent(users, "", "    ")
+		if err != nil {
+			return err
+		}
 	}
 
-	fmt.Println(string(jsonData))
+	if count {
+		fmt.Println(len(users.Users))
+	} else {
+		fmt.Println(string(jsonData))
+	}
 
 	return nil
 }
@@ -239,8 +267,10 @@ func init() {
 	listCmd.AddCommand(listUsersCmd)
 
 	listUsersCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required user attributes (separated by ~)")
+	listUsersCmd.Flags().BoolVarP(&count, "count", "", false, "count number of entities returned")
+	listUsersCmd.Flags().StringVarP(&customField, "customfieldmask", "c", "", "custom field mask schemas (separated by ~)")
 	listUsersCmd.Flags().StringVarP(&domain, "domain", "d", "", "domain from which to get users")
-	listUsersCmd.Flags().Int64VarP(&maxResults, "maxresults", "m", 500, "maximum number of results to return")
+	listUsersCmd.Flags().Int64VarP(&maxResults, "maxresults", "m", 500, "maximum number of results to return per page")
 	listUsersCmd.Flags().StringVarP(&orderBy, "orderby", "o", "", "field by which results will be ordered")
 	listUsersCmd.Flags().StringVarP(&pages, "pages", "p", "", "number of pages of results to be returned")
 	listUsersCmd.Flags().StringVarP(&projection, "projection", "j", "", "type of projection")
@@ -249,15 +279,4 @@ func init() {
 	listUsersCmd.Flags().StringVarP(&viewType, "viewtype", "v", "", "data view type")
 	listUsersCmd.Flags().BoolVarP(&deleted, "deleted", "x", false, "show deleted users")
 
-}
-
-func usrProcessQuery(query string) (string, error) {
-	queryParts, err := cmn.ValidateQuery(query, usrs.QueryAttrMap)
-	if err != nil {
-		return "", err
-	}
-
-	formattedQuery := strings.Join(queryParts, " ")
-
-	return formattedQuery, nil
 }

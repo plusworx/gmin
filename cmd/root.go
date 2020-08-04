@@ -26,23 +26,28 @@ import (
 	"log"
 
 	"github.com/mitchellh/go-homedir"
+	cfg "github.com/plusworx/gmin/utils/config"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
 var (
 	adminEmail       string
+	assetID          string
 	attrs            string
 	archived         bool
 	blockInherit     bool
 	cfgFile          string
 	credentialPath   string
 	changePassword   bool
+	count            bool
 	customerID       string
+	customField      string
 	deleted          bool
 	deliverySetting  string
 	domain           string
 	firstName        string
+	forceSend        string
 	gal              bool
 	group            string
 	groupDesc        string
@@ -50,9 +55,11 @@ var (
 	groupName        string
 	inputFile        string
 	lastName         string
+	location         string
 	maxResults       int64
 	noChangePassword bool
 	noGAL            bool
+	notes            string
 	orderBy          string
 	orgUnit          string
 	orgUnitDesc      string
@@ -62,6 +69,7 @@ var (
 	password         string
 	projection       string
 	query            string
+	reason           string
 	recoveryEmail    string
 	recoveryPhone    string
 	role             string
@@ -81,7 +89,7 @@ var rootCmd = &cobra.Command{
 	Long: `gmin is a commandline interface (CLI) that enables the 
 	administration of G Suite domains. It aims to provide tools that
 	make G Suite administration from the commandline more manageable.`,
-	Version: "v0.4.0",
+	Version: "v0.5.0",
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -98,6 +106,8 @@ func init() {
 }
 
 func initConfig() {
+	viper.SetEnvPrefix(cfg.EnvPrefix)
+
 	if cfgFile != "" {
 		viper.SetConfigFile(cfgFile)
 	} else {
@@ -107,8 +117,9 @@ func initConfig() {
 		}
 
 		viper.AddConfigPath(home)
-		viper.SetConfigName(".gmin")
+		viper.SetConfigName(cfg.ConfigFilePrefix)
 	}
 
+	viper.AutomaticEnv()
 	viper.ReadInConfig()
 }

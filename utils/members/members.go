@@ -31,9 +31,96 @@ import (
 )
 
 const (
-	endField          string = ")"
-	startMembersField string = "members("
+	// EndField is List call attribute string terminator
+	EndField string = ")"
+	// StartMembersField is List call attribute string prefix
+	StartMembersField string = "members("
 )
+
+// GminMember is custom admin.Member struct with no omitempty tags
+type GminMember struct {
+	// DeliverySettings: Delivery settings of member
+	DeliverySettings string `json:"delivery_settings"`
+
+	// Email: Email of member (Read-only)
+	Email string `json:"email"`
+
+	// Etag: ETag of the resource.
+	Etag string `json:"etag"`
+
+	// Id: The unique ID of the group member. A member id can be used as a
+	// member request URI's memberKey. Unique identifier of group
+	// (Read-only) Unique identifier of member (Read-only)
+	Id string `json:"id"`
+
+	// Kind: Kind of resource this is.
+	Kind string `json:"kind"`
+
+	// Role: Role of member
+	Role string `json:"role"`
+
+	// Status: Status of member (Immutable)
+	Status string `json:"status"`
+
+	// Type: Type of member (Immutable)
+	Type string `json:"type"`
+
+	// ServerResponse contains the HTTP response code and headers from the
+	// server.
+	googleapi.ServerResponse `json:"-"`
+
+	// ForceSendFields is a list of field names (e.g. "DeliverySettings") to
+	// unconditionally include in API requests. By default, fields with
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
+	ForceSendFields []string `json:"-"`
+
+	// NullFields is a list of field names (e.g. "DeliverySettings") to
+	// include in API requests with the JSON null value. By default, fields
+	// with empty values are omitted from API requests. However, any field
+	// with an empty value appearing in NullFields will be sent to the
+	// server as null. It is an error if a field in this list has a
+	// non-empty value. This may be used to include null fields in Patch
+	// requests.
+	NullFields []string `json:"-"`
+}
+
+// GminMembers is custom admin.Members struct containing GminMember
+type GminMembers struct {
+	// Etag: ETag of the resource.
+	Etag string `json:"etag,omitempty"`
+
+	// Kind: Kind of resource this is.
+	Kind string `json:"kind,omitempty"`
+
+	// Members: List of member objects.
+	Members []*GminMember `json:"members,omitempty"`
+
+	// NextPageToken: Token used to access next page of this result.
+	NextPageToken string `json:"nextPageToken,omitempty"`
+
+	// ServerResponse contains the HTTP response code and headers from the
+	// server.
+	googleapi.ServerResponse `json:"-"`
+
+	// ForceSendFields is a list of field names (e.g. "Etag") to
+	// unconditionally include in API requests. By default, fields with
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
+	ForceSendFields []string `json:"-"`
+
+	// NullFields is a list of field names (e.g. "Etag") to include in API
+	// requests with the JSON null value. By default, fields with empty
+	// values are omitted from API requests. However, any field with an
+	// empty value appearing in NullFields will be sent to the server as
+	// null. It is an error if a field in this list has a non-empty value.
+	// This may be used to include null fields in Patch requests.
+	NullFields []string `json:"-"`
+}
 
 // deliverySettingMap provides lowercase mappings to valid admin.Member delivery settings
 var deliverySettingMap = map[string]string{
@@ -46,14 +133,14 @@ var deliverySettingMap = map[string]string{
 
 // MemberAttrMap provides lowercase mappings to valid admin.Member attributes
 var MemberAttrMap = map[string]string{
-	"deliverysettings": "deliverySettings",
-	"email":            "email",
-	"etag":             "etag",
-	"id":               "id",
-	"kind":             "kind",
-	"role":             "role",
-	"status":           "status",
-	"type":             "type",
+	"delivery_settings": "delivery_settings",
+	"email":             "email",
+	"etag":              "etag",
+	"id":                "id",
+	"kind":              "kind",
+	"role":              "role",
+	"status":            "status",
+	"type":              "type",
 }
 
 // RoleMap provides lowercase mappings to valid admin.Member roles
@@ -130,26 +217,6 @@ func DoList(mlc *admin.MembersListCall) (*admin.Members, error) {
 	}
 
 	return members, nil
-}
-
-// FormatAttrs formats attributes for admin.MembersListCall.Fields, admin.MembersListCall.Roles and admin.MembersGetCall.Fields calls
-func FormatAttrs(attrs []string, get bool) string {
-	var (
-		outputStr    string
-		memberFields []string
-	)
-
-	for _, a := range attrs {
-		memberFields = append(memberFields, a)
-	}
-
-	if get {
-		outputStr = strings.Join(memberFields, ",")
-	} else {
-		outputStr = startMembersField + strings.Join(memberFields, ",") + endField
-	}
-
-	return outputStr
 }
 
 // ValidateDeliverySetting checks that a valid delivery setting has been provided

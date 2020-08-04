@@ -31,12 +31,20 @@ https://www.googleapis.com/auth/admin.directory.group.member
 ```
 
 5. Copy/move the gmin binary to a convenient directory/folder and rename the JSON key file, downloaded earlier, to 'gmin_credentials'. Place in a directory/folder suitable for your environment.
-6. Run the command `gmin init` and enter the required information.
+6. Run the command `gmin init` and enter the required information:
 
 * Email address of the admin whose privileges will be used (mandatory).
 * Path where config file, .gmin.yaml, will be written. Default is current user's home directory. If you choose a different installation path to the default for the config file then that path will need to be given with each gmin command by using the --config flag.
 * Path where service account credentials json file is stored. File must be named 'gmin_credentials'. Default is current user's home directory.
 * Customer ID. Default is 'my_customer'.
+
+Alternatively, you can provide the required information with environment variables:
+
+* GMIN_ADMINISTRATOR
+* GMIN_CREDENTIALPATH
+* GMIN_CUSTOMERID
+
+N.B. If both a config file and environment variables exist then the environment variables take precedence.
 
 7. To see the version number of your gmin binary, run the command `gmin -v` or `gmin --version`.
 8. To get help from gmin itself, enter `gmin -h` or `gmin --help` and go from there.
@@ -60,6 +68,18 @@ with abbreviations the command would look like this -
 
 `gmin crt user new.user@mydomain.com -f New -l User -p MyStrongPassword`
 
+The user object has a lot of attributes and there are only flags for the most commonly-used ones. However, you can set any user attribute via the attributes (-a or --attributes) flag by providing a JSON string.
+
+Therefore the user above could be created by using the following command -
+
+`gmin create user new.user@domain.com -a '{"name":{"givenName":"New","familyName":"User"},"password":"MyStrongPassword"}'`
+
+When creating objects, values provided by the attributes flag are overriden by attributes provided by other flags. For example -
+
+`gmin crt user d.williams@mycompany.org -f Danny -l Williams -p SuperSecretPwd -a '{"name":{"givenName":"Douglas"}}'`
+
+would result in a user whose first name is Danny not Douglas.
+
 **Get a user**
 
 `gmin get user new.user@mydomain.com`
@@ -70,7 +90,7 @@ This command results in all user information being returned. If I only want thei
 
 If I only want a particular part of the address, because address is made up of other attributes, I could say something like -
 
-`gmin get user new.user@mydomain.com -a addresses(formatted)`
+`gmin get user new.user@mydomain.com -a "addresses(formatted)"`
 
 **List users**
 
@@ -96,30 +116,15 @@ There are no warnings issued by the delete command so use it carefully.
 
 This allows you to restore a user that has been deleted.
 
-**Attributes Flag**
+### Attributes Flag
 
-Some commands have an attribute flag (-a or --attributes) where you can specify object attributes that you want to provide or that you want to see. For instance, where you are creating a user you can provide all or some of the user attributes that you want to create the user with via the attribute flag.
+**Get and list commands**
 
-Attributes are written in a particular format similar to but simpler than JSON. The rules are as follows -
-
-* Attribute names and values are separated by the colon character (:)
-* Attributes are separated by the tilde character (~)
-* If any attributes contain spaces then the whole attribute string after the -a or --attributes will need to be quoted and you will also need to use quotes around values that contain spaces
-* Composite attributes, those that have other attributes contained within them, have their values contained within {} braces
-
-Therefore the user above could be created by using the following command -
-
-`gmin create user new.user@domain.com -a name:{firstname:New~lastname:User}~password:MyStrongPassword`
-
-When creating objects, values provided by the attributes flag override attributes provided by other flags. For example -
-
-`gmin crt user d.williams@mycompany.org -f Danny -l Williams -p SuperSecretPwd -a name:{firstname:Douglas}`
-
-would result in a user whose first name is Douglas not Danny.
+These commands have an attribute flag (-a or --attributes) where you can specify particular object attributes that you want to see in the results. If the attribute is not present (including false or empty) then it will not be displayed.
 
 https://developers.google.com/admin-sdk/directory/v1/reference is a useful resource for looking up valid attribute names and values.
 
-**Query Flag**
+### Query Flag
 
 Some commands have a query flag (-q or --query) where you can specify query clauses to filter the returned results by. For instance, you might want to retrieve a list of users that have certain attributes -
 
@@ -147,9 +152,9 @@ https://developers.google.com/admin-sdk/directory/v1/get-start/getting-started i
 * Maybe there are other people who might benefit from gmin
 
 ## Project Status
-gmin is pretty young which means that it is liable to rapid change, although the command syntax is unlikely to change much (if at all) over time. The functionality is currently limited to the Admin SDK API and the group, group alias, group member, organisation unit, user and user alias objects but additional functionality will be added frequently when it is ready.
+gmin is pretty young which means that it is liable to rapid change, although the command syntax is unlikely to change much (if at all) over time. The functionality is currently limited to the Admin SDK directory API but additional functionality will be added frequently when it is ready.
 
-All output is in JSON format apart from informational and error messages. Output in other formats such as CSV is on the roadmap, however, I have found the use of the jq utility (https://stedolan.github.io/jq/) can be a great help in working with JSON.
+All output is in JSON format apart from informational and error messages. Input and output in other formats such as CSV is on the roadmap, however, I have found the use of the jq utility (https://stedolan.github.io/jq/) can be a great help in working with JSON.
 
 I have published a [development roadmap](https://github.com/plusworx/gmin/wiki/Development-Roadmap) and welcome any suggestions as to the most important features to add. A [wiki](https://github.com/plusworx/gmin/wiki) has also been started which contains the roadmap.
 

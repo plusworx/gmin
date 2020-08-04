@@ -34,8 +34,11 @@ var deleteUserCmd = &cobra.Command{
 	Use:   "user <email address or id>",
 	Args:  cobra.ExactArgs(1),
 	Short: "Deletes user",
-	Long:  `Deletes user.`,
-	RunE:  doDeleteUser,
+	Long: `Deletes user.
+	
+	Examples:	gmin delete user myuser@mycompany.com
+			gmin del user myuser@mycompany.com`,
+	RunE: doDeleteUser,
 }
 
 func doDeleteUser(cmd *cobra.Command, args []string) error {

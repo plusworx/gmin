@@ -27,6 +27,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/jinzhu/copier"
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
 	ous "github.com/plusworx/gmin/utils/orgunits"
@@ -38,14 +39,18 @@ var listOUsCmd = &cobra.Command{
 	Use:     "orgunits",
 	Aliases: []string{"orgunit", "ou", "ous"},
 	Short:   "Outputs a list of orgunits",
-	Long:    `Outputs a list of orgunits.`,
-	RunE:    doListOUs,
+	Long: `Outputs a list of orgunits.
+	
+	Examples:	gmin list orgunits -a description~orgunitpath
+			gmin ls ous -t all`,
+	RunE: doListOUs,
 }
 
 func doListOUs(cmd *cobra.Command, args []string) error {
 	var (
-		orgUnits   *admin.OrgUnits
-		validAttrs []string
+		jsonData    []byte
+		newOrgUnits = ous.GminOrgUnits{}
+		orgUnits    *admin.OrgUnits
 	)
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryOrgunitReadonlyScope)
@@ -61,12 +66,12 @@ func doListOUs(cmd *cobra.Command, args []string) error {
 	oulc := ds.Orgunits.List(customerID)
 
 	if attrs != "" {
-		validAttrs, err = cmn.ValidateArgs(attrs, ous.OrgUnitAttrMap, cmn.AttrStr)
+		listAttrs, err := cmn.ParseOutputAttrs(attrs, ous.OrgUnitAttrMap)
 		if err != nil {
 			return err
 		}
+		formattedAttrs := ous.StartOrgUnitsField + listAttrs + ous.EndField
 
-		formattedAttrs := ous.FormatAttrs(validAttrs, false)
 		listCall := ous.AddFields(oulc, formattedAttrs)
 		oulc = listCall.(*admin.OrgunitsListCall)
 	}
@@ -89,12 +94,25 @@ func doListOUs(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	jsonData, err := json.MarshalIndent(orgUnits, "", "    ")
-	if err != nil {
-		return err
+	if attrs == "" {
+		copier.Copy(&newOrgUnits, orgUnits)
+
+		jsonData, err = json.MarshalIndent(newOrgUnits, "", "    ")
+		if err != nil {
+			return err
+		}
+	} else {
+		jsonData, err = json.MarshalIndent(orgUnits, "", "    ")
+		if err != nil {
+			return err
+		}
 	}
 
-	fmt.Println(string(jsonData))
+	if count {
+		fmt.Println(len(orgUnits.OrganizationUnits))
+	} else {
+		fmt.Println(string(jsonData))
+	}
 
 	return nil
 }
@@ -103,6 +121,7 @@ func init() {
 	listCmd.AddCommand(listOUsCmd)
 
 	listOUsCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required orgunit attributes separated by (~)")
+	listOUsCmd.Flags().BoolVarP(&count, "count", "", false, "count number of entities returned")
 	listOUsCmd.Flags().StringVarP(&orgUnit, "orgunitpath", "o", "", "orgunitpath or id of starting orgunit")
 	listOUsCmd.Flags().StringVarP(&searchType, "type", "t", "children", "all sub-organizational units or only immediate children")
 }

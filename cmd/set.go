@@ -23,57 +23,20 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"fmt"
-
-	valid "github.com/asaskevich/govalidator"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 var setCmd = &cobra.Command{
-	Use:   "set",
-	Short: "Sets gmin configuration information",
-	RunE:  doSet,
+	Use:     "set",
+	Aliases: []string{"set"},
+	Short:   "Sets configuration values",
+	Run:     doSet,
 }
 
-func doSet(cmd *cobra.Command, args []string) error {
-	if customerID != "" {
-		viper.Set("customerid", customerID)
-		err := viper.WriteConfig()
-		if err != nil {
-			return err
-		}
-		fmt.Printf("**** gmin: customer id set to %v ****\n", customerID)
-	}
-
-	if adminEmail != "" {
-		ok := valid.IsEmail(adminEmail)
-		if !ok {
-			return fmt.Errorf("gmin: error - %v is not a valid email address", adminEmail)
-		}
-		viper.Set("administrator", adminEmail)
-		err := viper.WriteConfig()
-		if err != nil {
-			return err
-		}
-		fmt.Printf("**** gmin: administrator set to %v ****\n", adminEmail)
-	}
-
-	if credentialPath != "" {
-		viper.Set("credentialpath", credentialPath)
-		err := viper.WriteConfig()
-		if err != nil {
-			return err
-		}
-		fmt.Printf("**** gmin: service account credential path set to %v ****\n", credentialPath)
-	}
-	return nil
+func doSet(cmd *cobra.Command, args []string) {
+	cmd.Help()
 }
 
 func init() {
 	rootCmd.AddCommand(setCmd)
-
-	setCmd.Flags().StringVarP(&adminEmail, "admin", "a", "", "administrator email address")
-	setCmd.Flags().StringVarP(&customerID, "customerid", "c", "", "customer id for domain")
-	setCmd.Flags().StringVarP(&credentialPath, "credentialpath", "p", "", "service account credential file path")
 }

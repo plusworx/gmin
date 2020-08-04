@@ -32,24 +32,24 @@ import (
 )
 
 var updateOUCmd = &cobra.Command{
-	Use:     "orgunit <orgunit full path or id>",
+	Use:     "orgunit <orgunit path or id>",
 	Aliases: []string{"ou"},
 	Args:    cobra.ExactArgs(1),
 	Short:   "Updates an orgunit",
 	Long: `Updates an orgunit .
 	
-	Examples: gmin update orgunit Sales -n "New Name" -d "New description"
-	          gmin upd ou /Company/Aerodynamics -p /Company/Engineering`,
+	Examples:	gmin update orgunit Sales -n "New Name" -d "New description"
+			gmin upd ou Engineering/Aerodynamics -p Engineering/Aeronautics`,
 	RunE: doUpdateOU,
 }
 
 func doUpdateOU(cmd *cobra.Command, args []string) error {
 	var (
 		orgunit *admin.OrgUnit
-		ouPath  []string
+		ouPath  = []string{}
 	)
 
-	ouPath[0] = args[0]
+	ouPath = append(ouPath, args[0])
 	orgunit = new(admin.OrgUnit)
 
 	if orgUnitName != "" {
@@ -62,6 +62,7 @@ func doUpdateOU(cmd *cobra.Command, args []string) error {
 
 	if unblockInherit {
 		orgunit.BlockInheritance = false
+		orgunit.ForceSendFields = append(orgunit.ForceSendFields, "BlockInheritance")
 	}
 
 	if orgUnitDesc != "" {
@@ -88,7 +89,7 @@ func doUpdateOU(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Println("**** orgunit " + args[0] + " updated ****")
+	fmt.Println("**** gmin: orgunit " + args[0] + " updated ****")
 
 	return nil
 }

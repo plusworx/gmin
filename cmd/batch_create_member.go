@@ -42,8 +42,17 @@ var batchCrtMemberCmd = &cobra.Command{
 	Aliases: []string{"group-member", "grp-members", "grp-member", "gmembers", "gmember", "gmems", "gmem"},
 	Args:    cobra.ExactArgs(1),
 	Short:   "Creates a batch of group members",
-	Long:    `Creates a batch of group members.`,
-	RunE:    doBatchCrtMember,
+	Long: `Creates a batch of group members where group member details are provided in a JSON input file.
+	
+	Examples:	gmin batch-create group-members engineering@mycompany.com -i inputfile.json
+			gmin bcrt gmems engineering@mycompany.com -i inputfile.json
+			
+	The contents of the JSON file should look something like this:
+	
+	{"deliverySettings":"DIGEST","email":"kayden.yundt@mycompany.com","role":"MEMBER"}
+	{"deliverySettings":"ALL_MAIL","email":"kenyatta.tillman@mycompany.com","role":"MANAGER"}
+	{"deliverySettings":"DAILY","email":"keon.stroman@mycompany.com","role":"MEMBER"}`,
+	RunE: doBatchCrtMember,
 }
 
 func doBatchCrtMember(cmd *cobra.Command, args []string) error {
@@ -115,7 +124,7 @@ func createMember(ds *admin.Service, group string, jsonData string) error {
 		return err
 	}
 
-	fmt.Println("**** member " + newMember.Email + " created in group " + group + " ****")
+	fmt.Println("**** gmin: member " + newMember.Email + " created in group " + group + " ****")
 
 	return nil
 }

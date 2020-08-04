@@ -36,8 +36,10 @@ var undeleteUserCmd = &cobra.Command{
 	Short: "Undeletes user",
 	Long: `Undeletes user and reinstates to specified orgunit.
 	
-	Examples: gmin undelete user 12345678
-	          gmin undelete user 12345678 -o /Marketing`,
+	Examples:	gmin undelete user 417578192529765228417
+			gmin und user 308127142904731923463 -o /Marketing
+			  
+	N.B. Must use id and not email address.`,
 	RunE: doUndeleteUser,
 }
 

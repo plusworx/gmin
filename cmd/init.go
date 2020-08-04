@@ -38,9 +38,8 @@ import (
 var initCmd = &cobra.Command{
 	Use:   "init",
 	Short: "Creates gmin config file",
-	Long: `Asks for admin email address and config file path and creates gmin
-	configuration file (.gmin.yaml) in the default location,
-	which is the home directory of the user, or at the specified path.`,
+	Long: `Asks for admin email address, credentials path, customer id and config file path before creating gmin
+configuration file (.gmin.yaml) in the default location (the home directory of the user) or at the specified path.`,
 	RunE: doInit,
 }
 
@@ -153,12 +152,12 @@ func doInit(cmd *cobra.Command, args []string) error {
 	}
 
 	if answers.CustomerID == "" {
-		answers.CustomerID = "my_customer"
+		answers.CustomerID = cfg.DefaultCustID
 	}
 
 	cfgFile := cfg.File{Administrator: answers.AdminEmail, CredentialPath: answers.CredentialPath, CustomerID: answers.CustomerID}
 
-	path := filepath.Join(filepath.ToSlash(answers.ConfigPath), cfg.ConfigFile)
+	path := filepath.Join(filepath.ToSlash(answers.ConfigPath), cfg.ConfigFileName)
 
 	cfgYaml, err := yaml.Marshal(&cfgFile)
 	if err != nil {

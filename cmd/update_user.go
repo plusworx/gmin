@@ -23,8 +23,11 @@ THE SOFTWARE.
 package cmd
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
 
+	"github.com/imdario/mergo"
 	cmn "github.com/plusworx/gmin/utils/common"
 	usrs "github.com/plusworx/gmin/utils/users"
 	"github.com/spf13/cobra"
@@ -37,8 +40,8 @@ var updateUserCmd = &cobra.Command{
 	Short: "Updates a user",
 	Long: `Updates a user.
 	
-	Examples: gmin update user another.user@mycompany.com -p strongpassword -s
-	          gmin upd user finance.person@mycompany.com -l Newlastname`,
+	Examples:	gmin update user another.user@mycompany.com -p strongpassword -s
+			gmin upd user finance.person@mycompany.com -l Newlastname`,
 	RunE: doUpdateUser,
 }
 
@@ -53,12 +56,31 @@ func doUpdateUser(cmd *cobra.Command, args []string) error {
 	user = new(admin.User)
 	name = new(admin.UserName)
 
+	if changePassword {
+		user.ChangePasswordAtNextLogin = true
+	}
+
 	if firstName != "" {
 		name.GivenName = firstName
 	}
 
+	if forceSend != "" {
+		fields, err := cmn.ParseForceSend(forceSend, usrs.UserAttrMap)
+		if err != nil {
+			return err
+		}
+
+		for _, f := range fields {
+			user.ForceSendFields = append(user.ForceSendFields, f)
+		}
+	}
+
 	if lastName != "" {
 		name.FamilyName = lastName
+	}
+
+	if name.FamilyName != "" || name.FullName != "" || name.GivenName != "" {
+		user.Name = name
 	}
 
 	if password != "" {
@@ -69,14 +91,6 @@ func doUpdateUser(cmd *cobra.Command, args []string) error {
 
 		user.Password = pwd
 		user.HashFunction = cmn.HashFunction
-	}
-
-	if changePassword {
-		user.ChangePasswordAtNextLogin = true
-	}
-
-	if userEmail != "" {
-		user.PrimaryEmail = userEmail
 	}
 
 	if gal {
@@ -113,15 +127,36 @@ func doUpdateUser(cmd *cobra.Command, args []string) error {
 		user.ForceSendFields = append(user.ForceSendFields, "Suspended")
 	}
 
+	if userEmail != "" {
+		user.PrimaryEmail = userEmail
+	}
+
 	if attrs != "" {
-		err := usrs.ProcessFreeformAttrs(user, name, attrs)
+		attrUser := new(admin.User)
+		jsonBytes := []byte(attrs)
+		if !json.Valid(jsonBytes) {
+			return errors.New("gmin: error - attribute string is not valid JSON")
+		}
+
+		outStr, err := cmn.ParseInputAttrs(jsonBytes)
 		if err != nil {
 			return err
 		}
-	}
 
-	if name.FamilyName != "" || name.FullName != "" || name.GivenName != "" {
-		user.Name = name
+		err = cmn.ValidateInputAttrs(outStr, usrs.UserAttrMap)
+		if err != nil {
+			return err
+		}
+
+		err = json.Unmarshal(jsonBytes, &attrUser)
+		if err != nil {
+			return err
+		}
+
+		err = mergo.Merge(user, attrUser)
+		if err != nil {
+			return err
+		}
 	}
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserScope)
@@ -135,7 +170,7 @@ func doUpdateUser(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Println("**** user " + userKey + " updated ****")
+	fmt.Println("**** gmin: user " + userKey + " updated ****")
 
 	return nil
 }
@@ -143,11 +178,12 @@ func doUpdateUser(cmd *cobra.Command, args []string) error {
 func init() {
 	updateCmd.AddCommand(updateUserCmd)
 
-	updateUserCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "user's attributes")
+	updateUserCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "user's attributes as a JSON string")
 	updateUserCmd.Flags().BoolVarP(&changePassword, "changepassword", "c", false, "user must change password on next login")
 	updateUserCmd.Flags().BoolVarP(&noChangePassword, "nochangepassword", "d", false, "user doesn't have to change password on next login")
 	updateUserCmd.Flags().StringVarP(&userEmail, "email", "e", "", "user's primary email address")
 	updateUserCmd.Flags().StringVarP(&firstName, "firstname", "f", "", "user's first name")
+	updateUserCmd.Flags().StringVarP(&forceSend, "force", "", "", "field list for ForceSendFields separated by (~)")
 	updateUserCmd.Flags().BoolVarP(&gal, "gal", "g", false, "display user in Global Address List")
 	updateUserCmd.Flags().StringVarP(&lastName, "lastname", "l", "", "user's last name")
 	updateUserCmd.Flags().BoolVarP(&noGAL, "nogal", "n", false, "do not display user in Global Address List")

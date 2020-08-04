@@ -28,6 +28,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/jinzhu/copier"
 	cmn "github.com/plusworx/gmin/utils/common"
 	mems "github.com/plusworx/gmin/utils/members"
 	"github.com/spf13/cobra"
@@ -39,16 +40,18 @@ var listMembersCmd = &cobra.Command{
 	Aliases: []string{"group-member", "grp-members", "grp-member", "grp-mems", "grp-mem", "gmembers", "gmember", "gmems", "gmem"},
 	Args:    cobra.ExactArgs(1),
 	Short:   "Outputs a list of group members",
-	Long:    `Outputs a list of group members. Must specify a group email address or id.`,
-	RunE:    doListMembers,
+	Long: `Outputs a list of group members. Must specify a group email address or id.
+	
+	Examples:	gmin list group-members mygroup@mycompany.com -r OWNER~MANAGER
+			gmin ls gmems mygroup@mycompany.com -a email`,
+	RunE: doListMembers,
 }
 
 func doListMembers(cmd *cobra.Command, args []string) error {
 	var (
 		jsonData   []byte
 		members    *admin.Members
-		validAttrs []string
-		validRoles []string
+		newMembers = mems.GminMembers{}
 	)
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupMemberReadonlyScope)
@@ -59,23 +62,21 @@ func doListMembers(cmd *cobra.Command, args []string) error {
 	mlc := ds.Members.List(args[0])
 
 	if attrs != "" {
-		validAttrs, err = cmn.ValidateArgs(attrs, mems.MemberAttrMap, cmn.AttrStr)
+		listAttrs, err := cmn.ParseOutputAttrs(attrs, mems.MemberAttrMap)
 		if err != nil {
 			return err
 		}
+		formattedAttrs := mems.StartMembersField + listAttrs + mems.EndField
 
-		formattedAttrs := mems.FormatAttrs(validAttrs, false)
 		listCall := mems.AddFields(mlc, formattedAttrs)
 		mlc = listCall.(*admin.MembersListCall)
 	}
 
 	if role != "" {
-		validRoles, err = cmn.ValidateArgs(role, mems.RoleMap, cmn.RoleStr)
+		formattedRoles, err := cmn.ParseOutputAttrs(role, mems.RoleMap)
 		if err != nil {
 			return err
 		}
-
-		formattedRoles := mems.FormatAttrs(validRoles, true)
 		mlc = mems.AddRoles(mlc, formattedRoles)
 	}
 
@@ -93,12 +94,25 @@ func doListMembers(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	jsonData, err = json.MarshalIndent(members, "", "    ")
-	if err != nil {
-		return err
+	if attrs == "" {
+		copier.Copy(&newMembers, members)
+
+		jsonData, err = json.MarshalIndent(newMembers, "", "    ")
+		if err != nil {
+			return err
+		}
+	} else {
+		jsonData, err = json.MarshalIndent(members, "", "    ")
+		if err != nil {
+			return err
+		}
 	}
 
-	fmt.Println(string(jsonData))
+	if count {
+		fmt.Println(len(members.Members))
+	} else {
+		fmt.Println(string(jsonData))
+	}
 
 	return nil
 }
@@ -168,6 +182,7 @@ func init() {
 	listCmd.AddCommand(listMembersCmd)
 
 	listMembersCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required member attributes (separated by ~)")
+	listMembersCmd.Flags().BoolVarP(&count, "count", "", false, "count number of entities returned")
 	listMembersCmd.Flags().Int64VarP(&maxResults, "maxresults", "m", 200, "maximum number or results to return")
 	listMembersCmd.Flags().StringVarP(&pages, "pages", "p", "", "number of pages of results to be returned")
 	listMembersCmd.Flags().StringVarP(&role, "roles", "r", "", "roles to filter results by (separated by ~)")

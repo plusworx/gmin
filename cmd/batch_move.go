@@ -23,34 +23,20 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"testing"
+	"github.com/spf13/cobra"
 )
 
-func TestDoBatchUndelUser(t *testing.T) {
-	cases := []struct {
-		expectedErr string
-		infile      string
-	}{
-		{
-			expectedErr: "gmin: error - must provide inputfile",
-		},
-		{
-			infile:      "/home/me/nonexistentfile",
-			expectedErr: "open /home/me/nonexistentfile: no such file or directory",
-		},
-	}
+var batchMoveCmd = &cobra.Command{
+	Use:     "batch-move",
+	Aliases: []string{"bmove", "bmv"},
+	Short:   "Moves a batch of G Suite devices to another orgunit",
+	Run:     doBatchMove,
+}
 
-	for _, c := range cases {
-		inputFile = ""
+func doBatchMove(cmd *cobra.Command, args []string) {
+	cmd.Help()
+}
 
-		if c.infile != "" {
-			inputFile = c.infile
-		}
-
-		err := doBatchUndelUser(nil, nil)
-		if err.Error() != c.expectedErr {
-			t.Errorf("Expected error %v, got %v", c.expectedErr, err)
-
-		}
-	}
+func init() {
+	rootCmd.AddCommand(batchMoveCmd)
 }

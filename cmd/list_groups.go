@@ -29,6 +29,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/jinzhu/copier"
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
 	grps "github.com/plusworx/gmin/utils/groups"
@@ -40,16 +41,19 @@ var listGroupsCmd = &cobra.Command{
 	Use:     "groups",
 	Aliases: []string{"group", "grp", "grps"},
 	Short:   "Outputs a list of groups",
-	Long:    `Outputs a list of groups.`,
-	RunE:    doListGroups,
+	Long: `Outputs a list of groups.
+	
+	Examples:	gmin list groups -a email~description~id
+			gmin ls grp -q email=mygroup@domain.com`,
+	RunE: doListGroups,
 }
 
 func doListGroups(cmd *cobra.Command, args []string) error {
 	var (
-		formattedAttrs string
-		groups         *admin.Groups
-		validAttrs     []string
-		validOrderBy   string
+		groups       *admin.Groups
+		jsonData     []byte
+		newGroups    = grps.GminGroups{}
+		validOrderBy string
 	)
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupReadonlyScope)
@@ -60,12 +64,12 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 	glc := ds.Groups.List()
 
 	if attrs != "" {
-		validAttrs, err = cmn.ValidateArgs(attrs, grps.GroupAttrMap, cmn.AttrStr)
+		listAttrs, err := cmn.ParseOutputAttrs(attrs, grps.GroupAttrMap)
 		if err != nil {
 			return err
 		}
+		formattedAttrs := grps.StartGroupsField + listAttrs + grps.EndField
 
-		formattedAttrs = grps.FormatAttrs(validAttrs, false)
 		listCall := grps.AddFields(glc, formattedAttrs)
 		glc = listCall.(*admin.GroupsListCall)
 	}
@@ -81,7 +85,7 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 	}
 
 	if query != "" {
-		formattedQuery, err := processQuery(query)
+		formattedQuery, err := cmn.ParseQuery(query, grps.QueryAttrMap)
 		if err != nil {
 			return err
 		}
@@ -116,7 +120,11 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 	}
 
 	if userKey != "" {
-		glc = grps.AddUserKey(glc, userKey)
+		if domain != "" {
+			glc = grps.AddUserKey(glc, userKey)
+		} else {
+			return errors.New("gmin: error - you must provide a domain in addition to userkey")
+		}
 	}
 
 	glc = grps.AddMaxResults(glc, maxResults)
@@ -133,12 +141,25 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	jsonData, err := json.MarshalIndent(groups, "", "    ")
-	if err != nil {
-		return err
+	if attrs == "" {
+		copier.Copy(&newGroups, groups)
+
+		jsonData, err = json.MarshalIndent(newGroups, "", "    ")
+		if err != nil {
+			return err
+		}
+	} else {
+		jsonData, err = json.MarshalIndent(groups, "", "    ")
+		if err != nil {
+			return err
+		}
 	}
 
-	fmt.Println(string(jsonData))
+	if count {
+		fmt.Println(len(groups.Groups))
+	} else {
+		fmt.Println(string(jsonData))
+	}
 
 	return nil
 }
@@ -208,27 +229,12 @@ func init() {
 	listCmd.AddCommand(listGroupsCmd)
 
 	listGroupsCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required group attributes (separated by ~)")
+	listGroupsCmd.Flags().BoolVarP(&count, "count", "", false, "count number of entities returned")
 	listGroupsCmd.Flags().StringVarP(&domain, "domain", "d", "", "domain from which to get groups")
-	listGroupsCmd.Flags().Int64VarP(&maxResults, "maxresults", "m", 200, "maximum number of results to return")
+	listGroupsCmd.Flags().Int64VarP(&maxResults, "maxresults", "m", 200, "maximum number of results to return per page")
 	listGroupsCmd.Flags().StringVarP(&orderBy, "orderby", "o", "", "field by which results will be ordered")
 	listGroupsCmd.Flags().StringVarP(&pages, "pages", "p", "", "number of pages of results to be returned")
 	listGroupsCmd.Flags().StringVarP(&query, "query", "q", "", "selection criteria to get groups (separated by ~)")
 	listGroupsCmd.Flags().StringVarP(&sortOrder, "sortorder", "s", "", "sort order of returned results")
 	listGroupsCmd.Flags().StringVarP(&userKey, "userkey", "u", "", "email address or id of user who belongs to returned groups")
-}
-
-func processQuery(query string) (string, error) {
-	var formattedQuery string
-
-	validQuery, err := cmn.ValidateQuery(query, grps.QueryAttrMap)
-	if err != nil {
-		return "", err
-	}
-
-	formattedQuery, err = grps.FormatQuery(validQuery)
-	if err != nil {
-		return "", err
-	}
-
-	return formattedQuery, nil
 }

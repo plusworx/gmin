@@ -23,8 +23,9 @@ THE SOFTWARE.
 package common
 
 import (
-	"reflect"
 	"testing"
+
+	tsts "github.com/plusworx/gmin/tests"
 )
 
 func TestHashPassword(t *testing.T) {
@@ -38,18 +39,6 @@ func TestHashPassword(t *testing.T) {
 }
 
 func TestIsValidAttr(t *testing.T) {
-	var groupAttrMap = map[string]string{
-		"admincreated":       "adminCreated",
-		"description":        "description",
-		"directmemberscount": "directMembersCount",
-		"email":              "email",
-		"etag":               "etag",
-		"id":                 "id",
-		"kind":               "kind",
-		"name":               "name",
-		"noneditablealiases": "nonEditableAliases",
-	}
-
 	cases := []struct {
 		attr          string
 		attrMap       map[string]string
@@ -58,13 +47,13 @@ func TestIsValidAttr(t *testing.T) {
 	}{
 		{
 			attr:          "admincreated",
-			attrMap:       groupAttrMap,
+			attrMap:       tsts.TestGroupAttrMap,
 			expectedErr:   "",
 			expectedValue: "adminCreated",
 		},
 		{
 			attr:          "nonexistent",
-			attrMap:       groupAttrMap,
+			attrMap:       tsts.TestGroupAttrMap,
 			expectedErr:   "gmin: error - attribute nonexistent is unrecognized",
 			expectedValue: "",
 		},
@@ -86,6 +75,150 @@ func TestIsValidAttr(t *testing.T) {
 			t.Errorf("Got output: %v - expected: %v", output, c.expectedValue)
 		}
 
+	}
+}
+
+func TestParseOutputAttrs(t *testing.T) {
+	cases := []struct {
+		attrs          string
+		expectedErr    string
+		expectedResult string
+	}{
+		{
+			attrs:          "givenname",
+			expectedResult: "givenName",
+		},
+		{
+			attrs:          "primaryEmail",
+			expectedResult: "primaryEmail",
+		},
+		{
+			attrs:          "EmaiLs",
+			expectedResult: "emails",
+		},
+		{
+			attrs:          "isadmin",
+			expectedResult: "isAdmin",
+		},
+		{
+			attrs:          "addresses(region)",
+			expectedResult: "addresses(region)",
+		},
+		{
+			attrs:          "name(firstname,lastname)",
+			expectedResult: "name(givenName,familyName)",
+		},
+		{
+			attrs:          "primaryEMail~emails~name(christianname)",
+			expectedResult: "primaryEmail,emails,name(givenName)",
+		},
+		{
+			attrs:          "directManager",
+			expectedResult: "",
+			expectedErr:    "gmin: error - attribute directManager is unrecognized",
+		},
+		{
+			attrs:          "name/givenname~primaryemail",
+			expectedResult: "name/givenName,primaryEmail",
+		},
+		{
+			attrs:          "customschemas/EmploymentData/startDate",
+			expectedResult: "customSchemas/EmploymentData/startDate",
+		},
+	}
+
+	for _, c := range cases {
+		output, err := ParseOutputAttrs(c.attrs, tsts.TestUserAttrMap)
+		if err != nil {
+			if err.Error() != c.expectedErr {
+				t.Errorf("Got error: %v - expected error: %v", err.Error(), c.expectedErr)
+				continue
+			}
+		}
+
+		if output != c.expectedResult {
+			t.Errorf("Got result: %v - expected result: %v", output, c.expectedResult)
+		}
+
+	}
+}
+
+func TestParseQuery(t *testing.T) {
+	cases := []struct {
+		expectedErr    string
+		expectedResult string
+		query          string
+	}{
+		{
+			query:          "givenname=Frank",
+			expectedResult: "givenName=Frank",
+		},
+		{
+			query:          "name='Jane Smith'",
+			expectedResult: "name='Jane Smith'",
+		},
+		{
+			query:          "email:admin*",
+			expectedResult: "email:admin*",
+		},
+		{
+			query:          "isadmin=true",
+			expectedResult: "isAdmin=true",
+		},
+		{
+			query:          "isadmin=True",
+			expectedResult: "isAdmin=true",
+		},
+		{
+			query:          "orgtitle:Manager",
+			expectedResult: "orgTitle:Manager",
+		},
+		{
+			query:          "Orgtitle:Manager",
+			expectedResult: "orgTitle:Manager",
+		},
+		{
+			query:          "directManager='bobjones@example.com'",
+			expectedResult: "directManager='bobjones@example.com'",
+		},
+		{
+			query:          "orgName=Engineering~orgTitle:Manager",
+			expectedResult: "orgName=Engineering orgTitle:Manager",
+		},
+		{
+			query:          "orgdescription:'Some description text.'",
+			expectedResult: "orgDescription:'Some description text.'",
+		},
+		{
+			query:          "EmploymentData.projects:'GeneGnomes'",
+			expectedResult: "EmploymentData.projects:'GeneGnomes'",
+		},
+		{
+			query:          "EmploymentData.jobLevel>=7",
+			expectedResult: "EmploymentData.jobLevel>=7",
+		},
+		{
+			query:          "EmploymentData.jobLevel:[5,8]",
+			expectedResult: "EmploymentData.jobLevel:[5,8]",
+		},
+		{
+			query:       "wrongattr:Value",
+			expectedErr: "gmin: error - query attribute wrongattr is unrecognized",
+		},
+	}
+
+	for _, c := range cases {
+		output, err := ParseQuery(c.query, tsts.TestUserQueryAttrMap)
+		if err != nil {
+			if err.Error() != c.expectedErr {
+				t.Errorf("Got error: %v - expected error: %v", err.Error(), c.expectedErr)
+				continue
+			}
+		}
+
+		if output != c.expectedResult {
+			t.Errorf("Got result: %v - expected result: %v", output, c.expectedResult)
+		}
 	}
 }
 
@@ -111,210 +244,6 @@ func TestSliceContainsStr(t *testing.T) {
 		res := SliceContainsStr(c.sl, c.input)
 		if res != c.expectedResult {
 			t.Errorf("Got result: %v - expected result: %v", res, c.expectedResult)
-		}
-	}
-}
-
-func TestValidateArgs(t *testing.T) {
-	var userAttrMap = map[string]string{
-		"addresses":                  "addresses",
-		"addresses(country)":         "addresses(country)",
-		"addresses(countrycode)":     "addresses(countryCode)",
-		"addresses(customtype)":      "addresses(customType)",
-		"addresses(extendedaddress)": "addresses(extendedAddress)",
-		"addresses(formatted)":       "addresses(formatted)",
-		"addresses(pobox)":           "addresses(poBox)",
-		"addresses(postalcode)":      "addresses(postalCode)",
-		"addresses(primary)":         "addresses(primary)",
-		"addresses(region)":          "addresses(region)",
-		"addresses(streetaddress)":   "addresses(streetAddress)",
-		"addresses(type)":            "addresses(type)",
-		"agreedtoterms":              "agreedToTerms",
-		"aliases":                    "aliases",
-		"archived":                   "archived",
-		"changepasswordatnextlogin":  "changePasswordAtNextLogin",
-		"christianname":              "givenName",
-		"creationtime":               "creationTime",
-		"customschemas":              "customSchemas",
-		"customerid":                 "customerId",
-		"deletiontime":               "deletionTime",
-		"emails":                     "emails",
-		"emails(address)":            "emails(address)",
-		"emails(customtype)":         "emails(customType)",
-		"emails(primary)":            "emails(primary)",
-		"emails(type)":               "emails(type)",
-		"etag":                       "etag",
-		"externalids":                "externalIds",
-		"familyname":                 "familyName",
-		"firstname":                  "givenName",
-		"fullname":                   "fullName",
-		"gender":                     "gender",
-		"givenname":                  "givenName",
-		"hashfunction":               "hashFunction",
-		"id":                         "id",
-		"ims":                        "ims",
-		"includeinglobaladdresslist": "includeInGlobalAddressList",
-		"ipwhitelisted":              "ipWhiteListed",
-		"isadmin":                    "isAdmin",
-		"isdelegatedadmin":           "isDelegatedAdmin",
-		"isenforcedin2sv":            "isEnforcedIn2Sv",
-		"isenrolledin2sv":            "isEnrolledIn2Sv",
-		"ismailboxsetup":             "isMailboxSetup",
-		"keywords":                   "keywords",
-		"kind":                       "kind",
-		"languages":                  "languages",
-		"lastlogintime":              "lastLoginTime",
-		"lastname":                   "familyName",
-		"locations":                  "locations",
-		"name":                       "name",
-		"name(familyname)":           "name(familyName)",
-		"name(firstname)":            "name(givenName)",
-		"name(fullname)":             "name(fullName)",
-		"name(givenname)":            "name(givenName)",
-		"name(lastname)":             "name(familyName)",
-		"notes":                      "notes",
-		"noneditablealiases":         "nonEditableAliases",
-		"orgunitpath":                "orgUnitPath",
-		"password":                   "password",
-		"phones":                     "phones",
-		"posixaccounts":              "posixAccounts",
-		"primaryemail":               "primaryEmail",
-		"recoveryemail":              "recoveryEmail",
-		"recoveryphone":              "recoveryPhone",
-		"relations":                  "relations",
-		"sshpublickeys":              "sshPublicKeys",
-		"surname":                    "familyName",
-		"suspended":                  "suspended",
-		"suspensionreason":           "suspensionReason",
-		"thumbnailphotoetag":         "thumbnailPhotoEtag",
-		"thumbnailphotourl":          "thumbnailPhotoUrl",
-		"type":                       "type",
-		"websites":                   "websites",
-	}
-
-	cases := []struct {
-		args          string
-		argMap        map[string]string
-		expectedErr   string
-		expectedValue []string
-	}{
-		{
-			args:          "name(firstname)~name(lastname)~primaryemail",
-			argMap:        userAttrMap,
-			expectedErr:   "",
-			expectedValue: []string{"name(givenName)", "name(familyName)", "primaryEmail"},
-		},
-		{
-			args:        "name(firstname)~name(lastname)~primaryemail~addresses(streetaddress)~addresses(postalcode)",
-			argMap:      userAttrMap,
-			expectedErr: "",
-			expectedValue: []string{"name(givenName)", "name(familyName)", "primaryEmail", "addresses(streetAddress)",
-				"addresses(postalCode)"},
-		},
-		{
-			args:        "itain'tright~name(firstname)~name(lastname)~primaryemail",
-			argMap:      userAttrMap,
-			expectedErr: "gmin: error - attribute itain'tright is unrecognized",
-		},
-		{
-			args:          "firstname~lastname~primaryemail",
-			argMap:        userAttrMap,
-			expectedErr:   "",
-			expectedValue: []string{"givenName", "familyName", "primaryEmail"},
-		},
-	}
-
-	for _, c := range cases {
-
-		output, err := ValidateArgs(c.args, c.argMap, AttrStr)
-
-		if err != nil {
-			if err.Error() != c.expectedErr {
-				t.Errorf("Got error: %v - expected error: %v", err.Error(), c.expectedErr)
-			}
-
-			continue
-		}
-
-		ok := reflect.DeepEqual(output, c.expectedValue)
-
-		if !ok {
-			t.Errorf("Expected output: %v got: %v", c.expectedValue, output)
-		}
-	}
-}
-
-func TestValidateQuery(t *testing.T) {
-	var queryAttrMap = map[string]string{
-		"christianname": "givenName",
-		"email":         "email",
-		"firstname":     "givenName",
-		"lastname":      "familyName",
-		"name":          "name",
-		"memberkey":     "memberKey",
-		"surname":       "familyName",
-	}
-
-	cases := []struct {
-		attrMap       map[string]string
-		expectedErr   string
-		expectedValue []string
-		query         string
-	}{
-		{
-			query:         "email=finance@mycompany.org",
-			attrMap:       queryAttrMap,
-			expectedErr:   "",
-			expectedValue: []string{"email=finance@mycompany.org"},
-		},
-		{
-			query:         "EmaIl=marketing@mycompany.org",
-			attrMap:       queryAttrMap,
-			expectedErr:   "",
-			expectedValue: []string{"email=marketing@mycompany.org"},
-		},
-		{
-			query:         "name:Fin*",
-			attrMap:       queryAttrMap,
-			expectedErr:   "",
-			expectedValue: []string{"name:Fin*"},
-		},
-		{
-			query:         "christianname:Bri*",
-			attrMap:       queryAttrMap,
-			expectedErr:   "",
-			expectedValue: []string{"givenName:Bri*"},
-		},
-		{
-			query:         "email:fin*~name:Finance*",
-			attrMap:       queryAttrMap,
-			expectedErr:   "",
-			expectedValue: []string{"email:fin*", "name:Finance*"},
-		},
-		{
-			query:         "groupemail=engineering@mycompany.org",
-			attrMap:       queryAttrMap,
-			expectedErr:   "gmin: error - query attribute groupemail is unrecognized",
-			expectedValue: []string{"email=malcolmx@mycompany.org"},
-		},
-	}
-
-	for _, c := range cases {
-
-		output, err := ValidateQuery(c.query, c.attrMap)
-
-		if err != nil {
-			if err.Error() != c.expectedErr {
-				t.Errorf("Got error: %v - expected error: %v", err.Error(), c.expectedErr)
-			}
-
-			continue
-		}
-
-		ok := reflect.DeepEqual(output, c.expectedValue)
-
-		if !ok {
-			t.Errorf("Expected output: %v got: %v", c.expectedValue, output)
 		}
 	}
 }
