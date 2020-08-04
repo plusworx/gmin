@@ -24,6 +24,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 
 	cfg "github.com/plusworx/gmin/utils/config"
 	"github.com/spf13/cobra"
@@ -38,12 +39,18 @@ var whoamiCmd = &cobra.Command{
 }
 
 func doWhoami(cmd *cobra.Command, args []string) error {
-	adminEmail, err := cfg.ReadConfigString("administrator")
-	if err != nil {
-		return err
+	var err error
+
+	email := os.Getenv(cfg.EnvPrefix + cfg.EnvVarAdmin)
+
+	if email == "" {
+		email, err = cfg.ReadConfigString(cfg.ConfigAdmin)
+		if err != nil {
+			return err
+		}
 	}
 
-	fmt.Println("gmin: you are " + adminEmail)
+	fmt.Println("gmin: admin is " + email)
 
 	return nil
 }

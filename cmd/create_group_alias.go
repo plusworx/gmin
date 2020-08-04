@@ -23,7 +23,6 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"errors"
 	"fmt"
 
 	cmn "github.com/plusworx/gmin/utils/common"
@@ -32,14 +31,14 @@ import (
 )
 
 var createGroupAliasCmd = &cobra.Command{
-	Use:     "group-alias <alias email address> -g <group email address or id>",
+	Use:     "group-alias <alias email address> <group email address or id>",
 	Aliases: []string{"galias", "ga"},
-	Args:    cobra.ExactArgs(1),
+	Args:    cobra.ExactArgs(2),
 	Short:   "Creates a group alias",
 	Long: `Creates a group alias.
 	
-	Examples: gmin create group-alias group.alias@mycompany.com  -g finance@mycompany.com
-	          gmin crt ga group.alias@mycompany.com  -g sales@mycompany.com`,
+	Examples:	gmin create group-alias group.alias@mycompany.com finance@mycompany.com
+			gmin crt ga group.alias@mycompany.com sales@mycompany.com`,
 	RunE: doCreateGroupAlias,
 }
 
@@ -50,29 +49,22 @@ func doCreateGroupAlias(cmd *cobra.Command, args []string) error {
 
 	alias.Alias = args[0]
 
-	if group == "" {
-		err := errors.New("gmin: error - group must be provided")
-		return err
-	}
-
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupScope)
 	if err != nil {
 		return err
 	}
 
-	gaic := ds.Groups.Aliases.Insert(group, alias)
+	gaic := ds.Groups.Aliases.Insert(args[1], alias)
 	newAlias, err := gaic.Do()
 	if err != nil {
 		return err
 	}
 
-	fmt.Println("**** group alias " + newAlias.Alias + " created for group " + group + " ****")
+	fmt.Println("**** gmin: group alias " + newAlias.Alias + " created for group " + args[1] + " ****")
 
 	return nil
 }
 
 func init() {
 	createCmd.AddCommand(createGroupAliasCmd)
-
-	createGroupAliasCmd.Flags().StringVarP(&group, "group", "g", "", "email address or id of group")
 }

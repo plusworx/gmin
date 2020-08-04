@@ -25,27 +25,38 @@ package cmd
 import (
 	"bufio"
 	"errors"
+	"fmt"
 	"os"
 	"strings"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
+	cmn "github.com/plusworx/gmin/utils/common"
 	"github.com/spf13/cobra"
+	admin "google.golang.org/api/admin/directory/v1"
 )
 
 var batchDelMemberCmd = &cobra.Command{
-	Use:     "group-members -g <group email address or id> -i <input file path>",
+	Use:     "group-members <group email address or id> -i <input file path>",
 	Aliases: []string{"group-member", "grp-members", "grp-member", "gmembers", "gmember", "gmems", "gmem"},
+	Args:    cobra.ExactArgs(1),
 	Short:   "Deletes a batch of group members",
-	Long:    `Deletes a batch of group members.`,
-	RunE:    doBatchDelMember,
+	Long: `Deletes a batch of group members where group member details are provided in a text input file.
+	
+	Examples:	gmin batch-delete group-members somegroup@mycompany.com -i inputfile.txt
+			gmin bdel gmems somegroup@mycompany.com -i inputfile.txt
+			
+	The input file should have the group member email addresses, aliases or ids to be deleted on separate lines like this:
+	
+	frank.castle@mycompany.com
+	bruce.wayne@mycompany.com
+	peter.parker@mycompany.com`,
+	RunE: doBatchDelMember,
 }
 
 func doBatchDelMember(cmd *cobra.Command, args []string) error {
-	var members []string
-
-	if group == "" {
-		err := errors.New("gmin: error - group email address or id must be provided")
+	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupMemberScope)
+	if err != nil {
 		return err
 	}
 
@@ -62,16 +73,14 @@ func doBatchDelMember(cmd *cobra.Command, args []string) error {
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		members = []string{}
-
-		members = append(members, scanner.Text())
+		member := scanner.Text()
 
 		b := backoff.NewExponentialBackOff()
 		b.MaxElapsedTime = 30 * time.Second
 
 		err = backoff.Retry(func() error {
 			var err error
-			err = doDeleteMember(nil, members)
+			err = deleteMember(ds, member, args[0])
 			if err == nil {
 				return err
 			}
@@ -95,9 +104,21 @@ func doBatchDelMember(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
+func deleteMember(ds *admin.Service, member string, group string) error {
+	mdc := ds.Members.Delete(group, member)
+
+	err := mdc.Do()
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("**** gmin: member %s of group %s deleted ****\n", member, group)
+
+	return nil
+}
+
 func init() {
 	batchDelCmd.AddCommand(batchDelMemberCmd)
 
-	batchDelMemberCmd.Flags().StringVarP(&group, "group", "g", "", "email address or id of group")
 	batchDelMemberCmd.Flags().StringVarP(&inputFile, "inputfile", "i", "", "filepath to member data text file")
 }

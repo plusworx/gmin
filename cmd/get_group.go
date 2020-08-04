@@ -26,6 +26,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/jinzhu/copier"
 	cmn "github.com/plusworx/gmin/utils/common"
 	grps "github.com/plusworx/gmin/utils/groups"
 	"github.com/spf13/cobra"
@@ -39,15 +40,16 @@ var getGroupCmd = &cobra.Command{
 	Short:   "Outputs information about a group",
 	Long: `Outputs information about a group.
 	
-	Examples: gmin get group agroup@mydomain.org
-	          gmin get group 12345678 -a email`,
+	Examples:	gmin get group agroup@mydomain.org
+			gmin get grp 042yioqz3p5ulpk -a email`,
 	RunE: doGetGroup,
 }
 
 func doGetGroup(cmd *cobra.Command, args []string) error {
 	var (
-		group      *admin.Group
-		validAttrs []string
+		jsonData []byte
+		group    *admin.Group
+		newGroup = grps.GminGroup{}
 	)
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupReadonlyScope)
@@ -58,12 +60,11 @@ func doGetGroup(cmd *cobra.Command, args []string) error {
 	ggc := ds.Groups.Get(args[0])
 
 	if attrs != "" {
-		validAttrs, err = cmn.ValidateArgs(attrs, grps.GroupAttrMap, cmn.AttrStr)
+		formattedAttrs, err := cmn.ParseOutputAttrs(attrs, grps.GroupAttrMap)
 		if err != nil {
 			return err
 		}
 
-		formattedAttrs := grps.FormatAttrs(validAttrs, true)
 		getCall := grps.AddFields(ggc, formattedAttrs)
 		ggc = getCall.(*admin.GroupsGetCall)
 	}
@@ -73,9 +74,18 @@ func doGetGroup(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	jsonData, err := json.MarshalIndent(group, "", "    ")
-	if err != nil {
-		return err
+	if attrs == "" {
+		copier.Copy(&newGroup, group)
+
+		jsonData, err = json.MarshalIndent(newGroup, "", "    ")
+		if err != nil {
+			return err
+		}
+	} else {
+		jsonData, err = json.MarshalIndent(group, "", "    ")
+		if err != nil {
+			return err
+		}
 	}
 
 	fmt.Println(string(jsonData))

@@ -26,6 +26,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/jinzhu/copier"
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
 	ous "github.com/plusworx/gmin/utils/orgunits"
@@ -40,15 +41,16 @@ var getOrgUnitCmd = &cobra.Command{
 	Short:   "Outputs information about an orgunit",
 	Long: `Outputs information about an orgunit.
 	
-	Examples: gmin get orgunit Accounts
-	          gmin get orgunit Marketing -a "name orgUnitId"`,
+	Examples:	gmin get orgunit Accounts
+			gmin get ou Marketing -a name~orgUnitId`,
 	RunE: doGetOrgUnit,
 }
 
 func doGetOrgUnit(cmd *cobra.Command, args []string) error {
 	var (
+		jsonData   []byte
+		newOrgUnit = ous.GminOrgUnit{}
 		orgUnit    *admin.OrgUnit
-		validAttrs []string
 	)
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryOrgunitReadonlyScope)
@@ -64,12 +66,10 @@ func doGetOrgUnit(cmd *cobra.Command, args []string) error {
 	ougc := ds.Orgunits.Get(customerID, args)
 
 	if attrs != "" {
-		validAttrs, err = cmn.ValidateArgs(attrs, ous.OrgUnitAttrMap, cmn.AttrStr)
+		formattedAttrs, err := cmn.ParseOutputAttrs(attrs, ous.OrgUnitAttrMap)
 		if err != nil {
 			return err
 		}
-
-		formattedAttrs := ous.FormatAttrs(validAttrs, true)
 		getCall := ous.AddFields(ougc, formattedAttrs)
 		ougc = getCall.(*admin.OrgunitsGetCall)
 	}
@@ -79,9 +79,18 @@ func doGetOrgUnit(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	jsonData, err := json.MarshalIndent(orgUnit, "", "    ")
-	if err != nil {
-		return err
+	if attrs == "" {
+		copier.Copy(&newOrgUnit, orgUnit)
+
+		jsonData, err = json.MarshalIndent(newOrgUnit, "", "    ")
+		if err != nil {
+			return err
+		}
+	} else {
+		jsonData, err = json.MarshalIndent(orgUnit, "", "    ")
+		if err != nil {
+			return err
+		}
 	}
 
 	fmt.Println(string(jsonData))

@@ -106,32 +106,6 @@ func TestAddMaxResults(t *testing.T) {
 		}
 	}
 }
-func TestFormatAttrs(t *testing.T) {
-	cases := []struct {
-		attrs          []string
-		getBool        bool
-		expectedOutput string
-	}{
-		{
-			attrs:          []string{"deliverySettings", "email", "role"},
-			expectedOutput: "members(deliverySettings,email,role)",
-			getBool:        false,
-		},
-		{
-			attrs:          []string{"role", "status", "type"},
-			expectedOutput: "role,status,type",
-			getBool:        true,
-		},
-	}
-
-	for _, c := range cases {
-		fmtAttrs := FormatAttrs(c.attrs, c.getBool)
-
-		if fmtAttrs != c.expectedOutput {
-			t.Errorf("Expected output: %v  Got: %v", c.expectedOutput, fmtAttrs)
-		}
-	}
-}
 
 func TestValidateDeliverySetting(t *testing.T) {
 	cases := []struct {

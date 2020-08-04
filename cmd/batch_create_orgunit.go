@@ -42,8 +42,17 @@ var batchCrtOrgUnitCmd = &cobra.Command{
 	Use:     "orgunits -i <input file path>",
 	Aliases: []string{"orgunit", "ous", "ou"},
 	Short:   "Creates a batch of orgunits",
-	Long:    `Creates a batch of orgunits.`,
-	RunE:    doBatchCrtOrgUnit,
+	Long: `Creates a batch of orgunits where orgunit details are provided in a JSON input file.
+	
+	Examples:	gmin batch-create orgunits -i inputfile.json
+			gmin bcrt ous -i inputfile.json
+		
+	The contents of the JSON file should look something like this:
+	
+	{"description":"Fabrication department OU","name":"Fabrication","parentOrgUnitPath":"/Engineering"}
+	{"description":"Electrical department OU","name":"Electrical","parentOrgUnitPath":"/Engineering"}
+	{"description":"Paintwork department OU","name":"Paintwork","parentOrgUnitPath":"/Engineering"}`,
+	RunE: doBatchCrtOrgUnit,
 }
 
 func doBatchCrtOrgUnit(cmd *cobra.Command, args []string) error {
@@ -119,7 +128,7 @@ func createOrgUnit(ds *admin.Service, jsonData string) error {
 		return err
 	}
 
-	fmt.Println("**** orgunit " + newOrgUnit.OrgUnitPath + " created ****")
+	fmt.Println("**** gmin: orgunit " + newOrgUnit.OrgUnitPath + " created ****")
 
 	return nil
 }

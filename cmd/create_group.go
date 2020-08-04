@@ -35,10 +35,10 @@ var createGroupCmd = &cobra.Command{
 	Aliases: []string{"grp"},
 	Args:    cobra.ExactArgs(1),
 	Short:   "Creates a group",
-	Long: `Creates a group .
+	Long: `Creates a group.
 	
-	Examples: gmin create group office@mycompany.com
-	          gmin crt group finance@mycompany.com -n Finance -d "Finance Department Group"`,
+	Examples:	gmin create group office@mycompany.com
+			gmin crt grp finance@mycompany.com -n Finance -d "Finance Department Group"`,
 	RunE: doCreateGroup,
 }
 
@@ -68,7 +68,7 @@ func doCreateGroup(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Println("**** group " + newGroup.Email + " created ****")
+	fmt.Println("**** gmin: group " + newGroup.Email + " created ****")
 
 	return nil
 }

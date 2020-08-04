@@ -37,16 +37,15 @@ var listGroupAliasesCmd = &cobra.Command{
 	Aliases: []string{"group-alias", "galiases", "galias", "gas", "ga"},
 	Args:    cobra.ExactArgs(1),
 	Short:   "Outputs a list of group aliases",
-	Long:    `Outputs a list of group aliases.`,
-	RunE:    doListGroupAliases,
+	Long: `Outputs a list of group aliases.
+	
+	Examples:	gmin list group-aliases mygroup@mycompany.com
+			gmin ls gas mygroup@mycompany.com`,
+	RunE: doListGroupAliases,
 }
 
 func doListGroupAliases(cmd *cobra.Command, args []string) error {
-	var (
-		formattedAttrs string
-		aliases        *admin.Aliases
-		validAttrs     []string
-	)
+	var aliases *admin.Aliases
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupReadonlyScope)
 	if err != nil {
@@ -56,12 +55,12 @@ func doListGroupAliases(cmd *cobra.Command, args []string) error {
 	galc := ds.Groups.Aliases.List(args[0])
 
 	if attrs != "" {
-		validAttrs, err = cmn.ValidateArgs(attrs, gas.GroupAliasAttrMap, cmn.AttrStr)
+		listAttrs, err := cmn.ParseOutputAttrs(attrs, gas.GroupAliasAttrMap)
 		if err != nil {
 			return err
 		}
+		formattedAttrs := gas.StartAliasesField + listAttrs + gas.EndField
 
-		formattedAttrs = gas.FormatAttrs(validAttrs)
 		galc = gas.AddFields(galc, formattedAttrs)
 	}
 

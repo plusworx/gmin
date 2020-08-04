@@ -24,9 +24,9 @@ package cmd
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 
+	"github.com/jinzhu/copier"
 	cmn "github.com/plusworx/gmin/utils/common"
 	mems "github.com/plusworx/gmin/utils/members"
 	"github.com/spf13/cobra"
@@ -34,25 +34,21 @@ import (
 )
 
 var getMemberCmd = &cobra.Command{
-	Use:     "group-member <member email address or id> -g <group email address or id>",
+	Use:     "group-member <member email address or id> <group email address or id>",
 	Aliases: []string{"grp-member", "grp-mem", "gmember", "gmem"},
-	Args:    cobra.ExactArgs(1),
+	Args:    cobra.ExactArgs(2),
 	Short:   "Outputs information about a member of a group",
 	Long: `Outputs information about a member of a group.
 	
-	Examples: gmin get member 12345678 -g mygroup@mydomain.org -a email`,
+	Examples:	gmin get group-member 127987192327764327416 mygroup@mydomain.org -a email
+			gmin get gmem jack.black@mydomain.org mygroup@mydomain.org -a email`,
 	RunE: doGetMember,
 }
 
 func doGetMember(cmd *cobra.Command, args []string) error {
 	var jsonData []byte
 
-	if group == "" {
-		err := errors.New("gmin: error - group email address must be provided")
-		return err
-	}
-
-	jsonData, err := processGroupMember(args[0], attrs, group)
+	jsonData, err := processGroupMember(args[0], attrs, args[1])
 	if err != nil {
 		return err
 	}
@@ -66,13 +62,13 @@ func init() {
 	getCmd.AddCommand(getMemberCmd)
 
 	getMemberCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required group attributes (separated by ~)")
-	getMemberCmd.Flags().StringVarP(&group, "group", "g", "", "email address of group")
 }
 
 func processGroupMember(memID string, attrs string, groupEmail string) ([]byte, error) {
 	var (
-		member     *admin.Member
-		validAttrs []string
+		jsonData  []byte
+		member    *admin.Member
+		newMember = mems.GminMember{}
 	)
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupMemberReadonlyScope)
@@ -83,12 +79,11 @@ func processGroupMember(memID string, attrs string, groupEmail string) ([]byte, 
 	mgc := ds.Members.Get(groupEmail, memID)
 
 	if attrs != "" {
-		validAttrs, err = cmn.ValidateArgs(attrs, mems.MemberAttrMap, cmn.AttrStr)
+		formattedAttrs, err := cmn.ParseOutputAttrs(attrs, mems.MemberAttrMap)
 		if err != nil {
 			return nil, err
 		}
 
-		formattedAttrs := mems.FormatAttrs(validAttrs, true)
 		getCall := mems.AddFields(mgc, formattedAttrs)
 		mgc = getCall.(*admin.MembersGetCall)
 	}
@@ -98,9 +93,18 @@ func processGroupMember(memID string, attrs string, groupEmail string) ([]byte, 
 		return nil, err
 	}
 
-	jsonData, err := json.MarshalIndent(member, "", "    ")
-	if err != nil {
-		return nil, err
+	if attrs == "" {
+		copier.Copy(&newMember, member)
+
+		jsonData, err = json.MarshalIndent(newMember, "", "    ")
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		jsonData, err = json.MarshalIndent(member, "", "    ")
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return jsonData, nil

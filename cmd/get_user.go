@@ -24,9 +24,11 @@ package cmd
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 
+	"github.com/jinzhu/copier"
 	cmn "github.com/plusworx/gmin/utils/common"
 	usrs "github.com/plusworx/gmin/utils/users"
 	"github.com/spf13/cobra"
@@ -39,15 +41,16 @@ var getUserCmd = &cobra.Command{
 	Short: "Outputs information about a user",
 	Long: `Outputs information about a user.
 	
-	Examples: gmin get user auser@mydomain.org
-	          gmin get user 12345678 -a primaryEmail`,
+	Examples:	gmin get user auser@mydomain.org
+			gmin get user 114361578941906491576 -a primaryEmail~name`,
 	RunE: doGetUser,
 }
 
 func doGetUser(cmd *cobra.Command, args []string) error {
 	var (
-		user       *admin.User
-		validAttrs []string
+		jsonData []byte
+		newUser  = usrs.GminUser{}
+		user     *admin.User
 	)
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserReadonlyScope)
@@ -58,12 +61,11 @@ func doGetUser(cmd *cobra.Command, args []string) error {
 	ugc := ds.Users.Get(args[0])
 
 	if attrs != "" {
-		validAttrs, err = cmn.ValidateArgs(attrs, usrs.UserAttrMap, cmn.AttrStr)
+		formattedAttrs, err := cmn.ParseOutputAttrs(attrs, usrs.UserAttrMap)
 		if err != nil {
 			return err
 		}
 
-		formattedAttrs := usrs.FormatAttrs(validAttrs, true)
 		getCall := usrs.AddFields(ugc, formattedAttrs)
 		ugc = getCall.(*admin.UsersGetCall)
 	}
@@ -77,6 +79,17 @@ func doGetUser(cmd *cobra.Command, args []string) error {
 
 		getCall := usrs.AddProjection(ugc, proj)
 		ugc = getCall.(*admin.UsersGetCall)
+
+		if proj == "custom" {
+			if customField != "" {
+				cFields := cmn.ParseCustomField(customField)
+				mask := strings.Join(cFields, ",")
+				getCall := usrs.AddCustomFieldMask(ugc, mask)
+				ugc = getCall.(*admin.UsersGetCall)
+			} else {
+				return errors.New("gmin: error - please provide a custom field mask for custom projection")
+			}
+		}
 	}
 
 	if viewType != "" {
@@ -95,9 +108,18 @@ func doGetUser(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	jsonData, err := json.MarshalIndent(user, "", "    ")
-	if err != nil {
-		return err
+	if attrs == "" {
+		copier.Copy(&newUser, user)
+
+		jsonData, err = json.MarshalIndent(newUser, "", "    ")
+		if err != nil {
+			return err
+		}
+	} else {
+		jsonData, err = json.MarshalIndent(user, "", "    ")
+		if err != nil {
+			return err
+		}
 	}
 
 	fmt.Println(string(jsonData))
@@ -109,6 +131,7 @@ func init() {
 	getCmd.AddCommand(getUserCmd)
 
 	getUserCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required user attributes (separated by ~)")
+	getUserCmd.Flags().StringVarP(&customField, "customfieldmask", "c", "", "custom field mask schemas (separated by ~)")
 	getUserCmd.Flags().StringVarP(&projection, "projection", "j", "", "type of projection")
 	getUserCmd.Flags().StringVarP(&viewType, "viewtype", "v", "", "data view type")
 }

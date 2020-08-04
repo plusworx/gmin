@@ -25,24 +25,47 @@ package cmd
 import (
 	"bufio"
 	"errors"
+	"fmt"
 	"os"
 	"strings"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
+	cmn "github.com/plusworx/gmin/utils/common"
+	cfg "github.com/plusworx/gmin/utils/config"
 	"github.com/spf13/cobra"
+	admin "google.golang.org/api/admin/directory/v1"
 )
 
 var batchDelOrgUnitCmd = &cobra.Command{
 	Use:     "orgunits -i <input file path>",
 	Aliases: []string{"orgunit", "ous", "ou"},
 	Short:   "Deletes a batch of orgunits",
-	Long:    `Deletes a batch of orgunits.`,
-	RunE:    doBatchDelOrgUnit,
+	Long: `Deletes a batch of orgunits where orgunit details are provided in a text input file.
+	
+	Examples:	gmin batch-delete orgunits -i inputfile.txt
+			gmin bdel ous -i inputfile.txt
+			
+	The input file should have the orgunit paths or ids to be deleted on separate lines like this:
+	
+	Engineering/Skunkworx
+	Engineering/SecretOps
+	Engineering/Surplus`,
+	RunE: doBatchDelOrgUnit,
 }
 
 func doBatchDelOrgUnit(cmd *cobra.Command, args []string) error {
-	var orgunits []string
+	var ouPaths = []string{}
+
+	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryOrgunitScope)
+	if err != nil {
+		return err
+	}
+
+	customerID, err := cfg.ReadConfigString("customerid")
+	if err != nil {
+		return err
+	}
 
 	if inputFile == "" {
 		err := errors.New("gmin: error - must provide inputfile")
@@ -57,22 +80,21 @@ func doBatchDelOrgUnit(cmd *cobra.Command, args []string) error {
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		orgunits = []string{}
-
-		orgunits = append(orgunits, scanner.Text())
+		ouPaths = []string{}
+		ouPaths = append(ouPaths, scanner.Text())
 
 		b := backoff.NewExponentialBackOff()
 		b.MaxElapsedTime = 30 * time.Second
 
 		err = backoff.Retry(func() error {
 			var err error
-			err = doDeleteOU(nil, orgunits)
+			err = deleteOU(ds, customerID, ouPaths)
 			if err == nil {
 				return err
 			}
 
-			if strings.Contains(err.Error(), "Org unit not found") ||
-				strings.Contains(err.Error(), "Cannot delete entity with members") ||
+			if strings.Contains(err.Error(), "Resource Not Found") ||
+				strings.Contains(err.Error(), "Org unit not found") ||
 				strings.Contains(err.Error(), "Bad Request") {
 				return backoff.Permanent(err)
 			}
@@ -87,6 +109,19 @@ func doBatchDelOrgUnit(cmd *cobra.Command, args []string) error {
 	if err := scanner.Err(); err != nil {
 		return err
 	}
+
+	return nil
+}
+
+func deleteOU(ds *admin.Service, customerID string, ouPaths []string) error {
+	oudc := ds.Orgunits.Delete(customerID, ouPaths)
+
+	err := oudc.Do()
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("**** gmin: orgunit " + ouPaths[0] + " deleted ****")
 
 	return nil
 }

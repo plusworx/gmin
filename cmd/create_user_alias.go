@@ -23,7 +23,6 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"errors"
 	"fmt"
 
 	cmn "github.com/plusworx/gmin/utils/common"
@@ -32,14 +31,14 @@ import (
 )
 
 var createUserAliasCmd = &cobra.Command{
-	Use:     "user-alias <alias email address> -u <user email address or id>",
+	Use:     "user-alias <alias email address> <user email address or id>",
 	Aliases: []string{"ualias", "ua"},
-	Args:    cobra.ExactArgs(1),
+	Args:    cobra.ExactArgs(2),
 	Short:   "Creates a user alias",
 	Long: `Creates a user alias.
 	
-	Examples: gmin create user-alias my.alias@mycompany.com  -u brian.cox@mycompany.com
-	          gmin crt ua my.alias@mycompany.com  -u brian.cox@mycompany.com`,
+	Examples:	gmin create user-alias my.alias@mycompany.com brian.cox@mycompany.com
+			gmin crt ua my.alias@mycompany.com brian.cox@mycompany.com`,
 	RunE: doCreateUserAlias,
 }
 
@@ -50,29 +49,22 @@ func doCreateUserAlias(cmd *cobra.Command, args []string) error {
 
 	alias.Alias = args[0]
 
-	if userKey == "" {
-		err := errors.New("gmin: error - user must be provided")
-		return err
-	}
-
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserAliasScope)
 	if err != nil {
 		return err
 	}
 
-	uaic := ds.Users.Aliases.Insert(userKey, alias)
+	uaic := ds.Users.Aliases.Insert(args[1], alias)
 	newAlias, err := uaic.Do()
 	if err != nil {
 		return err
 	}
 
-	fmt.Println("**** user alias " + newAlias.Alias + " created for user " + userKey + " ****")
+	fmt.Println("**** gmin: user alias " + newAlias.Alias + " created for user " + args[1] + " ****")
 
 	return nil
 }
 
 func init() {
 	createCmd.AddCommand(createUserAliasCmd)
-
-	createUserAliasCmd.Flags().StringVarP(&userKey, "user", "u", "", "email address or id of user")
 }

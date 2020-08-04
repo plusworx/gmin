@@ -23,14 +23,16 @@ THE SOFTWARE.
 package cmd
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 
 	cmn "github.com/plusworx/gmin/utils/common"
+	usrs "github.com/plusworx/gmin/utils/users"
 	"github.com/spf13/cobra"
 
 	valid "github.com/asaskevich/govalidator"
-	usrs "github.com/plusworx/gmin/utils/users"
+	"github.com/imdario/mergo"
 	admin "google.golang.org/api/admin/directory/v1"
 )
 
@@ -40,19 +42,16 @@ var createUserCmd = &cobra.Command{
 	Short: "Creates a user",
 	Long: `Creates a user.
 	
-	Examples: gmin create user another.user@mycompany.com  -f Another -l User -p strongpassword
-	          gmin crt user finance.person@mycompany.com -f Finance -l Person -p greatpassword -c`,
+	Examples:	gmin create user another.user@mycompany.com  -f Another -l User -p strongpassword
+			gmin crt user finance.person@mycompany.com -f Finance -l Person -p greatpassword -c`,
 	RunE: doCreateUser,
 }
 
 func doCreateUser(cmd *cobra.Command, args []string) error {
-	var (
-		name *admin.UserName
-		user *admin.User
-	)
+	var bPasswordCreated bool
 
-	user = new(admin.User)
-	name = new(admin.UserName)
+	user := new(admin.User)
+	name := new(admin.UserName)
 
 	ok := valid.IsEmail(args[0])
 	if !ok {
@@ -61,12 +60,38 @@ func doCreateUser(cmd *cobra.Command, args []string) error {
 
 	user.PrimaryEmail = args[0]
 
+	if changePassword {
+		user.ChangePasswordAtNextLogin = true
+	}
+
 	if firstName != "" {
 		name.GivenName = firstName
 	}
 
+	if forceSend != "" {
+		fields, err := cmn.ParseForceSend(forceSend, usrs.UserAttrMap)
+		if err != nil {
+			return err
+		}
+		for _, f := range fields {
+			user.ForceSendFields = append(user.ForceSendFields, f)
+		}
+	}
+
 	if lastName != "" {
 		name.FamilyName = lastName
+	}
+
+	user.HashFunction = cmn.HashFunction
+
+	if noGAL {
+		user.IncludeInGlobalAddressList = false
+		user.ForceSendFields = append(user.ForceSendFields, "IncludeInGlobalAddressList")
+
+	}
+
+	if orgUnit != "" {
+		user.OrgUnitPath = orgUnit
 	}
 
 	if password != "" {
@@ -76,22 +101,7 @@ func doCreateUser(cmd *cobra.Command, args []string) error {
 		}
 
 		user.Password = pwd
-	}
-
-	user.HashFunction = cmn.HashFunction
-
-	if changePassword {
-		user.ChangePasswordAtNextLogin = true
-	}
-
-	if noGAL {
-		user.IncludeInGlobalAddressList = false
-		user.ForceSendFields = append(user.ForceSendFields, "IncludeGlobalAddressList")
-
-	}
-
-	if orgUnit != "" {
-		user.OrgUnitPath = orgUnit
+		bPasswordCreated = true
 	}
 
 	if recoveryEmail != "" {
@@ -110,14 +120,46 @@ func doCreateUser(cmd *cobra.Command, args []string) error {
 		user.Suspended = true
 	}
 
+	user.Name = name
+
 	if attrs != "" {
-		err := usrs.ProcessFreeformAttrs(user, name, attrs)
+		attrUser := new(admin.User)
+		jsonBytes := []byte(attrs)
+		if !json.Valid(jsonBytes) {
+			return errors.New("gmin: error - attribute string is not valid JSON")
+		}
+
+		outStr, err := cmn.ParseInputAttrs(jsonBytes)
+		if err != nil {
+			return err
+		}
+
+		err = cmn.ValidateInputAttrs(outStr, usrs.UserAttrMap)
+		if err != nil {
+			return err
+		}
+
+		err = json.Unmarshal(jsonBytes, &attrUser)
+		if err != nil {
+			return err
+		}
+
+		if !bPasswordCreated {
+			if attrUser.Password != "" {
+				pwd, err := cmn.HashPassword(attrUser.Password)
+				if err != nil {
+					return err
+				}
+
+				attrUser.Password = pwd
+			}
+		}
+
+		err = mergo.Merge(user, attrUser)
 		if err != nil {
 			return err
 		}
 	}
-
-	user.Name = name
 
 	if user.Name.GivenName == "" || user.Name.FamilyName == "" || user.Password == "" {
 		err := errors.New("gmin: error - firstname, lastname and password must all be provided")
@@ -135,7 +177,7 @@ func doCreateUser(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Println("**** user " + newUser.PrimaryEmail + " created ****")
+	fmt.Println("**** gmin: user " + newUser.PrimaryEmail + " created ****")
 
 	return nil
 }
@@ -143,9 +185,10 @@ func doCreateUser(cmd *cobra.Command, args []string) error {
 func init() {
 	createCmd.AddCommand(createUserCmd)
 
-	createUserCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "user's attributes")
+	createUserCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "user's attributes as a JSON string")
 	createUserCmd.Flags().BoolVarP(&changePassword, "changepassword", "c", false, "user must change password on next login")
 	createUserCmd.Flags().StringVarP(&firstName, "firstname", "f", "", "user's first name")
+	createUserCmd.Flags().StringVarP(&forceSend, "force", "", "", "field list for ForceSendFields separated by (~)")
 	createUserCmd.Flags().StringVarP(&lastName, "lastname", "l", "", "user's last name")
 	createUserCmd.Flags().BoolVarP(&noGAL, "nogal", "n", false, "do not display user in Global Address List")
 	createUserCmd.Flags().StringVarP(&orgUnit, "orgunit", "o", "", "user's orgunit")

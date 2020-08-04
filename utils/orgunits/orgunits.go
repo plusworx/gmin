@@ -23,16 +23,99 @@ THE SOFTWARE.
 package orgunits
 
 import (
-	"strings"
-
 	admin "google.golang.org/api/admin/directory/v1"
 	"google.golang.org/api/googleapi"
 )
 
 const (
-	endField           string = ")"
-	startOrgUnitsField string = "organizationUnits("
+	// EndField is List call attribute string terminator
+	EndField string = ")"
+	// StartOrgUnitsField is List call attribute string prefix
+	StartOrgUnitsField string = "organizationUnits("
 )
+
+// GminOrgUnit is custom admin.OrgUnit struct with no omitempty tags
+type GminOrgUnit struct {
+	// BlockInheritance: Should block inheritance
+	BlockInheritance bool `json:"blockInheritance"`
+
+	// Description: Description of OrgUnit
+	Description string `json:"description"`
+
+	// Etag: ETag of the resource.
+	Etag string `json:"etag"`
+
+	// Kind: Kind of resource this is.
+	Kind string `json:"kind"`
+
+	// Name: Name of OrgUnit
+	Name string `json:"name"`
+
+	// OrgUnitId: Id of OrgUnit
+	OrgUnitId string `json:"orgUnitId"`
+
+	// OrgUnitPath: Path of OrgUnit
+	OrgUnitPath string `json:"orgUnitPath"`
+
+	// ParentOrgUnitId: Id of parent OrgUnit
+	ParentOrgUnitId string `json:"parentOrgUnitId"`
+
+	// ParentOrgUnitPath: Path of parent OrgUnit
+	ParentOrgUnitPath string `json:"parentOrgUnitPath"`
+
+	// ServerResponse contains the HTTP response code and headers from the
+	// server.
+	googleapi.ServerResponse `json:"-"`
+
+	// ForceSendFields is a list of field names (e.g. "BlockInheritance") to
+	// unconditionally include in API requests. By default, fields with
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
+	ForceSendFields []string `json:"-"`
+
+	// NullFields is a list of field names (e.g. "BlockInheritance") to
+	// include in API requests with the JSON null value. By default, fields
+	// with empty values are omitted from API requests. However, any field
+	// with an empty value appearing in NullFields will be sent to the
+	// server as null. It is an error if a field in this list has a
+	// non-empty value. This may be used to include null fields in Patch
+	// requests.
+	NullFields []string `json:"-"`
+}
+
+// GminOrgUnits is custom admin.OrgUnits struct containing GminOrgUnit
+type GminOrgUnits struct {
+	// Etag: ETag of the resource.
+	Etag string `json:"etag,omitempty"`
+
+	// Kind: Kind of resource this is.
+	Kind string `json:"kind,omitempty"`
+
+	// OrganizationUnits: List of user objects.
+	OrganizationUnits []*GminOrgUnit `json:"organizationUnits,omitempty"`
+
+	// ServerResponse contains the HTTP response code and headers from the
+	// server.
+	googleapi.ServerResponse `json:"-"`
+
+	// ForceSendFields is a list of field names (e.g. "Etag") to
+	// unconditionally include in API requests. By default, fields with
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
+	ForceSendFields []string `json:"-"`
+
+	// NullFields is a list of field names (e.g. "Etag") to include in API
+	// requests with the JSON null value. By default, fields with empty
+	// values are omitted from API requests. However, any field with an
+	// empty value appearing in NullFields will be sent to the server as
+	// null. It is an error if a field in this list has a non-empty value.
+	// This may be used to include null fields in Patch requests.
+	NullFields []string `json:"-"`
+}
 
 // OrgUnitAttrMap provides lowercase mappings to valid admin.OrgUnit attributes
 var OrgUnitAttrMap = map[string]string{
@@ -43,6 +126,7 @@ var OrgUnitAttrMap = map[string]string{
 	"name":              "name",
 	"orgunitid":         "orgUnitId",
 	"orgunitpath":       "orgUnitPath",
+	"oukey":             "ouKey", // Used in batch update
 	"parentorgunitid":   "parentOrgUnitId",
 	"parentorgunitpath": "parentOrgUnitPath",
 }
@@ -51,6 +135,11 @@ var OrgUnitAttrMap = map[string]string{
 var ValidSearchTypes = []string{
 	"all",
 	"children",
+}
+
+// Key is struct used to extract ouKey
+type Key struct {
+	OUKey string
 }
 
 // AddFields adds fields to be returned to admin calls
@@ -111,24 +200,4 @@ func DoList(oulc *admin.OrgunitsListCall) (*admin.OrgUnits, error) {
 	}
 
 	return orgunits, nil
-}
-
-// FormatAttrs formats attributes for admin.OrgunitsListCall.Fields call
-func FormatAttrs(attrs []string, get bool) string {
-	var (
-		outputStr string
-		ouFields  []string
-	)
-
-	for _, a := range attrs {
-		ouFields = append(ouFields, a)
-	}
-
-	if get {
-		outputStr = strings.Join(ouFields, ",")
-	} else {
-		outputStr = startOrgUnitsField + strings.Join(ouFields, ",") + endField
-	}
-
-	return outputStr
 }

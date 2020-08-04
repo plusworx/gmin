@@ -41,8 +41,17 @@ var batchCrtGroupCmd = &cobra.Command{
 	Use:     "groups -i <input file path>",
 	Aliases: []string{"group", "grps", "grp"},
 	Short:   "Creates a batch of groups",
-	Long:    `Creates a batch of groups.`,
-	RunE:    doBatchCrtGroup,
+	Long: `Creates a batch of groups where group details are provided in a JSON input file.
+	
+	Examples: 	gmin batch-create groups -i inputfile.json
+			gmin bcrt grp -i inputfile.json
+			  
+	The contents of the JSON file should look something like this:
+	
+	{"description":"Finance group","mail":"finance@mycompany.com","name":"Finance"}
+	{"description":"Marketing group","email":"marketing@mycompany.com","name":"Marketing"}
+	{"description":"Sales group","email":"sales@mycompany.com","name":"Sales"}`,
+	RunE: doBatchCrtGroup,
 }
 
 func doBatchCrtGroup(cmd *cobra.Command, args []string) error {
@@ -113,7 +122,7 @@ func createGroup(ds *admin.Service, jsonData string) error {
 		return err
 	}
 
-	fmt.Println("**** group " + newGroup.Email + " created ****")
+	fmt.Println("**** gmin: group " + newGroup.Email + " created ****")
 
 	return nil
 }
