@@ -96,6 +96,8 @@ const (
 	SINGLEQUOTE
 	// TILDE is ~
 	TILDE
+	// UNDERSCORE is _
+	UNDERSCORE
 	// VALUE is query or input attribute value
 	VALUE
 )
@@ -186,7 +188,7 @@ func (oas *OutputAttrScanner) Scan() (tok Token, lit string) {
 	if unicode.IsSpace(ch) {
 		oas.s.unread()
 		return oas.s.scanWhitespace()
-	} else if unicode.IsLetter(ch) {
+	} else if unicode.IsLetter(ch) || ch == underscore {
 		oas.s.unread()
 		return oas.s.scanIdent()
 	}
@@ -207,6 +209,8 @@ func (oas *OutputAttrScanner) Scan() (tok Token, lit string) {
 		return OPENBRACK, string(ch)
 	case '~':
 		return TILDE, string(ch)
+	case '_':
+		return UNDERSCORE, string(ch)
 	}
 
 	return ILLEGAL, string(ch)
@@ -452,7 +456,7 @@ func (s *Scanner) scanIdent() (tok Token, lit string) {
 	for {
 		if ch := s.read(); ch == eos {
 			break
-		} else if !unicode.IsLetter(ch) && !unicode.IsDigit(ch) {
+		} else if !unicode.IsLetter(ch) && !unicode.IsDigit(ch) && ch != underscore {
 			s.unread()
 			break
 		} else {
@@ -497,6 +501,9 @@ var eos = rune(0)
 
 // tilde is tilde rune
 var tilde = '~'
+
+// underscore is underscore rune
+var underscore = '_'
 
 // ValidSortOrders provides valid sort order strings
 var ValidSortOrders = map[string]string{
