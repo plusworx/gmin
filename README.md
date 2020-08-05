@@ -124,6 +124,10 @@ These commands have an attribute flag (-a or --attributes) where you can specify
 
 https://developers.google.com/admin-sdk/directory/v1/reference is a useful resource for looking up valid attribute names and values.
 
+**Create and update commands**
+
+Where an attribute flag (-a or --attributes) is provided for create or update commands, the value can be any valid JSON string that provides attribute values. Please note that if you are providing empty or false values you will need to use the --force flag with the field names separated by '~' otherwise those fields will be ignored.
+
 ### Query Flag
 
 Some commands have a query flag (-q or --query) where you can specify query clauses to filter the returned results by. For instance, you might want to retrieve a list of users that have certain attributes -
