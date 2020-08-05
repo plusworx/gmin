@@ -162,6 +162,8 @@ I have published a [development roadmap](https://github.com/plusworx/gmin/wiki/D
 
 Google Group: https://groups.google.com/a/plusworx.uk/d/forum/gmin
 
+Reddit: https://www.reddit.com/r/gmin/
+
 ## Code of Conduct
 Please see the code of conduct document - https://github.com/plusworx/gmin/blob/master/CODE_OF_CONDUCT.md
 
