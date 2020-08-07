@@ -50,6 +50,11 @@ var showAttrsCmd = &cobra.Command{
 }
 
 func doShowAttrs(cmd *cobra.Command, args []string) error {
+	var (
+		subAttr          string
+		subAttrsRequired bool
+	)
+
 	obj := strings.ToLower(args[0])
 
 	if composite {
@@ -66,60 +71,58 @@ func doShowAttrs(cmd *cobra.Command, args []string) error {
 	}
 
 	if len(args) > 1 {
-		err := doShowSubAttrs(obj, args[1])
-		if err != nil {
-			return err
-		}
-		return nil
+		subAttrsRequired = true
+		subAttr = args[1]
 	}
 
 	switch {
 	case obj == "chromeosdevice" || obj == "crosdevice" || obj == "cdev":
+		if subAttrsRequired {
+			err := cdevs.ShowSubAttrs(subAttr, filter)
+			if err != nil {
+				return err
+			}
+			break
+		}
 		cdevs.ShowAttrs(filter)
 	case obj == "group" || obj == "grp":
+		if subAttrsRequired {
+			return errors.New("gmin: error - groups do not have any composite attributes")
+		}
 		grps.ShowAttrs(filter)
 	case obj == "group-alias" || obj == "galias" || obj == "ga":
+		if subAttrsRequired {
+			return errors.New("gmin: error - group aliases do not have any composite attributes")
+		}
 		gas.ShowAttrs(filter)
 	case obj == "group-member" || obj == "grp-member" || obj == "grp-mem" || obj == "gmember" || obj == "gmem":
+		if subAttrsRequired {
+			return errors.New("gmin: error - group members do not have any composite attributes")
+		}
 		mems.ShowAttrs(filter)
 	case obj == "orgunit" || obj == "ou":
+		if subAttrsRequired {
+			return errors.New("gmin: error - orgunits do not have any composite attributes")
+		}
 		ous.ShowAttrs(filter)
 	case obj == "user":
+		if subAttrsRequired {
+			err := usrs.ShowSubAttrs(subAttr, filter)
+			if err != nil {
+				return err
+			}
+			break
+		}
 		usrs.ShowAttrs(filter)
 	case obj == "user-alias" || obj == "ualias" || obj == "ua":
+		if subAttrsRequired {
+			return errors.New("gmin: error - user aliases do not have any composite attributes")
+		}
 		uas.ShowAttrs(filter)
 	default:
 		return fmt.Errorf("gmin: error - %v not found", args[0])
 	}
 
-	return nil
-}
-
-func doShowSubAttrs(obj string, subAttr string) error {
-	switch {
-	case obj == "chromeosdevice" || obj == "crosdevice" || obj == "cdev":
-		err := cdevs.ShowSubAttrs(subAttr, filter)
-		if err != nil {
-			return err
-		}
-	case obj == "group" || obj == "grp":
-		return errors.New("gmin: error - groups do not have any composite attributes")
-	case obj == "group-alias" || obj == "galias" || obj == "ga":
-		return errors.New("gmin: error - group aliases do not have any composite attributes")
-	case obj == "group-member" || obj == "grp-member" || obj == "grp-mem" || obj == "gmember" || obj == "gmem":
-		return errors.New("gmin: error - group members do not have any composite attributes")
-	case obj == "orgunit" || obj == "ou":
-		return errors.New("gmin: error - orgunits do not have any composite attributes")
-	case obj == "user":
-		err := usrs.ShowSubAttrs(subAttr, filter)
-		if err != nil {
-			return err
-		}
-	case obj == "user-alias" || obj == "ualias" || obj == "ua":
-		return errors.New("gmin: error - user aliases do not have any composite attributes")
-	default:
-		return fmt.Errorf("gmin: error - %v not found", obj)
-	}
 	return nil
 }
 
