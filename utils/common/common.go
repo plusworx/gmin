@@ -30,6 +30,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"unicode"
@@ -748,6 +749,49 @@ func ShowAttrs(attrSlice []string, attrMap map[string]string, filter string) {
 		if strings.Contains(strings.ToLower(a), strings.ToLower(filter)) {
 			fmt.Println(s)
 		}
+	}
+}
+
+// deDupeStrSlice gets rid of duplicate values in a slice
+func deDupeStrSlice(strSlice []string) []string {
+
+	check := make(map[string]int)
+	res := make([]string, 0)
+	for _, val := range strSlice {
+		check[val] = 1
+	}
+
+	for s := range check {
+		res = append(res, s)
+	}
+
+	return res
+}
+
+// ShowQueryableAttrs displays user queryable attributes
+func ShowQueryableAttrs(filter string, qAttrMap map[string]string) {
+	keys := make([]string, 0, len(qAttrMap))
+	for k := range qAttrMap {
+		keys = append(keys, k)
+	}
+
+	vals := make([]string, 0, len(qAttrMap))
+	for _, k := range keys {
+		vals = append(vals, qAttrMap[k])
+	}
+	deDupedVals := deDupeStrSlice(vals)
+	sort.Strings(deDupedVals)
+
+	for _, v := range deDupedVals {
+		if filter == "" {
+			fmt.Println(v)
+			continue
+		}
+
+		if strings.Contains(v, strings.ToLower(filter)) {
+			fmt.Println(v)
+		}
+
 	}
 }
 

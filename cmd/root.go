@@ -71,6 +71,7 @@ var (
 	password         string
 	projection       string
 	query            string
+	queryable        bool
 	reason           string
 	recoveryEmail    string
 	recoveryPhone    string

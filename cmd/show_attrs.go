@@ -28,6 +28,7 @@ import (
 	"strings"
 
 	cdevs "github.com/plusworx/gmin/utils/chromeosdevices"
+	cmn "github.com/plusworx/gmin/utils/common"
 	gas "github.com/plusworx/gmin/utils/groupaliases"
 	grps "github.com/plusworx/gmin/utils/groups"
 	mems "github.com/plusworx/gmin/utils/members"
@@ -57,6 +58,10 @@ func doShowAttrs(cmd *cobra.Command, args []string) error {
 
 	obj := strings.ToLower(args[0])
 
+	if composite && queryable {
+		return errors.New("gmin: error - cannot provide both --composite and --queryable flags")
+	}
+
 	if composite {
 		switch {
 		case obj == "chromeosdevice" || obj == "crosdevice" || obj == "cdev":
@@ -66,6 +71,20 @@ func doShowAttrs(cmd *cobra.Command, args []string) error {
 			usrs.ShowCompAttrs(filter)
 		default:
 			fmt.Printf("gmin: %v does not have any composite attributes\n", args[0])
+		}
+		return nil
+	}
+
+	if queryable {
+		switch {
+		case obj == "chromeosdevice" || obj == "crosdevice" || obj == "cdev":
+			cmn.ShowQueryableAttrs(filter, cdevs.QueryAttrMap)
+		case obj == "group" || obj == "grp":
+			cmn.ShowQueryableAttrs(filter, grps.QueryAttrMap)
+		case obj == "user":
+			cmn.ShowQueryableAttrs(filter, usrs.QueryAttrMap)
+		default:
+			fmt.Printf("gmin: %v does not have any queryable attributes\n", args[0])
 		}
 		return nil
 	}
@@ -131,4 +150,5 @@ func init() {
 
 	showAttrsCmd.Flags().BoolVarP(&composite, "composite", "c", false, "show attributes that contain other attributes")
 	showAttrsCmd.Flags().StringVarP(&filter, "filter", "f", "", "string used to filter results")
+	showAttrsCmd.Flags().BoolVarP(&queryable, "queryable", "q", false, "show attributes that can be used in a query")
 }
