@@ -24,6 +24,7 @@ package members
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	admin "google.golang.org/api/admin/directory/v1"
@@ -217,6 +218,27 @@ func DoList(mlc *admin.MembersListCall) (*admin.Members, error) {
 	}
 
 	return members, nil
+}
+
+// ShowAttrs displays requested group member attributes
+func ShowAttrs(filter string) {
+	keys := make([]string, 0, len(MemberAttrMap))
+	for k := range MemberAttrMap {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	for _, k := range keys {
+		if filter == "" {
+			fmt.Println(MemberAttrMap[k])
+			continue
+		}
+
+		if strings.Contains(k, strings.ToLower(filter)) {
+			fmt.Println(MemberAttrMap[k])
+		}
+
+	}
 }
 
 // ValidateDeliverySetting checks that a valid delivery setting has been provided

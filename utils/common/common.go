@@ -736,7 +736,22 @@ func ParseQuery(query string, qAttrMap map[string]string) (string, error) {
 	return outputStr, nil
 }
 
-// SliceContainsStr tells whether strs contains s
+// ShowAttrs displays object attributes
+func ShowAttrs(attrSlice []string, attrMap map[string]string, filter string) {
+	for _, a := range attrSlice {
+		s, _ := IsValidAttr(a, attrMap)
+
+		if filter == "" {
+			fmt.Println(s)
+			continue
+		}
+		if strings.Contains(strings.ToLower(a), strings.ToLower(filter)) {
+			fmt.Println(s)
+		}
+	}
+}
+
+// SliceContainsStr tells whether a slice contains a particular string
 func SliceContainsStr(strs []string, s string) bool {
 	for _, sComp := range strs {
 		if s == sComp {

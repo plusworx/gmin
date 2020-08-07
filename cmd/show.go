@@ -26,16 +26,16 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var setCmd = &cobra.Command{
-	Use:   "set",
-	Short: "Sets configuration values",
-	Run:   doSet,
+var showCmd = &cobra.Command{
+	Use:   "show",
+	Short: "Shows attribute names and valid values",
+	Run:   doShow,
 }
 
-func doSet(cmd *cobra.Command, args []string) {
+func doShow(cmd *cobra.Command, args []string) {
 	cmd.Help()
 }
 
 func init() {
-	rootCmd.AddCommand(setCmd)
+	rootCmd.AddCommand(showCmd)
 }

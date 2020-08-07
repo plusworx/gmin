@@ -23,6 +23,10 @@ THE SOFTWARE.
 package orgunits
 
 import (
+	"fmt"
+	"sort"
+	"strings"
+
 	admin "google.golang.org/api/admin/directory/v1"
 	"google.golang.org/api/googleapi"
 )
@@ -200,4 +204,25 @@ func DoList(oulc *admin.OrgunitsListCall) (*admin.OrgUnits, error) {
 	}
 
 	return orgunits, nil
+}
+
+// ShowAttrs displays requested orgunit attributes
+func ShowAttrs(filter string) {
+	keys := make([]string, 0, len(OrgUnitAttrMap))
+	for k := range OrgUnitAttrMap {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	for _, k := range keys {
+		if filter == "" {
+			fmt.Println(OrgUnitAttrMap[k])
+			continue
+		}
+
+		if strings.Contains(k, strings.ToLower(filter)) {
+			fmt.Println(OrgUnitAttrMap[k])
+		}
+
+	}
 }

@@ -40,12 +40,14 @@ var (
 	cfgFile          string
 	credentialPath   string
 	changePassword   bool
+	composite        bool
 	count            bool
 	customerID       string
 	customField      string
 	deleted          bool
 	deliverySetting  string
 	domain           string
+	filter           string
 	firstName        string
 	forceSend        string
 	gal              bool

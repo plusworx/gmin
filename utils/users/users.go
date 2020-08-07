@@ -23,6 +23,11 @@ THE SOFTWARE.
 package users
 
 import (
+	"fmt"
+	"sort"
+	"strings"
+
+	cmn "github.com/plusworx/gmin/utils/common"
 	admin "google.golang.org/api/admin/directory/v1"
 	"google.golang.org/api/googleapi"
 )
@@ -109,13 +114,9 @@ var locationAttrs = []string{
 
 // nameAttrs contains names of all the addressable admin.UserName attributes
 var nameAttrs = []string{
-	"christianname",
 	"familyname",
-	"firstname",
 	"fullname",
 	"givenname",
-	"lastname",
-	"surname",
 }
 
 // notesAttrs contains names of all the addressable admin.UserAbout attributes
@@ -325,6 +326,75 @@ var UserAttrMap = map[string]string{
 	"username":                   "username",
 	"value":                      "value",
 	"websites":                   "websites",
+}
+
+var userAttrs = []string{
+	"addresses",
+	"agreedToTerms",
+	"aliases",
+	"archived",
+	"changePasswordAtNextLogin",
+	"creationTime",
+	"customSchemas",
+	"customerId",
+	"deletionTime",
+	"emails",
+	"etag",
+	"externalIds",
+	"gender",
+	"hashFunction",
+	"id",
+	"ims",
+	"includeInGlobalAddressList",
+	"ipWhitelisted",
+	"isAdmin",
+	"isDelegatedAdmin",
+	"isEnforcedIn2Sv",
+	"isEnrolledIn2Sv",
+	"isMailboxSetup",
+	"keywords",
+	"kind",
+	"languages",
+	"lastLoginTime",
+	"locations",
+	"name",
+	"nonEditableAliases",
+	"notes",
+	"organizations",
+	"orgUnitPath",
+	"password",
+	"phones",
+	"posixAccounts",
+	"primaryEmail",
+	"recoveryEmail",
+	"recoveryPhone",
+	"relations",
+	"sshPublicKeys",
+	"suspended",
+	"suspensionReason",
+	"thumbnailPhotoEtag",
+	"thumbnailPhotoUrl",
+	"userKey", // Used in batch update
+	"websites",
+}
+
+var userCompAttrs = map[string]string{
+	"addresses":     "address",
+	"emails":        "email",
+	"externalids":   "externalId",
+	"gender":        "gender",
+	"ims":           "im",
+	"keywords":      "keyword",
+	"languages":     "language",
+	"locations":     "location",
+	"name":          "name",
+	"notes":         "notes",
+	"organizations": "organization",
+	"phones":        "phone",
+	"posixaccounts": "posixAccount",
+	"relations":     "relation",
+	"sshpublickeys": "sshPublicKey",
+	"websites":      "website",
 }
 
 var validAddressTypes = []string{
@@ -886,4 +956,93 @@ func DoList(ulc *admin.UsersListCall) (*admin.Users, error) {
 	}
 
 	return users, nil
+}
+
+// ShowAttrs displays requested user attributes
+func ShowAttrs(filter string) {
+	for _, a := range userAttrs {
+		lwrA := strings.ToLower(a)
+		comp, _ := cmn.IsValidAttr(lwrA, userCompAttrs)
+		if filter == "" {
+			if comp != "" {
+				fmt.Println("* ", a)
+			} else {
+				fmt.Println(a)
+			}
+			continue
+		}
+
+		if strings.Contains(lwrA, strings.ToLower(filter)) {
+			if comp != "" {
+				fmt.Println("* ", a)
+			} else {
+				fmt.Println(a)
+			}
+		}
+
+	}
+}
+
+// ShowCompAttrs displays user composite attributes
+func ShowCompAttrs(filter string) {
+	keys := make([]string, 0, len(userCompAttrs))
+	for k := range userCompAttrs {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	for _, k := range keys {
+		if filter == "" {
+			fmt.Println(userCompAttrs[k])
+			continue
+		}
+
+		if strings.Contains(k, strings.ToLower(filter)) {
+			fmt.Println(userCompAttrs[k])
+		}
+
+	}
+}
+
+// ShowSubAttrs displays attributes of composite attributes
+func ShowSubAttrs(compAttr string, filter string) error {
+	lwrCompAttr := strings.ToLower(compAttr)
+	switch lwrCompAttr {
+	case "address":
+		cmn.ShowAttrs(addressAttrs, UserAttrMap, filter)
+	case "email":
+		cmn.ShowAttrs(emailAttrs, UserAttrMap, filter)
+	case "externalid":
+		cmn.ShowAttrs(extIDAttrs, UserAttrMap, filter)
+	case "gender":
+		cmn.ShowAttrs(genderAttrs, UserAttrMap, filter)
+	case "im":
+		cmn.ShowAttrs(imAttrs, UserAttrMap, filter)
+	case "keyword":
+		cmn.ShowAttrs(keywordAttrs, UserAttrMap, filter)
+	case "language":
+		cmn.ShowAttrs(languageAttrs, UserAttrMap, filter)
+	case "location":
+		cmn.ShowAttrs(locationAttrs, UserAttrMap, filter)
+	case "name":
+		cmn.ShowAttrs(nameAttrs, UserAttrMap, filter)
+	case "notes":
+		cmn.ShowAttrs(notesAttrs, UserAttrMap, filter)
+	case "organization":
+		cmn.ShowAttrs(organizationAttrs, UserAttrMap, filter)
+	case "phone":
+		cmn.ShowAttrs(phoneAttrs, UserAttrMap, filter)
+	case "posixaccount":
+		cmn.ShowAttrs(posAcctAttrs, UserAttrMap, filter)
+	case "relation":
+		cmn.ShowAttrs(relationAttrs, UserAttrMap, filter)
+	case "sshpublickey":
+		cmn.ShowAttrs(sshPubKeyAttrs, UserAttrMap, filter)
+	case "website":
+		cmn.ShowAttrs(websiteAttrs, UserAttrMap, filter)
+	default:
+		return fmt.Errorf("gmin: error - %v is not a composite attribute", compAttr)
+	}
+
+	return nil
 }

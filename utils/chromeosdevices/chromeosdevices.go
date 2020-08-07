@@ -23,6 +23,11 @@ THE SOFTWARE.
 package chromeosdevices
 
 import (
+	"fmt"
+	"sort"
+	"strings"
+
+	cmn "github.com/plusworx/gmin/utils/common"
 	admin "google.golang.org/api/admin/directory/v1"
 	"google.golang.org/api/googleapi"
 )
@@ -183,6 +188,56 @@ var CrOSDevAttrMap = map[string]string{
 	"volumeinfo":                   "volumeInfo",
 	"wanipaddress":                 "wanIpAddress",
 	"willautorenew":                "willAutoRenew",
+}
+
+var crOSDevAttrs = []string{
+	"activeTimeRanges",
+	"annotatedAssetId",
+	"annotatedLocation",
+	"annotatedUser",
+	"autoUpdateExpiration",
+	"bootMode",
+	"cpuStatusReports",
+	"deviceFiles",
+	"deviceId",
+	"diskVolumeReports",
+	"dockMacAddress",
+	"etag",
+	"ethernetMacAddress",
+	"ethernetMacAddress0",
+	"firmwareVersion",
+	"kind",
+	"lastEnrollmentTime",
+	"lastKnownNetwork",
+	"lastSync",
+	"macAddress",
+	"manufactureDate",
+	"meid",
+	"model",
+	"notes",
+	"orderNumber",
+	"orgUnitPath",
+	"osVersion",
+	"platformVersion",
+	"recentUsers",
+	"serialNumber",
+	"status",
+	"supportEndDate",
+	"systemRamFreeReports",
+	"systemRamTotal",
+	"tpmVersionInfo",
+	"willAutoRenew",
+}
+
+var crOSDevCompAttrs = map[string]string{
+	"activetimeranges":     "chromeOsDeviceActiveTimeRanges",
+	"cpustatusreports":     "chromeOsDeviceCpuStatusReports",
+	"devicefiles":          "chromeOsDeviceDeviceFiles",
+	"diskvolumereports":    "chromeOsDeviceDiskVolumeReports",
+	"lastknownnetwork":     "chromeOsDeviceLastKnownNetwork",
+	"recentusers":          "chromeOsDeviceRecentUsers",
+	"systemramfreereports": "chromeOsDeviceSystemRamFreeReports",
+	"tpmversioninfo":       "chromeOsDeviceTpmVersionInfo",
 }
 
 // ValidActions provide valid strings to be used for admin.ChromeosdevicesActionCall
@@ -354,4 +409,77 @@ func DoList(cdlc *admin.ChromeosdevicesListCall) (*admin.ChromeOsDevices, error)
 	}
 
 	return crosdevs, nil
+}
+
+// ShowAttrs displays requested chromeOS device attributes
+func ShowAttrs(filter string) {
+	for _, a := range crOSDevAttrs {
+		lwrA := strings.ToLower(a)
+		comp, _ := cmn.IsValidAttr(lwrA, crOSDevCompAttrs)
+		if filter == "" {
+			if comp != "" {
+				fmt.Println("* ", a)
+			} else {
+				fmt.Println(a)
+			}
+			continue
+		}
+
+		if strings.Contains(lwrA, strings.ToLower(filter)) {
+			if comp != "" {
+				fmt.Println("* ", a)
+			} else {
+				fmt.Println(a)
+			}
+		}
+
+	}
+}
+
+// ShowCompAttrs displays chromeOS device composite attributes
+func ShowCompAttrs(filter string) {
+	keys := make([]string, 0, len(crOSDevCompAttrs))
+	for k := range crOSDevCompAttrs {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	for _, k := range keys {
+		if filter == "" {
+			fmt.Println(crOSDevCompAttrs[k])
+			continue
+		}
+
+		if strings.Contains(k, strings.ToLower(filter)) {
+			fmt.Println(crOSDevCompAttrs[k])
+		}
+
+	}
+}
+
+// ShowSubAttrs displays attributes of composite attributes
+func ShowSubAttrs(compAttr string, filter string) error {
+	lwrCompAttr := strings.ToLower(compAttr)
+	switch lwrCompAttr {
+	case "chromeosdeviceactivetimeranges":
+		cmn.ShowAttrs(crOsDevActiveTimeRangesAttrs, CrOSDevAttrMap, filter)
+	case "chromeosdevicecpustatusreports":
+		cmn.ShowAttrs(crOsDevCPUStatusReportsAttrs, CrOSDevAttrMap, filter)
+	case "chromeosdevicedevicefiles":
+		cmn.ShowAttrs(crOsDevDeviceFilesAttrs, CrOSDevAttrMap, filter)
+	case "chromeosdevicediskvolumereports":
+		cmn.ShowAttrs(crOsDevDiskVolReportsAttrs, CrOSDevAttrMap, filter)
+	case "chromeosdevicelastknownnetwork":
+		cmn.ShowAttrs(crOsDevLastKnownNetworkAttrs, CrOSDevAttrMap, filter)
+	case "chromeosdevicerecentusers":
+		cmn.ShowAttrs(crOsDevRecentUsersAttrs, CrOSDevAttrMap, filter)
+	case "chromeosdevicesystemramfreereports":
+		cmn.ShowAttrs(crOsDevSystemRAMFreeReportsAttrs, CrOSDevAttrMap, filter)
+	case "chromeosdevicetpmversioninfo":
+		cmn.ShowAttrs(crOsDevTpmVersionInfoAttrs, CrOSDevAttrMap, filter)
+	default:
+		return fmt.Errorf("gmin: error - %v is not a composite attribute", compAttr)
+	}
+
+	return nil
 }

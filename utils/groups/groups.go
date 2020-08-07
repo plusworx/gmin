@@ -23,6 +23,10 @@ THE SOFTWARE.
 package groups
 
 import (
+	"fmt"
+	"sort"
+	"strings"
+
 	admin "google.golang.org/api/admin/directory/v1"
 	"google.golang.org/api/googleapi"
 )
@@ -265,4 +269,25 @@ func DoList(glc *admin.GroupsListCall) (*admin.Groups, error) {
 	}
 
 	return groups, nil
+}
+
+// ShowAttrs displays requested group attributes
+func ShowAttrs(filter string) {
+	keys := make([]string, 0, len(GroupAttrMap))
+	for k := range GroupAttrMap {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	for _, k := range keys {
+		if filter == "" {
+			fmt.Println(GroupAttrMap[k])
+			continue
+		}
+
+		if strings.Contains(k, strings.ToLower(filter)) {
+			fmt.Println(GroupAttrMap[k])
+		}
+
+	}
 }
