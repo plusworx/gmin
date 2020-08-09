@@ -56,9 +56,16 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 		validOrderBy string
 	)
 
+	if strings.ToLower(projection) == "custom" && customField == "" {
+		return errors.New("gmin: error - must provide --customfieldmask for custom projection")
+	}
+
+	if customField != "" && strings.ToLower(projection) != "custom" {
+		return errors.New("gmin: error - must provide --projection custom to use --customfieldmask")
+	}
+
 	if query != "" && deleted {
-		err := errors.New("gmin: error - cannot provide both --query and --deleted flags")
-		return err
+		return errors.New("gmin: error - cannot provide both --query and --deleted flags")
 	}
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserReadonlyScope)
