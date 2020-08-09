@@ -138,6 +138,7 @@ var GroupAttrMap = map[string]string{
 	"directmemberscount": "directMembersCount",
 	"email":              "email",
 	"etag":               "etag",
+	"forcesendfields":    "forceSendFields",
 	"groupkey":           "groupKey", // Used in batch update
 	"id":                 "id",
 	"kind":               "kind",

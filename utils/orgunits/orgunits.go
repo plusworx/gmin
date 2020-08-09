@@ -126,6 +126,7 @@ var OrgUnitAttrMap = map[string]string{
 	"blockinheritance":  "blockInheritance",
 	"description":       "description",
 	"etag":              "etag",
+	"forcesendfields":   "forceSendFields",
 	"kind":              "kind",
 	"name":              "name",
 	"orgunitid":         "orgUnitId",
