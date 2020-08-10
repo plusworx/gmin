@@ -514,6 +514,29 @@ var ValidSortOrders = map[string]string{
 	"descending": "descending",
 }
 
+// ValidPrimaryShowArgs holds valid primary arguments for the show command
+var ValidPrimaryShowArgs = []string{
+	"chromeosdevice",
+	"crosdev",
+	"cdev",
+	"group",
+	"grp",
+	"group-alias",
+	"grp-alias",
+	"galias",
+	"ga",
+	"group-member",
+	"grp-member",
+	"grp-mem",
+	"gmember",
+	"gmem",
+	"orgunit",
+	"ou",
+	"schema",
+	"sc",
+	"user",
+}
+
 // CreateDirectoryService function creates and returns Admin Service object
 func CreateDirectoryService(scope ...string) (*admin.Service, error) {
 	adminEmail, err := cfg.ReadConfigString("administrator")
@@ -548,6 +571,22 @@ func CreateDirectoryService(scope ...string) (*admin.Service, error) {
 		return nil, fmt.Errorf("NewService: %v", err)
 	}
 	return srv, nil
+}
+
+// deDupeStrSlice gets rid of duplicate values in a slice
+func deDupeStrSlice(strSlice []string) []string {
+
+	check := make(map[string]int)
+	res := make([]string, 0)
+	for _, val := range strSlice {
+		check[val] = 1
+	}
+
+	for s := range check {
+		res = append(res, s)
+	}
+
+	return res
 }
 
 // HashPassword creates a password hash
@@ -750,22 +789,6 @@ func ShowAttrs(attrSlice []string, attrMap map[string]string, filter string) {
 			fmt.Println(s)
 		}
 	}
-}
-
-// deDupeStrSlice gets rid of duplicate values in a slice
-func deDupeStrSlice(strSlice []string) []string {
-
-	check := make(map[string]int)
-	res := make([]string, 0)
-	for _, val := range strSlice {
-		check[val] = 1
-	}
-
-	for s := range check {
-		res = append(res, s)
-	}
-
-	return res
 }
 
 // ShowQueryableAttrs displays user queryable attributes

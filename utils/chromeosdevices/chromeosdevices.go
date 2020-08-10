@@ -232,14 +232,14 @@ var crOSDevAttrs = []string{
 }
 
 var crOSDevCompAttrs = map[string]string{
-	"activetimeranges":     "chromeOsDeviceActiveTimeRanges",
-	"cpustatusreports":     "chromeOsDeviceCpuStatusReports",
-	"devicefiles":          "chromeOsDeviceDeviceFiles",
-	"diskvolumereports":    "chromeOsDeviceDiskVolumeReports",
-	"lastknownnetwork":     "chromeOsDeviceLastKnownNetwork",
-	"recentusers":          "chromeOsDeviceRecentUsers",
-	"systemramfreereports": "chromeOsDeviceSystemRamFreeReports",
-	"tpmversioninfo":       "chromeOsDeviceTpmVersionInfo",
+	"activetimeranges":     "activeTimeRanges",
+	"cpustatusreports":     "cpuStatusReports",
+	"devicefiles":          "deviceFiles",
+	"diskvolumereports":    "diskVolumeReports",
+	"lastknownnetwork":     "lastKnownNetwork",
+	"recentusers":          "recentUsers",
+	"systemramfreereports": "systemRamFreeReports",
+	"tpmversioninfo":       "tpmVersionInfo",
 }
 
 // ValidActions provide valid strings to be used for admin.ChromeosdevicesActionCall
