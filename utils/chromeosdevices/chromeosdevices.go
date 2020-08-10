@@ -463,21 +463,21 @@ func ShowCompAttrs(filter string) {
 func ShowSubAttrs(compAttr string, filter string) error {
 	lwrCompAttr := strings.ToLower(compAttr)
 	switch lwrCompAttr {
-	case "chromeosdeviceactivetimeranges":
+	case "activetimeranges":
 		cmn.ShowAttrs(crOsDevActiveTimeRangesAttrs, CrOSDevAttrMap, filter)
-	case "chromeosdevicecpustatusreports":
+	case "cpustatusreports":
 		cmn.ShowAttrs(crOsDevCPUStatusReportsAttrs, CrOSDevAttrMap, filter)
-	case "chromeosdevicedevicefiles":
+	case "devicefiles":
 		cmn.ShowAttrs(crOsDevDeviceFilesAttrs, CrOSDevAttrMap, filter)
-	case "chromeosdevicediskvolumereports":
+	case "diskvolumereports":
 		cmn.ShowAttrs(crOsDevDiskVolReportsAttrs, CrOSDevAttrMap, filter)
-	case "chromeosdevicelastknownnetwork":
+	case "lastknownnetwork":
 		cmn.ShowAttrs(crOsDevLastKnownNetworkAttrs, CrOSDevAttrMap, filter)
-	case "chromeosdevicerecentusers":
+	case "recentusers":
 		cmn.ShowAttrs(crOsDevRecentUsersAttrs, CrOSDevAttrMap, filter)
-	case "chromeosdevicesystemramfreereports":
+	case "systemramfreereports":
 		cmn.ShowAttrs(crOsDevSystemRAMFreeReportsAttrs, CrOSDevAttrMap, filter)
-	case "chromeosdevicetpmversioninfo":
+	case "tpmversioninfo":
 		cmn.ShowAttrs(crOsDevTpmVersionInfoAttrs, CrOSDevAttrMap, filter)
 	default:
 		return fmt.Errorf("gmin: error - %v is not a composite attribute", compAttr)
