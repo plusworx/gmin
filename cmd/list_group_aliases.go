@@ -34,7 +34,7 @@ import (
 
 var listGroupAliasesCmd = &cobra.Command{
 	Use:     "group-aliases <group email address or id>",
-	Aliases: []string{"group-alias", "galiases", "galias", "gas", "ga"},
+	Aliases: []string{"group-alias", "grp-aliases", "grp-alias", "galiases", "galias", "gas", "ga"},
 	Args:    cobra.ExactArgs(1),
 	Short:   "Outputs a list of group aliases",
 	Long: `Outputs a list of group aliases.

@@ -32,7 +32,7 @@ import (
 
 var deleteGroupAliasCmd = &cobra.Command{
 	Use:     "group-alias <alias email address> <group email address or id>",
-	Aliases: []string{"galias", "ga"},
+	Aliases: []string{"grp-alias", "galias", "ga"},
 	Args:    cobra.ExactArgs(2),
 	Short:   "Deletes group alias",
 	Long: `Deletes group alias.
