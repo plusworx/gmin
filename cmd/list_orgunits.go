@@ -27,7 +27,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/jinzhu/copier"
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
 	ous "github.com/plusworx/gmin/utils/orgunits"
@@ -48,9 +47,8 @@ var listOUsCmd = &cobra.Command{
 
 func doListOUs(cmd *cobra.Command, args []string) error {
 	var (
-		jsonData    []byte
-		newOrgUnits = ous.GminOrgUnits{}
-		orgUnits    *admin.OrgUnits
+		jsonData []byte
+		orgUnits *admin.OrgUnits
 	)
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryOrgunitReadonlyScope)
@@ -94,18 +92,9 @@ func doListOUs(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if attrs == "" {
-		copier.Copy(&newOrgUnits, orgUnits)
-
-		jsonData, err = json.MarshalIndent(newOrgUnits, "", "    ")
-		if err != nil {
-			return err
-		}
-	} else {
-		jsonData, err = json.MarshalIndent(orgUnits, "", "    ")
-		if err != nil {
-			return err
-		}
+	jsonData, err = json.MarshalIndent(orgUnits, "", "    ")
+	if err != nil {
+		return err
 	}
 
 	if count {

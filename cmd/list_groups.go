@@ -29,7 +29,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/jinzhu/copier"
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
 	grps "github.com/plusworx/gmin/utils/groups"
@@ -52,7 +51,6 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 	var (
 		groups       *admin.Groups
 		jsonData     []byte
-		newGroups    = grps.GminGroups{}
 		validOrderBy string
 	)
 
@@ -141,18 +139,9 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	if attrs == "" {
-		copier.Copy(&newGroups, groups)
-
-		jsonData, err = json.MarshalIndent(newGroups, "", "    ")
-		if err != nil {
-			return err
-		}
-	} else {
-		jsonData, err = json.MarshalIndent(groups, "", "    ")
-		if err != nil {
-			return err
-		}
+	jsonData, err = json.MarshalIndent(groups, "", "    ")
+	if err != nil {
+		return err
 	}
 
 	if count {

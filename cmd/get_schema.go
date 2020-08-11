@@ -26,7 +26,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/jinzhu/copier"
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
 	scs "github.com/plusworx/gmin/utils/schemas"
@@ -48,9 +47,8 @@ var getSchemaCmd = &cobra.Command{
 
 func doGetSchema(cmd *cobra.Command, args []string) error {
 	var (
-		jsonData  []byte
-		newSchema = scs.GminSchema{}
-		schema    *admin.Schema
+		jsonData []byte
+		schema   *admin.Schema
 	)
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserschemaReadonlyScope)
@@ -79,18 +77,9 @@ func doGetSchema(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if attrs == "" {
-		copier.Copy(&newSchema, schema)
-
-		jsonData, err = json.MarshalIndent(newSchema, "", "    ")
-		if err != nil {
-			return err
-		}
-	} else {
-		jsonData, err = json.MarshalIndent(schema, "", "    ")
-		if err != nil {
-			return err
-		}
+	jsonData, err = json.MarshalIndent(schema, "", "    ")
+	if err != nil {
+		return err
 	}
 
 	fmt.Println(string(jsonData))
