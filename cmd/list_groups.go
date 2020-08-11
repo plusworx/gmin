@@ -39,6 +39,7 @@ import (
 var listGroupsCmd = &cobra.Command{
 	Use:     "groups",
 	Aliases: []string{"group", "grp", "grps"},
+	Args:    cobra.NoArgs,
 	Short:   "Outputs a list of groups",
 	Long: `Outputs a list of groups.
 	

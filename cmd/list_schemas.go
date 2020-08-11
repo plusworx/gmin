@@ -36,6 +36,7 @@ import (
 var listSchemasCmd = &cobra.Command{
 	Use:     "schemas",
 	Aliases: []string{"schema", "sc", "scs"},
+	Args:    cobra.NoArgs,
 	Short:   "Outputs a list of schemas",
 	Long: `Outputs a list of schemas.
 	

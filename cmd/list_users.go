@@ -39,6 +39,7 @@ import (
 var listUsersCmd = &cobra.Command{
 	Use:     "users",
 	Aliases: []string{"user"},
+	Args:    cobra.NoArgs,
 	Short:   "Outputs a list of users",
 	Long: `Outputs a list of users.
 	

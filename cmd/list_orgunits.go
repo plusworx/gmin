@@ -37,6 +37,7 @@ import (
 var listOUsCmd = &cobra.Command{
 	Use:     "orgunits",
 	Aliases: []string{"orgunit", "ou", "ous"},
+	Args:    cobra.NoArgs,
 	Short:   "Outputs a list of orgunits",
 	Long: `Outputs a list of orgunits.
 	
