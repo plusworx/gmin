@@ -61,6 +61,12 @@ func doGetOrgUnit(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	ou := args[0]
+	if ou[0] == '/' {
+		ou = ou[1:]
+		args[0] = ou
+	}
+
 	ougc := ds.Orgunits.Get(customerID, args)
 
 	if attrs != "" {
