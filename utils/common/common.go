@@ -23,12 +23,15 @@ THE SOFTWARE.
 package common
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"sort"
 	"strconv"
@@ -602,6 +605,25 @@ func HashPassword(password string) (string, error) {
 	hexSha1 := hex.EncodeToString(hashedBytes)
 
 	return hexSha1, nil
+}
+
+// InputFromStdIn checks to see if there is stdin data and sets up a scanner for it
+func InputFromStdIn(inputFile string) (*bufio.Scanner, error) {
+	file := os.Stdin
+	input, err := file.Stat()
+	if err != nil {
+		return nil, err
+	}
+	if input.Mode()&os.ModeNamedPipe == 0 {
+		return nil, nil
+	}
+	if inputFile != "" {
+		err = errors.New("gmin: error - cannot provide input file when piping in input")
+		return nil, err
+	}
+	scanner := bufio.NewScanner(os.Stdin)
+
+	return scanner, nil
 }
 
 // isOperator checks to see whether or not rune is an operator symbol

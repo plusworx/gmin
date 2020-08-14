@@ -37,16 +37,17 @@ import (
 )
 
 var batchDelMemberCmd = &cobra.Command{
-	Use:     "group-members <group email address or id> -i <input file path>",
+	Use:     "group-members <group email address or id> [-i input file path]",
 	Aliases: []string{"group-member", "grp-members", "grp-member", "gmembers", "gmember", "gmems", "gmem"},
 	Args:    cobra.ExactArgs(1),
 	Short:   "Deletes a batch of group members",
-	Long: `Deletes a batch of group members where group member details are provided in a text input file.
+	Long: `Deletes a batch of group members where group member details are provided in a text input file or through a pipe.
 	
 	Examples:	gmin batch-delete group-members somegroup@mycompany.com -i inputfile.txt
 			gmin bdel gmems somegroup@mycompany.com -i inputfile.txt
+			gmin ls gmem mygroup@mycompany.co.uk -a email | jq '.members[] | .email' -r | ./gmin bdel gmem mygroup@mycompany.co.uk
 			
-	The input file should have the group member email addresses, aliases or ids to be deleted on separate lines like this:
+	The input should have the group member email addresses, aliases or ids to be deleted on separate lines like this:
 	
 	frank.castle@mycompany.com
 	bruce.wayne@mycompany.com
@@ -60,18 +61,26 @@ func doBatchDelMember(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if inputFile == "" {
+	scanner, err := cmn.InputFromStdIn(inputFile)
+	if err != nil {
+		return err
+	}
+
+	if inputFile == "" && scanner == nil {
 		err := errors.New("gmin: error - must provide inputfile")
 		return err
 	}
 
-	file, err := os.Open(inputFile)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
+	if scanner == nil {
+		file, err := os.Open(inputFile)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
 
-	scanner := bufio.NewScanner(file)
+		scanner = bufio.NewScanner(file)
+	}
+
 	for scanner.Scan() {
 		member := scanner.Text()
 
