@@ -18,16 +18,20 @@ The following steps should get you a working gmin installation -
 Readonly scopes are needed for get and list functions. The other more permissive scopes are needed for
 create, delete, update and undelete functions.
 
+https://www.googleapis.com/auth/admin.directory.device.chromeos
+https://www.googleapis.com/auth/admin.directory.device.chromeos.readonly
 https://www.googleapis.com/auth/admin.directory.group
+https://www.googleapis.com/auth/admin.directory.group.member
 https://www.googleapis.com/auth/admin.directory.group.member.readonly
+https://www.googleapis.com/auth/admin.directory.group.readonly
 https://www.googleapis.com/auth/admin.directory.orgunit
 https://www.googleapis.com/auth/admin.directory.orgunit.readonly
 https://www.googleapis.com/auth/admin.directory.user
 https://www.googleapis.com/auth/admin.directory.user.alias
 https://www.googleapis.com/auth/admin.directory.user.alias.readonly
 https://www.googleapis.com/auth/admin.directory.user.readonly
-https://www.googleapis.com/auth/admin.directory.group.readonly
-https://www.googleapis.com/auth/admin.directory.group.member
+https://www.googleapis.com/auth/admin.directory.userschema
+https://www.googleapis.com/auth/admin.directory.userschema.readonly
 ```
 
 5. Copy/move the gmin binary to a convenient directory/folder and rename the JSON key file, downloaded earlier, to 'gmin_credentials'. Place in a directory/folder suitable for your environment.
@@ -156,11 +160,11 @@ https://developers.google.com/admin-sdk/directory/v1/get-start/getting-started i
 * Maybe there are other people who might benefit from gmin
 
 ## Project Status
-gmin is pretty young which means that it is liable to rapid change, although the command syntax is unlikely to change much (if at all) over time. The functionality is currently limited to the Admin SDK directory API but additional functionality will be added frequently when it is ready.
+gmin is pretty young which means that it is liable to rapid change, although the command syntax is unlikely to change much over time. The functionality is currently limited to the Admin SDK directory API but additional functionality will be added frequently when it is ready.
 
-All output is in JSON format apart from informational and error messages. Input and output in other formats such as CSV is on the roadmap, however, I have found the use of the jq utility (https://stedolan.github.io/jq/) can be a great help in working with JSON.
+All output is in JSON format apart from informational and error messages. Input in other formats such as CSV is on the roadmap, however, I have found the use of the fabulous jq utility (https://stedolan.github.io/jq/) can be a great help in manipulating JSON output.
 
-I have published a [development roadmap](https://github.com/plusworx/gmin/wiki/Development-Roadmap) and welcome any suggestions as to the most important features to add. A [wiki](https://github.com/plusworx/gmin/wiki) has also been started which contains the roadmap.
+There is a [documentation website](https://plusworx.github.io/gmindocs/#/) where I have published a [development roadmap](https://plusworx.github.io/gmindocs/#/dev_roadmap) and welcome any suggestions as to the most important features to add.
 
 ## Community
 
