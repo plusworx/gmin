@@ -27,6 +27,7 @@ import (
 	"sort"
 	"strings"
 
+	cmn "github.com/plusworx/gmin/utils/common"
 	admin "google.golang.org/api/admin/directory/v1"
 	"google.golang.org/api/googleapi"
 )
@@ -41,6 +42,11 @@ const (
 // Key is struct used to extract groupKey
 type Key struct {
 	GroupKey string
+}
+
+var flagValues = []string{
+	"orderby",
+	"sortorder",
 }
 
 // GroupAttrMap provides lowercase mappings to valid admin.Group attributes
@@ -203,4 +209,36 @@ func ShowAttrs(filter string) {
 		}
 
 	}
+}
+
+// ShowFlagValues displays enumerated flag values
+func ShowFlagValues(lenArgs int, args []string) error {
+	if lenArgs == 1 {
+		for _, v := range flagValues {
+			fmt.Println(v)
+		}
+	}
+
+	if lenArgs == 2 {
+		flag := strings.ToLower(args[1])
+		valSlice := []string{}
+
+		switch {
+		case flag == "orderby":
+			for _, ob := range ValidOrderByStrs {
+				fmt.Println(ob)
+			}
+		case flag == "sortorder":
+			for _, v := range cmn.ValidSortOrders {
+				valSlice = append(valSlice, v)
+			}
+			uniqueSlice := cmn.UniqueStrSlice(valSlice)
+			for _, so := range uniqueSlice {
+				fmt.Println(so)
+			}
+		default:
+			return fmt.Errorf("gmin: error - %v flag not recognized", args[1])
+		}
+	}
+	return nil
 }

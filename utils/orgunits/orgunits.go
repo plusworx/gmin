@@ -38,6 +38,10 @@ const (
 	StartOrgUnitsField string = "organizationUnits("
 )
 
+var flagValues = []string{
+	"type",
+}
+
 // OrgUnitAttrMap provides lowercase mappings to valid admin.OrgUnit attributes
 var OrgUnitAttrMap = map[string]string{
 	"blockinheritance":  "blockInheritance",
@@ -143,4 +147,28 @@ func ShowAttrs(filter string) {
 		}
 
 	}
+}
+
+// ShowFlagValues displays enumerated flag values
+func ShowFlagValues(lenArgs int, args []string) error {
+	if lenArgs == 1 {
+		for _, v := range flagValues {
+			fmt.Println(v)
+		}
+	}
+
+	if lenArgs == 2 {
+		flag := strings.ToLower(args[1])
+
+		switch {
+		case flag == "type":
+			for _, t := range ValidSearchTypes {
+				fmt.Println(t)
+			}
+		default:
+			return fmt.Errorf("gmin: error - %v flag not recognized", args[1])
+		}
+	}
+
+	return nil
 }

@@ -71,6 +71,13 @@ var extIDAttrs = []string{
 	"value",
 }
 
+var flagValues = []string{
+	"orderby",
+	"projection",
+	"sortorder",
+	"viewtype",
+}
+
 // genderAttrs contains names of all the addressable admin.UserGender attributes
 var genderAttrs = []string{
 	"addressmeas",
@@ -826,6 +833,55 @@ func ShowSubAttrs(compAttr string, filter string) error {
 		cmn.ShowAttrs(websiteAttrs, UserAttrMap, filter)
 	default:
 		return fmt.Errorf("gmin: error - %v is not a composite attribute", compAttr)
+	}
+
+	return nil
+}
+
+// ShowFlagValues displays enumerated flag values
+func ShowFlagValues(lenArgs int, args []string) error {
+	if lenArgs == 1 {
+		for _, v := range flagValues {
+			fmt.Println(v)
+		}
+	}
+
+	if lenArgs == 2 {
+		flag := strings.ToLower(args[1])
+		valSlice := []string{}
+
+		switch {
+		case flag == "orderby":
+			for _, val := range ValidOrderByStrs {
+				s, _ := cmn.IsValidAttr(val, UserAttrMap)
+				if s == "" {
+					s = val
+				}
+				valSlice = append(valSlice, s)
+			}
+			uniqueSlice := cmn.UniqueStrSlice(valSlice)
+			for _, ob := range uniqueSlice {
+				fmt.Println(ob)
+			}
+		case flag == "projection":
+			for _, vp := range ValidProjections {
+				fmt.Println(vp)
+			}
+		case flag == "sortorder":
+			for _, v := range cmn.ValidSortOrders {
+				valSlice = append(valSlice, v)
+			}
+			uniqueSlice := cmn.UniqueStrSlice(valSlice)
+			for _, so := range uniqueSlice {
+				fmt.Println(so)
+			}
+		case flag == "viewtype":
+			for _, vt := range ValidViewTypes {
+				fmt.Println(vt)
+			}
+		default:
+			return fmt.Errorf("gmin: error - %v flag not recognized", args[1])
+		}
 	}
 
 	return nil

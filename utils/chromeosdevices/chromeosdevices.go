@@ -242,6 +242,12 @@ var crOSDevCompAttrs = map[string]string{
 	"tpmversioninfo":       "tpmVersionInfo",
 }
 
+var flagValues = []string{
+	"orderby",
+	"projection",
+	"sortorder",
+}
+
 // ValidActions provide valid strings to be used for admin.ChromeosdevicesActionCall
 var ValidActions = []string{
 	"deprovision",
@@ -457,6 +463,51 @@ func ShowCompAttrs(filter string) {
 		}
 
 	}
+}
+
+// ShowFlagValues displays enumerated flag values
+func ShowFlagValues(lenArgs int, args []string) error {
+	if lenArgs == 1 {
+		for _, v := range flagValues {
+			fmt.Println(v)
+		}
+	}
+
+	if lenArgs == 2 {
+		flag := strings.ToLower(args[1])
+		valSlice := []string{}
+
+		switch {
+		case flag == "orderby":
+			for _, val := range ValidOrderByStrs {
+				s, _ := cmn.IsValidAttr(val, CrOSDevAttrMap)
+				if s == "" {
+					s = val
+				}
+				valSlice = append(valSlice, s)
+			}
+			uniqueSlice := cmn.UniqueStrSlice(valSlice)
+			for _, ob := range uniqueSlice {
+				fmt.Println(ob)
+			}
+		case flag == "projection":
+			for _, vp := range ValidProjections {
+				fmt.Println(vp)
+			}
+		case flag == "sortorder":
+			for _, v := range cmn.ValidSortOrders {
+				valSlice = append(valSlice, v)
+			}
+			uniqueSlice := cmn.UniqueStrSlice(valSlice)
+			for _, so := range uniqueSlice {
+				fmt.Println(so)
+			}
+		default:
+			return fmt.Errorf("gmin: error - %v flag not recognized", args[1])
+		}
+	}
+
+	return nil
 }
 
 // ShowSubAttrs displays attributes of composite attributes

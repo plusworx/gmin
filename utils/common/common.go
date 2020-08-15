@@ -850,6 +850,18 @@ func SliceContainsStr(strs []string, s string) bool {
 	return false
 }
 
+// UniqueStrSlice takes a slice with duplicate values and returns one with unique values
+func UniqueStrSlice(inSlice []string) []string {
+	outSlice := []string{}
+	for _, val := range inSlice {
+		ok := SliceContainsStr(outSlice, val)
+		if !ok {
+			outSlice = append(outSlice, val)
+		}
+	}
+	return outSlice
+}
+
 // ValidateInputAttrs validates JSON attribute string for create and update calls
 func ValidateInputAttrs(attrs []string, attrMap map[string]string) error {
 	for _, elem := range attrs {
