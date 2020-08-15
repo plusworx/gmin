@@ -221,7 +221,7 @@ func init() {
 	listCrOSDevsCmd.Flags().BoolVarP(&count, "count", "", false, "count number of entities returned")
 	listCrOSDevsCmd.Flags().Int64VarP(&maxResults, "maxresults", "m", 200, "maximum number of results to return per page")
 	listCrOSDevsCmd.Flags().StringVarP(&orderBy, "orderby", "o", "", "field by which results will be ordered")
-	listCrOSDevsCmd.Flags().StringVarP(&pages, "pages", "p", "", "number of pages of results to be returned")
+	listCrOSDevsCmd.Flags().StringVarP(&pages, "pages", "p", "", "number of pages of results to be returned ('all' or a number)")
 	listCrOSDevsCmd.Flags().StringVarP(&projection, "projection", "j", "", "type of projection")
 	listCrOSDevsCmd.Flags().StringVarP(&query, "query", "q", "", "selection criteria to get devices (separated by ~)")
 	listCrOSDevsCmd.Flags().StringVarP(&sortOrder, "sortorder", "s", "", "sort order of returned results")

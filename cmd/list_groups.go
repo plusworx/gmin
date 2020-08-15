@@ -223,7 +223,7 @@ func init() {
 	listGroupsCmd.Flags().StringVarP(&domain, "domain", "d", "", "domain from which to get groups")
 	listGroupsCmd.Flags().Int64VarP(&maxResults, "maxresults", "m", 200, "maximum number of results to return per page")
 	listGroupsCmd.Flags().StringVarP(&orderBy, "orderby", "o", "", "field by which results will be ordered")
-	listGroupsCmd.Flags().StringVarP(&pages, "pages", "p", "", "number of pages of results to be returned")
+	listGroupsCmd.Flags().StringVarP(&pages, "pages", "p", "", "number of pages of results to be returned ('all' or a number)")
 	listGroupsCmd.Flags().StringVarP(&query, "query", "q", "", "selection criteria to get groups (separated by ~)")
 	listGroupsCmd.Flags().StringVarP(&sortOrder, "sortorder", "s", "", "sort order of returned results")
 	listGroupsCmd.Flags().StringVarP(&userKey, "userkey", "u", "", "email address or id of user who belongs to returned groups")

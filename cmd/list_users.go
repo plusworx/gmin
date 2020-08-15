@@ -269,7 +269,7 @@ func init() {
 	listUsersCmd.Flags().StringVarP(&domain, "domain", "d", "", "domain from which to get users")
 	listUsersCmd.Flags().Int64VarP(&maxResults, "maxresults", "m", 500, "maximum number of results to return per page")
 	listUsersCmd.Flags().StringVarP(&orderBy, "orderby", "o", "", "field by which results will be ordered")
-	listUsersCmd.Flags().StringVarP(&pages, "pages", "p", "", "number of pages of results to be returned")
+	listUsersCmd.Flags().StringVarP(&pages, "pages", "p", "", "number of pages of results to be returned ('all' or a number)")
 	listUsersCmd.Flags().StringVarP(&projection, "projection", "j", "", "type of projection")
 	listUsersCmd.Flags().StringVarP(&query, "query", "q", "", "selection criteria to get users (separated by ~)")
 	listUsersCmd.Flags().StringVarP(&sortOrder, "sortorder", "s", "", "sort order of returned results")
