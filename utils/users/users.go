@@ -56,6 +56,22 @@ var addressAttrs = []string{
 	"type",
 }
 
+var attrValues = []string{
+	"address",
+	"email",
+	"externalId",
+	"gender",
+	"im",
+	"keyword",
+	"location",
+	"notes",
+	"organization",
+	"phone",
+	"posixAccount",
+	"relation",
+	"website",
+}
+
 // emailAttrs contains names of all the addressable admin.UserEmail attributes
 var emailAttrs = []string{
 	"address",
@@ -774,6 +790,153 @@ func ShowAttrs(filter string) {
 	}
 }
 
+// ShowAttrValues displays enumerated attribute values
+func ShowAttrValues(lenArgs int, args []string) error {
+	if lenArgs == 1 {
+		for _, v := range attrValues {
+			fmt.Println(v)
+		}
+	}
+
+	if lenArgs == 2 {
+		attr := strings.ToLower(args[1])
+
+		switch {
+		case attr == "address" || attr == "email" || attr == "externalid" || attr == "gender" ||
+			attr == "keyword" || attr == "location" || attr == "notes" || attr == "organization" || attr == "phone" ||
+			attr == "relation" || attr == "website":
+			fmt.Println("type")
+		case attr == "im":
+			fmt.Println("protocol")
+			fmt.Println("type")
+		case attr == "posixaccount":
+			fmt.Println("operatingSystemType")
+		default:
+			return fmt.Errorf("gmin: error - %v attribute not recognized", args[1])
+		}
+	}
+
+	if lenArgs == 3 {
+		attr2 := strings.ToLower(args[1])
+		attr3 := strings.ToLower(args[2])
+
+		switch {
+		case attr2 == "address":
+			if attr3 == "type" {
+				for _, val := range validAddressTypes {
+					fmt.Println(val)
+				}
+			} else {
+				return fmt.Errorf("gmin: error - %v attribute not recognized", args[2])
+			}
+		case attr2 == "email":
+			if attr3 == "type" {
+				for _, val := range validEmailTypes {
+					fmt.Println(val)
+				}
+			} else {
+				return fmt.Errorf("gmin: error - %v attribute not recognized", args[2])
+			}
+		case attr2 == "externalid":
+			if attr3 == "type" {
+				for _, val := range validExtIDTypes {
+					fmt.Println(val)
+				}
+			} else {
+				return fmt.Errorf("gmin: error - %v attribute not recognized", args[2])
+			}
+		case attr2 == "gender":
+			if attr3 == "type" {
+				for _, val := range validGenders {
+					fmt.Println(val)
+				}
+			} else {
+				return fmt.Errorf("gmin: error - %v attribute not recognized", args[2])
+			}
+		case attr2 == "keyword":
+			if attr3 == "type" {
+				for _, val := range validKeywordTypes {
+					fmt.Println(val)
+				}
+			} else {
+				return fmt.Errorf("gmin: error - %v attribute not recognized", args[2])
+			}
+		case attr2 == "location":
+			if attr3 == "type" {
+				for _, val := range validLocationTypes {
+					fmt.Println(val)
+				}
+			} else {
+				return fmt.Errorf("gmin: error - %v attribute not recognized", args[2])
+			}
+		case attr2 == "notes":
+			if attr3 == "type" {
+				for _, val := range validNotesContentTypes {
+					fmt.Println(val)
+				}
+			} else {
+				return fmt.Errorf("gmin: error - %v attribute not recognized", args[2])
+			}
+		case attr2 == "organization":
+			if attr3 == "type" {
+				for _, val := range validOrgTypes {
+					fmt.Println(val)
+				}
+			} else {
+				return fmt.Errorf("gmin: error - %v attribute not recognized", args[2])
+			}
+		case attr2 == "phone":
+			if attr3 == "type" {
+				for _, val := range validPhoneTypes {
+					fmt.Println(val)
+				}
+			} else {
+				return fmt.Errorf("gmin: error - %v attribute not recognized", args[2])
+			}
+		case attr2 == "posixaccount":
+			if attr3 == "operatingsystemtype" {
+				for _, val := range validOSTypes {
+					fmt.Println(val)
+				}
+			} else {
+				return fmt.Errorf("gmin: error - %v attribute not recognized", args[2])
+			}
+		case attr2 == "relation":
+			if attr3 == "type" {
+				for _, val := range validRelationTypes {
+					fmt.Println(val)
+				}
+			} else {
+				return fmt.Errorf("gmin: error - %v attribute not recognized", args[2])
+			}
+		case attr2 == "website":
+			if attr3 == "type" {
+				for _, val := range validWebsiteTypes {
+					fmt.Println(val)
+				}
+			} else {
+				return fmt.Errorf("gmin: error - %v attribute not recognized", args[2])
+			}
+		case attr2 == "im":
+			if attr3 == "protocol" {
+				for _, val := range validImProtocols {
+					fmt.Println(val)
+				}
+			} else if attr3 == "type" {
+				for _, val := range validImTypes {
+					fmt.Println(val)
+				}
+			} else {
+				return fmt.Errorf("gmin: error - %v attribute not recognized", args[2])
+			}
+		default:
+			return fmt.Errorf("gmin: error - %v attribute not recognized", args[1])
+		}
+	}
+
+	return nil
+}
+
 // ShowCompAttrs displays user composite attributes
 func ShowCompAttrs(filter string) {
 	keys := make([]string, 0, len(userCompAttrs))
@@ -793,49 +956,6 @@ func ShowCompAttrs(filter string) {
 		}
 
 	}
-}
-
-// ShowSubAttrs displays attributes of composite attributes
-func ShowSubAttrs(compAttr string, filter string) error {
-	lwrCompAttr := strings.ToLower(compAttr)
-	switch lwrCompAttr {
-	case "address":
-		cmn.ShowAttrs(addressAttrs, UserAttrMap, filter)
-	case "email":
-		cmn.ShowAttrs(emailAttrs, UserAttrMap, filter)
-	case "externalid":
-		cmn.ShowAttrs(extIDAttrs, UserAttrMap, filter)
-	case "gender":
-		cmn.ShowAttrs(genderAttrs, UserAttrMap, filter)
-	case "im":
-		cmn.ShowAttrs(imAttrs, UserAttrMap, filter)
-	case "keyword":
-		cmn.ShowAttrs(keywordAttrs, UserAttrMap, filter)
-	case "language":
-		cmn.ShowAttrs(languageAttrs, UserAttrMap, filter)
-	case "location":
-		cmn.ShowAttrs(locationAttrs, UserAttrMap, filter)
-	case "name":
-		cmn.ShowAttrs(nameAttrs, UserAttrMap, filter)
-	case "notes":
-		cmn.ShowAttrs(notesAttrs, UserAttrMap, filter)
-	case "organization":
-		cmn.ShowAttrs(organizationAttrs, UserAttrMap, filter)
-	case "phone":
-		cmn.ShowAttrs(phoneAttrs, UserAttrMap, filter)
-	case "posixaccount":
-		cmn.ShowAttrs(posAcctAttrs, UserAttrMap, filter)
-	case "relation":
-		cmn.ShowAttrs(relationAttrs, UserAttrMap, filter)
-	case "sshpublickey":
-		cmn.ShowAttrs(sshPubKeyAttrs, UserAttrMap, filter)
-	case "website":
-		cmn.ShowAttrs(websiteAttrs, UserAttrMap, filter)
-	default:
-		return fmt.Errorf("gmin: error - %v is not a composite attribute", compAttr)
-	}
-
-	return nil
 }
 
 // ShowFlagValues displays enumerated flag values
@@ -882,6 +1002,49 @@ func ShowFlagValues(lenArgs int, args []string) error {
 		default:
 			return fmt.Errorf("gmin: error - %v flag not recognized", args[1])
 		}
+	}
+
+	return nil
+}
+
+// ShowSubAttrs displays attributes of composite attributes
+func ShowSubAttrs(compAttr string, filter string) error {
+	lwrCompAttr := strings.ToLower(compAttr)
+	switch lwrCompAttr {
+	case "address":
+		cmn.ShowAttrs(addressAttrs, UserAttrMap, filter)
+	case "email":
+		cmn.ShowAttrs(emailAttrs, UserAttrMap, filter)
+	case "externalid":
+		cmn.ShowAttrs(extIDAttrs, UserAttrMap, filter)
+	case "gender":
+		cmn.ShowAttrs(genderAttrs, UserAttrMap, filter)
+	case "im":
+		cmn.ShowAttrs(imAttrs, UserAttrMap, filter)
+	case "keyword":
+		cmn.ShowAttrs(keywordAttrs, UserAttrMap, filter)
+	case "language":
+		cmn.ShowAttrs(languageAttrs, UserAttrMap, filter)
+	case "location":
+		cmn.ShowAttrs(locationAttrs, UserAttrMap, filter)
+	case "name":
+		cmn.ShowAttrs(nameAttrs, UserAttrMap, filter)
+	case "notes":
+		cmn.ShowAttrs(notesAttrs, UserAttrMap, filter)
+	case "organization":
+		cmn.ShowAttrs(organizationAttrs, UserAttrMap, filter)
+	case "phone":
+		cmn.ShowAttrs(phoneAttrs, UserAttrMap, filter)
+	case "posixaccount":
+		cmn.ShowAttrs(posAcctAttrs, UserAttrMap, filter)
+	case "relation":
+		cmn.ShowAttrs(relationAttrs, UserAttrMap, filter)
+	case "sshpublickey":
+		cmn.ShowAttrs(sshPubKeyAttrs, UserAttrMap, filter)
+	case "website":
+		cmn.ShowAttrs(websiteAttrs, UserAttrMap, filter)
+	default:
+		return fmt.Errorf("gmin: error - %v is not a composite attribute", compAttr)
 	}
 
 	return nil

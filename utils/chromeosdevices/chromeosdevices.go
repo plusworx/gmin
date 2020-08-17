@@ -23,6 +23,7 @@ THE SOFTWARE.
 package chromeosdevices
 
 import (
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -38,6 +39,10 @@ const (
 	// StartChromeDevicesField is List call attribute string prefix
 	StartChromeDevicesField string = "chromeosdevices("
 )
+
+var attrValues = []string{
+	"action",
+}
 
 // crOsDevActiveTimeRangesAttrs contains names of all the addressable admin.ChromeOsDeviceActiveTimeRanges attributes
 var crOsDevActiveTimeRangesAttrs = []string{
@@ -245,6 +250,7 @@ var crOSDevCompAttrs = map[string]string{
 var flagValues = []string{
 	"orderby",
 	"projection",
+	"reason",
 	"sortorder",
 }
 
@@ -444,6 +450,34 @@ func ShowAttrs(filter string) {
 	}
 }
 
+// ShowAttrValues displays enumerated attribute values
+func ShowAttrValues(lenArgs int, args []string) error {
+	if lenArgs > 2 {
+		return errors.New("gmin: error - too many arguments, chromeosdevice has maximum of 2")
+	}
+
+	if lenArgs == 1 {
+		for _, v := range attrValues {
+			fmt.Println(v)
+		}
+	}
+
+	if lenArgs == 2 {
+		attr := strings.ToLower(args[1])
+
+		if attr == "action" {
+			for _, val := range ValidActions {
+				fmt.Println(val)
+			}
+		} else {
+
+			return fmt.Errorf("gmin: error - %v attribute not recognized", args[1])
+		}
+	}
+
+	return nil
+}
+
 // ShowCompAttrs displays chromeOS device composite attributes
 func ShowCompAttrs(filter string) {
 	keys := make([]string, 0, len(crOSDevCompAttrs))
@@ -493,6 +527,10 @@ func ShowFlagValues(lenArgs int, args []string) error {
 		case flag == "projection":
 			for _, vp := range ValidProjections {
 				fmt.Println(vp)
+			}
+		case flag == "reason":
+			for _, dr := range ValidDeprovisionReasons {
+				fmt.Println(dr)
 			}
 		case flag == "sortorder":
 			for _, v := range cmn.ValidSortOrders {

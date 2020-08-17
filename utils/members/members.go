@@ -23,6 +23,7 @@ THE SOFTWARE.
 package members
 
 import (
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -38,6 +39,11 @@ const (
 	StartMembersField string = "members("
 )
 
+var attrValues = []string{
+	"delivery_settings",
+	"role",
+}
+
 // deliverySettingMap provides lowercase mappings to valid admin.Member delivery settings
 var deliverySettingMap = map[string]string{
 	"all_mail": "ALL_MAIL",
@@ -45,6 +51,10 @@ var deliverySettingMap = map[string]string{
 	"digest":   "DIGEST",
 	"disabled": "DISABLED",
 	"none":     "NONE",
+}
+
+var flagValues = []string{
+	"roles",
 }
 
 // MemberAttrMap provides lowercase mappings to valid admin.Member attributes
@@ -154,6 +164,76 @@ func ShowAttrs(filter string) {
 		}
 
 	}
+}
+
+// ShowAttrValues displays enumerated attribute values
+func ShowAttrValues(lenArgs int, args []string) error {
+	if lenArgs > 2 {
+		return errors.New("gmin: error - too many arguments, group-member has maximum of 2")
+	}
+
+	if lenArgs == 1 {
+		for _, v := range attrValues {
+			fmt.Println(v)
+		}
+	}
+
+	if lenArgs == 2 {
+		attr := strings.ToLower(args[1])
+		values := []string{}
+
+		switch {
+		case attr == "delivery_settings":
+			for _, val := range deliverySettingMap {
+				values = append(values, val)
+			}
+			sort.Strings(values)
+			for _, s := range values {
+				fmt.Println(s)
+			}
+		case attr == "role":
+			for _, val := range RoleMap {
+				values = append(values, val)
+			}
+			sort.Strings(values)
+			for _, s := range values {
+				fmt.Println(s)
+			}
+		default:
+			return fmt.Errorf("gmin: error - %v attribute not recognized", args[1])
+		}
+	}
+
+	return nil
+}
+
+// ShowFlagValues displays enumerated flag values
+func ShowFlagValues(lenArgs int, args []string) error {
+	values := []string{}
+
+	if lenArgs == 1 {
+		for _, v := range flagValues {
+			fmt.Println(v)
+		}
+	}
+
+	if lenArgs == 2 {
+		flag := strings.ToLower(args[1])
+
+		if flag == "roles" {
+			for _, val := range RoleMap {
+				values = append(values, val)
+			}
+			sort.Strings(values)
+			for _, s := range values {
+				fmt.Println(s)
+			}
+		} else {
+			return fmt.Errorf("gmin: error - %v flag not recognized", args[1])
+		}
+	}
+
+	return nil
 }
 
 // ValidateDeliverySetting checks that a valid delivery setting has been provided
