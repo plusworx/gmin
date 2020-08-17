@@ -29,6 +29,7 @@ import (
 
 	cdevs "github.com/plusworx/gmin/utils/chromeosdevices"
 	grps "github.com/plusworx/gmin/utils/groups"
+	gmems "github.com/plusworx/gmin/utils/members"
 	ous "github.com/plusworx/gmin/utils/orgunits"
 	usrs "github.com/plusworx/gmin/utils/users"
 	"github.com/spf13/cobra"
@@ -59,6 +60,16 @@ func doShowFlagVals(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return err
 		}
+	case obj == "group" || obj == "grp":
+		err := grps.ShowFlagValues(len(args), args)
+		if err != nil {
+			return err
+		}
+	case obj == "group-member" || obj == "grp-member" || obj == "grp-mem" || obj == "gmember" || obj == "gmem":
+		err := gmems.ShowFlagValues(len(args), args)
+		if err != nil {
+			return err
+		}
 	case obj == "orgunit" || obj == "ou":
 		err := ous.ShowFlagValues(len(args), args)
 		if err != nil {
@@ -66,11 +77,6 @@ func doShowFlagVals(cmd *cobra.Command, args []string) error {
 		}
 	case obj == "user":
 		err := usrs.ShowFlagValues(len(args), args)
-		if err != nil {
-			return err
-		}
-	case obj == "group" || obj == "grp":
-		err := grps.ShowFlagValues(len(args), args)
 		if err != nil {
 			return err
 		}
