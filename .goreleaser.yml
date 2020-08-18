@@ -14,7 +14,7 @@ archives:
     darwin: Darwin
     linux: Linux
     windows: Windows
-    amd64: x86_64
+    amd64: 64-bit
 checksum:
   name_template: 'checksums.txt'
 snapshot:
