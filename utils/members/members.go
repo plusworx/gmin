@@ -23,7 +23,9 @@ THE SOFTWARE.
 package members
 
 import (
+	"errors"
 	"fmt"
+	"sort"
 	"strings"
 
 	admin "google.golang.org/api/admin/directory/v1"
@@ -37,89 +39,9 @@ const (
 	StartMembersField string = "members("
 )
 
-// GminMember is custom admin.Member struct with no omitempty tags
-type GminMember struct {
-	// DeliverySettings: Delivery settings of member
-	DeliverySettings string `json:"delivery_settings"`
-
-	// Email: Email of member (Read-only)
-	Email string `json:"email"`
-
-	// Etag: ETag of the resource.
-	Etag string `json:"etag"`
-
-	// Id: The unique ID of the group member. A member id can be used as a
-	// member request URI's memberKey. Unique identifier of group
-	// (Read-only) Unique identifier of member (Read-only)
-	Id string `json:"id"`
-
-	// Kind: Kind of resource this is.
-	Kind string `json:"kind"`
-
-	// Role: Role of member
-	Role string `json:"role"`
-
-	// Status: Status of member (Immutable)
-	Status string `json:"status"`
-
-	// Type: Type of member (Immutable)
-	Type string `json:"type"`
-
-	// ServerResponse contains the HTTP response code and headers from the
-	// server.
-	googleapi.ServerResponse `json:"-"`
-
-	// ForceSendFields is a list of field names (e.g. "DeliverySettings") to
-	// unconditionally include in API requests. By default, fields with
-	// empty values are omitted from API requests. However, any non-pointer,
-	// non-interface field appearing in ForceSendFields will be sent to the
-	// server regardless of whether the field is empty or not. This may be
-	// used to include empty fields in Patch requests.
-	ForceSendFields []string `json:"-"`
-
-	// NullFields is a list of field names (e.g. "DeliverySettings") to
-	// include in API requests with the JSON null value. By default, fields
-	// with empty values are omitted from API requests. However, any field
-	// with an empty value appearing in NullFields will be sent to the
-	// server as null. It is an error if a field in this list has a
-	// non-empty value. This may be used to include null fields in Patch
-	// requests.
-	NullFields []string `json:"-"`
-}
-
-// GminMembers is custom admin.Members struct containing GminMember
-type GminMembers struct {
-	// Etag: ETag of the resource.
-	Etag string `json:"etag,omitempty"`
-
-	// Kind: Kind of resource this is.
-	Kind string `json:"kind,omitempty"`
-
-	// Members: List of member objects.
-	Members []*GminMember `json:"members,omitempty"`
-
-	// NextPageToken: Token used to access next page of this result.
-	NextPageToken string `json:"nextPageToken,omitempty"`
-
-	// ServerResponse contains the HTTP response code and headers from the
-	// server.
-	googleapi.ServerResponse `json:"-"`
-
-	// ForceSendFields is a list of field names (e.g. "Etag") to
-	// unconditionally include in API requests. By default, fields with
-	// empty values are omitted from API requests. However, any non-pointer,
-	// non-interface field appearing in ForceSendFields will be sent to the
-	// server regardless of whether the field is empty or not. This may be
-	// used to include empty fields in Patch requests.
-	ForceSendFields []string `json:"-"`
-
-	// NullFields is a list of field names (e.g. "Etag") to include in API
-	// requests with the JSON null value. By default, fields with empty
-	// values are omitted from API requests. However, any field with an
-	// empty value appearing in NullFields will be sent to the server as
-	// null. It is an error if a field in this list has a non-empty value.
-	// This may be used to include null fields in Patch requests.
-	NullFields []string `json:"-"`
+var attrValues = []string{
+	"delivery_settings",
+	"role",
 }
 
 // deliverySettingMap provides lowercase mappings to valid admin.Member delivery settings
@@ -129,6 +51,10 @@ var deliverySettingMap = map[string]string{
 	"digest":   "DIGEST",
 	"disabled": "DISABLED",
 	"none":     "NONE",
+}
+
+var flagValues = []string{
+	"roles",
 }
 
 // MemberAttrMap provides lowercase mappings to valid admin.Member attributes
@@ -217,6 +143,97 @@ func DoList(mlc *admin.MembersListCall) (*admin.Members, error) {
 	}
 
 	return members, nil
+}
+
+// ShowAttrs displays requested group member attributes
+func ShowAttrs(filter string) {
+	keys := make([]string, 0, len(MemberAttrMap))
+	for k := range MemberAttrMap {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	for _, k := range keys {
+		if filter == "" {
+			fmt.Println(MemberAttrMap[k])
+			continue
+		}
+
+		if strings.Contains(k, strings.ToLower(filter)) {
+			fmt.Println(MemberAttrMap[k])
+		}
+
+	}
+}
+
+// ShowAttrValues displays enumerated attribute values
+func ShowAttrValues(lenArgs int, args []string) error {
+	if lenArgs > 2 {
+		return errors.New("gmin: error - too many arguments, group-member has maximum of 2")
+	}
+
+	if lenArgs == 1 {
+		for _, v := range attrValues {
+			fmt.Println(v)
+		}
+	}
+
+	if lenArgs == 2 {
+		attr := strings.ToLower(args[1])
+		values := []string{}
+
+		switch {
+		case attr == "delivery_settings":
+			for _, val := range deliverySettingMap {
+				values = append(values, val)
+			}
+			sort.Strings(values)
+			for _, s := range values {
+				fmt.Println(s)
+			}
+		case attr == "role":
+			for _, val := range RoleMap {
+				values = append(values, val)
+			}
+			sort.Strings(values)
+			for _, s := range values {
+				fmt.Println(s)
+			}
+		default:
+			return fmt.Errorf("gmin: error - %v attribute not recognized", args[1])
+		}
+	}
+
+	return nil
+}
+
+// ShowFlagValues displays enumerated flag values
+func ShowFlagValues(lenArgs int, args []string) error {
+	values := []string{}
+
+	if lenArgs == 1 {
+		for _, v := range flagValues {
+			fmt.Println(v)
+		}
+	}
+
+	if lenArgs == 2 {
+		flag := strings.ToLower(args[1])
+
+		if flag == "roles" {
+			for _, val := range RoleMap {
+				values = append(values, val)
+			}
+			sort.Strings(values)
+			for _, s := range values {
+				fmt.Println(s)
+			}
+		} else {
+			return fmt.Errorf("gmin: error - %v flag not recognized", args[1])
+		}
+	}
+
+	return nil
 }
 
 // ValidateDeliverySetting checks that a valid delivery setting has been provided

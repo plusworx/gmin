@@ -23,6 +23,12 @@ THE SOFTWARE.
 package chromeosdevices
 
 import (
+	"errors"
+	"fmt"
+	"sort"
+	"strings"
+
+	cmn "github.com/plusworx/gmin/utils/common"
 	admin "google.golang.org/api/admin/directory/v1"
 	"google.golang.org/api/googleapi"
 )
@@ -33,6 +39,10 @@ const (
 	// StartChromeDevicesField is List call attribute string prefix
 	StartChromeDevicesField string = "chromeosdevices("
 )
+
+var attrValues = []string{
+	"action",
+}
 
 // crOsDevActiveTimeRangesAttrs contains names of all the addressable admin.ChromeOsDeviceActiveTimeRanges attributes
 var crOsDevActiveTimeRangesAttrs = []string{
@@ -145,6 +155,7 @@ var CrOSDevAttrMap = map[string]string{
 	"ethernetmacaddress0":          "ethernetMacAddress0",
 	"family":                       "family",
 	"firmwareversion":              "firmwareVersion",
+	"forcesendfields":              "forceSendFields",
 	"ipaddress":                    "ipAddress",
 	"kind":                         "kind",
 	"label":                        "label",
@@ -183,6 +194,64 @@ var CrOSDevAttrMap = map[string]string{
 	"volumeinfo":                   "volumeInfo",
 	"wanipaddress":                 "wanIpAddress",
 	"willautorenew":                "willAutoRenew",
+}
+
+var crOSDevAttrs = []string{
+	"activeTimeRanges",
+	"annotatedAssetId",
+	"annotatedLocation",
+	"annotatedUser",
+	"autoUpdateExpiration",
+	"bootMode",
+	"cpuStatusReports",
+	"deviceFiles",
+	"deviceId",
+	"diskVolumeReports",
+	"dockMacAddress",
+	"etag",
+	"ethernetMacAddress",
+	"ethernetMacAddress0",
+	"firmwareVersion",
+	"forceSendFields",
+	"kind",
+	"lastEnrollmentTime",
+	"lastKnownNetwork",
+	"lastSync",
+	"macAddress",
+	"manufactureDate",
+	"meid",
+	"model",
+	"notes",
+	"orderNumber",
+	"orgUnitPath",
+	"osVersion",
+	"platformVersion",
+	"recentUsers",
+	"serialNumber",
+	"status",
+	"supportEndDate",
+	"systemRamFreeReports",
+	"systemRamTotal",
+	"tpmVersionInfo",
+	"willAutoRenew",
+}
+
+var crOSDevCompAttrs = map[string]string{
+	"activetimeranges":     "activeTimeRanges",
+	"cpustatusreports":     "cpuStatusReports",
+	"devicefiles":          "deviceFiles",
+	"diskvolumereports":    "diskVolumeReports",
+	"lastknownnetwork":     "lastKnownNetwork",
+	"recentusers":          "recentUsers",
+	"systemramfreereports": "systemRamFreeReports",
+	"tpmversioninfo":       "tpmVersionInfo",
+}
+
+var flagValues = []string{
+	"orderby",
+	"projection",
+	"reason",
+	"sortorder",
 }
 
 // ValidActions provide valid strings to be used for admin.ChromeosdevicesActionCall
@@ -354,4 +423,154 @@ func DoList(cdlc *admin.ChromeosdevicesListCall) (*admin.ChromeOsDevices, error)
 	}
 
 	return crosdevs, nil
+}
+
+// ShowAttrs displays requested chromeOS device attributes
+func ShowAttrs(filter string) {
+	for _, a := range crOSDevAttrs {
+		lwrA := strings.ToLower(a)
+		comp, _ := cmn.IsValidAttr(lwrA, crOSDevCompAttrs)
+		if filter == "" {
+			if comp != "" {
+				fmt.Println("* ", a)
+			} else {
+				fmt.Println(a)
+			}
+			continue
+		}
+
+		if strings.Contains(lwrA, strings.ToLower(filter)) {
+			if comp != "" {
+				fmt.Println("* ", a)
+			} else {
+				fmt.Println(a)
+			}
+		}
+
+	}
+}
+
+// ShowAttrValues displays enumerated attribute values
+func ShowAttrValues(lenArgs int, args []string) error {
+	if lenArgs > 2 {
+		return errors.New("gmin: error - too many arguments, chromeosdevice has maximum of 2")
+	}
+
+	if lenArgs == 1 {
+		for _, v := range attrValues {
+			fmt.Println(v)
+		}
+	}
+
+	if lenArgs == 2 {
+		attr := strings.ToLower(args[1])
+
+		if attr == "action" {
+			for _, val := range ValidActions {
+				fmt.Println(val)
+			}
+		} else {
+
+			return fmt.Errorf("gmin: error - %v attribute not recognized", args[1])
+		}
+	}
+
+	return nil
+}
+
+// ShowCompAttrs displays chromeOS device composite attributes
+func ShowCompAttrs(filter string) {
+	keys := make([]string, 0, len(crOSDevCompAttrs))
+	for k := range crOSDevCompAttrs {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	for _, k := range keys {
+		if filter == "" {
+			fmt.Println(crOSDevCompAttrs[k])
+			continue
+		}
+
+		if strings.Contains(k, strings.ToLower(filter)) {
+			fmt.Println(crOSDevCompAttrs[k])
+		}
+
+	}
+}
+
+// ShowFlagValues displays enumerated flag values
+func ShowFlagValues(lenArgs int, args []string) error {
+	if lenArgs == 1 {
+		for _, v := range flagValues {
+			fmt.Println(v)
+		}
+	}
+
+	if lenArgs == 2 {
+		flag := strings.ToLower(args[1])
+		valSlice := []string{}
+
+		switch {
+		case flag == "orderby":
+			for _, val := range ValidOrderByStrs {
+				s, _ := cmn.IsValidAttr(val, CrOSDevAttrMap)
+				if s == "" {
+					s = val
+				}
+				valSlice = append(valSlice, s)
+			}
+			uniqueSlice := cmn.UniqueStrSlice(valSlice)
+			for _, ob := range uniqueSlice {
+				fmt.Println(ob)
+			}
+		case flag == "projection":
+			for _, vp := range ValidProjections {
+				fmt.Println(vp)
+			}
+		case flag == "reason":
+			for _, dr := range ValidDeprovisionReasons {
+				fmt.Println(dr)
+			}
+		case flag == "sortorder":
+			for _, v := range cmn.ValidSortOrders {
+				valSlice = append(valSlice, v)
+			}
+			uniqueSlice := cmn.UniqueStrSlice(valSlice)
+			for _, so := range uniqueSlice {
+				fmt.Println(so)
+			}
+		default:
+			return fmt.Errorf("gmin: error - %v flag not recognized", args[1])
+		}
+	}
+
+	return nil
+}
+
+// ShowSubAttrs displays attributes of composite attributes
+func ShowSubAttrs(compAttr string, filter string) error {
+	lwrCompAttr := strings.ToLower(compAttr)
+	switch lwrCompAttr {
+	case "activetimeranges":
+		cmn.ShowAttrs(crOsDevActiveTimeRangesAttrs, CrOSDevAttrMap, filter)
+	case "cpustatusreports":
+		cmn.ShowAttrs(crOsDevCPUStatusReportsAttrs, CrOSDevAttrMap, filter)
+	case "devicefiles":
+		cmn.ShowAttrs(crOsDevDeviceFilesAttrs, CrOSDevAttrMap, filter)
+	case "diskvolumereports":
+		cmn.ShowAttrs(crOsDevDiskVolReportsAttrs, CrOSDevAttrMap, filter)
+	case "lastknownnetwork":
+		cmn.ShowAttrs(crOsDevLastKnownNetworkAttrs, CrOSDevAttrMap, filter)
+	case "recentusers":
+		cmn.ShowAttrs(crOsDevRecentUsersAttrs, CrOSDevAttrMap, filter)
+	case "systemramfreereports":
+		cmn.ShowAttrs(crOsDevSystemRAMFreeReportsAttrs, CrOSDevAttrMap, filter)
+	case "tpmversioninfo":
+		cmn.ShowAttrs(crOsDevTpmVersionInfoAttrs, CrOSDevAttrMap, filter)
+	default:
+		return fmt.Errorf("gmin: error - %v is not a composite attribute", compAttr)
+	}
+
+	return nil
 }

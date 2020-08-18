@@ -18,16 +18,20 @@ The following steps should get you a working gmin installation -
 Readonly scopes are needed for get and list functions. The other more permissive scopes are needed for
 create, delete, update and undelete functions.
 
+https://www.googleapis.com/auth/admin.directory.device.chromeos
+https://www.googleapis.com/auth/admin.directory.device.chromeos.readonly
 https://www.googleapis.com/auth/admin.directory.group
+https://www.googleapis.com/auth/admin.directory.group.member
 https://www.googleapis.com/auth/admin.directory.group.member.readonly
+https://www.googleapis.com/auth/admin.directory.group.readonly
 https://www.googleapis.com/auth/admin.directory.orgunit
 https://www.googleapis.com/auth/admin.directory.orgunit.readonly
 https://www.googleapis.com/auth/admin.directory.user
 https://www.googleapis.com/auth/admin.directory.user.alias
 https://www.googleapis.com/auth/admin.directory.user.alias.readonly
 https://www.googleapis.com/auth/admin.directory.user.readonly
-https://www.googleapis.com/auth/admin.directory.group.readonly
-https://www.googleapis.com/auth/admin.directory.group.member
+https://www.googleapis.com/auth/admin.directory.userschema
+https://www.googleapis.com/auth/admin.directory.userschema.readonly
 ```
 
 5. Copy/move the gmin binary to a convenient directory/folder and rename the JSON key file, downloaded earlier, to 'gmin_credentials'. Place in a directory/folder suitable for your environment.
@@ -124,6 +128,10 @@ These commands have an attribute flag (-a or --attributes) where you can specify
 
 https://developers.google.com/admin-sdk/directory/v1/reference is a useful resource for looking up valid attribute names and values.
 
+**Create and update commands**
+
+Where an attribute flag (-a or --attributes) is provided for create or update commands, the value can be any valid JSON string that provides attribute values. Please note that if you are providing empty or false values you will need to use the --force flag with the field names separated by '~' otherwise those fields will be ignored.
+
 ### Query Flag
 
 Some commands have a query flag (-q or --query) where you can specify query clauses to filter the returned results by. For instance, you might want to retrieve a list of users that have certain attributes -
@@ -152,15 +160,17 @@ https://developers.google.com/admin-sdk/directory/v1/get-start/getting-started i
 * Maybe there are other people who might benefit from gmin
 
 ## Project Status
-gmin is pretty young which means that it is liable to rapid change, although the command syntax is unlikely to change much (if at all) over time. The functionality is currently limited to the Admin SDK directory API but additional functionality will be added frequently when it is ready.
+gmin is pretty young which means that it is liable to rapid change, although the command syntax is unlikely to change much over time. The functionality is currently limited to the Admin SDK directory API but additional functionality will be added frequently when it is ready.
 
-All output is in JSON format apart from informational and error messages. Input and output in other formats such as CSV is on the roadmap, however, I have found the use of the jq utility (https://stedolan.github.io/jq/) can be a great help in working with JSON.
+All output is in JSON format apart from informational and error messages. Input in other formats such as CSV is on the roadmap, however, I have found the use of the fabulous jq utility (https://stedolan.github.io/jq/) can be a great help in manipulating JSON output.
 
-I have published a [development roadmap](https://github.com/plusworx/gmin/wiki/Development-Roadmap) and welcome any suggestions as to the most important features to add. A [wiki](https://github.com/plusworx/gmin/wiki) has also been started which contains the roadmap.
+There is a [documentation website](https://plusworx.github.io/gmindocs/#/) where I have published a [development roadmap](https://plusworx.github.io/gmindocs/#/dev_roadmap) and welcome any suggestions as to the most important features to add.
 
 ## Community
 
 Google Group: https://groups.google.com/a/plusworx.uk/d/forum/gmin
+
+Reddit: https://www.reddit.com/r/gmin/
 
 ## Code of Conduct
 Please see the code of conduct document - https://github.com/plusworx/gmin/blob/master/CODE_OF_CONDUCT.md

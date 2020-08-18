@@ -23,35 +23,28 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"encoding/json"
 	"fmt"
 
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
-	ous "github.com/plusworx/gmin/utils/orgunits"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 )
 
-var getOrgUnitCmd = &cobra.Command{
-	Use:     "orgunit <orgunit name>",
-	Aliases: []string{"ou"},
+var deleteSchemaCmd = &cobra.Command{
+	Use:     "schema <name or id>",
+	Aliases: []string{"sc"},
 	Args:    cobra.ExactArgs(1),
-	Short:   "Outputs information about an orgunit",
-	Long: `Outputs information about an orgunit.
+	Short:   "Deletes schema",
+	Long: `Deletes schema.
 	
-	Examples:	gmin get orgunit Accounts
-			gmin get ou Marketing -a name~orgUnitId`,
-	RunE: doGetOrgUnit,
+	Examples:	gmin delete schema TestSchema
+			gmin del sc TestSchema`,
+	RunE: doDeleteSchema,
 }
 
-func doGetOrgUnit(cmd *cobra.Command, args []string) error {
-	var (
-		jsonData []byte
-		orgUnit  *admin.OrgUnit
-	)
-
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryOrgunitReadonlyScope)
+func doDeleteSchema(cmd *cobra.Command, args []string) error {
+	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserschemaScope)
 	if err != nil {
 		return err
 	}
@@ -61,40 +54,18 @@ func doGetOrgUnit(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	ou := args[0]
-	if ou[0] == '/' {
-		ou = ou[1:]
-		args[0] = ou
-	}
+	scdc := ds.Schemas.Delete(customerID, args[0])
 
-	ougc := ds.Orgunits.Get(customerID, args)
-
-	if attrs != "" {
-		formattedAttrs, err := cmn.ParseOutputAttrs(attrs, ous.OrgUnitAttrMap)
-		if err != nil {
-			return err
-		}
-		getCall := ous.AddFields(ougc, formattedAttrs)
-		ougc = getCall.(*admin.OrgunitsGetCall)
-	}
-
-	orgUnit, err = ous.DoGet(ougc)
+	err = scdc.Do()
 	if err != nil {
 		return err
 	}
 
-	jsonData, err = json.MarshalIndent(orgUnit, "", "    ")
-	if err != nil {
-		return err
-	}
-
-	fmt.Println(string(jsonData))
+	fmt.Printf("**** gmin: schema %s deleted ****\n", args[0])
 
 	return nil
 }
 
 func init() {
-	getCmd.AddCommand(getOrgUnitCmd)
-
-	getOrgUnitCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required orgunit attributes (separated by ~)")
+	deleteCmd.AddCommand(deleteSchemaCmd)
 }

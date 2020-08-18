@@ -28,30 +28,30 @@ import (
 
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
-	ous "github.com/plusworx/gmin/utils/orgunits"
+	scs "github.com/plusworx/gmin/utils/schemas"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 )
 
-var getOrgUnitCmd = &cobra.Command{
-	Use:     "orgunit <orgunit name>",
-	Aliases: []string{"ou"},
+var getSchemaCmd = &cobra.Command{
+	Use:     "schema <schema name>",
+	Aliases: []string{"sc"},
 	Args:    cobra.ExactArgs(1),
-	Short:   "Outputs information about an orgunit",
-	Long: `Outputs information about an orgunit.
+	Short:   "Outputs information about a schema",
+	Long: `Outputs information about a schema.
 	
-	Examples:	gmin get orgunit Accounts
-			gmin get ou Marketing -a name~orgUnitId`,
-	RunE: doGetOrgUnit,
+	Examples:	gmin get schema EmployeeInfo
+			gmin get sc EmployeeInfo -a displayName~schemaName`,
+	RunE: doGetSchema,
 }
 
-func doGetOrgUnit(cmd *cobra.Command, args []string) error {
+func doGetSchema(cmd *cobra.Command, args []string) error {
 	var (
 		jsonData []byte
-		orgUnit  *admin.OrgUnit
+		schema   *admin.Schema
 	)
 
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryOrgunitReadonlyScope)
+	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserschemaReadonlyScope)
 	if err != nil {
 		return err
 	}
@@ -61,29 +61,23 @@ func doGetOrgUnit(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	ou := args[0]
-	if ou[0] == '/' {
-		ou = ou[1:]
-		args[0] = ou
-	}
-
-	ougc := ds.Orgunits.Get(customerID, args)
+	scgc := ds.Schemas.Get(customerID, args[0])
 
 	if attrs != "" {
-		formattedAttrs, err := cmn.ParseOutputAttrs(attrs, ous.OrgUnitAttrMap)
+		formattedAttrs, err := cmn.ParseOutputAttrs(attrs, scs.SchemaAttrMap)
 		if err != nil {
 			return err
 		}
-		getCall := ous.AddFields(ougc, formattedAttrs)
-		ougc = getCall.(*admin.OrgunitsGetCall)
+		getCall := scs.AddFields(scgc, formattedAttrs)
+		scgc = getCall.(*admin.SchemasGetCall)
 	}
 
-	orgUnit, err = ous.DoGet(ougc)
+	schema, err = scs.DoGet(scgc)
 	if err != nil {
 		return err
 	}
 
-	jsonData, err = json.MarshalIndent(orgUnit, "", "    ")
+	jsonData, err = json.MarshalIndent(schema, "", "    ")
 	if err != nil {
 		return err
 	}
@@ -94,7 +88,7 @@ func doGetOrgUnit(cmd *cobra.Command, args []string) error {
 }
 
 func init() {
-	getCmd.AddCommand(getOrgUnitCmd)
+	getCmd.AddCommand(getSchemaCmd)
 
-	getOrgUnitCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required orgunit attributes (separated by ~)")
+	getSchemaCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required schema attributes (separated by ~)")
 }

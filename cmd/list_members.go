@@ -28,7 +28,6 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/jinzhu/copier"
 	cmn "github.com/plusworx/gmin/utils/common"
 	mems "github.com/plusworx/gmin/utils/members"
 	"github.com/spf13/cobra"
@@ -49,9 +48,8 @@ var listMembersCmd = &cobra.Command{
 
 func doListMembers(cmd *cobra.Command, args []string) error {
 	var (
-		jsonData   []byte
-		members    *admin.Members
-		newMembers = mems.GminMembers{}
+		jsonData []byte
+		members  *admin.Members
 	)
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupMemberReadonlyScope)
@@ -94,18 +92,9 @@ func doListMembers(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	if attrs == "" {
-		copier.Copy(&newMembers, members)
-
-		jsonData, err = json.MarshalIndent(newMembers, "", "    ")
-		if err != nil {
-			return err
-		}
-	} else {
-		jsonData, err = json.MarshalIndent(members, "", "    ")
-		if err != nil {
-			return err
-		}
+	jsonData, err = json.MarshalIndent(members, "", "    ")
+	if err != nil {
+		return err
 	}
 
 	if count {
@@ -184,6 +173,6 @@ func init() {
 	listMembersCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required member attributes (separated by ~)")
 	listMembersCmd.Flags().BoolVarP(&count, "count", "", false, "count number of entities returned")
 	listMembersCmd.Flags().Int64VarP(&maxResults, "maxresults", "m", 200, "maximum number or results to return")
-	listMembersCmd.Flags().StringVarP(&pages, "pages", "p", "", "number of pages of results to be returned")
+	listMembersCmd.Flags().StringVarP(&pages, "pages", "p", "", "number of pages of results to be returned ('all' or a number)")
 	listMembersCmd.Flags().StringVarP(&role, "roles", "r", "", "roles to filter results by (separated by ~)")
 }

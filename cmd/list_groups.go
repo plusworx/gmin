@@ -29,7 +29,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/jinzhu/copier"
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
 	grps "github.com/plusworx/gmin/utils/groups"
@@ -40,6 +39,7 @@ import (
 var listGroupsCmd = &cobra.Command{
 	Use:     "groups",
 	Aliases: []string{"group", "grp", "grps"},
+	Args:    cobra.NoArgs,
 	Short:   "Outputs a list of groups",
 	Long: `Outputs a list of groups.
 	
@@ -52,7 +52,6 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 	var (
 		groups       *admin.Groups
 		jsonData     []byte
-		newGroups    = grps.GminGroups{}
 		validOrderBy string
 	)
 
@@ -141,18 +140,9 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	if attrs == "" {
-		copier.Copy(&newGroups, groups)
-
-		jsonData, err = json.MarshalIndent(newGroups, "", "    ")
-		if err != nil {
-			return err
-		}
-	} else {
-		jsonData, err = json.MarshalIndent(groups, "", "    ")
-		if err != nil {
-			return err
-		}
+	jsonData, err = json.MarshalIndent(groups, "", "    ")
+	if err != nil {
+		return err
 	}
 
 	if count {
@@ -233,7 +223,7 @@ func init() {
 	listGroupsCmd.Flags().StringVarP(&domain, "domain", "d", "", "domain from which to get groups")
 	listGroupsCmd.Flags().Int64VarP(&maxResults, "maxresults", "m", 200, "maximum number of results to return per page")
 	listGroupsCmd.Flags().StringVarP(&orderBy, "orderby", "o", "", "field by which results will be ordered")
-	listGroupsCmd.Flags().StringVarP(&pages, "pages", "p", "", "number of pages of results to be returned")
+	listGroupsCmd.Flags().StringVarP(&pages, "pages", "p", "", "number of pages of results to be returned ('all' or a number)")
 	listGroupsCmd.Flags().StringVarP(&query, "query", "q", "", "selection criteria to get groups (separated by ~)")
 	listGroupsCmd.Flags().StringVarP(&sortOrder, "sortorder", "s", "", "sort order of returned results")
 	listGroupsCmd.Flags().StringVarP(&userKey, "userkey", "u", "", "email address or id of user who belongs to returned groups")

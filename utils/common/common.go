@@ -23,13 +23,17 @@ THE SOFTWARE.
 package common
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"unicode"
@@ -513,6 +517,29 @@ var ValidSortOrders = map[string]string{
 	"descending": "descending",
 }
 
+// ValidPrimaryShowArgs holds valid primary arguments for the show command
+var ValidPrimaryShowArgs = []string{
+	"chromeosdevice",
+	"crosdev",
+	"cdev",
+	"group",
+	"grp",
+	"group-alias",
+	"grp-alias",
+	"galias",
+	"ga",
+	"group-member",
+	"grp-member",
+	"grp-mem",
+	"gmember",
+	"gmem",
+	"orgunit",
+	"ou",
+	"schema",
+	"sc",
+	"user",
+}
+
 // CreateDirectoryService function creates and returns Admin Service object
 func CreateDirectoryService(scope ...string) (*admin.Service, error) {
 	adminEmail, err := cfg.ReadConfigString("administrator")
@@ -549,6 +576,22 @@ func CreateDirectoryService(scope ...string) (*admin.Service, error) {
 	return srv, nil
 }
 
+// deDupeStrSlice gets rid of duplicate values in a slice
+func deDupeStrSlice(strSlice []string) []string {
+
+	check := make(map[string]int)
+	res := make([]string, 0)
+	for _, val := range strSlice {
+		check[val] = 1
+	}
+
+	for s := range check {
+		res = append(res, s)
+	}
+
+	return res
+}
+
 // HashPassword creates a password hash
 func HashPassword(password string) (string, error) {
 	hasher := sha1.New()
@@ -562,6 +605,25 @@ func HashPassword(password string) (string, error) {
 	hexSha1 := hex.EncodeToString(hashedBytes)
 
 	return hexSha1, nil
+}
+
+// InputFromStdIn checks to see if there is stdin data and sets up a scanner for it
+func InputFromStdIn(inputFile string) (*bufio.Scanner, error) {
+	file := os.Stdin
+	input, err := file.Stat()
+	if err != nil {
+		return nil, err
+	}
+	if input.Mode()&os.ModeNamedPipe == 0 {
+		return nil, nil
+	}
+	if inputFile != "" {
+		err = errors.New("gmin: error - cannot provide input file when piping in input")
+		return nil, err
+	}
+	scanner := bufio.NewScanner(os.Stdin)
+
+	return scanner, nil
 }
 
 // isOperator checks to see whether or not rune is an operator symbol
@@ -736,7 +798,49 @@ func ParseQuery(query string, qAttrMap map[string]string) (string, error) {
 	return outputStr, nil
 }
 
-// SliceContainsStr tells whether strs contains s
+// ShowAttrs displays object attributes
+func ShowAttrs(attrSlice []string, attrMap map[string]string, filter string) {
+	for _, a := range attrSlice {
+		s, _ := IsValidAttr(a, attrMap)
+
+		if filter == "" {
+			fmt.Println(s)
+			continue
+		}
+		if strings.Contains(strings.ToLower(a), strings.ToLower(filter)) {
+			fmt.Println(s)
+		}
+	}
+}
+
+// ShowQueryableAttrs displays user queryable attributes
+func ShowQueryableAttrs(filter string, qAttrMap map[string]string) {
+	keys := make([]string, 0, len(qAttrMap))
+	for k := range qAttrMap {
+		keys = append(keys, k)
+	}
+
+	vals := make([]string, 0, len(qAttrMap))
+	for _, k := range keys {
+		vals = append(vals, qAttrMap[k])
+	}
+	deDupedVals := deDupeStrSlice(vals)
+	sort.Strings(deDupedVals)
+
+	for _, v := range deDupedVals {
+		if filter == "" {
+			fmt.Println(v)
+			continue
+		}
+
+		if strings.Contains(v, strings.ToLower(filter)) {
+			fmt.Println(v)
+		}
+
+	}
+}
+
+// SliceContainsStr tells whether a slice contains a particular string
 func SliceContainsStr(strs []string, s string) bool {
 	for _, sComp := range strs {
 		if s == sComp {
@@ -744,6 +848,18 @@ func SliceContainsStr(strs []string, s string) bool {
 		}
 	}
 	return false
+}
+
+// UniqueStrSlice takes a slice with duplicate values and returns one with unique values
+func UniqueStrSlice(inSlice []string) []string {
+	outSlice := []string{}
+	for _, val := range inSlice {
+		ok := SliceContainsStr(outSlice, val)
+		if !ok {
+			outSlice = append(outSlice, val)
+		}
+	}
+	return outSlice
 }
 
 // ValidateInputAttrs validates JSON attribute string for create and update calls

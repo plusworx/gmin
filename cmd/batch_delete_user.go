@@ -37,15 +37,16 @@ import (
 )
 
 var batchDelUserCmd = &cobra.Command{
-	Use:     "users -i <input file path>",
+	Use:     "users [-i input file path]",
 	Aliases: []string{"user"},
 	Short:   "Deletes a batch of users",
-	Long: `Deletes a batch of users where user details are provided in a text input file.
+	Long: `Deletes a batch of users where user details are provided in a text input file or from a pipe.
 	
 	Examples:	gmin batch-delete users -i inputfile.txt
 			gmin bdel user -i inputfile.txt
+			gmin ls user -a primaryemail -q orgunitpath=/TestOU | jq '.users[] | .primaryEmail' -r | gmin bdel user
 			
-	The input file should have the user email addresses, aliases or ids to be deleted on separate lines like this:
+	The input should provide the user email addresses, aliases or ids to be deleted on separate lines like this:
 	
 	frank.castle@mycompany.com
 	bruce.wayne@mycompany.com
@@ -59,18 +60,26 @@ func doBatchDelUser(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if inputFile == "" {
+	scanner, err := cmn.InputFromStdIn(inputFile)
+	if err != nil {
+		return err
+	}
+
+	if inputFile == "" && scanner == nil {
 		err := errors.New("gmin: error - must provide inputfile")
 		return err
 	}
 
-	file, err := os.Open(inputFile)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
+	if scanner == nil {
+		file, err := os.Open(inputFile)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
 
-	scanner := bufio.NewScanner(file)
+		scanner = bufio.NewScanner(file)
+	}
+
 	for scanner.Scan() {
 		user := scanner.Text()
 

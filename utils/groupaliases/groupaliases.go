@@ -23,6 +23,10 @@ THE SOFTWARE.
 package groupaliases
 
 import (
+	"fmt"
+	"sort"
+	"strings"
+
 	admin "google.golang.org/api/admin/directory/v1"
 	"google.golang.org/api/googleapi"
 )
@@ -61,4 +65,25 @@ func DoList(galc *admin.GroupsAliasesListCall) (*admin.Aliases, error) {
 	}
 
 	return aliases, nil
+}
+
+// ShowAttrs displays requested group alias attributes
+func ShowAttrs(filter string) {
+	keys := make([]string, 0, len(GroupAliasAttrMap))
+	for k := range GroupAliasAttrMap {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	for _, k := range keys {
+		if filter == "" {
+			fmt.Println(GroupAliasAttrMap[k])
+			continue
+		}
+
+		if strings.Contains(k, strings.ToLower(filter)) {
+			fmt.Println(GroupAliasAttrMap[k])
+		}
+
+	}
 }

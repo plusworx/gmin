@@ -28,30 +28,30 @@ import (
 
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
-	ous "github.com/plusworx/gmin/utils/orgunits"
+	scs "github.com/plusworx/gmin/utils/schemas"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 )
 
-var getOrgUnitCmd = &cobra.Command{
-	Use:     "orgunit <orgunit name>",
-	Aliases: []string{"ou"},
-	Args:    cobra.ExactArgs(1),
-	Short:   "Outputs information about an orgunit",
-	Long: `Outputs information about an orgunit.
+var listSchemasCmd = &cobra.Command{
+	Use:     "schemas",
+	Aliases: []string{"schema", "sc", "scs"},
+	Args:    cobra.NoArgs,
+	Short:   "Outputs a list of schemas",
+	Long: `Outputs a list of schemas.
 	
-	Examples:	gmin get orgunit Accounts
-			gmin get ou Marketing -a name~orgUnitId`,
-	RunE: doGetOrgUnit,
+	Examples:	gmin list schemas -a displayname~schemaname
+			gmin ls scs`,
+	RunE: doListSchemas,
 }
 
-func doGetOrgUnit(cmd *cobra.Command, args []string) error {
+func doListSchemas(cmd *cobra.Command, args []string) error {
 	var (
 		jsonData []byte
-		orgUnit  *admin.OrgUnit
+		schemas  *admin.Schemas
 	)
 
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryOrgunitReadonlyScope)
+	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserschemaReadonlyScope)
 	if err != nil {
 		return err
 	}
@@ -61,40 +61,41 @@ func doGetOrgUnit(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	ou := args[0]
-	if ou[0] == '/' {
-		ou = ou[1:]
-		args[0] = ou
-	}
-
-	ougc := ds.Orgunits.Get(customerID, args)
+	sclc := ds.Schemas.List(customerID)
 
 	if attrs != "" {
-		formattedAttrs, err := cmn.ParseOutputAttrs(attrs, ous.OrgUnitAttrMap)
+		listAttrs, err := cmn.ParseOutputAttrs(attrs, scs.SchemaAttrMap)
 		if err != nil {
 			return err
 		}
-		getCall := ous.AddFields(ougc, formattedAttrs)
-		ougc = getCall.(*admin.OrgunitsGetCall)
+		formattedAttrs := scs.StartSchemasField + listAttrs + scs.EndField
+
+		listCall := scs.AddFields(sclc, formattedAttrs)
+		sclc = listCall.(*admin.SchemasListCall)
 	}
 
-	orgUnit, err = ous.DoGet(ougc)
+	schemas, err = scs.DoList(sclc)
 	if err != nil {
 		return err
 	}
 
-	jsonData, err = json.MarshalIndent(orgUnit, "", "    ")
+	jsonData, err = json.MarshalIndent(schemas, "", "    ")
 	if err != nil {
 		return err
 	}
 
-	fmt.Println(string(jsonData))
+	if count {
+		fmt.Println(len(schemas.Schemas))
+	} else {
+		fmt.Println(string(jsonData))
+	}
 
 	return nil
 }
 
 func init() {
-	getCmd.AddCommand(getOrgUnitCmd)
+	listCmd.AddCommand(listSchemasCmd)
 
-	getOrgUnitCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required orgunit attributes (separated by ~)")
+	listSchemasCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required schema attributes separated by (~)")
+	listSchemasCmd.Flags().BoolVarP(&count, "count", "", false, "count number of entities returned")
 }

@@ -23,6 +23,11 @@ THE SOFTWARE.
 package users
 
 import (
+	"fmt"
+	"sort"
+	"strings"
+
+	cmn "github.com/plusworx/gmin/utils/common"
 	admin "google.golang.org/api/admin/directory/v1"
 	"google.golang.org/api/googleapi"
 )
@@ -51,6 +56,22 @@ var addressAttrs = []string{
 	"type",
 }
 
+var attrValues = []string{
+	"address",
+	"email",
+	"externalId",
+	"gender",
+	"im",
+	"keyword",
+	"location",
+	"notes",
+	"organization",
+	"phone",
+	"posixAccount",
+	"relation",
+	"website",
+}
+
 // emailAttrs contains names of all the addressable admin.UserEmail attributes
 var emailAttrs = []string{
 	"address",
@@ -64,6 +85,13 @@ var extIDAttrs = []string{
 	"customtype",
 	"type",
 	"value",
+}
+
+var flagValues = []string{
+	"orderby",
+	"projection",
+	"sortorder",
+	"viewtype",
 }
 
 // genderAttrs contains names of all the addressable admin.UserGender attributes
@@ -109,13 +137,9 @@ var locationAttrs = []string{
 
 // nameAttrs contains names of all the addressable admin.UserName attributes
 var nameAttrs = []string{
-	"christianname",
 	"familyname",
-	"firstname",
 	"fullname",
 	"givenname",
-	"lastname",
-	"surname",
 }
 
 // notesAttrs contains names of all the addressable admin.UserAbout attributes
@@ -260,6 +284,7 @@ var UserAttrMap = map[string]string{
 	"firstname":                  "givenName",
 	"floorname":                  "floorName",
 	"floorsection":               "floorSection",
+	"forcesendfields":            "forceSendFields",
 	"formatted":                  "formatted",
 	"fullname":                   "fullName",
 	"fulltimeequivalent":         "fullTimeEquivalent",
@@ -325,6 +350,76 @@ var UserAttrMap = map[string]string{
 	"username":                   "username",
 	"value":                      "value",
 	"websites":                   "websites",
+}
+
+var userAttrs = []string{
+	"addresses",
+	"agreedToTerms",
+	"aliases",
+	"archived",
+	"changePasswordAtNextLogin",
+	"creationTime",
+	"customSchemas",
+	"customerId",
+	"deletionTime",
+	"emails",
+	"etag",
+	"externalIds",
+	"forceSendFields",
+	"gender",
+	"hashFunction",
+	"id",
+	"ims",
+	"includeInGlobalAddressList",
+	"ipWhitelisted",
+	"isAdmin",
+	"isDelegatedAdmin",
+	"isEnforcedIn2Sv",
+	"isEnrolledIn2Sv",
+	"isMailboxSetup",
+	"keywords",
+	"kind",
+	"languages",
+	"lastLoginTime",
+	"locations",
+	"name",
+	"nonEditableAliases",
+	"notes",
+	"organizations",
+	"orgUnitPath",
+	"password",
+	"phones",
+	"posixAccounts",
+	"primaryEmail",
+	"recoveryEmail",
+	"recoveryPhone",
+	"relations",
+	"sshPublicKeys",
+	"suspended",
+	"suspensionReason",
+	"thumbnailPhotoEtag",
+	"thumbnailPhotoUrl",
+	"userKey", // Used in batch update
+	"websites",
+}
+
+var userCompAttrs = map[string]string{
+	"addresses":     "address",
+	"emails":        "email",
+	"externalids":   "externalId",
+	"gender":        "gender",
+	"ims":           "im",
+	"keywords":      "keyword",
+	"languages":     "language",
+	"locations":     "location",
+	"name":          "name",
+	"notes":         "notes",
+	"organizations": "organization",
+	"phones":        "phone",
+	"posixaccounts": "posixAccount",
+	"relations":     "relation",
+	"sshpublickeys": "sshPublicKey",
+	"websites":      "website",
 }
 
 var validAddressTypes = []string{
@@ -488,224 +583,6 @@ var validWebsiteTypes = []string{
 	"reservations",
 	"resume",
 	"work",
-}
-
-// GminUser is custom admin.User struct with no omitempty tags
-type GminUser struct {
-	Addresses interface{} `json:"addresses"`
-
-	// AgreedToTerms: Indicates if user has agreed to terms (Read-only)
-	AgreedToTerms bool `json:"agreedToTerms"`
-
-	// Aliases: List of aliases (Read-only)
-	Aliases []string `json:"aliases"`
-
-	// Archived: Indicates if user is archived.
-	Archived bool `json:"archived"`
-
-	// ChangePasswordAtNextLogin: Boolean indicating if the user should
-	// change password in next login
-	ChangePasswordAtNextLogin bool `json:"changePasswordAtNextLogin"`
-
-	// CreationTime: User's G Suite account creation time. (Read-only)
-	CreationTime string `json:"creationTime"`
-
-	// CustomSchemas: Custom fields of the user.
-	CustomSchemas map[string]googleapi.RawMessage `json:"customSchemas"`
-
-	// CustomerId: CustomerId of User (Read-only)
-	CustomerId string `json:"customerId"`
-
-	DeletionTime string `json:"deletionTime"`
-
-	Emails interface{} `json:"emails"`
-
-	// Etag: ETag of the resource.
-	Etag string `json:"etag"`
-
-	ExternalIds interface{} `json:"externalIds"`
-
-	Gender interface{} `json:"gender"`
-
-	// HashFunction: Hash function name for password. Supported are MD5,
-	// SHA-1 and crypt
-	HashFunction string `json:"hashFunction"`
-
-	// Id: Unique identifier of User (Read-only)
-	Id string `json:"id"`
-
-	Ims interface{} `json:"ims"`
-
-	// IncludeInGlobalAddressList: Boolean indicating if user is included in
-	// Global Address List
-	IncludeInGlobalAddressList bool `json:"includeInGlobalAddressList"`
-
-	// IpWhitelisted: Boolean indicating if ip is whitelisted
-	IpWhitelisted bool `json:"ipWhitelisted"`
-
-	// IsAdmin: Boolean indicating if the user is admin (Read-only)
-	IsAdmin bool `json:"isAdmin"`
-
-	// IsDelegatedAdmin: Boolean indicating if the user is delegated admin
-	// (Read-only)
-	IsDelegatedAdmin bool `json:"isDelegatedAdmin"`
-
-	// IsEnforcedIn2Sv: Is 2-step verification enforced (Read-only)
-	IsEnforcedIn2Sv bool `json:"isEnforcedIn2Sv"`
-
-	// IsEnrolledIn2Sv: Is enrolled in 2-step verification (Read-only)
-	IsEnrolledIn2Sv bool `json:"isEnrolledIn2Sv"`
-
-	// IsMailboxSetup: Is mailbox setup (Read-only)
-	IsMailboxSetup bool `json:"isMailboxSetup"`
-
-	Keywords interface{} `json:"keywords"`
-
-	// Kind: Kind of resource this is.
-	Kind string `json:"kind"`
-
-	Languages interface{} `json:"languages"`
-
-	// LastLoginTime: User's last login time. (Read-only)
-	LastLoginTime string `json:"lastLoginTime"`
-
-	Locations interface{} `json:"locations"`
-
-	// Name: User's name
-	Name *GminUserName `json:"name"`
-
-	// NonEditableAliases: List of non editable aliases (Read-only)
-	NonEditableAliases []string `json:"nonEditableAliases"`
-
-	Notes interface{} `json:"notes"`
-
-	// OrgUnitPath: OrgUnit of User
-	OrgUnitPath string `json:"orgUnitPath"`
-
-	Organizations interface{} `json:"organizations"`
-
-	// Password: User's password
-	Password string `json:"password"`
-
-	Phones interface{} `json:"phones"`
-
-	PosixAccounts interface{} `json:"posixAccounts"`
-
-	// PrimaryEmail: username of User
-	PrimaryEmail string `json:"primaryEmail"`
-
-	// RecoveryEmail: Recovery email of the user.
-	RecoveryEmail string `json:"recoveryEmail"`
-
-	// RecoveryPhone: Recovery phone of the user. The phone number must be
-	// in the E.164 format, starting with the plus sign (+). Example:
-	// +16506661212.
-	RecoveryPhone string `json:"recoveryPhone"`
-
-	Relations interface{} `json:"relations"`
-
-	SshPublicKeys interface{} `json:"sshPublicKeys"`
-
-	// Suspended: Indicates if user is suspended.
-	Suspended bool `json:"suspended"`
-
-	// SuspensionReason: Suspension reason if user is suspended (Read-only)
-	SuspensionReason string `json:"suspensionReason"`
-
-	// ThumbnailPhotoEtag: ETag of the user's photo (Read-only)
-	ThumbnailPhotoEtag string `json:"thumbnailPhotoEtag"`
-
-	// ThumbnailPhotoUrl: Photo Url of the user (Read-only)
-	ThumbnailPhotoUrl string `json:"thumbnailPhotoUrl"`
-
-	Websites interface{} `json:"websites"`
-
-	// ServerResponse contains the HTTP response code and headers from the
-	// server.
-	googleapi.ServerResponse `json:"-"`
-
-	// ForceSendFields is a list of field names (e.g. "Addresses") to
-	// unconditionally include in API requests. By default, fields with
-	// empty values are omitted from API requests. However, any non-pointer,
-	// non-interface field appearing in ForceSendFields will be sent to the
-	// server regardless of whether the field is empty or not. This may be
-	// used to include empty fields in Patch requests.
-	ForceSendFields []string `json:"-"`
-
-	// NullFields is a list of field names (e.g. "Addresses") to include in
-	// API requests with the JSON null value. By default, fields with empty
-	// values are omitted from API requests. However, any field with an
-	// empty value appearing in NullFields will be sent to the server as
-	// null. It is an error if a field in this list has a non-empty value.
-	// This may be used to include null fields in Patch requests.
-	NullFields []string `json:"-"`
-}
-
-// GminUsers is custom admin.Users struct containing GminUser
-type GminUsers struct {
-	// Etag: ETag of the resource.
-	Etag string `json:"etag,omitempty"`
-
-	// Kind: Kind of resource this is.
-	Kind string `json:"kind,omitempty"`
-
-	// NextPageToken: Token used to access next page of this result.
-	NextPageToken string `json:"nextPageToken,omitempty"`
-
-	// TriggerEvent: Event that triggered this response (only used in case
-	// of Push Response)
-	TriggerEvent string `json:"trigger_event,omitempty"`
-
-	// Users: List of user objects.
-	Users []*GminUser `json:"users,omitempty"`
-
-	// ServerResponse contains the HTTP response code and headers from the
-	// server.
-	googleapi.ServerResponse `json:"-"`
-
-	// ForceSendFields is a list of field names (e.g. "Etag") to
-	// unconditionally include in API requests. By default, fields with
-	// empty values are omitted from API requests. However, any non-pointer,
-	// non-interface field appearing in ForceSendFields will be sent to the
-	// server regardless of whether the field is empty or not. This may be
-	// used to include empty fields in Patch requests.
-	ForceSendFields []string `json:"-"`
-
-	// NullFields is a list of field names (e.g. "Etag") to include in API
-	// requests with the JSON null value. By default, fields with empty
-	// values are omitted from API requests. However, any field with an
-	// empty value appearing in NullFields will be sent to the server as
-	// null. It is an error if a field in this list has a non-empty value.
-	// This may be used to include null fields in Patch requests.
-	NullFields []string `json:"-"`
-}
-
-// GminUserName is custom admin.UserName struct with no omitempty tags
-type GminUserName struct {
-	// FamilyName: Last Name
-	FamilyName string `json:"familyName"`
-
-	// FullName: Full Name
-	FullName string `json:"fullName"`
-
-	// GivenName: First Name
-	GivenName string `json:"givenName"`
-
-	// ForceSendFields is a list of field names (e.g. "FamilyName") to
-	// unconditionally include in API requests. By default, fields with
-	// empty values are omitted from API requests. However, any non-pointer,
-	// non-interface field appearing in ForceSendFields will be sent to the
-	// server regardless of whether the field is empty or not. This may be
-	// used to include empty fields in Patch requests.
-	ForceSendFields []string `json:"-"`
-
-	// NullFields is a list of field names (e.g. "FamilyName") to include in
-	// API requests with the JSON null value. By default, fields with empty
-	// values are omitted from API requests. However, any field with an
-	// empty value appearing in NullFields will be sent to the server as
-	// null. It is an error if a field in this list has a non-empty value.
-	// This may be used to include null fields in Patch requests.
-	NullFields []string `json:"-"`
 }
 
 // Key is struct used to extract userKey
@@ -886,4 +763,289 @@ func DoList(ulc *admin.UsersListCall) (*admin.Users, error) {
 	}
 
 	return users, nil
+}
+
+// ShowAttrs displays requested user attributes
+func ShowAttrs(filter string) {
+	for _, a := range userAttrs {
+		lwrA := strings.ToLower(a)
+		comp, _ := cmn.IsValidAttr(lwrA, userCompAttrs)
+		if filter == "" {
+			if comp != "" {
+				fmt.Println("* ", a)
+			} else {
+				fmt.Println(a)
+			}
+			continue
+		}
+
+		if strings.Contains(lwrA, strings.ToLower(filter)) {
+			if comp != "" {
+				fmt.Println("* ", a)
+			} else {
+				fmt.Println(a)
+			}
+		}
+
+	}
+}
+
+// ShowAttrValues displays enumerated attribute values
+func ShowAttrValues(lenArgs int, args []string) error {
+	if lenArgs == 1 {
+		for _, v := range attrValues {
+			fmt.Println(v)
+		}
+	}
+
+	if lenArgs == 2 {
+		attr := strings.ToLower(args[1])
+
+		switch {
+		case attr == "address" || attr == "email" || attr == "externalid" || attr == "gender" ||
+			attr == "keyword" || attr == "location" || attr == "notes" || attr == "organization" || attr == "phone" ||
+			attr == "relation" || attr == "website":
+			fmt.Println("type")
+		case attr == "im":
+			fmt.Println("protocol")
+			fmt.Println("type")
+		case attr == "posixaccount":
+			fmt.Println("operatingSystemType")
+		default:
+			return fmt.Errorf("gmin: error - %v attribute not recognized", args[1])
+		}
+	}
+
+	if lenArgs == 3 {
+		attr2 := strings.ToLower(args[1])
+		attr3 := strings.ToLower(args[2])
+
+		switch {
+		case attr2 == "address":
+			if attr3 == "type" {
+				for _, val := range validAddressTypes {
+					fmt.Println(val)
+				}
+			} else {
+				return fmt.Errorf("gmin: error - %v attribute not recognized", args[2])
+			}
+		case attr2 == "email":
+			if attr3 == "type" {
+				for _, val := range validEmailTypes {
+					fmt.Println(val)
+				}
+			} else {
+				return fmt.Errorf("gmin: error - %v attribute not recognized", args[2])
+			}
+		case attr2 == "externalid":
+			if attr3 == "type" {
+				for _, val := range validExtIDTypes {
+					fmt.Println(val)
+				}
+			} else {
+				return fmt.Errorf("gmin: error - %v attribute not recognized", args[2])
+			}
+		case attr2 == "gender":
+			if attr3 == "type" {
+				for _, val := range validGenders {
+					fmt.Println(val)
+				}
+			} else {
+				return fmt.Errorf("gmin: error - %v attribute not recognized", args[2])
+			}
+		case attr2 == "keyword":
+			if attr3 == "type" {
+				for _, val := range validKeywordTypes {
+					fmt.Println(val)
+				}
+			} else {
+				return fmt.Errorf("gmin: error - %v attribute not recognized", args[2])
+			}
+		case attr2 == "location":
+			if attr3 == "type" {
+				for _, val := range validLocationTypes {
+					fmt.Println(val)
+				}
+			} else {
+				return fmt.Errorf("gmin: error - %v attribute not recognized", args[2])
+			}
+		case attr2 == "notes":
+			if attr3 == "type" {
+				for _, val := range validNotesContentTypes {
+					fmt.Println(val)
+				}
+			} else {
+				return fmt.Errorf("gmin: error - %v attribute not recognized", args[2])
+			}
+		case attr2 == "organization":
+			if attr3 == "type" {
+				for _, val := range validOrgTypes {
+					fmt.Println(val)
+				}
+			} else {
+				return fmt.Errorf("gmin: error - %v attribute not recognized", args[2])
+			}
+		case attr2 == "phone":
+			if attr3 == "type" {
+				for _, val := range validPhoneTypes {
+					fmt.Println(val)
+				}
+			} else {
+				return fmt.Errorf("gmin: error - %v attribute not recognized", args[2])
+			}
+		case attr2 == "posixaccount":
+			if attr3 == "operatingsystemtype" {
+				for _, val := range validOSTypes {
+					fmt.Println(val)
+				}
+			} else {
+				return fmt.Errorf("gmin: error - %v attribute not recognized", args[2])
+			}
+		case attr2 == "relation":
+			if attr3 == "type" {
+				for _, val := range validRelationTypes {
+					fmt.Println(val)
+				}
+			} else {
+				return fmt.Errorf("gmin: error - %v attribute not recognized", args[2])
+			}
+		case attr2 == "website":
+			if attr3 == "type" {
+				for _, val := range validWebsiteTypes {
+					fmt.Println(val)
+				}
+			} else {
+				return fmt.Errorf("gmin: error - %v attribute not recognized", args[2])
+			}
+		case attr2 == "im":
+			if attr3 == "protocol" {
+				for _, val := range validImProtocols {
+					fmt.Println(val)
+				}
+			} else if attr3 == "type" {
+				for _, val := range validImTypes {
+					fmt.Println(val)
+				}
+			} else {
+				return fmt.Errorf("gmin: error - %v attribute not recognized", args[2])
+			}
+		default:
+			return fmt.Errorf("gmin: error - %v attribute not recognized", args[1])
+		}
+	}
+
+	return nil
+}
+
+// ShowCompAttrs displays user composite attributes
+func ShowCompAttrs(filter string) {
+	keys := make([]string, 0, len(userCompAttrs))
+	for k := range userCompAttrs {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	for _, k := range keys {
+		if filter == "" {
+			fmt.Println(userCompAttrs[k])
+			continue
+		}
+
+		if strings.Contains(k, strings.ToLower(filter)) {
+			fmt.Println(userCompAttrs[k])
+		}
+
+	}
+}
+
+// ShowFlagValues displays enumerated flag values
+func ShowFlagValues(lenArgs int, args []string) error {
+	if lenArgs == 1 {
+		for _, v := range flagValues {
+			fmt.Println(v)
+		}
+	}
+
+	if lenArgs == 2 {
+		flag := strings.ToLower(args[1])
+		valSlice := []string{}
+
+		switch {
+		case flag == "orderby":
+			for _, val := range ValidOrderByStrs {
+				s, _ := cmn.IsValidAttr(val, UserAttrMap)
+				if s == "" {
+					s = val
+				}
+				valSlice = append(valSlice, s)
+			}
+			uniqueSlice := cmn.UniqueStrSlice(valSlice)
+			for _, ob := range uniqueSlice {
+				fmt.Println(ob)
+			}
+		case flag == "projection":
+			for _, vp := range ValidProjections {
+				fmt.Println(vp)
+			}
+		case flag == "sortorder":
+			for _, v := range cmn.ValidSortOrders {
+				valSlice = append(valSlice, v)
+			}
+			uniqueSlice := cmn.UniqueStrSlice(valSlice)
+			for _, so := range uniqueSlice {
+				fmt.Println(so)
+			}
+		case flag == "viewtype":
+			for _, vt := range ValidViewTypes {
+				fmt.Println(vt)
+			}
+		default:
+			return fmt.Errorf("gmin: error - %v flag not recognized", args[1])
+		}
+	}
+
+	return nil
+}
+
+// ShowSubAttrs displays attributes of composite attributes
+func ShowSubAttrs(compAttr string, filter string) error {
+	lwrCompAttr := strings.ToLower(compAttr)
+	switch lwrCompAttr {
+	case "address":
+		cmn.ShowAttrs(addressAttrs, UserAttrMap, filter)
+	case "email":
+		cmn.ShowAttrs(emailAttrs, UserAttrMap, filter)
+	case "externalid":
+		cmn.ShowAttrs(extIDAttrs, UserAttrMap, filter)
+	case "gender":
+		cmn.ShowAttrs(genderAttrs, UserAttrMap, filter)
+	case "im":
+		cmn.ShowAttrs(imAttrs, UserAttrMap, filter)
+	case "keyword":
+		cmn.ShowAttrs(keywordAttrs, UserAttrMap, filter)
+	case "language":
+		cmn.ShowAttrs(languageAttrs, UserAttrMap, filter)
+	case "location":
+		cmn.ShowAttrs(locationAttrs, UserAttrMap, filter)
+	case "name":
+		cmn.ShowAttrs(nameAttrs, UserAttrMap, filter)
+	case "notes":
+		cmn.ShowAttrs(notesAttrs, UserAttrMap, filter)
+	case "organization":
+		cmn.ShowAttrs(organizationAttrs, UserAttrMap, filter)
+	case "phone":
+		cmn.ShowAttrs(phoneAttrs, UserAttrMap, filter)
+	case "posixaccount":
+		cmn.ShowAttrs(posAcctAttrs, UserAttrMap, filter)
+	case "relation":
+		cmn.ShowAttrs(relationAttrs, UserAttrMap, filter)
+	case "sshpublickey":
+		cmn.ShowAttrs(sshPubKeyAttrs, UserAttrMap, filter)
+	case "website":
+		cmn.ShowAttrs(websiteAttrs, UserAttrMap, filter)
+	default:
+		return fmt.Errorf("gmin: error - %v is not a composite attribute", compAttr)
+	}
+
+	return nil
 }

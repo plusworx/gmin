@@ -29,7 +29,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/jinzhu/copier"
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
 	usrs "github.com/plusworx/gmin/utils/users"
@@ -40,6 +39,7 @@ import (
 var listUsersCmd = &cobra.Command{
 	Use:     "users",
 	Aliases: []string{"user"},
+	Args:    cobra.NoArgs,
 	Short:   "Outputs a list of users",
 	Long: `Outputs a list of users.
 	
@@ -51,14 +51,20 @@ var listUsersCmd = &cobra.Command{
 func doListUsers(cmd *cobra.Command, args []string) error {
 	var (
 		jsonData     []byte
-		newUsers     = usrs.GminUsers{}
 		users        *admin.Users
 		validOrderBy string
 	)
 
+	if strings.ToLower(projection) == "custom" && customField == "" {
+		return errors.New("gmin: error - must provide --customfieldmask for custom projection")
+	}
+
+	if customField != "" && strings.ToLower(projection) != "custom" {
+		return errors.New("gmin: error - must provide --projection custom to use --customfieldmask")
+	}
+
 	if query != "" && deleted {
-		err := errors.New("gmin: error - cannot provide both --query and --deleted flags")
-		return err
+		return errors.New("gmin: error - cannot provide both --query and --deleted flags")
 	}
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserReadonlyScope)
@@ -179,18 +185,9 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	if attrs == "" {
-		copier.Copy(&newUsers, users)
-
-		jsonData, err = json.MarshalIndent(newUsers, "", "    ")
-		if err != nil {
-			return err
-		}
-	} else {
-		jsonData, err = json.MarshalIndent(users, "", "    ")
-		if err != nil {
-			return err
-		}
+	jsonData, err = json.MarshalIndent(users, "", "    ")
+	if err != nil {
+		return err
 	}
 
 	if count {
@@ -272,7 +269,7 @@ func init() {
 	listUsersCmd.Flags().StringVarP(&domain, "domain", "d", "", "domain from which to get users")
 	listUsersCmd.Flags().Int64VarP(&maxResults, "maxresults", "m", 500, "maximum number of results to return per page")
 	listUsersCmd.Flags().StringVarP(&orderBy, "orderby", "o", "", "field by which results will be ordered")
-	listUsersCmd.Flags().StringVarP(&pages, "pages", "p", "", "number of pages of results to be returned")
+	listUsersCmd.Flags().StringVarP(&pages, "pages", "p", "", "number of pages of results to be returned ('all' or a number)")
 	listUsersCmd.Flags().StringVarP(&projection, "projection", "j", "", "type of projection")
 	listUsersCmd.Flags().StringVarP(&query, "query", "q", "", "selection criteria to get users (separated by ~)")
 	listUsersCmd.Flags().StringVarP(&sortOrder, "sortorder", "s", "", "sort order of returned results")

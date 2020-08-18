@@ -23,6 +23,11 @@ THE SOFTWARE.
 package groups
 
 import (
+	"fmt"
+	"sort"
+	"strings"
+
+	cmn "github.com/plusworx/gmin/utils/common"
 	admin "google.golang.org/api/admin/directory/v1"
 	"google.golang.org/api/googleapi"
 )
@@ -34,97 +39,14 @@ const (
 	StartGroupsField string = "groups("
 )
 
-// GminGroup is custom admin.Group struct with no omitempty tags
-type GminGroup struct {
-	// AdminCreated: Is the group created by admin (Read-only) *
-	AdminCreated bool `json:"adminCreated"`
-
-	// Aliases: List of aliases (Read-only)
-	Aliases []string `json:"aliases"`
-
-	// Description: Description of the group
-	Description string `json:"description"`
-
-	// DirectMembersCount: Group direct members count
-	DirectMembersCount int64 `json:"directMembersCount,string"`
-
-	// Email: Email of Group
-	Email string `json:"email"`
-
-	// Etag: ETag of the resource.
-	Etag string `json:"etag"`
-
-	// Id: Unique identifier of Group (Read-only)
-	Id string `json:"id"`
-
-	// Kind: Kind of resource this is.
-	Kind string `json:"kind"`
-
-	// Name: Group name
-	Name string `json:"name"`
-
-	// NonEditableAliases: List of non editable aliases (Read-only)
-	NonEditableAliases []string `json:"nonEditableAliases"`
-
-	// ServerResponse contains the HTTP response code and headers from the
-	// server.
-	googleapi.ServerResponse `json:"-"`
-
-	// ForceSendFields is a list of field names (e.g. "AdminCreated") to
-	// unconditionally include in API requests. By default, fields with
-	// empty values are omitted from API requests. However, any non-pointer,
-	// non-interface field appearing in ForceSendFields will be sent to the
-	// server regardless of whether the field is empty or not. This may be
-	// used to include empty fields in Patch requests.
-	ForceSendFields []string `json:"-"`
-
-	// NullFields is a list of field names (e.g. "AdminCreated") to include
-	// in API requests with the JSON null value. By default, fields with
-	// empty values are omitted from API requests. However, any field with
-	// an empty value appearing in NullFields will be sent to the server as
-	// null. It is an error if a field in this list has a non-empty value.
-	// This may be used to include null fields in Patch requests.
-	NullFields []string `json:"-"`
-}
-
-// GminGroups is custom admin.Groups struct containing GminGroup
-type GminGroups struct {
-	// Etag: ETag of the resource.
-	Etag string `json:"etag,omitempty"`
-
-	// Groups: List of group objects.
-	Groups []*GminGroup `json:"groups,omitempty"`
-
-	// Kind: Kind of resource this is.
-	Kind string `json:"kind,omitempty"`
-
-	// NextPageToken: Token used to access next page of this result.
-	NextPageToken string `json:"nextPageToken,omitempty"`
-
-	// ServerResponse contains the HTTP response code and headers from the
-	// server.
-	googleapi.ServerResponse `json:"-"`
-
-	// ForceSendFields is a list of field names (e.g. "Etag") to
-	// unconditionally include in API requests. By default, fields with
-	// empty values are omitted from API requests. However, any non-pointer,
-	// non-interface field appearing in ForceSendFields will be sent to the
-	// server regardless of whether the field is empty or not. This may be
-	// used to include empty fields in Patch requests.
-	ForceSendFields []string `json:"-"`
-
-	// NullFields is a list of field names (e.g. "Etag") to include in API
-	// requests with the JSON null value. By default, fields with empty
-	// values are omitted from API requests. However, any field with an
-	// empty value appearing in NullFields will be sent to the server as
-	// null. It is an error if a field in this list has a non-empty value.
-	// This may be used to include null fields in Patch requests.
-	NullFields []string `json:"-"`
-}
-
 // Key is struct used to extract groupKey
 type Key struct {
 	GroupKey string
+}
+
+var flagValues = []string{
+	"orderby",
+	"sortorder",
 }
 
 // GroupAttrMap provides lowercase mappings to valid admin.Group attributes
@@ -134,6 +56,7 @@ var GroupAttrMap = map[string]string{
 	"directmemberscount": "directMembersCount",
 	"email":              "email",
 	"etag":               "etag",
+	"forcesendfields":    "forceSendFields",
 	"groupkey":           "groupKey", // Used in batch update
 	"id":                 "id",
 	"kind":               "kind",
@@ -265,4 +188,57 @@ func DoList(glc *admin.GroupsListCall) (*admin.Groups, error) {
 	}
 
 	return groups, nil
+}
+
+// ShowAttrs displays requested group attributes
+func ShowAttrs(filter string) {
+	keys := make([]string, 0, len(GroupAttrMap))
+	for k := range GroupAttrMap {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	for _, k := range keys {
+		if filter == "" {
+			fmt.Println(GroupAttrMap[k])
+			continue
+		}
+
+		if strings.Contains(k, strings.ToLower(filter)) {
+			fmt.Println(GroupAttrMap[k])
+		}
+
+	}
+}
+
+// ShowFlagValues displays enumerated flag values
+func ShowFlagValues(lenArgs int, args []string) error {
+	if lenArgs == 1 {
+		for _, v := range flagValues {
+			fmt.Println(v)
+		}
+	}
+
+	if lenArgs == 2 {
+		flag := strings.ToLower(args[1])
+		valSlice := []string{}
+
+		switch {
+		case flag == "orderby":
+			for _, ob := range ValidOrderByStrs {
+				fmt.Println(ob)
+			}
+		case flag == "sortorder":
+			for _, v := range cmn.ValidSortOrders {
+				valSlice = append(valSlice, v)
+			}
+			uniqueSlice := cmn.UniqueStrSlice(valSlice)
+			for _, so := range uniqueSlice {
+				fmt.Println(so)
+			}
+		default:
+			return fmt.Errorf("gmin: error - %v flag not recognized", args[1])
+		}
+	}
+	return nil
 }

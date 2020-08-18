@@ -68,18 +68,26 @@ func doBatchMoveCrOSDev(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if inputFile == "" {
+	scanner, err := cmn.InputFromStdIn(inputFile)
+	if err != nil {
+		return err
+	}
+
+	if inputFile == "" && scanner == nil {
 		err := errors.New("gmin: error - must provide inputfile")
 		return err
 	}
 
-	file, err := os.Open(inputFile)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
+	if scanner == nil {
+		file, err := os.Open(inputFile)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
 
-	scanner := bufio.NewScanner(file)
+		scanner = bufio.NewScanner(file)
+	}
+
 	for scanner.Scan() {
 		deviceIDs = []string{}
 		deviceIDs = append(deviceIDs, scanner.Text())

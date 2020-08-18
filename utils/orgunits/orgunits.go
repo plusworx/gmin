@@ -23,6 +23,10 @@ THE SOFTWARE.
 package orgunits
 
 import (
+	"fmt"
+	"sort"
+	"strings"
+
 	admin "google.golang.org/api/admin/directory/v1"
 	"google.golang.org/api/googleapi"
 )
@@ -34,87 +38,8 @@ const (
 	StartOrgUnitsField string = "organizationUnits("
 )
 
-// GminOrgUnit is custom admin.OrgUnit struct with no omitempty tags
-type GminOrgUnit struct {
-	// BlockInheritance: Should block inheritance
-	BlockInheritance bool `json:"blockInheritance"`
-
-	// Description: Description of OrgUnit
-	Description string `json:"description"`
-
-	// Etag: ETag of the resource.
-	Etag string `json:"etag"`
-
-	// Kind: Kind of resource this is.
-	Kind string `json:"kind"`
-
-	// Name: Name of OrgUnit
-	Name string `json:"name"`
-
-	// OrgUnitId: Id of OrgUnit
-	OrgUnitId string `json:"orgUnitId"`
-
-	// OrgUnitPath: Path of OrgUnit
-	OrgUnitPath string `json:"orgUnitPath"`
-
-	// ParentOrgUnitId: Id of parent OrgUnit
-	ParentOrgUnitId string `json:"parentOrgUnitId"`
-
-	// ParentOrgUnitPath: Path of parent OrgUnit
-	ParentOrgUnitPath string `json:"parentOrgUnitPath"`
-
-	// ServerResponse contains the HTTP response code and headers from the
-	// server.
-	googleapi.ServerResponse `json:"-"`
-
-	// ForceSendFields is a list of field names (e.g. "BlockInheritance") to
-	// unconditionally include in API requests. By default, fields with
-	// empty values are omitted from API requests. However, any non-pointer,
-	// non-interface field appearing in ForceSendFields will be sent to the
-	// server regardless of whether the field is empty or not. This may be
-	// used to include empty fields in Patch requests.
-	ForceSendFields []string `json:"-"`
-
-	// NullFields is a list of field names (e.g. "BlockInheritance") to
-	// include in API requests with the JSON null value. By default, fields
-	// with empty values are omitted from API requests. However, any field
-	// with an empty value appearing in NullFields will be sent to the
-	// server as null. It is an error if a field in this list has a
-	// non-empty value. This may be used to include null fields in Patch
-	// requests.
-	NullFields []string `json:"-"`
-}
-
-// GminOrgUnits is custom admin.OrgUnits struct containing GminOrgUnit
-type GminOrgUnits struct {
-	// Etag: ETag of the resource.
-	Etag string `json:"etag,omitempty"`
-
-	// Kind: Kind of resource this is.
-	Kind string `json:"kind,omitempty"`
-
-	// OrganizationUnits: List of user objects.
-	OrganizationUnits []*GminOrgUnit `json:"organizationUnits,omitempty"`
-
-	// ServerResponse contains the HTTP response code and headers from the
-	// server.
-	googleapi.ServerResponse `json:"-"`
-
-	// ForceSendFields is a list of field names (e.g. "Etag") to
-	// unconditionally include in API requests. By default, fields with
-	// empty values are omitted from API requests. However, any non-pointer,
-	// non-interface field appearing in ForceSendFields will be sent to the
-	// server regardless of whether the field is empty or not. This may be
-	// used to include empty fields in Patch requests.
-	ForceSendFields []string `json:"-"`
-
-	// NullFields is a list of field names (e.g. "Etag") to include in API
-	// requests with the JSON null value. By default, fields with empty
-	// values are omitted from API requests. However, any field with an
-	// empty value appearing in NullFields will be sent to the server as
-	// null. It is an error if a field in this list has a non-empty value.
-	// This may be used to include null fields in Patch requests.
-	NullFields []string `json:"-"`
+var flagValues = []string{
+	"type",
 }
 
 // OrgUnitAttrMap provides lowercase mappings to valid admin.OrgUnit attributes
@@ -122,6 +47,7 @@ var OrgUnitAttrMap = map[string]string{
 	"blockinheritance":  "blockInheritance",
 	"description":       "description",
 	"etag":              "etag",
+	"forcesendfields":   "forceSendFields",
 	"kind":              "kind",
 	"name":              "name",
 	"orgunitid":         "orgUnitId",
@@ -200,4 +126,49 @@ func DoList(oulc *admin.OrgunitsListCall) (*admin.OrgUnits, error) {
 	}
 
 	return orgunits, nil
+}
+
+// ShowAttrs displays requested orgunit attributes
+func ShowAttrs(filter string) {
+	keys := make([]string, 0, len(OrgUnitAttrMap))
+	for k := range OrgUnitAttrMap {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	for _, k := range keys {
+		if filter == "" {
+			fmt.Println(OrgUnitAttrMap[k])
+			continue
+		}
+
+		if strings.Contains(k, strings.ToLower(filter)) {
+			fmt.Println(OrgUnitAttrMap[k])
+		}
+
+	}
+}
+
+// ShowFlagValues displays enumerated flag values
+func ShowFlagValues(lenArgs int, args []string) error {
+	if lenArgs == 1 {
+		for _, v := range flagValues {
+			fmt.Println(v)
+		}
+	}
+
+	if lenArgs == 2 {
+		flag := strings.ToLower(args[1])
+
+		switch {
+		case flag == "type":
+			for _, t := range ValidSearchTypes {
+				fmt.Println(t)
+			}
+		default:
+			return fmt.Errorf("gmin: error - %v flag not recognized", args[1])
+		}
+	}
+
+	return nil
 }
