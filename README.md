@@ -3,6 +3,8 @@
 # gmin
 gmin is a Google G Suite administration CLI (command line interface) written in Go (aka Golang). gmin performs actions by using credentials of a service account that has delegated domain-wide authority and the email address of a user with administrative authority in the G Suite domain.
 
+There is a gmin [documentation website](https://plusworx.github.io/gmindocs/#/) that is under construction.
+
 ## Installing gmin
 gmin is intended to run on Linux, Windows and MacOS for which pre-compiled binaries are [available](https://github.com/plusworx/gmin/releases). gmin may run on other operating systems, but it is up to the user to test.
 
