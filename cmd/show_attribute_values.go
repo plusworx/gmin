@@ -39,6 +39,11 @@ var showAttrValsCmd = &cobra.Command{
 	Args:    cobra.MinimumNArgs(1),
 	Short:   "Shows object field predefined value information",
 	Long: `Shows object field predefined value information.
+
+	Valid objects are:
+	chromeosdevice, crosdevice, cdev
+	group-member, grp-member, grp-mem, gmember, gmem
+	user
 	
 	Examples:	gmin show attribute-values user email type
 			gmin show avals user email type`,

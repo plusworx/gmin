@@ -41,6 +41,13 @@ var showFlagValsCmd = &cobra.Command{
 	Args:    cobra.MinimumNArgs(1),
 	Short:   "Shows object flag predefined value information",
 	Long: `Shows object flag predefined value information.
+
+	Valid objects are:
+	chromeosdevice, crosdevice, cdev
+	group, grp
+	group-member, grp-member, grp-mem, gmember, gmem
+	orgunit, ou
+	user
 	
 	Examples:	gmin show flag-values user projection
 			gmin show fvals user orderby`,

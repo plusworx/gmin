@@ -46,6 +46,16 @@ var showAttrsCmd = &cobra.Command{
 	Short:   "Shows object attribute information",
 	Long: `Shows object attribute information.
 	
+	Valid objects are:
+	chromeosdevice, crosdevice, cdev
+	group, grp
+	group-alias, grp-alias, galias, ga
+	group-member, grp-member, grp-mem, gmember, gmem
+	orgunit, ou
+	schema, sc
+	user
+	user-alias, ualias, ua
+
 	Examples:	gmin show attributes user -f pass
 			gmin show attrs user name`,
 	RunE: doShowAttrs,
@@ -113,7 +123,7 @@ func threeArgs(arg1 string, arg2 string, arg3 string) error {
 	subAttr := strings.ToLower(arg3)
 
 	switch {
-	case obj == "schema":
+	case obj == "schema" || obj == "sc":
 		if composite {
 			return fmt.Errorf("gmin: error - %v does not have any composite attributes", arg3)
 		}
