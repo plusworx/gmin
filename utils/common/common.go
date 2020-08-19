@@ -537,7 +537,10 @@ var ValidPrimaryShowArgs = []string{
 	"ou",
 	"schema",
 	"sc",
+	"ua",
+	"ualias",
 	"user",
+	"user-alias",
 }
 
 // CreateDirectoryService function creates and returns Admin Service object
