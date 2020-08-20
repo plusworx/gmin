@@ -305,7 +305,7 @@ func (qs *QueryScanner) Scan() (tok Token, lit string) {
 		if unicode.IsSpace(ch) {
 			qs.s.unread()
 			return qs.s.scanWhitespace()
-		} else if unicode.IsLetter(ch) {
+		} else if unicode.IsLetter(ch) || ch == underscore {
 			qs.s.unread()
 			tok, lit := qs.scanIdent()
 			qs.bConFieldName = false
@@ -377,7 +377,7 @@ func (qs *QueryScanner) scanIdent() (tok Token, lit string) {
 	for {
 		if ch := qs.s.read(); ch == eos {
 			break
-		} else if !unicode.IsLetter(ch) && !unicode.IsDigit(ch) && ch != '.' {
+		} else if !unicode.IsLetter(ch) && !unicode.IsDigit(ch) && ch != '.' && ch != underscore {
 			qs.s.unread()
 			break
 		} else {
