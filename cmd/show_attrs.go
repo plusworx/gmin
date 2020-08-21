@@ -32,6 +32,7 @@ import (
 	gas "github.com/plusworx/gmin/utils/groupaliases"
 	grps "github.com/plusworx/gmin/utils/groups"
 	mems "github.com/plusworx/gmin/utils/members"
+	mdevs "github.com/plusworx/gmin/utils/mobiledevices"
 	ous "github.com/plusworx/gmin/utils/orgunits"
 	scs "github.com/plusworx/gmin/utils/schemas"
 	uas "github.com/plusworx/gmin/utils/useraliases"
@@ -47,10 +48,11 @@ var showAttrsCmd = &cobra.Command{
 	Long: `Shows object attribute information.
 	
 	Valid objects are:
-	chromeosdevice, crosdevice, cdev
+	chromeosdevice, crosdevice, crosdev, cdev
 	group, grp
 	group-alias, grp-alias, galias, ga
 	group-member, grp-member, grp-mem, gmember, gmem
+	mobiledevice, mobdevice, mobdev, mdev
 	orgunit, ou
 	schema, sc
 	user
@@ -141,11 +143,19 @@ func threeArgs(arg1 string, arg2 string, arg3 string) error {
 func twoArgs(arg1 string, arg2 string) error {
 	obj := strings.ToLower(arg1)
 	switch {
-	case obj == "chromeosdevice" || obj == "crosdevice" || obj == "cdev":
+	case obj == "chromeosdevice" || obj == "crosdevice" || obj == "crosdev" || obj == "cdev":
 		if composite {
 			return fmt.Errorf("gmin: error - %v does not have any composite attributes", arg2)
 		}
 		err := cdevs.ShowSubAttrs(arg2, filter)
+		if err != nil {
+			return err
+		}
+	case obj == "mobiledevice" || obj == "mobdevice" || obj == "mobdev" || obj == "mdev":
+		if composite {
+			return fmt.Errorf("gmin: error - %v does not have any composite attributes", arg2)
+		}
+		err := mdevs.ShowSubAttrs(arg2, filter)
 		if err != nil {
 			return err
 		}
@@ -182,10 +192,12 @@ func oneArg(arg string) error {
 
 	if queryable {
 		switch {
-		case obj == "chromeosdevice" || obj == "crosdevice" || obj == "cdev":
+		case obj == "chromeosdevice" || obj == "crosdevice" || obj == "crosdev" || obj == "cdev":
 			cmn.ShowQueryableAttrs(filter, cdevs.QueryAttrMap)
 		case obj == "group" || obj == "grp":
 			cmn.ShowQueryableAttrs(filter, grps.QueryAttrMap)
+		case obj == "mobiledevice" || obj == "mobdevice" || obj == "mobdev" || obj == "mdev":
+			cmn.ShowQueryableAttrs(filter, mdevs.QueryAttrMap)
 		case obj == "user":
 			cmn.ShowQueryableAttrs(filter, usrs.QueryAttrMap)
 		default:
@@ -195,7 +207,7 @@ func oneArg(arg string) error {
 	}
 
 	switch {
-	case obj == "chromeosdevice" || obj == "crosdevice" || obj == "cdev":
+	case obj == "chromeosdevice" || obj == "crosdevice" || obj == "crosdev" || obj == "cdev":
 		if composite {
 			cdevs.ShowCompAttrs(filter)
 			break
@@ -216,6 +228,12 @@ func oneArg(arg string) error {
 			return errors.New("gmin: error - group members do not have any composite attributes")
 		}
 		mems.ShowAttrs(filter)
+	case obj == "mobiledevice" || obj == "mobdevice" || obj == "mobdev" || obj == "mdev":
+		if composite {
+			mdevs.ShowCompAttrs(filter)
+			break
+		}
+		mdevs.ShowAttrs(filter)
 	case obj == "orgunit" || obj == "ou":
 		if composite {
 			return errors.New("gmin: error - orgunits do not have any composite attributes")

@@ -30,6 +30,7 @@ import (
 	cdevs "github.com/plusworx/gmin/utils/chromeosdevices"
 	grps "github.com/plusworx/gmin/utils/groups"
 	gmems "github.com/plusworx/gmin/utils/members"
+	mdevs "github.com/plusworx/gmin/utils/mobiledevices"
 	ous "github.com/plusworx/gmin/utils/orgunits"
 	usrs "github.com/plusworx/gmin/utils/users"
 	"github.com/spf13/cobra"
@@ -43,9 +44,10 @@ var showFlagValsCmd = &cobra.Command{
 	Long: `Shows object flag predefined value information.
 
 	Valid objects are:
-	chromeosdevice, crosdevice, cdev
+	chromeosdevice, crosdevice, crosdev, cdev
 	group, grp
 	group-member, grp-member, grp-mem, gmember, gmem
+	mobiledevice, mobdevice, mobdev, mdev
 	orgunit, ou
 	user
 	
@@ -62,7 +64,7 @@ func doShowFlagVals(cmd *cobra.Command, args []string) error {
 	obj := strings.ToLower(args[0])
 
 	switch {
-	case obj == "chromeosdevice" || obj == "crosdevice" || obj == "cdev":
+	case obj == "chromeosdevice" || obj == "crosdevice" || obj == "crosdev" || obj == "cdev":
 		err := cdevs.ShowFlagValues(len(args), args)
 		if err != nil {
 			return err
@@ -74,6 +76,11 @@ func doShowFlagVals(cmd *cobra.Command, args []string) error {
 		}
 	case obj == "group-member" || obj == "grp-member" || obj == "grp-mem" || obj == "gmember" || obj == "gmem":
 		err := gmems.ShowFlagValues(len(args), args)
+		if err != nil {
+			return err
+		}
+	case obj == "mobiledevice" || obj == "mobdevice" || obj == "mobdev" || obj == "mdev":
+		err := mdevs.ShowFlagValues(len(args), args)
 		if err != nil {
 			return err
 		}

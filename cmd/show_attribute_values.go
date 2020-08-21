@@ -29,6 +29,7 @@ import (
 
 	cdevs "github.com/plusworx/gmin/utils/chromeosdevices"
 	gmems "github.com/plusworx/gmin/utils/members"
+	mdevs "github.com/plusworx/gmin/utils/mobiledevices"
 	usrs "github.com/plusworx/gmin/utils/users"
 	"github.com/spf13/cobra"
 )
@@ -41,8 +42,9 @@ var showAttrValsCmd = &cobra.Command{
 	Long: `Shows object field predefined value information.
 
 	Valid objects are:
-	chromeosdevice, crosdevice, cdev
+	chromeosdevice, crosdevice, crosdev, cdev
 	group-member, grp-member, grp-mem, gmember, gmem
+	mobiledevice, mobdevice, mobdev, mdev
 	user
 	
 	Examples:	gmin show attribute-values user email type
@@ -58,13 +60,18 @@ func doShowAttrVals(cmd *cobra.Command, args []string) error {
 	obj := strings.ToLower(args[0])
 
 	switch {
-	case obj == "chromeosdevice" || obj == "crosdevice" || obj == "cdev":
+	case obj == "chromeosdevice" || obj == "crosdevice" || obj == "crosdev" || obj == "cdev":
 		err := cdevs.ShowAttrValues(len(args), args)
 		if err != nil {
 			return err
 		}
 	case obj == "group-member" || obj == "grp-member" || obj == "grp-mem" || obj == "gmember" || obj == "gmem":
 		err := gmems.ShowAttrValues(len(args), args)
+		if err != nil {
+			return err
+		}
+	case obj == "mobiledevice" || obj == "mobdevice" || obj == "mobdev" || obj == "mdev":
+		err := mdevs.ShowAttrValues(len(args), args)
 		if err != nil {
 			return err
 		}
