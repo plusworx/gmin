@@ -519,9 +519,10 @@ var ValidSortOrders = map[string]string{
 
 // ValidPrimaryShowArgs holds valid primary arguments for the show command
 var ValidPrimaryShowArgs = []string{
+	"cdev",
 	"chromeosdevice",
 	"crosdev",
-	"cdev",
+	"crosdevice",
 	"group",
 	"grp",
 	"group-alias",
@@ -533,6 +534,10 @@ var ValidPrimaryShowArgs = []string{
 	"grp-mem",
 	"gmember",
 	"gmem",
+	"mdev",
+	"mobdev",
+	"mobdevice",
+	"mobiledevice",
 	"orgunit",
 	"ou",
 	"schema",
