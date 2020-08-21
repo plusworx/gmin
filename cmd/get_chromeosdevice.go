@@ -36,7 +36,7 @@ import (
 
 var getCrOSDevCmd = &cobra.Command{
 	Use:     "chromeosdevice <device id>",
-	Aliases: []string{"crosdevice", "cdev"},
+	Aliases: []string{"crosdevice", "crosdev", "cdev"},
 	Args:    cobra.ExactArgs(1),
 	Short:   "Outputs information about a ChromeOS device",
 	Long: `Outputs information about a ChromeOS device.

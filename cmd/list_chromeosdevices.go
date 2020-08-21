@@ -38,7 +38,7 @@ import (
 
 var listCrOSDevsCmd = &cobra.Command{
 	Use:     "chromeosdevices",
-	Aliases: []string{"chromeosdevice", "crosdevices", "crosdevice", "cdevs", "cdev"},
+	Aliases: []string{"chromeosdevice", "crosdevices", "crosdevice", "crosdevs", "crosdev", "cdevs", "cdev"},
 	Args:    cobra.NoArgs,
 	Short:   "Outputs a list of ChromeOS devices",
 	Long: `Outputs a list of ChromeOS devices.

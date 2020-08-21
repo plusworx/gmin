@@ -37,7 +37,7 @@ import (
 
 var manageCrOSDevCmd = &cobra.Command{
 	Use:     "chromeosdevice <device id> <action>",
-	Aliases: []string{"crosdevice", "cdev"},
+	Aliases: []string{"crosdevice", "crosdev", "cdev"},
 	Args:    cobra.ExactArgs(2),
 	Short:   "Performs an action on a ChromeOS device",
 	Long: `Performs an action on a ChromeOS device.

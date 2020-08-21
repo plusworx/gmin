@@ -40,7 +40,7 @@ import (
 
 var batchMngCrOSDevCmd = &cobra.Command{
 	Use:     "chromeosdevices <action> -i <input file>",
-	Aliases: []string{"chromeosdevice", "crosdevices", "crosdevice", "cdevs", "cdev"},
+	Aliases: []string{"chromeosdevice", "crosdevices", "crosdevice", "crosdevs", "crosdev", "cdevs", "cdev"},
 	Args:    cobra.ExactArgs(1),
 	Short:   "Manages a batch of ChromeOS devices",
 	Long: `Manages a batch of ChromeOS devices where device details are provided in a text input file.

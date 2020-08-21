@@ -41,7 +41,7 @@ import (
 
 var batchUpdCrOSDevCmd = &cobra.Command{
 	Use:     "chromeosdevices -i <input file>",
-	Aliases: []string{"chromeosdevice", "crosdevices", "crosdevice", "cdevs", "cdev"},
+	Aliases: []string{"chromeosdevice", "crosdevices", "crosdevice", "crosdevs", "crosdev", "cdevs", "cdev"},
 	Short:   "Updates a batch of ChromeOS devices",
 	Long: `Updates a batch of ChromeOS devices with device details provided by a JSON input file.
 	

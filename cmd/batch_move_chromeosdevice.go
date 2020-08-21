@@ -39,7 +39,7 @@ import (
 
 var batchMoveCrOSDevCmd = &cobra.Command{
 	Use:     "chromeosdevices <orgunitpath> -i <input file>",
-	Aliases: []string{"chromeosdevice", "crosdevices", "crosdevice", "cdevs", "cdev"},
+	Aliases: []string{"chromeosdevice", "crosdevices", "crosdevice", "crosdevs", "crosdev", "cdevs", "cdev"},
 	Args:    cobra.ExactArgs(1),
 	Short:   "Moves a batch of ChromeOS devices to another orgunit",
 	Long: `Moves a batch of ChromeOS devices to another orgunit where device details are provided in a text input file.
