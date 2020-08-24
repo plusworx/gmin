@@ -939,3 +939,11 @@ func ValidateInputAttrs(attrs []string, attrMap map[string]string) error {
 	}
 	return nil
 }
+
+// ValidateRecoveryPhone validates recovery phone number
+func ValidateRecoveryPhone(phoneNo string) error {
+	if string(phoneNo[0]) != "+" {
+		return fmt.Errorf("gmin: error - recovery phone number %v must start with '+' followed by country code", phoneNo)
+	}
+	return nil
+}
