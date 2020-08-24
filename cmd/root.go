@@ -23,9 +23,12 @@ THE SOFTWARE.
 package cmd
 
 import (
+	"fmt"
 	"log"
+	"os"
 
 	"github.com/mitchellh/go-homedir"
+	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -50,6 +53,7 @@ var (
 	filter           string
 	firstName        string
 	forceSend        string
+	format           string
 	gal              bool
 	group            string
 	groupDesc        string
@@ -72,6 +76,7 @@ var (
 	projection       string
 	query            string
 	queryable        bool
+	sheetRange       string
 	reason           string
 	recoveryEmail    string
 	recoveryPhone    string
@@ -98,7 +103,8 @@ var rootCmd = &cobra.Command{
 // Execute adds all child commands to the root command and sets flags appropriately.
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
-		log.Fatal(err)
+		fmt.Println(cmn.Timestamp() + err.Error())
+		os.Exit(1)
 	}
 }
 

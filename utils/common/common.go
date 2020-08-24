@@ -36,6 +36,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 	"unicode"
 
 	"crypto/sha1"
@@ -44,6 +45,7 @@ import (
 	"golang.org/x/oauth2/google"
 	admin "google.golang.org/api/admin/directory/v1"
 	"google.golang.org/api/option"
+	sheet "google.golang.org/api/sheets/v4"
 )
 
 const (
@@ -584,6 +586,42 @@ func CreateDirectoryService(scope ...string) (*admin.Service, error) {
 	return srv, nil
 }
 
+// CreateSheetService function creates and returns Sheet Service object
+func CreateSheetService(scope ...string) (*sheet.Service, error) {
+	adminEmail, err := cfg.ReadConfigString("administrator")
+	if err != nil {
+		return nil, err
+	}
+
+	credentialPath, err := cfg.ReadConfigString("credentialpath")
+	if err != nil {
+		return nil, err
+	}
+
+	ctx := context.Background()
+
+	ServiceAccountFilePath := filepath.Join(filepath.ToSlash(credentialPath), cfg.CredentialFile)
+
+	jsonCredentials, err := ioutil.ReadFile(ServiceAccountFilePath)
+	if err != nil {
+		return nil, err
+	}
+
+	config, err := google.JWTConfigFromJSON(jsonCredentials, scope...)
+	if err != nil {
+		return nil, fmt.Errorf("JWTConfigFromJSON: %v", err)
+	}
+	config.Subject = adminEmail
+
+	ts := config.TokenSource(ctx)
+
+	srv, err := sheet.NewService(ctx, option.WithTokenSource(ts))
+	if err != nil {
+		return nil, fmt.Errorf("NewService: %v", err)
+	}
+	return srv, nil
+}
+
 // deDupeStrSlice gets rid of duplicate values in a slice
 func deDupeStrSlice(strSlice []string) []string {
 
@@ -598,6 +636,11 @@ func deDupeStrSlice(strSlice []string) []string {
 	}
 
 	return res
+}
+
+// GminMessage constructs a message for output
+func GminMessage(msgTxt string) string {
+	return Timestamp() + msgTxt
 }
 
 // HashPassword creates a password hash
@@ -856,6 +899,12 @@ func SliceContainsStr(strs []string, s string) bool {
 		}
 	}
 	return false
+}
+
+// Timestamp gets current formatted time
+func Timestamp() string {
+	t := time.Now()
+	return "[" + t.Format("2006/01/02 15:04:05") + "]"
 }
 
 // UniqueStrSlice takes a slice with duplicate values and returns one with unique values
