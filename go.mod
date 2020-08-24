@@ -3,9 +3,9 @@ module github.com/plusworx/gmin
 go 1.14
 
 require (
-	github.com/asaskevich/govalidator v0.0.0-20200428143746-21a406dcc535
+	github.com/asaskevich/govalidator v0.0.0-20200819183940-29e1ff8eb0bb
 	github.com/cenkalti/backoff/v4 v4.0.2
-	github.com/imdario/mergo v0.3.10
+	github.com/imdario/mergo v0.3.11
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/viper v1.7.1
