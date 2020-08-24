@@ -109,8 +109,8 @@ func doCreateUser(cmd *cobra.Command, args []string) error {
 	}
 
 	if recoveryPhone != "" {
-		if string(recoveryPhone[0]) != "+" {
-			err := fmt.Errorf("gmin: error - recovery phone number %v must start with '+'", recoveryPhone)
+		err := cmn.ValidateRecoveryPhone(recoveryPhone)
+		if err != nil {
 			return err
 		}
 		user.RecoveryPhone = recoveryPhone
@@ -162,8 +162,7 @@ func doCreateUser(cmd *cobra.Command, args []string) error {
 	}
 
 	if user.Name.GivenName == "" || user.Name.FamilyName == "" || user.Password == "" {
-		err := errors.New("gmin: error - firstname, lastname and password must all be provided")
-		return err
+		return errors.New("gmin: error - firstname, lastname and password must all be provided")
 	}
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserScope)
@@ -177,7 +176,7 @@ func doCreateUser(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Println("**** gmin: user " + newUser.PrimaryEmail + " created ****")
+	fmt.Println(cmn.GminMessage("**** gmin: user " + newUser.PrimaryEmail + " created ****"))
 
 	return nil
 }
