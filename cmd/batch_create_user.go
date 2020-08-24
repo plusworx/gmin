@@ -198,7 +198,7 @@ func processHeader(hdr []interface{}) map[int]string {
 }
 
 func processSheet(ds *admin.Service, sheetID string) error {
-	ss, err := cmn.CreateSheetService(sheet.DriveScope)
+	ss, err := cmn.CreateSheetService(sheet.DriveReadonlyScope)
 	if err != nil {
 		return err
 	}
