@@ -40,19 +40,36 @@ import (
 )
 
 var batchCrtUserCmd = &cobra.Command{
-	Use:     "users -i <input file path>",
+	Use:     "users -i <input file path or google sheet id>",
 	Aliases: []string{"user"},
 	Short:   "Creates a batch of users",
-	Long: `Creates a batch of users where user details are provided in a JSON input file.
+	Long: `Creates a batch of users where user details are provided in a Google Sheet or CSV/JSON input file.
 	
 	Examples:	gmin batch-create users -i inputfile.json
-			gmin bcrt user -i inputfile.json
+			gmin bcrt user -i inputfile.csv -f csv
+			gmin bcrt user -i 1odyAIp3jGspd3M4xeepxWD6aeQIUuHBgrZB2OHSu8MI -s 'Sheet1!A1:K25'
 			
-	The contents of the JSON file should look something like this:
+	The contents of a JSON file should look something like this:
 	
 	{"name":{"firstName":"Stan","familyName":"Laurel"},"primaryEmail":"stan.laurel@company.com","password":"SecretPassword","changePasswordAtNextLogin":true}
 	{"name":{"givenName":"Oliver","familyName":"Hardy"},"primaryEmail":"oliver.hardy@company.com","password":"SecretPassword","changePasswordAtNextLogin":true}
-	{"name":{"givenName":"Harold","familyName":"Lloyd"},"primaryEmail":"harold.lloyd@company.com","password":"SecretPassword","changePasswordAtNextLogin":true}`,
+	{"name":{"givenName":"Harold","familyName":"Lloyd"},"primaryEmail":"harold.lloyd@company.com","password":"SecretPassword","changePasswordAtNextLogin":true}
+	
+	CSV and Google sheets must have a header row with the following column names being the only ones that are valid:
+	
+	changePasswordAtNextLogin [value true or false]
+	firstName [required]
+	includeInGlobalAddressList [value true or false]
+	ipWhitelisted [value true or false]
+	lastName [required]
+	orgUnitPath
+	password [required]
+	primaryEmail [required]
+	recoveryEmail
+	recoveryPhone [must start with '+' in E.164 format]
+	suspended [value true or false]
+	
+	The column names are case insensitive and can be in any order. firstName can be replaced by givenName and lastName can be replaced by familyName.`,
 	RunE: doBatchCrtUser,
 }
 
@@ -67,36 +84,29 @@ func doBatchCrtUser(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if format == "gsheet" {
-		if sheetRange == "" {
-			return errors.New("gmin: error - sheetrange must be provided")
-		}
+	lwrFmt := strings.ToLower(format)
 
+	ok := cmn.SliceContainsStr(cmn.ValidFileFormats, lwrFmt)
+	if !ok {
+		return fmt.Errorf("gmin: error - %v is not a valid file format", format)
+	}
+
+	switch {
+	case lwrFmt == "csv":
+		err := processCSV(ds, inputFile)
+		if err != nil {
+			return err
+		}
+	case lwrFmt == "json":
+		err := processJSON(ds, inputFile)
+		if err != nil {
+			return err
+		}
+	case lwrFmt == "gsheet":
 		err := processSheet(ds, inputFile)
 		if err != nil {
 			return err
 		}
-		return nil
-	}
-
-	file, err := os.Open(inputFile)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		jsonData := scanner.Text()
-
-		err = createJSONUser(ds, jsonData)
-		if err != nil {
-			return err
-		}
-	}
-
-	if err := scanner.Err(); err != nil {
-		return err
 	}
 
 	return nil
@@ -187,7 +197,31 @@ func insertNewUser(ds *admin.Service, user *admin.User) error {
 	return nil
 }
 
-func processHeader(hdr []interface{}) map[int]string {
+func processCSV(ds *admin.Service, filePath string) error {
+	return nil
+}
+
+func processJSON(ds *admin.Service, filePath string) error {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		jsonData := scanner.Text()
+
+		err = createJSONUser(ds, jsonData)
+		if err != nil {
+			return err
+		}
+	}
+
+	return scanner.Err()
+}
+
+func processSheetHeader(hdr []interface{}) map[int]string {
 	hdrMap := make(map[int]string)
 	for idx, attr := range hdr {
 		strAttr := fmt.Sprintf("%v", attr)
@@ -198,6 +232,10 @@ func processHeader(hdr []interface{}) map[int]string {
 }
 
 func processSheet(ds *admin.Service, sheetID string) error {
+	if sheetRange == "" {
+		return errors.New("gmin: error - sheetrange must be provided")
+	}
+
 	ss, err := cmn.CreateSheetService(sheet.DriveReadonlyScope)
 	if err != nil {
 		return err
@@ -213,8 +251,8 @@ func processSheet(ds *admin.Service, sheetID string) error {
 		return errors.New("gmin: error - no data found in sheet " + sheetID + " range: " + sheetRange)
 	}
 
-	hdrMap := processHeader(sValRange.Values[0])
-	err = validateHeader(hdrMap)
+	hdrMap := processSheetHeader(sValRange.Values[0])
+	err = validateSheetHeader(hdrMap)
 	if err != nil {
 		return err
 	}
@@ -299,7 +337,7 @@ func processUser(ds *admin.Service, hdrMap map[int]string, userData []interface{
 	return nil
 }
 
-func validateHeader(hdr map[int]string) error {
+func validateSheetHeader(hdr map[int]string) error {
 	for idx, hdrAttr := range hdr {
 		correctVal, err := cmn.IsValidAttr(hdrAttr, usrs.UserAttrMap)
 		if err != nil {
