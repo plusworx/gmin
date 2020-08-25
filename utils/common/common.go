@@ -51,8 +51,6 @@ import (
 const (
 	// HashFunction specifies password hash function
 	HashFunction string = "SHA-1"
-	// RepeatTxt is used to signal a repeated attribute in attribute argument processing
-	RepeatTxt string = "**** repeat ****"
 )
 
 const (
@@ -510,6 +508,13 @@ var tilde = '~'
 
 // underscore is underscore rune
 var underscore = '_'
+
+// ValidFileFormats provides valid file format strings
+var ValidFileFormats = []string{
+	"csv",
+	"gsheet",
+	"json",
+}
 
 // ValidSortOrders provides valid sort order strings
 var ValidSortOrders = map[string]string{
