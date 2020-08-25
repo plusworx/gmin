@@ -24,9 +24,11 @@ package cmd
 
 import (
 	"bufio"
+	"encoding/csv"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 	"time"
@@ -198,6 +200,53 @@ func insertNewUser(ds *admin.Service, user *admin.User) error {
 }
 
 func processCSV(ds *admin.Service, filePath string) error {
+	var (
+		iSlice []interface{}
+		hdrMap = map[int]string{}
+	)
+
+	csvfile, err := os.Open(filePath)
+	if err != nil {
+		return err
+	}
+	defer csvfile.Close()
+
+	r := csv.NewReader(csvfile)
+
+	count := 0
+	for {
+		record, err := r.Read()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+
+		if count == 0 {
+			iSlice = make([]interface{}, len(record))
+			for idx, value := range record {
+				iSlice[idx] = value
+			}
+			hdrMap = processHeader(iSlice)
+			err = validateHeader(hdrMap)
+			if err != nil {
+				return err
+			}
+			count = count + 1
+			continue
+		}
+
+		for idx, value := range record {
+			iSlice[idx] = value
+		}
+
+		err = processUser(ds, hdrMap, iSlice)
+		if err != nil {
+			return err
+		}
+		count = count + 1
+	}
 	return nil
 }
 
@@ -221,7 +270,7 @@ func processJSON(ds *admin.Service, filePath string) error {
 	return scanner.Err()
 }
 
-func processSheetHeader(hdr []interface{}) map[int]string {
+func processHeader(hdr []interface{}) map[int]string {
 	hdrMap := make(map[int]string)
 	for idx, attr := range hdr {
 		strAttr := fmt.Sprintf("%v", attr)
@@ -251,8 +300,8 @@ func processSheet(ds *admin.Service, sheetID string) error {
 		return errors.New("gmin: error - no data found in sheet " + sheetID + " range: " + sheetRange)
 	}
 
-	hdrMap := processSheetHeader(sValRange.Values[0])
-	err = validateSheetHeader(hdrMap)
+	hdrMap := processHeader(sValRange.Values[0])
+	err = validateHeader(hdrMap)
 	if err != nil {
 		return err
 	}
@@ -337,7 +386,7 @@ func processUser(ds *admin.Service, hdrMap map[int]string, userData []interface{
 	return nil
 }
 
-func validateSheetHeader(hdr map[int]string) error {
+func validateHeader(hdr map[int]string) error {
 	for idx, hdrAttr := range hdr {
 		correctVal, err := cmn.IsValidAttr(hdrAttr, usrs.UserAttrMap)
 		if err != nil {
