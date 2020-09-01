@@ -97,6 +97,11 @@ func doUpdateUser(cmd *cobra.Command, args []string) error {
 		user.IncludeInGlobalAddressList = true
 	}
 
+	if noChangePassword {
+		user.ChangePasswordAtNextLogin = false
+		user.ForceSendFields = append(user.ForceSendFields, "ChangePasswordAtNextLogin")
+	}
+
 	if noGAL {
 		user.IncludeInGlobalAddressList = false
 		user.ForceSendFields = append(user.ForceSendFields, "IncludeInGlobalAddressList")
