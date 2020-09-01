@@ -96,17 +96,17 @@ func doBatchCrtUser(cmd *cobra.Command, args []string) error {
 
 	switch {
 	case lwrFmt == "csv":
-		err := btchUsrProcessCSV(ds, inputFile)
+		err := btchCrtUsrProcessCSV(ds, inputFile)
 		if err != nil {
 			return err
 		}
 	case lwrFmt == "json":
-		err := btchUsrProcessJSON(ds, inputFile)
+		err := btchCrtUsrProcessJSON(ds, inputFile)
 		if err != nil {
 			return err
 		}
 	case lwrFmt == "gsheet":
-		err := btchUsrProcessSheet(ds, inputFile)
+		err := btchCrtUsrProcessSheet(ds, inputFile)
 		if err != nil {
 			return err
 		}
@@ -115,7 +115,7 @@ func doBatchCrtUser(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func btchCreateJSONUser(ds *admin.Service, jsonData string) (*admin.User, error) {
+func btchCrtJSONUser(ds *admin.Service, jsonData string) (*admin.User, error) {
 	var user *admin.User
 
 	user = new(admin.User)
@@ -193,7 +193,7 @@ func btchUsrInsertProcess(user *admin.User, wg *sync.WaitGroup, uic *admin.Users
 	}
 }
 
-func btchUsrProcessCSV(ds *admin.Service, filePath string) error {
+func btchCrtUsrProcessCSV(ds *admin.Service, filePath string) error {
 	var (
 		iSlice []interface{}
 		hdrMap = map[int]string{}
@@ -253,7 +253,7 @@ func btchUsrProcessCSV(ds *admin.Service, filePath string) error {
 	return nil
 }
 
-func btchUsrProcessJSON(ds *admin.Service, filePath string) error {
+func btchCrtUsrProcessJSON(ds *admin.Service, filePath string) error {
 	var users []*admin.User
 
 	file, err := os.Open(filePath)
@@ -266,7 +266,7 @@ func btchUsrProcessJSON(ds *admin.Service, filePath string) error {
 	for scanner.Scan() {
 		jsonData := scanner.Text()
 
-		userVar, err := btchCreateJSONUser(ds, jsonData)
+		userVar, err := btchCrtJSONUser(ds, jsonData)
 		if err != nil {
 			return err
 		}
@@ -286,7 +286,7 @@ func btchUsrProcessJSON(ds *admin.Service, filePath string) error {
 	return nil
 }
 
-func btchUsrProcessSheet(ds *admin.Service, sheetID string) error {
+func btchCrtUsrProcessSheet(ds *admin.Service, sheetID string) error {
 	var users []*admin.User
 
 	if sheetRange == "" {
