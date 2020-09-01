@@ -27,7 +27,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"strings"
+	"sync"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
@@ -81,49 +81,44 @@ func doBatchDelMember(cmd *cobra.Command, args []string) error {
 		scanner = bufio.NewScanner(file)
 	}
 
+	group := args[0]
+	wg := new(sync.WaitGroup)
+
 	for scanner.Scan() {
 		member := scanner.Text()
+		mdc := ds.Members.Delete(group, member)
 
-		b := backoff.NewExponentialBackOff()
-		b.MaxElapsedTime = 30 * time.Second
+		wg.Add(1)
 
-		err = backoff.Retry(func() error {
-			var err error
-			err = deleteMember(ds, member, args[0])
-			if err == nil {
-				return err
-			}
-
-			if strings.Contains(err.Error(), "Resource Not Found") ||
-				strings.Contains(err.Error(), "Bad Request") {
-				return backoff.Permanent(err)
-			}
-
-			return err
-		}, b)
-		if err != nil {
-			return err
-		}
+		go deleteMember(wg, mdc, member, group)
 	}
 
-	if err := scanner.Err(); err != nil {
-		return err
-	}
+	wg.Wait()
 
 	return nil
 }
 
-func deleteMember(ds *admin.Service, member string, group string) error {
-	mdc := ds.Members.Delete(group, member)
+func deleteMember(wg *sync.WaitGroup, mdc *admin.MembersDeleteCall, member string, group string) {
+	defer wg.Done()
 
-	err := mdc.Do()
+	b := backoff.NewExponentialBackOff()
+	b.MaxElapsedTime = 32 * time.Second
+
+	err := backoff.Retry(func() error {
+		var err error
+		err = mdc.Do()
+		if err == nil {
+			fmt.Println(cmn.GminMessage("**** gmin: member " + member + " of group " + group + " deleted ****"))
+			return err
+		}
+		if !cmn.IsErrRetryable(err) {
+			return backoff.Permanent(errors.New(cmn.GminMessage("gmin: error - " + err.Error() + " " + member)))
+		}
+		return errors.New(cmn.GminMessage("gmin: error - " + err.Error() + " " + member))
+	}, b)
 	if err != nil {
-		return err
+		fmt.Println(err)
 	}
-
-	fmt.Printf("**** gmin: member %s of group %s deleted ****\n", member, group)
-
-	return nil
 }
 
 func init() {

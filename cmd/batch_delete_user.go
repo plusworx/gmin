@@ -27,7 +27,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"strings"
+	"sync"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
@@ -80,49 +80,45 @@ func doBatchDelUser(cmd *cobra.Command, args []string) error {
 		scanner = bufio.NewScanner(file)
 	}
 
+	wg := new(sync.WaitGroup)
+
 	for scanner.Scan() {
 		user := scanner.Text()
 
-		b := backoff.NewExponentialBackOff()
-		b.MaxElapsedTime = 30 * time.Second
+		udc := ds.Users.Delete(user)
 
-		err = backoff.Retry(func() error {
-			var err error
-			err = deleteUser(ds, user)
-			if err == nil {
-				return err
-			}
+		wg.Add(1)
 
-			if strings.Contains(err.Error(), "Resource Not Found") ||
-				strings.Contains(err.Error(), "Bad Request") {
-				return backoff.Permanent(err)
-			}
-
-			return err
-		}, b)
-		if err != nil {
-			return err
-		}
+		go deleteUser(wg, udc, user)
 	}
 
-	if err := scanner.Err(); err != nil {
-		return err
-	}
+	wg.Wait()
 
 	return nil
 }
 
-func deleteUser(ds *admin.Service, user string) error {
-	udc := ds.Users.Delete(user)
+func deleteUser(wg *sync.WaitGroup, udc *admin.UsersDeleteCall, user string) {
+	defer wg.Done()
 
-	err := udc.Do()
+	b := backoff.NewExponentialBackOff()
+	b.MaxElapsedTime = 32 * time.Second
+
+	err := backoff.Retry(func() error {
+		var err error
+
+		err = udc.Do()
+		if err == nil {
+			fmt.Println(cmn.GminMessage("**** gmin: user " + user + " deleted ****"))
+			return err
+		}
+		if !cmn.IsErrRetryable(err) {
+			return backoff.Permanent(errors.New(cmn.GminMessage("gmin: error - " + err.Error() + " " + user)))
+		}
+		return errors.New(cmn.GminMessage("gmin: error - " + err.Error() + " " + user))
+	}, b)
 	if err != nil {
-		return err
+		fmt.Println(err)
 	}
-
-	fmt.Printf("**** gmin: user %s deleted ****\n", user)
-
-	return nil
 }
 
 func init() {

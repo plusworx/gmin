@@ -31,6 +31,7 @@ import (
 	"io"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
@@ -49,7 +50,7 @@ var batchCrtUserCmd = &cobra.Command{
 	
 	Examples:	gmin batch-create users -i inputfile.json
 			gmin bcrt user -i inputfile.csv -f csv
-			gmin bcrt user -i 1odyAIp3jGspd3M4xeepxWD6aeQIUuHBgrZB2OHSu8MI -s 'Sheet1!A1:K25'
+			gmin bcrt user -i 1odyAIp3jGspd3M4xeepxWD6aeQIUuHBgrZB2OHSu8MI -s 'Sheet1!A1:K25' -f gsheet
 			
 	The contents of a JSON file should look something like this:
 	
@@ -95,17 +96,17 @@ func doBatchCrtUser(cmd *cobra.Command, args []string) error {
 
 	switch {
 	case lwrFmt == "csv":
-		err := processCSV(ds, inputFile)
+		err := btchUsrProcessCSV(ds, inputFile)
 		if err != nil {
 			return err
 		}
 	case lwrFmt == "json":
-		err := processJSON(ds, inputFile)
+		err := btchUsrProcessJSON(ds, inputFile)
 		if err != nil {
 			return err
 		}
 	case lwrFmt == "gsheet":
-		err := processSheet(ds, inputFile)
+		err := btchUsrProcessSheet(ds, inputFile)
 		if err != nil {
 			return err
 		}
@@ -114,95 +115,89 @@ func doBatchCrtUser(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func createJSONUser(ds *admin.Service, jsonData string) error {
+func btchCreateJSONUser(ds *admin.Service, jsonData string) (*admin.User, error) {
 	var user *admin.User
 
 	user = new(admin.User)
 	jsonBytes := []byte(jsonData)
 
 	if !json.Valid(jsonBytes) {
-		return errors.New("gmin: error - attribute string is not valid JSON")
+		return nil, errors.New("gmin: error - attribute string is not valid JSON")
 	}
 
 	outStr, err := cmn.ParseInputAttrs(jsonBytes)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	err = cmn.ValidateInputAttrs(outStr, usrs.UserAttrMap)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	err = json.Unmarshal(jsonBytes, &user)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	err = insertNewUser(ds, user)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return user, nil
 }
 
-func init() {
-	batchCreateCmd.AddCommand(batchCrtUserCmd)
+func btchInsertNewUsers(ds *admin.Service, users []*admin.User) error {
+	wg := new(sync.WaitGroup)
 
-	batchCrtUserCmd.Flags().StringVarP(&inputFile, "inputfile", "i", "", "filepath to user data file")
-	batchCrtUserCmd.Flags().StringVarP(&format, "format", "f", "json", "user data file format")
-	batchCrtUserCmd.Flags().StringVarP(&sheetRange, "sheetrange", "s", "", "user data gsheet range")
-}
+	for _, u := range users {
+		if u.PrimaryEmail == "" || u.Name.GivenName == "" || u.Name.FamilyName == "" || u.Password == "" {
+			return errors.New("gmin: error - primaryEmail, givenName, familyName and password must all be provided")
+		}
 
-func insertNewUser(ds *admin.Service, user *admin.User) error {
-	var newUser *admin.User
-
-	if user.PrimaryEmail == "" || user.Name.GivenName == "" || user.Name.FamilyName == "" || user.Password == "" {
-		return errors.New("gmin: error - primaryEmail, givenName, familyName and password must all be provided")
-	}
-
-	user.HashFunction = cmn.HashFunction
-	pwd, err := cmn.HashPassword(user.Password)
-	if err != nil {
-		return err
-	}
-	user.Password = pwd
-
-	uic := ds.Users.Insert(user)
-
-	b := backoff.NewExponentialBackOff()
-	b.MaxElapsedTime = 30 * time.Second
-
-	err = backoff.Retry(func() error {
-		var err error
-		newUser, err = uic.Do()
-		if err == nil {
+		u.HashFunction = cmn.HashFunction
+		pwd, err := cmn.HashPassword(u.Password)
+		if err != nil {
 			return err
 		}
+		u.Password = pwd
 
-		if strings.Contains(err.Error(), "Missing required field") ||
-			strings.Contains(err.Error(), "invalid") ||
-			strings.Contains(err.Error(), "Entity already exists") ||
-			strings.Contains(err.Error(), "should be") {
-			return backoff.Permanent(err)
-		}
+		uic := ds.Users.Insert(u)
 
-		return err
-	}, b)
-	if err != nil {
-		return err
+		wg.Add(1)
+
+		go btchUsrInsertProcess(u, wg, uic)
 	}
 
-	fmt.Println(cmn.GminMessage("**** gmin: user " + newUser.PrimaryEmail + " created ****"))
+	wg.Wait()
 
 	return nil
 }
 
-func processCSV(ds *admin.Service, filePath string) error {
+func btchUsrInsertProcess(user *admin.User, wg *sync.WaitGroup, uic *admin.UsersInsertCall) {
+	defer wg.Done()
+
+	b := backoff.NewExponentialBackOff()
+	b.MaxElapsedTime = 32 * time.Second
+
+	err := backoff.Retry(func() error {
+		var err error
+		newUser, err := uic.Do()
+		if err == nil {
+			fmt.Println(cmn.GminMessage("**** gmin: user " + newUser.PrimaryEmail + " created ****"))
+			return err
+		}
+		if !cmn.IsErrRetryable(err) {
+			return backoff.Permanent(errors.New(cmn.GminMessage("gmin: error - " + err.Error() + " " + user.PrimaryEmail)))
+		}
+		return errors.New(cmn.GminMessage("gmin: error - " + err.Error() + " " + user.PrimaryEmail))
+	}, b)
+	if err != nil {
+		fmt.Println(err)
+	}
+}
+
+func btchUsrProcessCSV(ds *admin.Service, filePath string) error {
 	var (
 		iSlice []interface{}
 		hdrMap = map[int]string{}
+		users  []*admin.User
 	)
 
 	csvfile, err := os.Open(filePath)
@@ -228,8 +223,8 @@ func processCSV(ds *admin.Service, filePath string) error {
 			for idx, value := range record {
 				iSlice[idx] = value
 			}
-			hdrMap = processHeader(iSlice)
-			err = validateHeader(hdrMap)
+			hdrMap = cmn.ProcessHeader(iSlice)
+			err = cmn.ValidateHeader(hdrMap, usrs.UserAttrMap)
 			if err != nil {
 				return err
 			}
@@ -241,16 +236,26 @@ func processCSV(ds *admin.Service, filePath string) error {
 			iSlice[idx] = value
 		}
 
-		err = processUser(ds, hdrMap, iSlice)
+		userVar, err := btchCrtProcessUser(hdrMap, iSlice)
 		if err != nil {
-			return err
+			fmt.Println(err.Error())
 		}
+
+		users = append(users, userVar)
+
 		count = count + 1
+	}
+
+	err = btchInsertNewUsers(ds, users)
+	if err != nil {
+		return err
 	}
 	return nil
 }
 
-func processJSON(ds *admin.Service, filePath string) error {
+func btchUsrProcessJSON(ds *admin.Service, filePath string) error {
+	var users []*admin.User
+
 	file, err := os.Open(filePath)
 	if err != nil {
 		return err
@@ -261,26 +266,29 @@ func processJSON(ds *admin.Service, filePath string) error {
 	for scanner.Scan() {
 		jsonData := scanner.Text()
 
-		err = createJSONUser(ds, jsonData)
+		userVar, err := btchCreateJSONUser(ds, jsonData)
 		if err != nil {
 			return err
 		}
+
+		users = append(users, userVar)
+	}
+	err = scanner.Err()
+	if err != nil {
+		return err
 	}
 
-	return scanner.Err()
-}
-
-func processHeader(hdr []interface{}) map[int]string {
-	hdrMap := make(map[int]string)
-	for idx, attr := range hdr {
-		strAttr := fmt.Sprintf("%v", attr)
-		hdrMap[idx] = strings.ToLower(strAttr)
+	err = btchInsertNewUsers(ds, users)
+	if err != nil {
+		return err
 	}
 
-	return hdrMap
+	return nil
 }
 
-func processSheet(ds *admin.Service, sheetID string) error {
+func btchUsrProcessSheet(ds *admin.Service, sheetID string) error {
+	var users []*admin.User
+
 	if sheetRange == "" {
 		return errors.New("gmin: error - sheetrange must be provided")
 	}
@@ -300,8 +308,8 @@ func processSheet(ds *admin.Service, sheetID string) error {
 		return errors.New("gmin: error - no data found in sheet " + sheetID + " range: " + sheetRange)
 	}
 
-	hdrMap := processHeader(sValRange.Values[0])
-	err = validateHeader(hdrMap)
+	hdrMap := cmn.ProcessHeader(sValRange.Values[0])
+	err = cmn.ValidateHeader(hdrMap, usrs.UserAttrMap)
 	if err != nil {
 		return err
 	}
@@ -311,16 +319,23 @@ func processSheet(ds *admin.Service, sheetID string) error {
 			continue
 		}
 
-		err := processUser(ds, hdrMap, row)
+		userVar, err := btchCrtProcessUser(hdrMap, row)
 		if err != nil {
 			return err
 		}
+
+		users = append(users, userVar)
+	}
+
+	err = btchInsertNewUsers(ds, users)
+	if err != nil {
+		return err
 	}
 
 	return nil
 }
 
-func processUser(ds *admin.Service, hdrMap map[int]string, userData []interface{}) error {
+func btchCrtProcessUser(hdrMap map[int]string, userData []interface{}) (*admin.User, error) {
 	var (
 		name *admin.UserName
 		user *admin.User
@@ -365,7 +380,7 @@ func processUser(ds *admin.Service, hdrMap map[int]string, userData []interface{
 			sAttr := fmt.Sprintf("%v", attr)
 			err := cmn.ValidateRecoveryPhone(sAttr)
 			if err != nil {
-				return err
+				return nil, err
 			}
 			user.RecoveryPhone = sAttr
 		case attrName == "suspended":
@@ -378,21 +393,13 @@ func processUser(ds *admin.Service, hdrMap map[int]string, userData []interface{
 
 	user.Name = name
 
-	err := insertNewUser(ds, user)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return user, nil
 }
 
-func validateHeader(hdr map[int]string) error {
-	for idx, hdrAttr := range hdr {
-		correctVal, err := cmn.IsValidAttr(hdrAttr, usrs.UserAttrMap)
-		if err != nil {
-			return err
-		}
-		hdr[idx] = correctVal
-	}
-	return nil
+func init() {
+	batchCreateCmd.AddCommand(batchCrtUserCmd)
+
+	batchCrtUserCmd.Flags().StringVarP(&inputFile, "inputfile", "i", "", "filepath to user data file or sheet id")
+	batchCrtUserCmd.Flags().StringVarP(&format, "format", "f", "json", "user data file format")
+	batchCrtUserCmd.Flags().StringVarP(&sheetRange, "sheetrange", "s", "", "user data gsheet range")
 }

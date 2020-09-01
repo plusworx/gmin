@@ -44,6 +44,7 @@ import (
 	cfg "github.com/plusworx/gmin/utils/config"
 	"golang.org/x/oauth2/google"
 	admin "google.golang.org/api/admin/directory/v1"
+	"google.golang.org/api/googleapi"
 	"google.golang.org/api/option"
 	sheet "google.golang.org/api/sheets/v4"
 )
@@ -682,6 +683,29 @@ func InputFromStdIn(inputFile string) (*bufio.Scanner, error) {
 	return scanner, nil
 }
 
+// IsErrRetryable checks to see whether Google API error should allow retry
+func IsErrRetryable(e error) bool {
+	var retryable bool
+
+	gErr, ok := e.(*googleapi.Error)
+	if !ok {
+		return false
+	}
+
+	body := gErr.Body
+
+	switch {
+	case gErr.Code == 403 && (strings.Contains(body, "userRateLimitExceeded") || strings.Contains(body, "quotaExceeded")):
+		retryable = true
+	case gErr.Code == 403 && strings.Contains(body, "rateLimitExceeded"):
+		retryable = true
+	case gErr.Code == 429 && strings.Contains(body, "rateLimitExceeded"):
+		retryable = true
+	}
+
+	return retryable
+}
+
 // isOperator checks to see whether or not rune is an operator symbol
 func isOperator(ch rune) bool {
 	switch ch {
@@ -854,6 +878,17 @@ func ParseQuery(query string, qAttrMap map[string]string) (string, error) {
 	return outputStr, nil
 }
 
+// ProcessHeader processes header column names
+func ProcessHeader(hdr []interface{}) map[int]string {
+	hdrMap := make(map[int]string)
+	for idx, attr := range hdr {
+		strAttr := fmt.Sprintf("%v", attr)
+		hdrMap[idx] = strings.ToLower(strAttr)
+	}
+
+	return hdrMap
+}
+
 // ShowAttrs displays object attributes
 func ShowAttrs(attrSlice []string, attrMap map[string]string, filter string) {
 	for _, a := range attrSlice {
@@ -922,6 +957,18 @@ func UniqueStrSlice(inSlice []string) []string {
 		}
 	}
 	return outSlice
+}
+
+// ValidateHeader validated header column names
+func ValidateHeader(hdr map[int]string, attrMap map[string]string) error {
+	for idx, hdrAttr := range hdr {
+		correctVal, err := IsValidAttr(hdrAttr, attrMap)
+		if err != nil {
+			return err
+		}
+		hdr[idx] = correctVal
+	}
+	return nil
 }
 
 // ValidateInputAttrs validates JSON attribute string for create and update calls

@@ -27,7 +27,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"strings"
+	"sync"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
@@ -80,49 +80,44 @@ func doBatchDelGroup(cmd *cobra.Command, args []string) error {
 		scanner = bufio.NewScanner(file)
 	}
 
+	wg := new(sync.WaitGroup)
+
 	for scanner.Scan() {
 		group := scanner.Text()
+		gdc := ds.Groups.Delete(group)
 
-		b := backoff.NewExponentialBackOff()
-		b.MaxElapsedTime = 30 * time.Second
+		wg.Add(1)
 
-		err = backoff.Retry(func() error {
-			var err error
-			err = deleteGroup(ds, group)
-			if err == nil {
-				return err
-			}
-
-			if strings.Contains(err.Error(), "Resource Not Found") ||
-				strings.Contains(err.Error(), "Bad Request") {
-				return backoff.Permanent(err)
-			}
-
-			return err
-		}, b)
-		if err != nil {
-			return err
-		}
+		go deleteGroup(wg, gdc, group)
 	}
 
-	if err := scanner.Err(); err != nil {
-		return err
-	}
+	wg.Wait()
 
 	return nil
 }
 
-func deleteGroup(ds *admin.Service, group string) error {
-	gdc := ds.Groups.Delete(group)
+func deleteGroup(wg *sync.WaitGroup, gdc *admin.GroupsDeleteCall, group string) {
+	defer wg.Done()
 
-	err := gdc.Do()
+	b := backoff.NewExponentialBackOff()
+	b.MaxElapsedTime = 32 * time.Second
+
+	err := backoff.Retry(func() error {
+		var err error
+
+		err = gdc.Do()
+		if err == nil {
+			fmt.Println(cmn.GminMessage("**** gmin: group " + group + " deleted ****"))
+			return err
+		}
+		if !cmn.IsErrRetryable(err) {
+			return backoff.Permanent(errors.New(cmn.GminMessage("gmin: error - " + err.Error() + " " + group)))
+		}
+		return errors.New(cmn.GminMessage("gmin: error - " + err.Error() + " " + group))
+	}, b)
 	if err != nil {
-		return err
+		fmt.Println(err)
 	}
-
-	fmt.Printf("**** gmin: group %s deleted ****\n", group)
-
-	return nil
 }
 
 func init() {

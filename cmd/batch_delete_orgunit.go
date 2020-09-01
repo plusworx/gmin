@@ -27,7 +27,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"strings"
+	"sync"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
@@ -88,6 +88,8 @@ func doBatchDelOrgUnit(cmd *cobra.Command, args []string) error {
 		scanner = bufio.NewScanner(file)
 	}
 
+	wg := new(sync.WaitGroup)
+
 	for scanner.Scan() {
 		text := scanner.Text()
 		ouPaths = []string{}
@@ -97,47 +99,44 @@ func doBatchDelOrgUnit(cmd *cobra.Command, args []string) error {
 		}
 		ouPaths = append(ouPaths, text)
 
-		b := backoff.NewExponentialBackOff()
-		b.MaxElapsedTime = 30 * time.Second
+		oudc := ds.Orgunits.Delete(customerID, ouPaths)
 
-		err = backoff.Retry(func() error {
-			var err error
-			err = deleteOU(ds, customerID, ouPaths)
-			if err == nil {
-				return err
-			}
+		// Sleep for 2 seconds because only 1 orgunit can be created per second but 1 second interval
+		// still results in rate limit errors
+		time.Sleep(2 * time.Second)
 
-			if strings.Contains(err.Error(), "Resource Not Found") ||
-				strings.Contains(err.Error(), "Org unit not found") ||
-				strings.Contains(err.Error(), "Bad Request") {
-				return backoff.Permanent(err)
-			}
+		wg.Add(1)
 
-			return err
-		}, b)
-		if err != nil {
-			return err
-		}
+		go deleteOU(wg, oudc, ouPaths)
 	}
 
-	if err := scanner.Err(); err != nil {
-		return err
-	}
+	wg.Wait()
 
 	return nil
 }
 
-func deleteOU(ds *admin.Service, customerID string, ouPaths []string) error {
-	oudc := ds.Orgunits.Delete(customerID, ouPaths)
+func deleteOU(wg *sync.WaitGroup, oudc *admin.OrgunitsDeleteCall, ouPaths []string) {
+	defer wg.Done()
 
-	err := oudc.Do()
+	b := backoff.NewExponentialBackOff()
+	b.MaxElapsedTime = 32 * time.Second
+
+	err := backoff.Retry(func() error {
+		var err error
+
+		err = oudc.Do()
+		if err == nil {
+			fmt.Println(cmn.GminMessage("**** gmin: orgunit " + ouPaths[0] + " deleted ****"))
+			return err
+		}
+		if !cmn.IsErrRetryable(err) {
+			return backoff.Permanent(errors.New(cmn.GminMessage("gmin: error - " + err.Error() + " " + ouPaths[0])))
+		}
+		return errors.New(cmn.GminMessage("gmin: error - " + err.Error() + " " + ouPaths[0]))
+	}, b)
 	if err != nil {
-		return err
+		fmt.Println(err)
 	}
-
-	fmt.Println("**** gmin: orgunit " + ouPaths[0] + " deleted ****")
-
-	return nil
 }
 
 func init() {

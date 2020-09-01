@@ -27,7 +27,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"strings"
+	"sync"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
@@ -86,49 +86,43 @@ func doBatchDelMobDev(cmd *cobra.Command, args []string) error {
 		scanner = bufio.NewScanner(file)
 	}
 
+	wg := new(sync.WaitGroup)
+
 	for scanner.Scan() {
 		mobResID := scanner.Text()
+		mdc := ds.Mobiledevices.Delete(customerID, mobResID)
 
-		b := backoff.NewExponentialBackOff()
-		b.MaxElapsedTime = 30 * time.Second
+		wg.Add(1)
 
-		err = backoff.Retry(func() error {
-			var err error
-			err = deleteMobDev(ds, customerID, mobResID)
-			if err == nil {
-				return err
-			}
-
-			if strings.Contains(err.Error(), "Resource Not Found") ||
-				strings.Contains(err.Error(), "Bad Request") {
-				return backoff.Permanent(err)
-			}
-
-			return err
-		}, b)
-		if err != nil {
-			return err
-		}
+		go deleteMobDev(wg, mdc, mobResID)
 	}
 
-	if err := scanner.Err(); err != nil {
-		return err
-	}
+	wg.Wait()
 
 	return nil
 }
 
-func deleteMobDev(ds *admin.Service, customerID string, resourceID string) error {
-	mdc := ds.Mobiledevices.Delete(customerID, resourceID)
+func deleteMobDev(wg *sync.WaitGroup, mdc *admin.MobiledevicesDeleteCall, resourceID string) {
+	defer wg.Done()
 
-	err := mdc.Do()
+	b := backoff.NewExponentialBackOff()
+	b.MaxElapsedTime = 32 * time.Second
+
+	err := backoff.Retry(func() error {
+		var err error
+		err = mdc.Do()
+		if err == nil {
+			fmt.Println(cmn.GminMessage("**** gmin: mobile device " + resourceID + " deleted ****"))
+			return err
+		}
+		if !cmn.IsErrRetryable(err) {
+			return backoff.Permanent(errors.New(cmn.GminMessage("gmin: error - " + err.Error() + " " + resourceID)))
+		}
+		return errors.New(cmn.GminMessage("gmin: error - " + err.Error() + " " + resourceID))
+	}, b)
 	if err != nil {
-		return err
+		fmt.Println(err)
 	}
-
-	fmt.Printf("**** gmin: mobile device %s deleted ****\n", resourceID)
-
-	return nil
 }
 
 func init() {
