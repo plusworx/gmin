@@ -110,7 +110,10 @@ func doBatchCrtOrgUnit(cmd *cobra.Command, args []string) error {
 }
 
 func btchCreateJSONOrgUnit(ds *admin.Service, jsonData string) (*admin.OrgUnit, error) {
-	var orgunit *admin.OrgUnit
+	var (
+		emptyVals = cmn.EmptyValues{}
+		orgunit   *admin.OrgUnit
+	)
 
 	orgunit = new(admin.OrgUnit)
 	jsonBytes := []byte(jsonData)
@@ -132,6 +135,14 @@ func btchCreateJSONOrgUnit(ds *admin.Service, jsonData string) (*admin.OrgUnit, 
 	err = json.Unmarshal(jsonBytes, &orgunit)
 	if err != nil {
 		return nil, err
+	}
+
+	err = json.Unmarshal(jsonBytes, &emptyVals)
+	if err != nil {
+		return nil, err
+	}
+	if len(emptyVals.ForceSendFields) > 0 {
+		orgunit.ForceSendFields = emptyVals.ForceSendFields
 	}
 
 	return orgunit, nil

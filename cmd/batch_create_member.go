@@ -111,7 +111,10 @@ func doBatchCrtMember(cmd *cobra.Command, args []string) error {
 }
 
 func btchCreateJSONMember(ds *admin.Service, jsonData string) (*admin.Member, error) {
-	var member *admin.Member
+	var (
+		emptyVals = cmn.EmptyValues{}
+		member    *admin.Member
+	)
 
 	member = new(admin.Member)
 	jsonBytes := []byte(jsonData)
@@ -129,6 +132,14 @@ func btchCreateJSONMember(ds *admin.Service, jsonData string) (*admin.Member, er
 	err = json.Unmarshal(jsonBytes, &member)
 	if err != nil {
 		return nil, err
+	}
+
+	err = json.Unmarshal(jsonBytes, &emptyVals)
+	if err != nil {
+		return nil, err
+	}
+	if len(emptyVals.ForceSendFields) > 0 {
+		member.ForceSendFields = emptyVals.ForceSendFields
 	}
 
 	return member, nil

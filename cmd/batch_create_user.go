@@ -116,7 +116,10 @@ func doBatchCrtUser(cmd *cobra.Command, args []string) error {
 }
 
 func btchCrtJSONUser(ds *admin.Service, jsonData string) (*admin.User, error) {
-	var user *admin.User
+	var (
+		emptyVals = cmn.EmptyValues{}
+		user      *admin.User
+	)
 
 	user = new(admin.User)
 	jsonBytes := []byte(jsonData)
@@ -138,6 +141,14 @@ func btchCrtJSONUser(ds *admin.Service, jsonData string) (*admin.User, error) {
 	err = json.Unmarshal(jsonBytes, &user)
 	if err != nil {
 		return nil, err
+	}
+
+	err = json.Unmarshal(jsonBytes, &emptyVals)
+	if err != nil {
+		return nil, err
+	}
+	if len(emptyVals.ForceSendFields) > 0 {
+		user.ForceSendFields = emptyVals.ForceSendFields
 	}
 
 	return user, nil

@@ -108,7 +108,10 @@ func doBatchCrtGroup(cmd *cobra.Command, args []string) error {
 }
 
 func btchCreateJSONGroup(ds *admin.Service, jsonData string) (*admin.Group, error) {
-	var group *admin.Group
+	var (
+		emptyVals = cmn.EmptyValues{}
+		group     *admin.Group
+	)
 
 	group = new(admin.Group)
 	jsonBytes := []byte(jsonData)
@@ -130,6 +133,14 @@ func btchCreateJSONGroup(ds *admin.Service, jsonData string) (*admin.Group, erro
 	err = json.Unmarshal(jsonBytes, &group)
 	if err != nil {
 		return nil, err
+	}
+
+	err = json.Unmarshal(jsonBytes, &emptyVals)
+	if err != nil {
+		return nil, err
+	}
+	if len(emptyVals.ForceSendFields) > 0 {
+		group.ForceSendFields = emptyVals.ForceSendFields
 	}
 
 	return group, nil
