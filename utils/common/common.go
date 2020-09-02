@@ -107,6 +107,11 @@ const (
 	VALUE
 )
 
+// EmptyValues is struct used to extract ForceSendFields from JSON
+type EmptyValues struct {
+	ForceSendFields []string
+}
+
 // OutputAttrStr is a struct to hold list of output attribute string parts
 type OutputAttrStr struct {
 	Fields []string
