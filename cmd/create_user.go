@@ -124,6 +124,7 @@ func doCreateUser(cmd *cobra.Command, args []string) error {
 
 	if attrs != "" {
 		attrUser := new(admin.User)
+		emptyVals := cmn.EmptyValues{}
 		jsonBytes := []byte(attrs)
 		if !json.Valid(jsonBytes) {
 			return errors.New("gmin: error - attribute string is not valid JSON")
@@ -142,6 +143,14 @@ func doCreateUser(cmd *cobra.Command, args []string) error {
 		err = json.Unmarshal(jsonBytes, &attrUser)
 		if err != nil {
 			return err
+		}
+
+		err = json.Unmarshal(jsonBytes, &emptyVals)
+		if err != nil {
+			return err
+		}
+		if len(emptyVals.ForceSendFields) > 0 {
+			attrUser.ForceSendFields = emptyVals.ForceSendFields
 		}
 
 		if !bPasswordCreated {
