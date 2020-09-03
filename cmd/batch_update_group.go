@@ -24,11 +24,14 @@ package cmd
 
 import (
 	"bufio"
+	"encoding/csv"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
@@ -36,16 +39,18 @@ import (
 	grps "github.com/plusworx/gmin/utils/groups"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
+	sheet "google.golang.org/api/sheets/v4"
 )
 
 var batchUpdGrpCmd = &cobra.Command{
 	Use:     "groups -i <input file path>",
 	Aliases: []string{"group", "grps", "grp"},
 	Short:   "Updates a batch of groups",
-	Long: `Updates a batch of groups where group details are provided in a JSON input file.
+	Long: `Updates a batch of groups where group details are provided in a Google Sheet or CSV/JSON input file.
 	
 	Examples:	gmin batch-update groups -i inputfile.json
-			gmin bupd grps -i inputfile.json
+			gmin bupd grps -i inputfile.csv -f csv
+			gmin bupd grp -i 1odyAIp3jGspd3M4xeepxWD6aeQIUuHBgrZB2OHSu8MI -s 'Sheet1!A1:K25' -f gsheet
 			  
 	The contents of the JSON file should look something like this:
 	
@@ -53,7 +58,16 @@ var batchUpdGrpCmd = &cobra.Command{
 	{"groupKey":"032hioqz3p4ulyk","email":"info@mycompany.com","name":"Information","description":"Group for responding to general queries."}
 	{"groupKey":"045fijmz6w8nkqc","email":"webmaster@mycompany.com","name":"Webmaster","description":"Group for responding to website queries."}
 
-N.B. groupKey (group email address, alias or id) must be provided.`,
+	N.B. groupKey (group email address, alias or id) must be provided.
+	
+	CSV and Google sheets must have a header row with the following column names being the only ones that are valid:
+	
+	description
+	email
+	groupKey [required]
+	name
+	
+	The column names are case insensitive and can be in any order.`,
 	RunE: doBatchUpdGrp,
 }
 
@@ -68,7 +82,191 @@ func doBatchUpdGrp(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	file, err := os.Open(inputFile)
+	lwrFmt := strings.ToLower(format)
+
+	ok := cmn.SliceContainsStr(cmn.ValidFileFormats, lwrFmt)
+	if !ok {
+		return fmt.Errorf("gmin: error - %v is not a valid file format", format)
+	}
+
+	switch {
+	case lwrFmt == "csv":
+		err := btchUpdGrpProcessCSV(ds, inputFile)
+		if err != nil {
+			return err
+		}
+	case lwrFmt == "json":
+		err := btchUpdGrpProcessJSON(ds, inputFile)
+		if err != nil {
+			return err
+		}
+	case lwrFmt == "gsheet":
+		err := btchUpdGrpProcessSheet(ds, inputFile)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func btchUpdJSONGroup(ds *admin.Service, jsonData string) (*admin.Group, string, error) {
+	var (
+		emptyVals = cmn.EmptyValues{}
+		group     *admin.Group
+		grpKey    = grps.Key{}
+	)
+
+	group = new(admin.Group)
+	jsonBytes := []byte(jsonData)
+
+	if !json.Valid(jsonBytes) {
+		return nil, "", errors.New("gmin: error - attribute string is not valid JSON")
+	}
+
+	outStr, err := cmn.ParseInputAttrs(jsonBytes)
+	if err != nil {
+		return nil, "", err
+	}
+
+	err = cmn.ValidateInputAttrs(outStr, grps.GroupAttrMap)
+	if err != nil {
+		return nil, "", err
+	}
+
+	err = json.Unmarshal(jsonBytes, &grpKey)
+	if err != nil {
+		return nil, "", err
+	}
+
+	if grpKey.GroupKey == "" {
+		return nil, "", errors.New("gmin: error - groupKey must be included in the JSON input string")
+	}
+
+	err = json.Unmarshal(jsonBytes, &group)
+	if err != nil {
+		return nil, "", err
+	}
+
+	err = json.Unmarshal(jsonBytes, &emptyVals)
+	if err != nil {
+		return nil, "", err
+	}
+	if len(emptyVals.ForceSendFields) > 0 {
+		group.ForceSendFields = emptyVals.ForceSendFields
+	}
+
+	return group, grpKey.GroupKey, nil
+}
+
+func btchUpdateGroups(ds *admin.Service, groups []*admin.Group, groupKeys []string) error {
+	wg := new(sync.WaitGroup)
+
+	for idx, g := range groups {
+		guc := ds.Groups.Update(groupKeys[idx], g)
+
+		wg.Add(1)
+
+		go btchGrpUpdateProcess(g, wg, guc, groupKeys[idx])
+	}
+
+	wg.Wait()
+
+	return nil
+}
+
+func btchGrpUpdateProcess(group *admin.Group, wg *sync.WaitGroup, guc *admin.GroupsUpdateCall, groupKey string) {
+	defer wg.Done()
+
+	b := backoff.NewExponentialBackOff()
+	b.MaxElapsedTime = 32 * time.Second
+
+	err := backoff.Retry(func() error {
+		var err error
+		_, err = guc.Do()
+		if err == nil {
+			fmt.Println(cmn.GminMessage("**** gmin: group " + groupKey + " updated ****"))
+			return err
+		}
+		if !cmn.IsErrRetryable(err) {
+			return backoff.Permanent(errors.New(cmn.GminMessage("gmin: error - " + err.Error() + " " + groupKey)))
+		}
+		return errors.New(cmn.GminMessage("gmin: error - " + err.Error() + " " + groupKey))
+	}, b)
+	if err != nil {
+		fmt.Println(err)
+	}
+}
+
+func btchUpdGrpProcessCSV(ds *admin.Service, filePath string) error {
+	var (
+		iSlice    []interface{}
+		hdrMap    = map[int]string{}
+		groupKeys []string
+		groups    []*admin.Group
+	)
+
+	csvfile, err := os.Open(filePath)
+	if err != nil {
+		return err
+	}
+	defer csvfile.Close()
+
+	r := csv.NewReader(csvfile)
+
+	count := 0
+	for {
+		record, err := r.Read()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+
+		if count == 0 {
+			iSlice = make([]interface{}, len(record))
+			for idx, value := range record {
+				iSlice[idx] = value
+			}
+			hdrMap = cmn.ProcessHeader(iSlice)
+			err = cmn.ValidateHeader(hdrMap, grps.GroupAttrMap)
+			if err != nil {
+				return err
+			}
+			count = count + 1
+			continue
+		}
+
+		for idx, value := range record {
+			iSlice[idx] = value
+		}
+
+		grpVar, groupKey, err := btchUpdProcessGroup(hdrMap, iSlice)
+		if err != nil {
+			fmt.Println(err.Error())
+		}
+
+		groups = append(groups, grpVar)
+		groupKeys = append(groupKeys, groupKey)
+
+		count = count + 1
+	}
+
+	err = btchUpdateGroups(ds, groups, groupKeys)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func btchUpdGrpProcessJSON(ds *admin.Service, filePath string) error {
+	var (
+		groupKeys []string
+		groups    []*admin.Group
+	)
+
+	file, err := os.Open(filePath)
 	if err != nil {
 		return err
 	}
@@ -78,88 +276,114 @@ func doBatchUpdGrp(cmd *cobra.Command, args []string) error {
 	for scanner.Scan() {
 		jsonData := scanner.Text()
 
-		b := backoff.NewExponentialBackOff()
-		b.MaxElapsedTime = 30 * time.Second
-
-		err = backoff.Retry(func() error {
-			var err error
-			err = updateGroup(ds, jsonData)
-			if err == nil {
-				return err
-			}
-
-			if strings.Contains(err.Error(), "Missing required field") ||
-				strings.Contains(err.Error(), "not valid") ||
-				strings.Contains(err.Error(), "unrecognized") ||
-				strings.Contains(err.Error(), "should be") ||
-				strings.Contains(err.Error(), "must be included") {
-				return backoff.Permanent(err)
-			}
-
-			return err
-		}, b)
+		grpVar, groupKey, err := btchUpdJSONGroup(ds, jsonData)
 		if err != nil {
 			return err
 		}
+
+		groupKeys = append(groupKeys, groupKey)
+		groups = append(groups, grpVar)
+	}
+	err = scanner.Err()
+	if err != nil {
+		return err
 	}
 
-	if err := scanner.Err(); err != nil {
+	err = btchUpdateGroups(ds, groups, groupKeys)
+	if err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func updateGroup(ds *admin.Service, jsonData string) error {
+func btchUpdGrpProcessSheet(ds *admin.Service, sheetID string) error {
 	var (
-		group  *admin.Group
-		grpKey = grps.Key{}
+		groupKeys []string
+		groups    []*admin.Group
+	)
+
+	if sheetRange == "" {
+		return errors.New("gmin: error - sheetrange must be provided")
+	}
+
+	ss, err := cmn.CreateSheetService(sheet.DriveReadonlyScope)
+	if err != nil {
+		return err
+	}
+
+	ssvgc := ss.Spreadsheets.Values.Get(sheetID, sheetRange)
+	sValRange, err := ssvgc.Do()
+	if err != nil {
+		return err
+	}
+
+	if len(sValRange.Values) == 0 {
+		return errors.New("gmin: error - no data found in sheet " + sheetID + " range: " + sheetRange)
+	}
+
+	hdrMap := cmn.ProcessHeader(sValRange.Values[0])
+	err = cmn.ValidateHeader(hdrMap, grps.GroupAttrMap)
+	if err != nil {
+		return err
+	}
+
+	for idx, row := range sValRange.Values {
+		if idx == 0 {
+			continue
+		}
+
+		grpVar, groupKey, err := btchUpdProcessGroup(hdrMap, row)
+		if err != nil {
+			return err
+		}
+
+		groupKeys = append(groupKeys, groupKey)
+		groups = append(groups, grpVar)
+	}
+
+	err = btchUpdateGroups(ds, groups, groupKeys)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func btchUpdProcessGroup(hdrMap map[int]string, grpData []interface{}) (*admin.Group, string, error) {
+	var (
+		group    *admin.Group
+		groupKey string
 	)
 
 	group = new(admin.Group)
-	jsonBytes := []byte(jsonData)
 
-	if !json.Valid(jsonBytes) {
-		return errors.New("gmin: error - attribute string is not valid JSON")
+	for idx, attr := range grpData {
+		attrName := hdrMap[idx]
+
+		switch {
+		case attrName == "description":
+			desc := fmt.Sprintf("%v", attr)
+			group.Description = desc
+			if desc == "" {
+				group.ForceSendFields = append(group.ForceSendFields, "Description")
+			}
+		case attrName == "email":
+			group.Email = fmt.Sprintf("%v", attr)
+		case attrName == "name":
+			group.Name = fmt.Sprintf("%v", attr)
+		case attrName == "groupKey":
+			groupKey = fmt.Sprintf("%v", attr)
+		}
 	}
 
-	outStr, err := cmn.ParseInputAttrs(jsonBytes)
-	if err != nil {
-		return err
-	}
-
-	err = cmn.ValidateInputAttrs(outStr, grps.GroupAttrMap)
-	if err != nil {
-		return err
-	}
-
-	err = json.Unmarshal(jsonBytes, &grpKey)
-	if err != nil {
-		return err
-	}
-
-	if grpKey.GroupKey == "" {
-		return errors.New("gmin: error - groupKey must be included in the JSON input string")
-	}
-
-	err = json.Unmarshal(jsonBytes, &group)
-	if err != nil {
-		return err
-	}
-
-	guc := ds.Groups.Update(grpKey.GroupKey, group)
-	_, err = guc.Do()
-	if err != nil {
-		return err
-	}
-
-	fmt.Println("**** gmin: group " + grpKey.GroupKey + " updated ****")
-
-	return nil
+	return group, groupKey, nil
 }
 
 func init() {
 	batchUpdateCmd.AddCommand(batchUpdGrpCmd)
 
-	batchUpdGrpCmd.Flags().StringVarP(&inputFile, "inputfile", "i", "", "filepath to group data file")
+	batchUpdGrpCmd.Flags().StringVarP(&inputFile, "inputfile", "i", "", "filepath to group data file or sheet id")
+	batchUpdGrpCmd.Flags().StringVarP(&format, "format", "f", "json", "user data file format")
+	batchUpdGrpCmd.Flags().StringVarP(&sheetRange, "sheetrange", "s", "", "user data gsheet range")
 }

@@ -91,17 +91,17 @@ func doBatchCrtMember(cmd *cobra.Command, args []string) error {
 
 	switch {
 	case lwrFmt == "csv":
-		err := btchMemProcessCSV(ds, groupKey, inputFile)
+		err := btchCrtMemProcessCSV(ds, groupKey, inputFile)
 		if err != nil {
 			return err
 		}
 	case lwrFmt == "json":
-		err := btchMemProcessJSON(ds, groupKey, inputFile)
+		err := btchCrtMemProcessJSON(ds, groupKey, inputFile)
 		if err != nil {
 			return err
 		}
 	case lwrFmt == "gsheet":
-		err := btchMemProcessSheet(ds, groupKey, inputFile)
+		err := btchCrtMemProcessSheet(ds, groupKey, inputFile)
 		if err != nil {
 			return err
 		}
@@ -188,7 +188,7 @@ func btchMemInsertProcess(member *admin.Member, groupKey string, wg *sync.WaitGr
 	}
 }
 
-func btchMemProcessCSV(ds *admin.Service, groupKey string, filePath string) error {
+func btchCrtMemProcessCSV(ds *admin.Service, groupKey string, filePath string) error {
 	var (
 		iSlice  []interface{}
 		hdrMap  = map[int]string{}
@@ -248,7 +248,7 @@ func btchMemProcessCSV(ds *admin.Service, groupKey string, filePath string) erro
 	return nil
 }
 
-func btchMemProcessJSON(ds *admin.Service, groupKey, filePath string) error {
+func btchCrtMemProcessJSON(ds *admin.Service, groupKey, filePath string) error {
 	var members []*admin.Member
 
 	file, err := os.Open(filePath)
@@ -281,7 +281,7 @@ func btchMemProcessJSON(ds *admin.Service, groupKey, filePath string) error {
 	return nil
 }
 
-func btchMemProcessSheet(ds *admin.Service, groupKey string, sheetID string) error {
+func btchCrtMemProcessSheet(ds *admin.Service, groupKey string, sheetID string) error {
 	var members []*admin.Member
 
 	if sheetRange == "" {

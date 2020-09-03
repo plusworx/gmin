@@ -120,8 +120,9 @@ func doBatchUpdUser(cmd *cobra.Command, args []string) error {
 
 func btchUpdJSONUser(ds *admin.Service, jsonData string) (*admin.User, string, error) {
 	var (
-		user   *admin.User
-		usrKey = usrs.Key{}
+		emptyVals = cmn.EmptyValues{}
+		user      *admin.User
+		usrKey    = usrs.Key{}
 	)
 
 	user = new(admin.User)
@@ -153,6 +154,14 @@ func btchUpdJSONUser(ds *admin.Service, jsonData string) (*admin.User, string, e
 	err = json.Unmarshal(jsonBytes, &user)
 	if err != nil {
 		return nil, "", err
+	}
+
+	err = json.Unmarshal(jsonBytes, &emptyVals)
+	if err != nil {
+		return nil, "", err
+	}
+	if len(emptyVals.ForceSendFields) > 0 {
+		user.ForceSendFields = emptyVals.ForceSendFields
 	}
 
 	return user, usrKey.UserKey, nil
@@ -410,14 +419,23 @@ func btchUpdProcessUser(hdrMap map[int]string, userData []interface{}) (*admin.U
 		case attrName == "primaryEmail":
 			user.PrimaryEmail = fmt.Sprintf("%v", attr)
 		case attrName == "recoveryEmail":
-			user.RecoveryEmail = fmt.Sprintf("%v", attr)
-		case attrName == "recoveryPhone":
-			sAttr := fmt.Sprintf("%v", attr)
-			err := cmn.ValidateRecoveryPhone(sAttr)
-			if err != nil {
-				return nil, "", err
+			recEmail := fmt.Sprintf("%v", attr)
+			user.RecoveryEmail = recEmail
+			if recEmail == "" {
+				user.ForceSendFields = append(user.ForceSendFields, "RecoveryEmail")
 			}
-			user.RecoveryPhone = sAttr
+		case attrName == "recoveryPhone":
+			recPhone := fmt.Sprintf("%v", attr)
+			if recPhone != "" {
+				err := cmn.ValidateRecoveryPhone(recPhone)
+				if err != nil {
+					return nil, "", err
+				}
+			}
+			user.RecoveryPhone = recPhone
+			if recPhone == "" {
+				user.ForceSendFields = append(user.ForceSendFields, "RecoveryPhone")
+			}
 		case attrName == "suspended":
 			lwrAttr := strings.ToLower(fmt.Sprintf("%v", attr))
 			if lwrAttr == "true" {
