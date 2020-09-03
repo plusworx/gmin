@@ -204,4 +204,8 @@ func init() {
 	createUserCmd.Flags().StringVarP(&recoveryEmail, "recoveryemail", "z", "", "user's recovery email address")
 	createUserCmd.Flags().StringVarP(&recoveryPhone, "recoveryphone", "k", "", "user's recovery phone")
 	createUserCmd.Flags().BoolVarP(&suspended, "suspended", "s", false, "user is suspended")
+
+	createUserCmd.MarkFlagRequired("firstname")
+	createUserCmd.MarkFlagRequired("lastname")
+	createUserCmd.MarkFlagRequired("password")
 }
