@@ -107,7 +107,7 @@ func doUpdateCrOSDev(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Println("**** gmin: ChromeOS device " + updCrOSDev.DeviceId + " updated ****")
+	fmt.Println(cmn.GminMessage("**** gmin: ChromeOS device " + updCrOSDev.DeviceId + " updated ****"))
 
 	jsonData, err := json.MarshalIndent(updCrOSDev, "", "    ")
 	if err != nil {

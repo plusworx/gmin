@@ -55,7 +55,7 @@ func doDeleteGroup(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Printf("**** gmin: group %s deleted ****\n", args[0])
+	fmt.Println(cmn.GminMessage("**** gmin: group " + args[0] + " deleted ****"))
 
 	return nil
 }

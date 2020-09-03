@@ -55,7 +55,7 @@ func doDeleteGroupAlias(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Printf("**** gmin: group alias %s for group %s deleted ****\n", args[0], args[1])
+	fmt.Println(cmn.GminMessage("**** gmin: group alias " + args[0] + " for group " + args[1] + " deleted ****"))
 
 	return nil
 }

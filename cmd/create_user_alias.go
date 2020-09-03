@@ -60,7 +60,7 @@ func doCreateUserAlias(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Println("**** gmin: user alias " + newAlias.Alias + " created for user " + args[1] + " ****")
+	fmt.Println(cmn.GminMessage("**** gmin: user alias " + newAlias.Alias + " created for user " + args[1] + " ****"))
 
 	return nil
 }

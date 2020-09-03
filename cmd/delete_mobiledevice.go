@@ -60,7 +60,7 @@ func doDeleteMobDev(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Printf("**** gmin: mobile device %s deleted ****\n", args[0])
+	fmt.Println(cmn.GminMessage("**** gmin: mobile device " + args[0] + " deleted ****"))
 
 	return nil
 }

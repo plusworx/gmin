@@ -84,7 +84,7 @@ func doManageMobDev(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Println("**** gmin : " + args[1] + " successfully performed on mobile device " + args[0] + " ****")
+	fmt.Println(cmn.GminMessage("**** gmin : " + args[1] + " successfully performed on mobile device " + args[0] + " ****"))
 
 	return nil
 }
