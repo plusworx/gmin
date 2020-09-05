@@ -949,7 +949,7 @@ func SliceContainsStr(strs []string, s string) bool {
 // Timestamp gets current formatted time
 func Timestamp() string {
 	t := time.Now()
-	return "[" + t.Format("2006/01/02 15:04:05") + "]"
+	return "[" + t.Format("2006-01-02 15:04:05") + "]"
 }
 
 // UniqueStrSlice takes a slice with duplicate values and returns one with unique values
