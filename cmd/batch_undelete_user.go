@@ -27,7 +27,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"strings"
+	"sync"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
@@ -43,7 +43,7 @@ var batchUndelUserCmd = &cobra.Command{
 	Long: `Undeletes a batch of users where user details are provided in a text input file.
 	
 	Examples:	gmin batch-undelete users -i inputfile.txt
-			gmin bund user -i inputfile.txt
+			gmin bund user -i inputfile.txt -o /Engineering
 			
 	The input file should contain a list of user ids like this:
 	
@@ -54,6 +54,15 @@ var batchUndelUserCmd = &cobra.Command{
 }
 
 func doBatchUndelUser(cmd *cobra.Command, args []string) error {
+	var userUndelete *admin.UserUndelete
+	userUndelete = new(admin.UserUndelete)
+
+	if orgUnit == "" {
+		userUndelete.OrgUnitPath = "/"
+	} else {
+		userUndelete.OrgUnitPath = orgUnit
+	}
+
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserScope)
 	if err != nil {
 		return err
@@ -79,58 +88,45 @@ func doBatchUndelUser(cmd *cobra.Command, args []string) error {
 		scanner = bufio.NewScanner(file)
 	}
 
+	wg := new(sync.WaitGroup)
+
 	for scanner.Scan() {
 		user := scanner.Text()
 
-		b := backoff.NewExponentialBackOff()
-		b.MaxElapsedTime = 30 * time.Second
+		uuc := ds.Users.Undelete(user, userUndelete)
 
-		err = backoff.Retry(func() error {
-			var err error
-			err = undeleteUser(ds, user)
-			if err == nil {
-				return err
-			}
+		wg.Add(1)
 
-			if strings.Contains(err.Error(), "No deleted user to undelete") ||
-				strings.Contains(err.Error(), "Bad Request") {
-				return backoff.Permanent(err)
-			}
-
-			return err
-		}, b)
-		if err != nil {
-			return err
-		}
+		go undeleteUser(wg, uuc, user)
 	}
 
-	if err := scanner.Err(); err != nil {
-		return err
-	}
+	wg.Wait()
 
 	return nil
 }
 
-func undeleteUser(ds *admin.Service, user string) error {
-	var userUndelete *admin.UserUndelete
-	userUndelete = new(admin.UserUndelete)
+func undeleteUser(wg *sync.WaitGroup, uuc *admin.UsersUndeleteCall, user string) {
+	defer wg.Done()
 
-	if orgUnit == "" {
-		userUndelete.OrgUnitPath = "/"
-	} else {
-		userUndelete.OrgUnitPath = orgUnit
-	}
+	b := backoff.NewExponentialBackOff()
+	b.MaxElapsedTime = 32 * time.Second
 
-	uuc := ds.Users.Undelete(user, userUndelete)
+	err := backoff.Retry(func() error {
+		var err error
 
-	err := uuc.Do()
+		err = uuc.Do()
+		if err == nil {
+			fmt.Println(cmn.GminMessage("**** gmin: user " + user + " undeleted ****"))
+			return err
+		}
+		if !cmn.IsErrRetryable(err) {
+			return backoff.Permanent(errors.New(cmn.GminMessage("gmin: error - " + err.Error() + " " + user)))
+		}
+		return errors.New(cmn.GminMessage("gmin: error - " + err.Error() + " " + user))
+	}, b)
 	if err != nil {
-		return err
+		fmt.Println(err)
 	}
-
-	fmt.Printf("**** gmin: user %s undeleted ****\n", user)
-
-	return nil
 }
 
 func init() {
