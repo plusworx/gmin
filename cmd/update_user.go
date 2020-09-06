@@ -31,6 +31,7 @@ import (
 	cmn "github.com/plusworx/gmin/utils/common"
 	usrs "github.com/plusworx/gmin/utils/users"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	admin "google.golang.org/api/admin/directory/v1"
 )
 
@@ -47,93 +48,29 @@ var updateUserCmd = &cobra.Command{
 
 func doUpdateUser(cmd *cobra.Command, args []string) error {
 	var (
-		name    *admin.UserName
-		user    *admin.User
-		userKey string
+		flagsPassed []string
+		name        *admin.UserName
+		user        *admin.User
+		userKey     string
 	)
 
 	userKey = args[0]
 	user = new(admin.User)
 	name = new(admin.UserName)
 
-	if changePassword {
-		user.ChangePasswordAtNextLogin = true
-	}
+	// Collect names of command flags passed in
+	cmd.Flags().Visit(func(f *pflag.Flag) {
+		flagsPassed = append(flagsPassed, f.Name)
+	})
 
-	if firstName != "" {
-		name.GivenName = firstName
-	}
-
-	if forceSend != "" {
-		fields, err := cmn.ParseForceSend(forceSend, usrs.UserAttrMap)
-		if err != nil {
-			return err
-		}
-
-		for _, f := range fields {
-			user.ForceSendFields = append(user.ForceSendFields, f)
-		}
-	}
-
-	if lastName != "" {
-		name.FamilyName = lastName
+	// Process command flags
+	err := processUpdUsrFlags(cmd, user, name, flagsPassed)
+	if err != nil {
+		return err
 	}
 
 	if name.FamilyName != "" || name.FullName != "" || name.GivenName != "" {
 		user.Name = name
-	}
-
-	if password != "" {
-		pwd, err := cmn.HashPassword(password)
-		if err != nil {
-			return err
-		}
-
-		user.Password = pwd
-		user.HashFunction = cmn.HashFunction
-	}
-
-	if gal {
-		user.IncludeInGlobalAddressList = true
-	}
-
-	if noChangePassword {
-		user.ChangePasswordAtNextLogin = false
-		user.ForceSendFields = append(user.ForceSendFields, "ChangePasswordAtNextLogin")
-	}
-
-	if noGAL {
-		user.IncludeInGlobalAddressList = false
-		user.ForceSendFields = append(user.ForceSendFields, "IncludeInGlobalAddressList")
-	}
-
-	if orgUnit != "" {
-		user.OrgUnitPath = orgUnit
-	}
-
-	if recoveryEmail != "" {
-		user.RecoveryEmail = recoveryEmail
-	}
-
-	if recoveryPhone != "" {
-		if string(recoveryPhone[0]) != "+" {
-			err := fmt.Errorf("gmin: error - recovery phone number %v must start with '+'", recoveryPhone)
-			return err
-		}
-		user.RecoveryPhone = recoveryPhone
-	}
-
-	if suspended {
-		user.Suspended = true
-	}
-
-	if unSuspended {
-		user.Suspended = false
-		user.ForceSendFields = append(user.ForceSendFields, "Suspended")
-	}
-
-	if userEmail != "" {
-		user.PrimaryEmail = userEmail
 	}
 
 	if attrs != "" {
@@ -207,4 +144,69 @@ func init() {
 	updateUserCmd.Flags().StringVarP(&recoveryPhone, "recoveryphone", "k", "", "user's recovery phone")
 	updateUserCmd.Flags().BoolVarP(&suspended, "suspended", "s", false, "user is suspended")
 	updateUserCmd.Flags().BoolVarP(&unSuspended, "unsuspended", "u", false, "user is unsuspended")
+}
+
+func processUpdUsrFlags(cmd *cobra.Command, user *admin.User, name *admin.UserName, flagNames []string) error {
+	for _, flName := range flagNames {
+		switch flName {
+		case "changepassword":
+			user.ChangePasswordAtNextLogin = true
+		case "email":
+			if userEmail == "" {
+				return errors.New("gmin: error - email cannot be empty string")
+			}
+			user.PrimaryEmail = userEmail
+		case "firstname":
+			name.GivenName = firstName
+		case "forceSend":
+			fields, err := cmn.ParseForceSend(forceSend, usrs.UserAttrMap)
+			if err != nil {
+				return err
+			}
+			for _, fld := range fields {
+				user.ForceSendFields = append(user.ForceSendFields, fld)
+			}
+		case "gal":
+			user.IncludeInGlobalAddressList = true
+		case "lastname":
+			name.FamilyName = lastName
+		case "nochangepassword":
+			user.ChangePasswordAtNextLogin = false
+			user.ForceSendFields = append(user.ForceSendFields, "ChangePasswordAtNextLogin")
+		case "nogal":
+			user.IncludeInGlobalAddressList = false
+			user.ForceSendFields = append(user.ForceSendFields, "IncludeInGlobalAddressList")
+		case "orgunit":
+			user.OrgUnitPath = orgUnit
+		case "password":
+			if password == "" {
+				return errors.New("gmin: error - password cannot be empty string")
+			}
+			pwd, err := cmn.HashPassword(password)
+			if err != nil {
+				return err
+			}
+			user.Password = pwd
+			user.HashFunction = cmn.HashFunction
+		case "recoveryemail":
+			user.RecoveryEmail = recoveryEmail
+			user.ForceSendFields = append(user.ForceSendFields, "RecoveryEmail")
+		case "recoveryphone":
+			if recoveryPhone != "" {
+				if string(recoveryPhone[0]) != "+" {
+					err := fmt.Errorf("gmin: error - recovery phone number %v must start with '+'", recoveryPhone)
+					return err
+				}
+			}
+			user.RecoveryPhone = recoveryPhone
+			user.ForceSendFields = append(user.ForceSendFields, "RecoveryPhone")
+		case "suspended":
+			user.Suspended = true
+		case "unsuspended":
+			user.Suspended = false
+			user.ForceSendFields = append(user.ForceSendFields, "Suspended")
+		}
+	}
+
+	return nil
 }
