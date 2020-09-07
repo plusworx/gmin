@@ -202,8 +202,7 @@ func processCrtUsrFlags(cmd *cobra.Command, user *admin.User, name *admin.UserNa
 				return errors.New("gmin: error - recoveryphone cannot be empty string")
 			}
 			if string(recoveryPhone[0]) != "+" {
-				err := fmt.Errorf("gmin: error - recovery phone number %v must start with '+'", recoveryPhone)
-				return err
+				return fmt.Errorf("gmin: error - recovery phone number %v must start with '+'", recoveryPhone)
 			}
 			user.RecoveryPhone = recoveryPhone
 		case "suspended":
