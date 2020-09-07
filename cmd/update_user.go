@@ -49,14 +49,12 @@ var updateUserCmd = &cobra.Command{
 func doUpdateUser(cmd *cobra.Command, args []string) error {
 	var (
 		flagsPassed []string
-		name        *admin.UserName
-		user        *admin.User
 		userKey     string
 	)
 
 	userKey = args[0]
-	user = new(admin.User)
-	name = new(admin.UserName)
+	user := new(admin.User)
+	name := new(admin.UserName)
 
 	// Collect names of command flags passed in
 	cmd.Flags().Visit(func(f *pflag.Flag) {
