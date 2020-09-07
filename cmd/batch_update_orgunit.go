@@ -406,4 +406,6 @@ func init() {
 	batchUpdOUCmd.Flags().StringVarP(&inputFile, "inputfile", "i", "", "filepath to orgunit data file or sheet id")
 	batchUpdOUCmd.Flags().StringVarP(&format, "format", "f", "json", "user data file format")
 	batchUpdOUCmd.Flags().StringVarP(&sheetRange, "sheetrange", "s", "", "user data gsheet range")
+
+	batchUpdOUCmd.MarkFlagRequired("inputfile")
 }

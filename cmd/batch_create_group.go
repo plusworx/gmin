@@ -358,4 +358,6 @@ func init() {
 	batchCrtGroupCmd.Flags().StringVarP(&inputFile, "inputfile", "i", "", "filepath to group data file or sheet id")
 	batchCrtGroupCmd.Flags().StringVarP(&format, "format", "f", "json", "user data file format")
 	batchCrtGroupCmd.Flags().StringVarP(&sheetRange, "sheetrange", "s", "", "user data gsheet range")
+
+	batchCrtGroupCmd.MarkFlagRequired("inputfile")
 }

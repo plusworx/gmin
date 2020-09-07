@@ -142,4 +142,5 @@ func init() {
 	batchMoveCmd.AddCommand(batchMoveCrOSDevCmd)
 
 	batchMoveCrOSDevCmd.Flags().StringVarP(&inputFile, "inputfile", "i", "", "filepath to device data file")
+	batchMoveCrOSDevCmd.MarkFlagRequired("inputfile")
 }

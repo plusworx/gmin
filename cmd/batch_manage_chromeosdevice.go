@@ -158,4 +158,5 @@ func init() {
 
 	batchMngCrOSDevCmd.Flags().StringVarP(&inputFile, "inputfile", "i", "", "filepath to device data file")
 	batchMngCrOSDevCmd.Flags().StringVarP(&reason, "reason", "r", "", "device deprovision reason")
+	batchMngCrOSDevCmd.MarkFlagRequired("inputfile")
 }

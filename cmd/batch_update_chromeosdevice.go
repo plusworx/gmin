@@ -389,4 +389,6 @@ func init() {
 	batchUpdCrOSDevCmd.Flags().StringVarP(&inputFile, "inputfile", "i", "", "filepath to device data file or sheet id")
 	batchUpdCrOSDevCmd.Flags().StringVarP(&format, "format", "f", "json", "user data file format")
 	batchUpdCrOSDevCmd.Flags().StringVarP(&sheetRange, "sheetrange", "s", "", "user data gsheet range")
+
+	batchUpdCrOSDevCmd.MarkFlagRequired("inputfile")
 }

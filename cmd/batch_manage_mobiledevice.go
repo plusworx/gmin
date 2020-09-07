@@ -150,4 +150,5 @@ func init() {
 	batchManageCmd.AddCommand(batchMngMobDevCmd)
 
 	batchMngMobDevCmd.Flags().StringVarP(&inputFile, "inputfile", "i", "", "filepath to device data file")
+	batchMngMobDevCmd.MarkFlagRequired("inputfile")
 }

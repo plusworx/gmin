@@ -134,5 +134,5 @@ func init() {
 
 	batchUndelUserCmd.Flags().StringVarP(&inputFile, "inputfile", "i", "", "filepath to user data text file")
 	batchUndelUserCmd.Flags().StringVarP(&orgUnit, "orgunit", "o", "", "path of orgunit to restore user to")
-
+	batchUndelUserCmd.MarkFlagRequired("inputfile")
 }
