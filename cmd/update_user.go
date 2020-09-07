@@ -192,11 +192,9 @@ func processUpdUsrFlags(cmd *cobra.Command, user *admin.User, name *admin.UserNa
 			user.RecoveryEmail = recoveryEmail
 			user.ForceSendFields = append(user.ForceSendFields, "RecoveryEmail")
 		case "recoveryphone":
-			if recoveryPhone != "" {
-				if string(recoveryPhone[0]) != "+" {
-					err := fmt.Errorf("gmin: error - recovery phone number %v must start with '+'", recoveryPhone)
-					return err
-				}
+			if recoveryPhone != "" && string(recoveryPhone[0]) != "+" {
+				err := fmt.Errorf("gmin: error - recovery phone number %v must start with '+'", recoveryPhone)
+				return err
 			}
 			user.RecoveryPhone = recoveryPhone
 			user.ForceSendFields = append(user.ForceSendFields, "RecoveryPhone")
