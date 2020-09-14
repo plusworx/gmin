@@ -64,6 +64,7 @@ var MemberAttrMap = map[string]string{
 	"etag":              "etag",
 	"id":                "id",
 	"kind":              "kind",
+	"memberkey":         "memberKey", // used in batch update
 	"role":              "role",
 	"status":            "status",
 	"type":              "type",
@@ -74,6 +75,11 @@ var RoleMap = map[string]string{
 	"owner":   "OWNER",
 	"manager": "MANAGER",
 	"member":  "MEMBER",
+}
+
+// Key is struct used to extract memberKey
+type Key struct {
+	MemberKey string
 }
 
 // AddFields adds fields to be returned to admin calls

@@ -79,7 +79,7 @@ func doUpdateMember(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Println("**** gmin: member " + memberKey + " updated in group " + args[1] + " ****")
+	fmt.Println(cmn.GminMessage("**** gmin: member " + memberKey + " updated in group " + args[1] + " ****"))
 
 	return nil
 }

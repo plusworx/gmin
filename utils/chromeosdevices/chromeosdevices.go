@@ -40,6 +40,19 @@ const (
 	StartChromeDevicesField string = "chromeosdevices("
 )
 
+// ManagedDevice is struct to extract device data
+type ManagedDevice struct {
+	Action            string
+	DeviceId          string
+	DeprovisionReason string
+}
+
+// MovedDevice is struct to extract device data
+type MovedDevice struct {
+	DeviceId    string
+	OrgUnitPath string
+}
+
 var attrValues = []string{
 	"action",
 }
@@ -132,6 +145,7 @@ var QueryAttrMap = map[string]string{
 
 // CrOSDevAttrMap provides lowercase mappings to valid admin.ChromeOsDevice attributes
 var CrOSDevAttrMap = map[string]string{
+	"action":                       "action", // used in batch manage
 	"activetime":                   "activeTime",
 	"activetimeranges":             "activeTimeRanges",
 	"annotatedassetid":             "annotatedAssetId",
@@ -144,6 +158,7 @@ var CrOSDevAttrMap = map[string]string{
 	"cpustatusreports":             "cpuStatusReports",
 	"createtime":                   "createTime",
 	"date":                         "date",
+	"deprovisionreason":            "deprovisionReason", // used in batch manage
 	"devicefiles":                  "deviceFiles",
 	"deviceid":                     "deviceId",
 	"diskvolumereports":            "diskVolumeReports",

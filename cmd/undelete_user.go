@@ -65,7 +65,7 @@ func doUndeleteUser(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Printf("**** gmin: user %s undeleted ****\n", args[0])
+	fmt.Println(cmn.GminMessage("**** gmin: user " + args[0] + " undeleted ****"))
 
 	return nil
 }

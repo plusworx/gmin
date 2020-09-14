@@ -36,6 +36,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 	"unicode"
 
 	"crypto/sha1"
@@ -43,14 +44,14 @@ import (
 	cfg "github.com/plusworx/gmin/utils/config"
 	"golang.org/x/oauth2/google"
 	admin "google.golang.org/api/admin/directory/v1"
+	"google.golang.org/api/googleapi"
 	"google.golang.org/api/option"
+	sheet "google.golang.org/api/sheets/v4"
 )
 
 const (
 	// HashFunction specifies password hash function
 	HashFunction string = "SHA-1"
-	// RepeatTxt is used to signal a repeated attribute in attribute argument processing
-	RepeatTxt string = "**** repeat ****"
 )
 
 const (
@@ -105,6 +106,11 @@ const (
 	// VALUE is query or input attribute value
 	VALUE
 )
+
+// EmptyValues is struct used to extract ForceSendFields from JSON
+type EmptyValues struct {
+	ForceSendFields []string
+}
 
 // OutputAttrStr is a struct to hold list of output attribute string parts
 type OutputAttrStr struct {
@@ -305,7 +311,7 @@ func (qs *QueryScanner) Scan() (tok Token, lit string) {
 		if unicode.IsSpace(ch) {
 			qs.s.unread()
 			return qs.s.scanWhitespace()
-		} else if unicode.IsLetter(ch) {
+		} else if unicode.IsLetter(ch) || ch == underscore {
 			qs.s.unread()
 			tok, lit := qs.scanIdent()
 			qs.bConFieldName = false
@@ -377,7 +383,7 @@ func (qs *QueryScanner) scanIdent() (tok Token, lit string) {
 	for {
 		if ch := qs.s.read(); ch == eos {
 			break
-		} else if !unicode.IsLetter(ch) && !unicode.IsDigit(ch) && ch != '.' {
+		} else if !unicode.IsLetter(ch) && !unicode.IsDigit(ch) && ch != '.' && ch != underscore {
 			qs.s.unread()
 			break
 		} else {
@@ -509,6 +515,13 @@ var tilde = '~'
 // underscore is underscore rune
 var underscore = '_'
 
+// ValidFileFormats provides valid file format strings
+var ValidFileFormats = []string{
+	"csv",
+	"gsheet",
+	"json",
+}
+
 // ValidSortOrders provides valid sort order strings
 var ValidSortOrders = map[string]string{
 	"asc":        "ascending",
@@ -519,9 +532,10 @@ var ValidSortOrders = map[string]string{
 
 // ValidPrimaryShowArgs holds valid primary arguments for the show command
 var ValidPrimaryShowArgs = []string{
+	"cdev",
 	"chromeosdevice",
 	"crosdev",
-	"cdev",
+	"crosdevice",
 	"group",
 	"grp",
 	"group-alias",
@@ -533,11 +547,18 @@ var ValidPrimaryShowArgs = []string{
 	"grp-mem",
 	"gmember",
 	"gmem",
+	"mdev",
+	"mobdev",
+	"mobdevice",
+	"mobiledevice",
 	"orgunit",
 	"ou",
 	"schema",
 	"sc",
+	"ua",
+	"ualias",
 	"user",
+	"user-alias",
 }
 
 // CreateDirectoryService function creates and returns Admin Service object
@@ -576,6 +597,42 @@ func CreateDirectoryService(scope ...string) (*admin.Service, error) {
 	return srv, nil
 }
 
+// CreateSheetService function creates and returns Sheet Service object
+func CreateSheetService(scope ...string) (*sheet.Service, error) {
+	adminEmail, err := cfg.ReadConfigString("administrator")
+	if err != nil {
+		return nil, err
+	}
+
+	credentialPath, err := cfg.ReadConfigString("credentialpath")
+	if err != nil {
+		return nil, err
+	}
+
+	ctx := context.Background()
+
+	ServiceAccountFilePath := filepath.Join(filepath.ToSlash(credentialPath), cfg.CredentialFile)
+
+	jsonCredentials, err := ioutil.ReadFile(ServiceAccountFilePath)
+	if err != nil {
+		return nil, err
+	}
+
+	config, err := google.JWTConfigFromJSON(jsonCredentials, scope...)
+	if err != nil {
+		return nil, fmt.Errorf("JWTConfigFromJSON: %v", err)
+	}
+	config.Subject = adminEmail
+
+	ts := config.TokenSource(ctx)
+
+	srv, err := sheet.NewService(ctx, option.WithTokenSource(ts))
+	if err != nil {
+		return nil, fmt.Errorf("NewService: %v", err)
+	}
+	return srv, nil
+}
+
 // deDupeStrSlice gets rid of duplicate values in a slice
 func deDupeStrSlice(strSlice []string) []string {
 
@@ -590,6 +647,11 @@ func deDupeStrSlice(strSlice []string) []string {
 	}
 
 	return res
+}
+
+// GminMessage constructs a message for output
+func GminMessage(msgTxt string) string {
+	return Timestamp() + msgTxt
 }
 
 // HashPassword creates a password hash
@@ -624,6 +686,29 @@ func InputFromStdIn(inputFile string) (*bufio.Scanner, error) {
 	scanner := bufio.NewScanner(os.Stdin)
 
 	return scanner, nil
+}
+
+// IsErrRetryable checks to see whether Google API error should allow retry
+func IsErrRetryable(e error) bool {
+	var retryable bool
+
+	gErr, ok := e.(*googleapi.Error)
+	if !ok {
+		return false
+	}
+
+	body := gErr.Body
+
+	switch {
+	case gErr.Code == 403 && (strings.Contains(body, "userRateLimitExceeded") || strings.Contains(body, "quotaExceeded")):
+		retryable = true
+	case gErr.Code == 403 && strings.Contains(body, "rateLimitExceeded"):
+		retryable = true
+	case gErr.Code == 429 && strings.Contains(body, "rateLimitExceeded"):
+		retryable = true
+	}
+
+	return retryable
 }
 
 // isOperator checks to see whether or not rune is an operator symbol
@@ -798,6 +883,17 @@ func ParseQuery(query string, qAttrMap map[string]string) (string, error) {
 	return outputStr, nil
 }
 
+// ProcessHeader processes header column names
+func ProcessHeader(hdr []interface{}) map[int]string {
+	hdrMap := make(map[int]string)
+	for idx, attr := range hdr {
+		strAttr := fmt.Sprintf("%v", attr)
+		hdrMap[idx] = strings.ToLower(strAttr)
+	}
+
+	return hdrMap
+}
+
 // ShowAttrs displays object attributes
 func ShowAttrs(attrSlice []string, attrMap map[string]string, filter string) {
 	for _, a := range attrSlice {
@@ -850,6 +946,12 @@ func SliceContainsStr(strs []string, s string) bool {
 	return false
 }
 
+// Timestamp gets current formatted time
+func Timestamp() string {
+	t := time.Now()
+	return "[" + t.Format("2006-01-02 15:04:05") + "]"
+}
+
 // UniqueStrSlice takes a slice with duplicate values and returns one with unique values
 func UniqueStrSlice(inSlice []string) []string {
 	outSlice := []string{}
@@ -860,6 +962,18 @@ func UniqueStrSlice(inSlice []string) []string {
 		}
 	}
 	return outSlice
+}
+
+// ValidateHeader validated header column names
+func ValidateHeader(hdr map[int]string, attrMap map[string]string) error {
+	for idx, hdrAttr := range hdr {
+		correctVal, err := IsValidAttr(hdrAttr, attrMap)
+		if err != nil {
+			return err
+		}
+		hdr[idx] = correctVal
+	}
+	return nil
 }
 
 // ValidateInputAttrs validates JSON attribute string for create and update calls
@@ -879,6 +993,14 @@ func ValidateInputAttrs(attrs []string, attrMap map[string]string) error {
 		if s != attrName {
 			return fmt.Errorf("gmin: error - %v should be %v in attribute string", attrName, s)
 		}
+	}
+	return nil
+}
+
+// ValidateRecoveryPhone validates recovery phone number
+func ValidateRecoveryPhone(phoneNo string) error {
+	if string(phoneNo[0]) != "+" {
+		return fmt.Errorf("gmin: error - recovery phone number %v must start with '+' followed by country code", phoneNo)
 	}
 	return nil
 }

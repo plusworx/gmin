@@ -80,7 +80,7 @@ func doCreateOU(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Println("**** gmin: orgunit " + newOrgUnit.OrgUnitPath + " created ****")
+	fmt.Println(cmn.GminMessage("**** gmin: orgunit " + newOrgUnit.OrgUnitPath + " created ****"))
 
 	return nil
 }

@@ -38,13 +38,11 @@ func TestDoCreateUser(t *testing.T) {
 	}{
 		{
 			args:          []string{"mickey.mouse"},
+			firstname:     "Mickey",
+			lastname:      "Mouse",
+			password:      "VeryStrongPassword",
 			recoveryPhone: "988787686",
 			expectedErr:   "gmin: error - invalid email address",
-		},
-		{
-			args:          []string{"mickey.mouse@disney.com"},
-			recoveryPhone: "988787686",
-			expectedErr:   "gmin: error - recovery phone number 988787686 must start with '+'",
 		},
 		{
 			args:        []string{"mickey.mouse@disney.com"},

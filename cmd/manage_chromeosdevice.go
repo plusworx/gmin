@@ -37,7 +37,7 @@ import (
 
 var manageCrOSDevCmd = &cobra.Command{
 	Use:     "chromeosdevice <device id> <action>",
-	Aliases: []string{"crosdevice", "cdev"},
+	Aliases: []string{"crosdevice", "crosdev", "cdev"},
 	Args:    cobra.ExactArgs(2),
 	Short:   "Performs an action on a ChromeOS device",
 	Long: `Performs an action on a ChromeOS device.
@@ -91,7 +91,7 @@ func doManageCrOSDev(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Println("**** gmin : " + args[1] + " successfully performed on ChromeOS device " + args[0] + " ****")
+	fmt.Println(cmn.GminMessage("**** gmin : " + args[1] + " successfully performed on ChromeOS device " + args[0] + " ****"))
 
 	return nil
 }

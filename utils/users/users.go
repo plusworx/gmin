@@ -590,6 +590,12 @@ type Key struct {
 	UserKey string
 }
 
+// UndeleteUser is struct to extract undelete data
+type UndeleteUser struct {
+	UserKey     string
+	OrgUnitPath string
+}
+
 // AddCustomer adds Customer to admin calls
 func AddCustomer(ulc *admin.UsersListCall, customerID string) *admin.UsersListCall {
 	var newULC *admin.UsersListCall

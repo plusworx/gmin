@@ -61,7 +61,7 @@ func doDeleteOU(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Printf("**** gmin: orgunit %s deleted ****\n", args[0])
+	fmt.Println(cmn.GminMessage("**** gmin: orgunit " + args[0] + " deleted ****"))
 
 	return nil
 }

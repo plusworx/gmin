@@ -32,30 +32,36 @@ import (
 
 	"github.com/cenkalti/backoff/v4"
 	cmn "github.com/plusworx/gmin/utils/common"
+	cfg "github.com/plusworx/gmin/utils/config"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 )
 
-var batchDelUserCmd = &cobra.Command{
-	Use:     "users [-i input file path]",
-	Aliases: []string{"user"},
-	Short:   "Deletes a batch of users",
-	Long: `Deletes a batch of users where user details are provided in a text input file or from a pipe.
+var batchDelMobDevCmd = &cobra.Command{
+	Use:     "mobiledevices [-i input file path]",
+	Aliases: []string{"mobiledevice", "mobdevices", "mobdevice", "mobdevs", "mobdev", "mdevs", "mdev"},
+	Short:   "Deletes a batch of mobile devices",
+	Long: `Deletes a batch of mobile devices where mobile device details are provided in a text input file or through a pipe.
 	
-	Examples:	gmin batch-delete users -i inputfile.txt
-			gmin bdel user -i inputfile.txt
-			gmin ls user -a primaryemail -q orgunitpath=/TestOU | jq '.users[] | .primaryEmail' -r | gmin bdel user
+	Examples:	gmin batch-delete mobiledevices -i inputfile.txt
+			gmin bdel mdevs -i inputfile.txt
+			gmin ls mdevs -q user:William* -a resourceId | jq '.mobiledevices[] | .resourceId' -r | gmin bdel mdevs
 			
-	The input should provide the user email addresses, aliases or ids to be deleted on separate lines like this:
-	
-	frank.castle@mycompany.com
-	bruce.wayne@mycompany.com
-	peter.parker@mycompany.com`,
-	RunE: doBatchDelUser,
+The input should have the mobile device resource ids to be deleted on separate lines like this:
+
+4cx07eba348f09b3Yjklj93xjsol0kE30lkl
+Hkj98764yKK4jw8yyoyq9987js07q1hs7y98
+lkalkju9027ja98na65wqHaTBOOUgarTQKk9`,
+	RunE: doBatchDelMobDev,
 }
 
-func doBatchDelUser(cmd *cobra.Command, args []string) error {
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserScope)
+func doBatchDelMobDev(cmd *cobra.Command, args []string) error {
+	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryDeviceMobileScope)
+	if err != nil {
+		return err
+	}
+
+	customerID, err := cfg.ReadConfigString("customerid")
 	if err != nil {
 		return err
 	}
@@ -83,13 +89,12 @@ func doBatchDelUser(cmd *cobra.Command, args []string) error {
 	wg := new(sync.WaitGroup)
 
 	for scanner.Scan() {
-		user := scanner.Text()
-
-		udc := ds.Users.Delete(user)
+		mobResID := scanner.Text()
+		mdc := ds.Mobiledevices.Delete(customerID, mobResID)
 
 		wg.Add(1)
 
-		go deleteUser(wg, udc, user)
+		go deleteMobDev(wg, mdc, mobResID)
 	}
 
 	wg.Wait()
@@ -97,7 +102,7 @@ func doBatchDelUser(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func deleteUser(wg *sync.WaitGroup, udc *admin.UsersDeleteCall, user string) {
+func deleteMobDev(wg *sync.WaitGroup, mdc *admin.MobiledevicesDeleteCall, resourceID string) {
 	defer wg.Done()
 
 	b := backoff.NewExponentialBackOff()
@@ -105,16 +110,15 @@ func deleteUser(wg *sync.WaitGroup, udc *admin.UsersDeleteCall, user string) {
 
 	err := backoff.Retry(func() error {
 		var err error
-
-		err = udc.Do()
+		err = mdc.Do()
 		if err == nil {
-			fmt.Println(cmn.GminMessage("**** gmin: user " + user + " deleted ****"))
+			fmt.Println(cmn.GminMessage("**** gmin: mobile device " + resourceID + " deleted ****"))
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(errors.New(cmn.GminMessage("gmin: error - " + err.Error() + " " + user)))
+			return backoff.Permanent(errors.New(cmn.GminMessage("gmin: error - " + err.Error() + " " + resourceID)))
 		}
-		return errors.New(cmn.GminMessage("gmin: error - " + err.Error() + " " + user))
+		return errors.New(cmn.GminMessage("gmin: error - " + err.Error() + " " + resourceID))
 	}, b)
 	if err != nil {
 		fmt.Println(err)
@@ -122,8 +126,8 @@ func deleteUser(wg *sync.WaitGroup, udc *admin.UsersDeleteCall, user string) {
 }
 
 func init() {
-	batchDelCmd.AddCommand(batchDelUserCmd)
+	batchDelCmd.AddCommand(batchDelMobDevCmd)
 
-	batchDelUserCmd.Flags().StringVarP(&inputFile, "inputfile", "i", "", "filepath to user data text file")
-	batchDelUserCmd.MarkFlagRequired("inputfile")
+	batchDelMobDevCmd.Flags().StringVarP(&inputFile, "inputfile", "i", "", "filepath to mobile device data text file")
+	batchDelMobDevCmd.MarkFlagRequired("inputfile")
 }

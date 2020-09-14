@@ -55,7 +55,7 @@ func doDeleteUserAlias(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Printf("**** gmin: user alias %s for user %s deleted ****\n", args[0], args[1])
+	fmt.Println(cmn.GminMessage("**** gmin: user alias " + args[0] + " for user " + args[1] + " deleted ****"))
 
 	return nil
 }

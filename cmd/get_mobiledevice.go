@@ -27,32 +27,32 @@ import (
 	"fmt"
 	"strings"
 
-	cdevs "github.com/plusworx/gmin/utils/chromeosdevices"
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
+	mdevs "github.com/plusworx/gmin/utils/mobiledevices"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 )
 
-var getCrOSDevCmd = &cobra.Command{
-	Use:     "chromeosdevice <device id>",
-	Aliases: []string{"crosdevice", "crosdev", "cdev"},
+var getMobDevCmd = &cobra.Command{
+	Use:     "mobiledevice <resource id>",
+	Aliases: []string{"mobdevice", "mobdev", "mdev"},
 	Args:    cobra.ExactArgs(1),
-	Short:   "Outputs information about a ChromeOS device",
-	Long: `Outputs information about a ChromeOS device.
+	Short:   "Outputs information about a mobile device",
+	Long: `Outputs information about a mobile device.
 	
-	Examples:	gmin get chromeosdevice 5ad9ae43-5996-394e-9c39-12d45a8f10e8
-			gmin get cdev 5ad9ae43-5996-394e-9c39-12d45a8f10e8 -a serialnumber`,
-	RunE: doGetCrOSDev,
+	Examples:	gmin get mobiledevice AFiQxQ83IZT4llDfTWPZt69JvwSJU0YECe1TVyVZC4x
+			gmin get mdev AFiQxQ83IZT4llDfTWPZt69JvwSJU0YECe1TVyVZC4x -a serialnumber`,
+	RunE: doGetMobDev,
 }
 
-func doGetCrOSDev(cmd *cobra.Command, args []string) error {
+func doGetMobDev(cmd *cobra.Command, args []string) error {
 	var (
 		jsonData []byte
-		crosdev  *admin.ChromeOsDevice
+		mobdev   *admin.MobileDevice
 	)
 
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryDeviceChromeosReadonlyScope)
+	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryDeviceMobileReadonlyScope)
 	if err != nil {
 		return err
 	}
@@ -61,35 +61,35 @@ func doGetCrOSDev(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	cdgc := ds.Chromeosdevices.Get(customerID, args[0])
+	mdgc := ds.Mobiledevices.Get(customerID, args[0])
 
 	if attrs != "" {
-		formattedAttrs, err := cmn.ParseOutputAttrs(attrs, cdevs.CrOSDevAttrMap)
+		formattedAttrs, err := cmn.ParseOutputAttrs(attrs, mdevs.MobDevAttrMap)
 		if err != nil {
 			return err
 		}
 
-		getCall := cdevs.AddFields(cdgc, formattedAttrs)
-		cdgc = getCall.(*admin.ChromeosdevicesGetCall)
+		getCall := mdevs.AddFields(mdgc, formattedAttrs)
+		mdgc = getCall.(*admin.MobiledevicesGetCall)
 	}
 
 	if projection != "" {
 		proj := strings.ToLower(projection)
-		ok := cmn.SliceContainsStr(cdevs.ValidProjections, proj)
+		ok := cmn.SliceContainsStr(mdevs.ValidProjections, proj)
 		if !ok {
 			return fmt.Errorf("gmin: error - %v is not a valid projection type", projection)
 		}
 
-		getCall := cdevs.AddProjection(cdgc, proj)
-		cdgc = getCall.(*admin.ChromeosdevicesGetCall)
+		getCall := mdevs.AddProjection(mdgc, proj)
+		mdgc = getCall.(*admin.MobiledevicesGetCall)
 	}
 
-	crosdev, err = cdevs.DoGet(cdgc)
+	mobdev, err = mdevs.DoGet(mdgc)
 	if err != nil {
 		return err
 	}
 
-	jsonData, err = json.MarshalIndent(crosdev, "", "    ")
+	jsonData, err = json.MarshalIndent(mobdev, "", "    ")
 	if err != nil {
 		return err
 	}
@@ -100,8 +100,8 @@ func doGetCrOSDev(cmd *cobra.Command, args []string) error {
 }
 
 func init() {
-	getCmd.AddCommand(getCrOSDevCmd)
+	getCmd.AddCommand(getMobDevCmd)
 
-	getCrOSDevCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required device attributes (separated by ~)")
-	getCrOSDevCmd.Flags().StringVarP(&projection, "projection", "j", "", "type of projection")
+	getMobDevCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required device attributes (separated by ~)")
+	getMobDevCmd.Flags().StringVarP(&projection, "projection", "j", "", "type of projection")
 }

@@ -54,7 +54,7 @@ func doDeleteUser(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Printf("**** gmin: user %s deleted ****\n", args[0])
+	fmt.Println(cmn.GminMessage("**** gmin: user " + args[0] + " deleted ****"))
 
 	return nil
 }

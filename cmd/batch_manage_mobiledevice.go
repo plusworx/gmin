@@ -35,55 +35,51 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
-	cdevs "github.com/plusworx/gmin/utils/chromeosdevices"
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
+	mdevs "github.com/plusworx/gmin/utils/mobiledevices"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 	sheet "google.golang.org/api/sheets/v4"
 )
 
-var batchMngCrOSDevCmd = &cobra.Command{
-	Use:     "chromeosdevices -i <input file>",
-	Aliases: []string{"chromeosdevice", "crosdevices", "crosdevice", "crosdevs", "crosdev", "cdevs", "cdev"},
-	Short:   "Manages a batch of ChromeOS devices",
-	Long: `Manages a batch of ChromeOS devices where device details are provided in a Google Sheet or CSV/JSON input file.
+var batchMngMobDevCmd = &cobra.Command{
+	Use:     "mobiledevices -i <input file>",
+	Aliases: []string{"mobiledevice", "mobdevices", "mobdevice", "mobdevs", "mobdev", "mdevs", "mdev"},
+	Short:   "Manages a batch of mobile devices",
+	Long: `Manages a batch of mobile devices where device details are provided in a Google Sheet or CSV/JSON input file.
 	
-	Examples:	gmin batch-manage chromeosdevices -i inputfile.json
-			gmin bmng cdevs -i inputfile.csv -f csv
-			gmin bmng cdev -i 1odyAIp3jGspd3M4xeepxWD6aeQIUuHBgrZB2OHSu8MI -s 'Sheet1!A1:C25' -f gsheet
+	Examples:	gmin batch-manage mobiledevices -i inputfile.json
+			gmin bmng mdevs -i inputfile.csv -f csv
+			gmin bmng mdev -i 1odyAIp3jGspd3M4xeepxWD6aeQIUuHBgrZB2OHSu8MI -s 'Sheet1!A1:B25' -f gsheet
 			  
-	The JSON file should contain ChromeOS device management details like this:
+	The JSON file should contain mobile device management details like this:
 	
-	{"deviceId":"5ac7be73-5996-394e-9c30-62d41a8f10e8","action":"disable"}
-	{"deviceId":"6ac9bd33-7095-453e-6c39-22d48a8f13e8","action":"reenable"}
-	{"deviceId":"6bc4be13-9916-494e-9c39-62d45c8f40e9","action":"deprovision","deprovisionReason":"retiring_device"}
-	
-	N.B. If you are deprovisioning devices then a deprovision reason must be provided.
+	{"resourceId":"4cx07eba348f09b3Yjklj93xjsol0kE30lkl","action":"admin_account_wipe"}
+	{"resourceId":"Hkj98764yKK4jw8yyoyq9987js07q1hs7y98","action":"approve"}
+	{"resourceId":"lkalkju9027ja98na65wqHaTBOOUgarTQKk9","action":"admin_remote_wipe"}
+
+	N.B. resourceId must be used NOT deviceId.
 	
 	CSV and Google sheets must have a header row with the following column names being the only ones that are valid:
 	
 	action [required]
-	deprovisionReason
-	deviceId [required]
+	resourceId [required]
 	
 	The column names are case insensitive and can be in any order.
 	
 	Valid actions are:
-	deprovision
-	disable
-	reenable
-	
-	Valid deprovision reasons are:
-	different_model_replacement
-	retiring_device
-	same_model_replacement
-	upgrade_transfer`,
-	RunE: doBatchMngCrOSDev,
+	admin_account_wipe
+	admin_remote_wipe
+	approve
+	block
+	cancel_remote_wipe_then_activate
+	cancel_remote_wipe_then_block`,
+	RunE: doBatchMngMobDev,
 }
 
-func doBatchMngCrOSDev(cmd *cobra.Command, args []string) error {
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryDeviceChromeosScope)
+func doBatchMngMobDev(cmd *cobra.Command, args []string) error {
+	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryDeviceMobileActionScope)
 	if err != nil {
 		return err
 	}
@@ -102,17 +98,17 @@ func doBatchMngCrOSDev(cmd *cobra.Command, args []string) error {
 
 	switch {
 	case lwrFmt == "csv":
-		err := btchMngCrOSDevProcessCSV(ds, inputFile)
+		err := btchMngMobDevProcessCSV(ds, inputFile)
 		if err != nil {
 			return err
 		}
 	case lwrFmt == "json":
-		err := btchMngCrOSDevProcessJSON(ds, inputFile)
+		err := btchMngMobDevProcessJSON(ds, inputFile)
 		if err != nil {
 			return err
 		}
 	case lwrFmt == "gsheet":
-		err := btchMngCrOSDevProcessSheet(ds, inputFile)
+		err := btchMngMobDevProcessSheet(ds, inputFile)
 		if err != nil {
 			return err
 		}
@@ -121,8 +117,8 @@ func doBatchMngCrOSDev(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func btchMngJSONCrOSDev(ds *admin.Service, jsonData string) (cdevs.ManagedDevice, error) {
-	managedDev := cdevs.ManagedDevice{}
+func btchMngJSONMobDev(ds *admin.Service, jsonData string) (mdevs.ManagedDevice, error) {
+	managedDev := mdevs.ManagedDevice{}
 	jsonBytes := []byte(jsonData)
 
 	if !json.Valid(jsonBytes) {
@@ -134,7 +130,7 @@ func btchMngJSONCrOSDev(ds *admin.Service, jsonData string) (cdevs.ManagedDevice
 		return managedDev, err
 	}
 
-	err = cmn.ValidateInputAttrs(outStr, cdevs.CrOSDevAttrMap)
+	err = cmn.ValidateInputAttrs(outStr, mdevs.MobDevAttrMap)
 	if err != nil {
 		return managedDev, err
 	}
@@ -147,7 +143,7 @@ func btchMngJSONCrOSDev(ds *admin.Service, jsonData string) (cdevs.ManagedDevice
 	return managedDev, nil
 }
 
-func btchMngCrOSDevs(ds *admin.Service, managedDevs []cdevs.ManagedDevice) error {
+func btchMngMobDevs(ds *admin.Service, managedDevs []mdevs.ManagedDevice) error {
 	customerID, err := cfg.ReadConfigString("customerid")
 	if err != nil {
 		return err
@@ -156,16 +152,15 @@ func btchMngCrOSDevs(ds *admin.Service, managedDevs []cdevs.ManagedDevice) error
 	wg := new(sync.WaitGroup)
 
 	for _, md := range managedDevs {
-		devAction := admin.ChromeOsDeviceAction{}
+		devAction := admin.MobileDeviceAction{}
 
 		devAction.Action = md.Action
-		devAction.DeprovisionReason = md.DeprovisionReason
 
-		cdac := ds.Chromeosdevices.Action(customerID, md.DeviceId, &devAction)
+		mdac := ds.Mobiledevices.Action(customerID, md.ResourceId, &devAction)
 
 		wg.Add(1)
 
-		go btchMngCrOSDevProcess(md.DeviceId, md.Action, wg, cdac)
+		go btchMngMobDevProcess(md.ResourceId, md.Action, wg, mdac)
 	}
 
 	wg.Wait()
@@ -173,7 +168,7 @@ func btchMngCrOSDevs(ds *admin.Service, managedDevs []cdevs.ManagedDevice) error
 	return nil
 }
 
-func btchMngCrOSDevProcess(deviceID string, action string, wg *sync.WaitGroup, cdac *admin.ChromeosdevicesActionCall) {
+func btchMngMobDevProcess(resourceID string, action string, wg *sync.WaitGroup, mdac *admin.MobiledevicesActionCall) {
 	defer wg.Done()
 
 	b := backoff.NewExponentialBackOff()
@@ -181,26 +176,26 @@ func btchMngCrOSDevProcess(deviceID string, action string, wg *sync.WaitGroup, c
 
 	err := backoff.Retry(func() error {
 		var err error
-		err = cdac.Do()
+		err = mdac.Do()
 		if err == nil {
-			fmt.Println(cmn.GminMessage("**** gmin: " + action + " successfully performed on ChromeOS device " + deviceID + " ****"))
+			fmt.Println(cmn.GminMessage("**** gmin: " + action + " successfully performed on mobile device " + resourceID + " ****"))
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(errors.New(cmn.GminMessage("gmin: error - " + err.Error() + " " + deviceID)))
+			return backoff.Permanent(errors.New(cmn.GminMessage("gmin: error - " + err.Error() + " " + resourceID)))
 		}
-		return errors.New(cmn.GminMessage("gmin: error - " + err.Error() + " " + deviceID))
+		return errors.New(cmn.GminMessage("gmin: error - " + err.Error() + " " + resourceID))
 	}, b)
 	if err != nil {
 		fmt.Println(err)
 	}
 }
 
-func btchMngCrOSDevProcessCSV(ds *admin.Service, filePath string) error {
+func btchMngMobDevProcessCSV(ds *admin.Service, filePath string) error {
 	var (
 		iSlice      []interface{}
 		hdrMap      = map[int]string{}
-		managedDevs []cdevs.ManagedDevice
+		managedDevs []mdevs.ManagedDevice
 	)
 
 	csvfile, err := os.Open(filePath)
@@ -227,7 +222,7 @@ func btchMngCrOSDevProcessCSV(ds *admin.Service, filePath string) error {
 				iSlice[idx] = value
 			}
 			hdrMap = cmn.ProcessHeader(iSlice)
-			err = cmn.ValidateHeader(hdrMap, cdevs.CrOSDevAttrMap)
+			err = cmn.ValidateHeader(hdrMap, mdevs.MobDevAttrMap)
 			if err != nil {
 				return err
 			}
@@ -239,25 +234,25 @@ func btchMngCrOSDevProcessCSV(ds *admin.Service, filePath string) error {
 			iSlice[idx] = value
 		}
 
-		mngCdevVar, err := btchMngProcessCrOSDev(hdrMap, iSlice)
+		mngMdevVar, err := btchMngProcessMobDev(hdrMap, iSlice)
 		if err != nil {
 			return err
 		}
 
-		managedDevs = append(managedDevs, mngCdevVar)
+		managedDevs = append(managedDevs, mngMdevVar)
 
 		count = count + 1
 	}
 
-	err = btchMngCrOSDevs(ds, managedDevs)
+	err = btchMngMobDevs(ds, managedDevs)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func btchMngCrOSDevProcessJSON(ds *admin.Service, filePath string) error {
-	var managedDevs []cdevs.ManagedDevice
+func btchMngMobDevProcessJSON(ds *admin.Service, filePath string) error {
+	var managedDevs []mdevs.ManagedDevice
 
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -269,19 +264,19 @@ func btchMngCrOSDevProcessJSON(ds *admin.Service, filePath string) error {
 	for scanner.Scan() {
 		jsonData := scanner.Text()
 
-		mngCdevVar, err := btchMngJSONCrOSDev(ds, jsonData)
+		mngMdevVar, err := btchMngJSONMobDev(ds, jsonData)
 		if err != nil {
 			return err
 		}
 
-		managedDevs = append(managedDevs, mngCdevVar)
+		managedDevs = append(managedDevs, mngMdevVar)
 	}
 	err = scanner.Err()
 	if err != nil {
 		return err
 	}
 
-	err = btchMngCrOSDevs(ds, managedDevs)
+	err = btchMngMobDevs(ds, managedDevs)
 	if err != nil {
 		return err
 	}
@@ -289,8 +284,8 @@ func btchMngCrOSDevProcessJSON(ds *admin.Service, filePath string) error {
 	return nil
 }
 
-func btchMngCrOSDevProcessSheet(ds *admin.Service, sheetID string) error {
-	var managedDevs []cdevs.ManagedDevice
+func btchMngMobDevProcessSheet(ds *admin.Service, sheetID string) error {
+	var managedDevs []mdevs.ManagedDevice
 
 	if sheetRange == "" {
 		return errors.New("gmin: error - sheetrange must be provided")
@@ -312,7 +307,7 @@ func btchMngCrOSDevProcessSheet(ds *admin.Service, sheetID string) error {
 	}
 
 	hdrMap := cmn.ProcessHeader(sValRange.Values[0])
-	err = cmn.ValidateHeader(hdrMap, cdevs.CrOSDevAttrMap)
+	err = cmn.ValidateHeader(hdrMap, mdevs.MobDevAttrMap)
 	if err != nil {
 		return err
 	}
@@ -322,15 +317,15 @@ func btchMngCrOSDevProcessSheet(ds *admin.Service, sheetID string) error {
 			continue
 		}
 
-		mngCdevVar, err := btchMngProcessCrOSDev(hdrMap, row)
+		mngMdevVar, err := btchMngProcessMobDev(hdrMap, row)
 		if err != nil {
 			return err
 		}
 
-		managedDevs = append(managedDevs, mngCdevVar)
+		managedDevs = append(managedDevs, mngMdevVar)
 	}
 
-	err = btchMngCrOSDevs(ds, managedDevs)
+	err = btchMngMobDevs(ds, managedDevs)
 	if err != nil {
 		return err
 	}
@@ -338,47 +333,34 @@ func btchMngCrOSDevProcessSheet(ds *admin.Service, sheetID string) error {
 	return nil
 }
 
-func btchMngProcessCrOSDev(hdrMap map[int]string, cdevData []interface{}) (cdevs.ManagedDevice, error) {
-	managedDev := cdevs.ManagedDevice{}
+func btchMngProcessMobDev(hdrMap map[int]string, mdevData []interface{}) (mdevs.ManagedDevice, error) {
+	managedDev := mdevs.ManagedDevice{}
 
-	for idx, attr := range cdevData {
+	for idx, attr := range mdevData {
 		attrName := hdrMap[idx]
 
 		switch {
 		case attrName == "action":
 			lwrAction := strings.ToLower(fmt.Sprintf("%v", attr))
-			ok := cmn.SliceContainsStr(cdevs.ValidActions, lwrAction)
+			ok := cmn.SliceContainsStr(mdevs.ValidActions, lwrAction)
 			if !ok {
 				return managedDev, fmt.Errorf("gmin: error - %v is not a valid action type", fmt.Sprintf("%v", attr))
 			}
 			managedDev.Action = lwrAction
-		case attrName == "deviceId":
-			managedDev.DeviceId = fmt.Sprintf("%v", attr)
-		case attrName == "deprovisionReason":
-			lwrReason := strings.ToLower(fmt.Sprintf("%v", attr))
-			if lwrReason != "" {
-				ok := cmn.SliceContainsStr(cdevs.ValidDeprovisionReasons, lwrReason)
-				if !ok {
-					return managedDev, fmt.Errorf("gmin: error - %v is not a valid deprovision reason", fmt.Sprintf("%v", attr))
-				}
-			}
-			managedDev.DeprovisionReason = fmt.Sprintf("%v", attr)
+		case attrName == "resourceId":
+			managedDev.ResourceId = fmt.Sprintf("%v", attr)
 		}
-	}
-
-	if managedDev.Action == "deprovision" && managedDev.DeprovisionReason == "" {
-		return managedDev, errors.New("gmin: error - must provide a deprovision reason")
 	}
 
 	return managedDev, nil
 }
 
 func init() {
-	batchManageCmd.AddCommand(batchMngCrOSDevCmd)
+	batchManageCmd.AddCommand(batchMngMobDevCmd)
 
-	batchMngCrOSDevCmd.Flags().StringVarP(&inputFile, "inputfile", "i", "", "filepath to device data file")
-	batchMngCrOSDevCmd.Flags().StringVarP(&format, "format", "f", "json", "user data file format")
-	batchMngCrOSDevCmd.Flags().StringVarP(&sheetRange, "sheetrange", "s", "", "user data gsheet range")
+	batchMngMobDevCmd.Flags().StringVarP(&inputFile, "inputfile", "i", "", "filepath to device data file")
+	batchMngMobDevCmd.Flags().StringVarP(&format, "format", "f", "json", "user data file format")
+	batchMngMobDevCmd.Flags().StringVarP(&sheetRange, "sheetrange", "s", "", "user data gsheet range")
 
-	batchMngCrOSDevCmd.MarkFlagRequired("inputfile")
+	batchMngMobDevCmd.MarkFlagRequired("inputfile")
 }

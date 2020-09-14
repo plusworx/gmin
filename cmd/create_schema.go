@@ -142,7 +142,7 @@ func doCreateSchema(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Println("**** gmin: schema " + newSchema.SchemaName + " created ****")
+	fmt.Println(cmn.GminMessage("**** gmin: schema " + newSchema.SchemaName + " created ****"))
 
 	return nil
 }

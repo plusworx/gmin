@@ -24,66 +24,73 @@ package cmd
 
 import (
 	"fmt"
+	"strings"
 
-	cdevs "github.com/plusworx/gmin/utils/chromeosdevices"
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
+	mdevs "github.com/plusworx/gmin/utils/mobiledevices"
 	"github.com/spf13/cobra"
 
 	admin "google.golang.org/api/admin/directory/v1"
 )
 
-var moveCrOSDevCmd = &cobra.Command{
-	Use:     "chromeosdevice <device id> <orgunitpath>",
-	Aliases: []string{"crosdevice", "crosdev", "cdev"},
+var manageMobDevCmd = &cobra.Command{
+	Use:     "mobiledevice <resource id> <action>",
+	Aliases: []string{"mobdevice", "mobdev", "mdev"},
 	Args:    cobra.ExactArgs(2),
-	Short:   "Moves a ChromeOS device to another orgunit",
-	Long: `Moves a ChromeOS device to another orgunit.
+	Short:   "Performs an action on a mobile device",
+	Long: `Performs an action on a mobile device.
 	
-	Examples:	gmin move chromeosdevice 4cx07eba348f09b3 /Sales
-			gmin mv cdev 4cx07eba348f09b3 /IT`,
-	RunE: doMoveCrOSDev,
+	Examples:	gmin manage mobiledevice 4cx07eba348f09b3 block
+			gmin mng mdev 4cx07eba348f09b3 admin_remote_wipe`,
+	RunE: doManageMobDev,
 }
 
-func doMoveCrOSDev(cmd *cobra.Command, args []string) error {
-	var move = admin.ChromeOsMoveDevicesToOu{}
+func doManageMobDev(cmd *cobra.Command, args []string) error {
+	var devAction = admin.MobileDeviceAction{}
 
 	customerID, err := cfg.ReadConfigString("customerid")
 	if err != nil {
 		return err
 	}
 
-	move.DeviceIds = append(move.DeviceIds, args[0])
+	action := strings.ToLower(args[1])
+	ok := cmn.SliceContainsStr(mdevs.ValidActions, action)
+	if !ok {
+		return fmt.Errorf("gmin: error - %v is not a valid action type", args[1])
+	}
 
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryDeviceChromeosScope)
+	devAction.Action = action
+
+	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryDeviceMobileActionScope)
 	if err != nil {
 		return err
 	}
 
-	cdmc := ds.Chromeosdevices.MoveDevicesToOu(customerID, args[1], &move)
+	mdac := ds.Mobiledevices.Action(customerID, args[0], &devAction)
 
 	if attrs != "" {
-		moveAttrs, err := cmn.ParseOutputAttrs(attrs, cdevs.CrOSDevAttrMap)
+		manageAttrs, err := cmn.ParseOutputAttrs(attrs, mdevs.MobDevAttrMap)
 		if err != nil {
 			return err
 		}
-		formattedAttrs := cdevs.StartChromeDevicesField + moveAttrs + cdevs.EndField
-		moveCall := cdevs.AddFields(cdmc, formattedAttrs)
-		cdmc = moveCall.(*admin.ChromeosdevicesMoveDevicesToOuCall)
+		formattedAttrs := mdevs.StartMobDevicesField + manageAttrs + mdevs.EndField
+		actionCall := mdevs.AddFields(mdac, formattedAttrs)
+		mdac = actionCall.(*admin.MobiledevicesActionCall)
 	}
 
-	err = cdmc.Do()
+	err = mdac.Do()
 	if err != nil {
 		return err
 	}
 
-	fmt.Println(cmn.GminMessage("**** gmin: ChromeOS device " + args[0] + " moved to " + args[1] + " ****"))
+	fmt.Println(cmn.GminMessage("**** gmin : " + args[1] + " successfully performed on mobile device " + args[0] + " ****"))
 
 	return nil
 }
 
 func init() {
-	moveCmd.AddCommand(moveCrOSDevCmd)
+	manageCmd.AddCommand(manageMobDevCmd)
 
-	moveCrOSDevCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "device's attributes to display (separated by ~)")
+	manageMobDevCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "device's attributes to display (separated by ~)")
 }
