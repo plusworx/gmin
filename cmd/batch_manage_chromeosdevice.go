@@ -53,7 +53,7 @@ var batchMngCrOSDevCmd = &cobra.Command{
 			gmin bmng cdevs -i inputfile.csv -f csv
 			gmin bmng cdev -i 1odyAIp3jGspd3M4xeepxWD6aeQIUuHBgrZB2OHSu8MI -s 'Sheet1!A1:C25' -f gsheet
 			  
-	The input file should contain a list of device ids like this:
+	The JSON file should contain ChromeOS device management details like this:
 	
 	{"deviceId":"5ac7be73-5996-394e-9c30-62d41a8f10e8","action":"disable"}
 	{"deviceId":"6ac9bd33-7095-453e-6c39-22d48a8f13e8","action":"reenable"}
@@ -126,7 +126,7 @@ func btchMngJSONCrOSDev(ds *admin.Service, jsonData string) (cdevs.ManagedDevice
 	jsonBytes := []byte(jsonData)
 
 	if !json.Valid(jsonBytes) {
-		return managedDev, errors.New(cmn.GminMessage("gmin: error - attribute string is not valid JSON"))
+		return managedDev, errors.New("gmin: error - attribute string is not valid JSON")
 	}
 
 	outStr, err := cmn.ParseInputAttrs(jsonBytes)

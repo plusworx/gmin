@@ -24,10 +24,14 @@ package cmd
 
 import (
 	"bufio"
+	"encoding/csv"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
@@ -36,25 +40,42 @@ import (
 	mdevs "github.com/plusworx/gmin/utils/mobiledevices"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
+	sheet "google.golang.org/api/sheets/v4"
 )
 
 var batchMngMobDevCmd = &cobra.Command{
-	Use:     "mobiledevices <action> [-i input file]",
+	Use:     "mobiledevices -i <input file>",
 	Aliases: []string{"mobiledevice", "mobdevices", "mobdevice", "mobdevs", "mobdev", "mdevs", "mdev"},
-	Args:    cobra.ExactArgs(1),
 	Short:   "Manages a batch of mobile devices",
-	Long: `Manages a batch of mobile devices where device details are provided in a text input file or 
-	via a command line pipe.
+	Long: `Manages a batch of mobile devices where device details are provided in a Google Sheet or CSV/JSON input file.
 	
-	Examples:	gmin batch-manage mobiledevices admin_account_wipe -i inputfile.txt
-			gmin bmng mdev approve -i inputfile.txt
+	Examples:	gmin batch-manage mobiledevices -i inputfile.json
+			gmin bmng mdevs -i inputfile.csv -f csv
+			gmin bmng mdev -i 1odyAIp3jGspd3M4xeepxWD6aeQIUuHBgrZB2OHSu8MI -s 'Sheet1!A1:B25' -f gsheet
 			  
-	The input file should contain a list of resource ids like this:
+	The JSON file should contain mobile device management details like this:
 	
-	4cx07eba348f09b3Yjklj93xjsol0kE30lkl
-	Hkj98764yKK4jw8yyoyq9987js07q1hs7y98
-	lkalkju9027ja98na65wqHaTBOOUgarTQKk9`,
-	RunE: doBatchMngCrOSDev,
+	{"resourceId":"4cx07eba348f09b3Yjklj93xjsol0kE30lkl","action":"admin_account_wipe"}
+	{"resourceId":"Hkj98764yKK4jw8yyoyq9987js07q1hs7y98","action":"approve"}
+	{"resourceId":"lkalkju9027ja98na65wqHaTBOOUgarTQKk9","action":"admin_remote_wipe"}
+
+	N.B. resourceId must be used NOT deviceId.
+	
+	CSV and Google sheets must have a header row with the following column names being the only ones that are valid:
+	
+	action [required]
+	resourceId [required]
+	
+	The column names are case insensitive and can be in any order.
+	
+	Valid actions are:
+	admin_account_wipe
+	admin_remote_wipe
+	approve
+	block
+	cancel_remote_wipe_then_activate
+	cancel_remote_wipe_then_block`,
+	RunE: doBatchMngMobDev,
 }
 
 func doBatchMngMobDev(cmd *cobra.Command, args []string) error {
@@ -63,92 +84,283 @@ func doBatchMngMobDev(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	if inputFile == "" {
+		err := errors.New("gmin: error - must provide inputfile")
+		return err
+	}
+
+	lwrFmt := strings.ToLower(format)
+
+	ok := cmn.SliceContainsStr(cmn.ValidFileFormats, lwrFmt)
+	if !ok {
+		return fmt.Errorf("gmin: error - %v is not a valid file format", format)
+	}
+
+	switch {
+	case lwrFmt == "csv":
+		err := btchMngMobDevProcessCSV(ds, inputFile)
+		if err != nil {
+			return err
+		}
+	case lwrFmt == "json":
+		err := btchMngMobDevProcessJSON(ds, inputFile)
+		if err != nil {
+			return err
+		}
+	case lwrFmt == "gsheet":
+		err := btchMngMobDevProcessSheet(ds, inputFile)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func btchMngJSONMobDev(ds *admin.Service, jsonData string) (mdevs.ManagedDevice, error) {
+	managedDev := mdevs.ManagedDevice{}
+	jsonBytes := []byte(jsonData)
+
+	if !json.Valid(jsonBytes) {
+		return managedDev, errors.New("gmin: error - attribute string is not valid JSON")
+	}
+
+	outStr, err := cmn.ParseInputAttrs(jsonBytes)
+	if err != nil {
+		return managedDev, err
+	}
+
+	err = cmn.ValidateInputAttrs(outStr, mdevs.MobDevAttrMap)
+	if err != nil {
+		return managedDev, err
+	}
+
+	err = json.Unmarshal(jsonBytes, &managedDev)
+	if err != nil {
+		return managedDev, err
+	}
+
+	return managedDev, nil
+}
+
+func btchMngMobDevs(ds *admin.Service, managedDevs []mdevs.ManagedDevice) error {
 	customerID, err := cfg.ReadConfigString("customerid")
 	if err != nil {
 		return err
 	}
 
-	scanner, err := cmn.InputFromStdIn(inputFile)
+	wg := new(sync.WaitGroup)
+
+	for _, md := range managedDevs {
+		devAction := admin.MobileDeviceAction{}
+
+		devAction.Action = md.Action
+
+		mdac := ds.Mobiledevices.Action(customerID, md.ResourceId, &devAction)
+
+		wg.Add(1)
+
+		go btchMngMobDevProcess(md.ResourceId, md.Action, wg, mdac)
+	}
+
+	wg.Wait()
+
+	return nil
+}
+
+func btchMngMobDevProcess(resourceID string, action string, wg *sync.WaitGroup, mdac *admin.MobiledevicesActionCall) {
+	defer wg.Done()
+
+	b := backoff.NewExponentialBackOff()
+	b.MaxElapsedTime = 32 * time.Second
+
+	err := backoff.Retry(func() error {
+		var err error
+		err = mdac.Do()
+		if err == nil {
+			fmt.Println(cmn.GminMessage("**** gmin: " + action + " successfully performed on mobile device " + resourceID + " ****"))
+			return err
+		}
+		if !cmn.IsErrRetryable(err) {
+			return backoff.Permanent(errors.New(cmn.GminMessage("gmin: error - " + err.Error() + " " + resourceID)))
+		}
+		return errors.New(cmn.GminMessage("gmin: error - " + err.Error() + " " + resourceID))
+	}, b)
+	if err != nil {
+		fmt.Println(err)
+	}
+}
+
+func btchMngMobDevProcessCSV(ds *admin.Service, filePath string) error {
+	var (
+		iSlice      []interface{}
+		hdrMap      = map[int]string{}
+		managedDevs []mdevs.ManagedDevice
+	)
+
+	csvfile, err := os.Open(filePath)
+	if err != nil {
+		return err
+	}
+	defer csvfile.Close()
+
+	r := csv.NewReader(csvfile)
+
+	count := 0
+	for {
+		record, err := r.Read()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+
+		if count == 0 {
+			iSlice = make([]interface{}, len(record))
+			for idx, value := range record {
+				iSlice[idx] = value
+			}
+			hdrMap = cmn.ProcessHeader(iSlice)
+			err = cmn.ValidateHeader(hdrMap, mdevs.MobDevAttrMap)
+			if err != nil {
+				return err
+			}
+			count = count + 1
+			continue
+		}
+
+		for idx, value := range record {
+			iSlice[idx] = value
+		}
+
+		mngMdevVar, err := btchMngProcessMobDev(hdrMap, iSlice)
+		if err != nil {
+			return err
+		}
+
+		managedDevs = append(managedDevs, mngMdevVar)
+
+		count = count + 1
+	}
+
+	err = btchMngMobDevs(ds, managedDevs)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func btchMngMobDevProcessJSON(ds *admin.Service, filePath string) error {
+	var managedDevs []mdevs.ManagedDevice
+
+	file, err := os.Open(filePath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		jsonData := scanner.Text()
+
+		mngMdevVar, err := btchMngJSONMobDev(ds, jsonData)
+		if err != nil {
+			return err
+		}
+
+		managedDevs = append(managedDevs, mngMdevVar)
+	}
+	err = scanner.Err()
 	if err != nil {
 		return err
 	}
 
-	if inputFile == "" && scanner == nil {
-		err := errors.New("gmin: error - must provide inputfile")
-		return err
-	}
-
-	if scanner == nil {
-		file, err := os.Open(inputFile)
-		if err != nil {
-			return err
-		}
-		defer file.Close()
-
-		scanner = bufio.NewScanner(file)
-	}
-
-	for scanner.Scan() {
-		mobResID := scanner.Text()
-
-		b := backoff.NewExponentialBackOff()
-		b.MaxElapsedTime = 30 * time.Second
-
-		err = backoff.Retry(func() error {
-			var err error
-			err = manageMobDev(ds, customerID, mobResID, args[0])
-			if err == nil {
-				return err
-			}
-
-			if strings.Contains(err.Error(), "Missing required field") ||
-				strings.Contains(err.Error(), "not a valid") ||
-				strings.Contains(err.Error(), "provide a reason") ||
-				strings.Contains(err.Error(), "Resource Not Found") ||
-				strings.Contains(err.Error(), "Illegal") {
-				return backoff.Permanent(err)
-			}
-
-			return err
-		}, b)
-		if err != nil {
-			return err
-		}
-	}
-
-	if err := scanner.Err(); err != nil {
+	err = btchMngMobDevs(ds, managedDevs)
+	if err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func manageMobDev(ds *admin.Service, customerID string, resourceID string, action string) error {
-	var devAction = admin.MobileDeviceAction{}
+func btchMngMobDevProcessSheet(ds *admin.Service, sheetID string) error {
+	var managedDevs []mdevs.ManagedDevice
 
-	lwrAction := strings.ToLower(action)
-	ok := cmn.SliceContainsStr(mdevs.ValidActions, lwrAction)
-	if !ok {
-		return fmt.Errorf("gmin: error - %v is not a valid action type", action)
+	if sheetRange == "" {
+		return errors.New("gmin: error - sheetrange must be provided")
 	}
 
-	devAction.Action = lwrAction
-
-	mdac := ds.Mobiledevices.Action(customerID, resourceID, &devAction)
-
-	err := mdac.Do()
+	ss, err := cmn.CreateSheetService(sheet.DriveReadonlyScope)
 	if err != nil {
 		return err
 	}
 
-	fmt.Println("**** gmin: " + action + " successfully performed on mobile device " + resourceID + " ****")
+	ssvgc := ss.Spreadsheets.Values.Get(sheetID, sheetRange)
+	sValRange, err := ssvgc.Do()
+	if err != nil {
+		return err
+	}
+
+	if len(sValRange.Values) == 0 {
+		return errors.New("gmin: error - no data found in sheet " + sheetID + " range: " + sheetRange)
+	}
+
+	hdrMap := cmn.ProcessHeader(sValRange.Values[0])
+	err = cmn.ValidateHeader(hdrMap, mdevs.MobDevAttrMap)
+	if err != nil {
+		return err
+	}
+
+	for idx, row := range sValRange.Values {
+		if idx == 0 {
+			continue
+		}
+
+		mngMdevVar, err := btchMngProcessMobDev(hdrMap, row)
+		if err != nil {
+			return err
+		}
+
+		managedDevs = append(managedDevs, mngMdevVar)
+	}
+
+	err = btchMngMobDevs(ds, managedDevs)
+	if err != nil {
+		return err
+	}
 
 	return nil
+}
+
+func btchMngProcessMobDev(hdrMap map[int]string, mdevData []interface{}) (mdevs.ManagedDevice, error) {
+	managedDev := mdevs.ManagedDevice{}
+
+	for idx, attr := range mdevData {
+		attrName := hdrMap[idx]
+
+		switch {
+		case attrName == "action":
+			lwrAction := strings.ToLower(fmt.Sprintf("%v", attr))
+			ok := cmn.SliceContainsStr(mdevs.ValidActions, lwrAction)
+			if !ok {
+				return managedDev, fmt.Errorf("gmin: error - %v is not a valid action type", fmt.Sprintf("%v", attr))
+			}
+			managedDev.Action = lwrAction
+		case attrName == "resourceId":
+			managedDev.ResourceId = fmt.Sprintf("%v", attr)
+		}
+	}
+
+	return managedDev, nil
 }
 
 func init() {
 	batchManageCmd.AddCommand(batchMngMobDevCmd)
 
 	batchMngMobDevCmd.Flags().StringVarP(&inputFile, "inputfile", "i", "", "filepath to device data file")
+	batchMngMobDevCmd.Flags().StringVarP(&format, "format", "f", "json", "user data file format")
+	batchMngMobDevCmd.Flags().StringVarP(&sheetRange, "sheetrange", "s", "", "user data gsheet range")
+
 	batchMngMobDevCmd.MarkFlagRequired("inputfile")
 }

@@ -47,6 +47,12 @@ type ManagedDevice struct {
 	DeprovisionReason string
 }
 
+// MovedDevice is struct to extract device data
+type MovedDevice struct {
+	DeviceId    string
+	OrgUnitPath string
+}
+
 var attrValues = []string{
 	"action",
 }

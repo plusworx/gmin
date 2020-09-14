@@ -40,6 +40,12 @@ const (
 	StartMobDevicesField string = "mobiledevices("
 )
 
+// ManagedDevice is struct to extract device data
+type ManagedDevice struct {
+	Action     string
+	ResourceId string
+}
+
 var attrValues = []string{
 	"action",
 }
@@ -61,6 +67,7 @@ var mobDevApplicationsAttrs = []string{
 // MobDevAttrMap provides lowercase mappings to valid admin.MobileDevice attributes
 var MobDevAttrMap = map[string]string{
 	"adbstatus":                      "adbStatus",
+	"action":                         "action", // used in batch manage
 	"applications":                   "applications",
 	"basebandversion":                "basebandVersion",
 	"bootloaderversion":              "bootloaderVersion",
