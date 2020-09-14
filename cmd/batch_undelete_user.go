@@ -46,13 +46,13 @@ var batchUndelUserCmd = &cobra.Command{
 	Use:     "users -i <input file path>",
 	Aliases: []string{"user"},
 	Short:   "Undeletes a batch of users",
-	Long: `Undeletes a batch of users where user details are provided in a Google Sheet or CSV/JSON input file.
+	Long: `Undeletes a batch of users where user details are provided in a Google Sheet, CSV/JSON input file or piped JSON.
 	
 	Examples:	gmin batch-undelete users -i inputfile.json
 			gmin bund user -i inputfile.csv -f csv
 			gmin bund user -i 1odyAIp3jGspd3M4xeepxWD6aeQIUuHBgrZB2OHSu8MI -s 'Sheet1!A1:B25' -f gsheet
 			
-	The contents of a JSON file should look something like this:
+	The contents of a JSON file or piped input should look something like this:
 	
 	{"userKey":"417578192529765228417","orgUnitPath":"/Sales"}
 	{"userKey":"308127142904731923463","orgUnitPath":"/"}
@@ -75,7 +75,12 @@ func doBatchUndelUser(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if inputFile == "" {
+	scanner, err := cmn.InputFromStdIn(inputFile)
+	if err != nil {
+		return err
+	}
+
+	if inputFile == "" && scanner == nil {
 		err := errors.New("gmin: error - must provide inputfile")
 		return err
 	}
@@ -94,7 +99,7 @@ func doBatchUndelUser(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	case lwrFmt == "json":
-		err := btchUndelUsrProcessJSON(ds, inputFile)
+		err := btchUndelUsrProcessJSON(ds, inputFile, scanner)
 		if err != nil {
 			return err
 		}
@@ -241,16 +246,19 @@ func btchUndelUsrProcessCSV(ds *admin.Service, filePath string) error {
 	return nil
 }
 
-func btchUndelUsrProcessJSON(ds *admin.Service, filePath string) error {
+func btchUndelUsrProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner) error {
 	var undelUsers []usrs.UndeleteUser
 
-	file, err := os.Open(filePath)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
+	if filePath != "" {
+		file, err := os.Open(filePath)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
 
-	scanner := bufio.NewScanner(file)
+		scanner = bufio.NewScanner(file)
+	}
+
 	for scanner.Scan() {
 		jsonData := scanner.Text()
 
@@ -261,7 +269,7 @@ func btchUndelUsrProcessJSON(ds *admin.Service, filePath string) error {
 
 		undelUsers = append(undelUsers, undelUserVar)
 	}
-	err = scanner.Err()
+	err := scanner.Err()
 	if err != nil {
 		return err
 	}
@@ -346,6 +354,4 @@ func init() {
 	batchUndelUserCmd.Flags().StringVarP(&inputFile, "inputfile", "i", "", "filepath to user data file or sheet id")
 	batchUndelUserCmd.Flags().StringVarP(&format, "format", "f", "json", "user data file format")
 	batchUndelUserCmd.Flags().StringVarP(&sheetRange, "sheetrange", "s", "", "user data gsheet range")
-
-	batchUndelUserCmd.MarkFlagRequired("inputfile")
 }

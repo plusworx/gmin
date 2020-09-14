@@ -46,13 +46,13 @@ var batchUpdUserCmd = &cobra.Command{
 	Use:     "users -i <input file path>",
 	Aliases: []string{"user"},
 	Short:   "Updates a batch of users",
-	Long: `Updates a batch of users where user details are provided in a Google Sheet or CSV/JSON input file.
+	Long: `Updates a batch of users where user details are provided in a Google Sheet,CSV/JSON input file or piped JSON.
 	
 	Examples:	gmin batch-update users -i inputfile.json
 			gmin bupd users -i inputfile.csv -f csv
 			gmin bupd user -i 1odyAIp3jGspd3M4xeepxWD6aeQIUuHBgrZB2OHSu8MI -s 'Sheet1!A1:K25' -f gsheet
 			  
-	The contents of the JSON file should look something like this:
+	The contents of the JSON file or piped input should look something like this:
 	
 	{"userKey":"stan.laurel@myorg.org","name":{"givenName":"Stanislav","familyName":"Laurelius"},"primaryEmail":"stanislav.laurelius@myorg.org","password":"SuperSuperSecretPassword","changePasswordAtNextLogin":true}
 	{"userKey":"oliver.hardy@myorg.org","name":{"givenName":"Oliviatus","familyName":"Hardium"},"primaryEmail":"oliviatus.hardium@myorg.org","password":"StealthySuperSecretPassword","changePasswordAtNextLogin":true}
@@ -85,7 +85,12 @@ func doBatchUpdUser(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if inputFile == "" {
+	scanner, err := cmn.InputFromStdIn(inputFile)
+	if err != nil {
+		return err
+	}
+
+	if inputFile == "" && scanner == nil {
 		err := errors.New("gmin: error - must provide inputfile")
 		return err
 	}
@@ -104,7 +109,7 @@ func doBatchUpdUser(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	case lwrFmt == "json":
-		err := btchUpdUsrProcessJSON(ds, inputFile)
+		err := btchUpdUsrProcessJSON(ds, inputFile, scanner)
 		if err != nil {
 			return err
 		}
@@ -277,19 +282,22 @@ func btchUpdUsrProcessCSV(ds *admin.Service, filePath string) error {
 	return nil
 }
 
-func btchUpdUsrProcessJSON(ds *admin.Service, filePath string) error {
+func btchUpdUsrProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner) error {
 	var (
 		userKeys []string
 		users    []*admin.User
 	)
 
-	file, err := os.Open(filePath)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
+	if filePath != "" {
+		file, err := os.Open(filePath)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
 
-	scanner := bufio.NewScanner(file)
+		scanner = bufio.NewScanner(file)
+	}
+
 	for scanner.Scan() {
 		jsonData := scanner.Text()
 
@@ -301,7 +309,7 @@ func btchUpdUsrProcessJSON(ds *admin.Service, filePath string) error {
 		userKeys = append(userKeys, userKey)
 		users = append(users, userVar)
 	}
-	err = scanner.Err()
+	err := scanner.Err()
 	if err != nil {
 		return err
 	}
@@ -463,6 +471,4 @@ func init() {
 	batchUpdUserCmd.Flags().StringVarP(&inputFile, "inputfile", "i", "", "filepath to user data file or sheet id")
 	batchUpdUserCmd.Flags().StringVarP(&format, "format", "f", "json", "user data file format")
 	batchUpdUserCmd.Flags().StringVarP(&sheetRange, "sheetrange", "s", "", "user data gsheet range")
-
-	batchUpdUserCmd.MarkFlagRequired("inputfile")
 }

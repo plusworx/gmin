@@ -124,5 +124,4 @@ func init() {
 	batchDelCmd.AddCommand(batchDelGroupCmd)
 
 	batchDelGroupCmd.Flags().StringVarP(&inputFile, "inputfile", "i", "", "filepath to group data text file")
-	batchDelGroupCmd.MarkFlagRequired("inputfile")
 }

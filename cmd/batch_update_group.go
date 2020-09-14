@@ -46,13 +46,13 @@ var batchUpdGrpCmd = &cobra.Command{
 	Use:     "groups -i <input file path>",
 	Aliases: []string{"group", "grps", "grp"},
 	Short:   "Updates a batch of groups",
-	Long: `Updates a batch of groups where group details are provided in a Google Sheet or CSV/JSON input file.
+	Long: `Updates a batch of groups where group details are provided in a Google Sheet, CSV/JSON input file or piped JSON.
 	
 	Examples:	gmin batch-update groups -i inputfile.json
 			gmin bupd grps -i inputfile.csv -f csv
 			gmin bupd grp -i 1odyAIp3jGspd3M4xeepxWD6aeQIUuHBgrZB2OHSu8MI -s 'Sheet1!A1:K25' -f gsheet
 			  
-	The contents of the JSON file should look something like this:
+	The contents of the JSON file or piped input should look something like this:
 	
 	{"groupKey":"034gixby5n7pqal","email":"testgroup@mycompany.com","name":"Testing","description":"This is a testing group for all your testing needs."}
 	{"groupKey":"032hioqz3p4ulyk","email":"info@mycompany.com","name":"Information","description":"Group for responding to general queries."}
@@ -77,7 +77,12 @@ func doBatchUpdGrp(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if inputFile == "" {
+	scanner, err := cmn.InputFromStdIn(inputFile)
+	if err != nil {
+		return err
+	}
+
+	if inputFile == "" && scanner == nil {
 		err := errors.New("gmin: error - must provide inputfile")
 		return err
 	}
@@ -96,7 +101,7 @@ func doBatchUpdGrp(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	case lwrFmt == "json":
-		err := btchUpdGrpProcessJSON(ds, inputFile)
+		err := btchUpdGrpProcessJSON(ds, inputFile, scanner)
 		if err != nil {
 			return err
 		}
@@ -260,19 +265,22 @@ func btchUpdGrpProcessCSV(ds *admin.Service, filePath string) error {
 	return nil
 }
 
-func btchUpdGrpProcessJSON(ds *admin.Service, filePath string) error {
+func btchUpdGrpProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner) error {
 	var (
 		groupKeys []string
 		groups    []*admin.Group
 	)
 
-	file, err := os.Open(filePath)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
+	if filePath != "" {
+		file, err := os.Open(filePath)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
 
-	scanner := bufio.NewScanner(file)
+		scanner = bufio.NewScanner(file)
+	}
+
 	for scanner.Scan() {
 		jsonData := scanner.Text()
 
@@ -284,7 +292,7 @@ func btchUpdGrpProcessJSON(ds *admin.Service, filePath string) error {
 		groupKeys = append(groupKeys, groupKey)
 		groups = append(groups, grpVar)
 	}
-	err = scanner.Err()
+	err := scanner.Err()
 	if err != nil {
 		return err
 	}
@@ -386,6 +394,4 @@ func init() {
 	batchUpdGrpCmd.Flags().StringVarP(&inputFile, "inputfile", "i", "", "filepath to group data file or sheet id")
 	batchUpdGrpCmd.Flags().StringVarP(&format, "format", "f", "json", "user data file format")
 	batchUpdGrpCmd.Flags().StringVarP(&sheetRange, "sheetrange", "s", "", "user data gsheet range")
-
-	batchUpdGrpCmd.MarkFlagRequired("inputfile")
 }

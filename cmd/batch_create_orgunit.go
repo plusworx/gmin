@@ -47,13 +47,13 @@ var batchCrtOrgUnitCmd = &cobra.Command{
 	Use:     "orgunits -i <input file path or google sheet id>",
 	Aliases: []string{"orgunit", "ous", "ou"},
 	Short:   "Creates a batch of orgunits",
-	Long: `Creates a batch of orgunits where orgunit details are provided in a Google Sheet or CSV/JSON input file.
+	Long: `Creates a batch of orgunits where orgunit details are provided in a Google Sheet, CSV/JSON input file or piped JSON.
 	
 	Examples:	gmin batch-create orgunits -i inputfile.json
 			gmin bcrt ous -i inputfile.csv -f csv
 			gmin bcrt ou -i 1odyAIp3jGspd3M4xeepxWD6aeQIUuHBgrZB2OHSu8MI -s 'Sheet1!A1:K25' -f gsheet
 		
-	The contents of the JSON file should look something like this:
+	The contents of the JSON file or piped input should look something like this:
 	
 	{"description":"Fabrication department OU","name":"Fabrication","parentOrgUnitPath":"/Engineering"}
 	{"description":"Electrical department OU","name":"Electrical","parentOrgUnitPath":"/Engineering"}
@@ -76,7 +76,12 @@ func doBatchCrtOrgUnit(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if inputFile == "" {
+	scanner, err := cmn.InputFromStdIn(inputFile)
+	if err != nil {
+		return err
+	}
+
+	if inputFile == "" && scanner == nil {
 		err := errors.New("gmin: error - must provide inputfile")
 		return err
 	}
@@ -95,7 +100,7 @@ func doBatchCrtOrgUnit(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	case lwrFmt == "json":
-		err := btchOUProcessJSON(ds, inputFile)
+		err := btchOUProcessJSON(ds, inputFile, scanner)
 		if err != nil {
 			return err
 		}
@@ -260,16 +265,19 @@ func btchOUProcessCSV(ds *admin.Service, filePath string) error {
 	return nil
 }
 
-func btchOUProcessJSON(ds *admin.Service, filePath string) error {
+func btchOUProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner) error {
 	var orgunits []*admin.OrgUnit
 
-	file, err := os.Open(filePath)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
+	if filePath != "" {
+		file, err := os.Open(filePath)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
 
-	scanner := bufio.NewScanner(file)
+		scanner = bufio.NewScanner(file)
+	}
+
 	for scanner.Scan() {
 		jsonData := scanner.Text()
 
@@ -280,7 +288,7 @@ func btchOUProcessJSON(ds *admin.Service, filePath string) error {
 
 		orgunits = append(orgunits, ouVar)
 	}
-	err = scanner.Err()
+	err := scanner.Err()
 	if err != nil {
 		return err
 	}
@@ -374,6 +382,4 @@ func init() {
 	batchCrtOrgUnitCmd.Flags().StringVarP(&inputFile, "inputfile", "i", "", "filepath to orgunit data file or sheet id")
 	batchCrtOrgUnitCmd.Flags().StringVarP(&format, "format", "f", "json", "user data file format")
 	batchCrtOrgUnitCmd.Flags().StringVarP(&sheetRange, "sheetrange", "s", "", "user data gsheet range")
-
-	batchCrtOrgUnitCmd.MarkFlagRequired("inputfile")
 }

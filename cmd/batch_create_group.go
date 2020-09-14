@@ -46,13 +46,13 @@ var batchCrtGroupCmd = &cobra.Command{
 	Use:     "groups -i <input file path or google sheet id>",
 	Aliases: []string{"group", "grps", "grp"},
 	Short:   "Creates a batch of groups",
-	Long: `Creates a batch of groups where group details are provided in a Google Sheet or CSV/JSON input file.
+	Long: `Creates a batch of groups where group details are provided in a Google Sheet, CSV/JSON input file or piped JSON.
 	
 	Examples: 	gmin batch-create groups -i inputfile.json
 			gmin bcrt grps -i inputfile.csv -f csv
 			gmin bcrt grp -i 1odyAIp3jGspd3M4xeepxWD6aeQIUuHBgrZB2OHSu8MI -s 'Sheet1!A1:K25' -f gsheet
 			  
-	The contents of the JSON file should look something like this:
+	The contents of the JSON file or piped input should look something like this:
 	
 	{"description":"Finance group","email":"finance@mycompany.com","name":"Finance"}
 	{"description":"Marketing group","email":"marketing@mycompany.com","name":"Marketing"}
@@ -74,7 +74,12 @@ func doBatchCrtGroup(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if inputFile == "" {
+	scanner, err := cmn.InputFromStdIn(inputFile)
+	if err != nil {
+		return err
+	}
+
+	if inputFile == "" && scanner == nil {
 		err := errors.New("gmin: error - must provide inputfile")
 		return err
 	}
@@ -93,7 +98,7 @@ func doBatchCrtGroup(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	case lwrFmt == "json":
-		err := btchGrpProcessJSON(ds, inputFile)
+		err := btchGrpProcessJSON(ds, inputFile, scanner)
 		if err != nil {
 			return err
 		}
@@ -249,16 +254,19 @@ func btchGrpProcessCSV(ds *admin.Service, filePath string) error {
 	return nil
 }
 
-func btchGrpProcessJSON(ds *admin.Service, filePath string) error {
+func btchGrpProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner) error {
 	var groups []*admin.Group
 
-	file, err := os.Open(filePath)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
+	if filePath != "" {
+		file, err := os.Open(filePath)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
 
-	scanner := bufio.NewScanner(file)
+		scanner = bufio.NewScanner(file)
+	}
+
 	for scanner.Scan() {
 		jsonData := scanner.Text()
 
@@ -269,7 +277,7 @@ func btchGrpProcessJSON(ds *admin.Service, filePath string) error {
 
 		groups = append(groups, grpVar)
 	}
-	err = scanner.Err()
+	err := scanner.Err()
 	if err != nil {
 		return err
 	}
@@ -358,6 +366,4 @@ func init() {
 	batchCrtGroupCmd.Flags().StringVarP(&inputFile, "inputfile", "i", "", "filepath to group data file or sheet id")
 	batchCrtGroupCmd.Flags().StringVarP(&format, "format", "f", "json", "user data file format")
 	batchCrtGroupCmd.Flags().StringVarP(&sheetRange, "sheetrange", "s", "", "user data gsheet range")
-
-	batchCrtGroupCmd.MarkFlagRequired("inputfile")
 }

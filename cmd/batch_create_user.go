@@ -46,13 +46,13 @@ var batchCrtUserCmd = &cobra.Command{
 	Use:     "users -i <input file path or google sheet id>",
 	Aliases: []string{"user"},
 	Short:   "Creates a batch of users",
-	Long: `Creates a batch of users where user details are provided in a Google Sheet or CSV/JSON input file.
+	Long: `Creates a batch of users where user details are provided in a Google Sheet,CSV/JSON input file or piped JSON.
 	
 	Examples:	gmin batch-create users -i inputfile.json
 			gmin bcrt user -i inputfile.csv -f csv
 			gmin bcrt user -i 1odyAIp3jGspd3M4xeepxWD6aeQIUuHBgrZB2OHSu8MI -s 'Sheet1!A1:K25' -f gsheet
 			
-	The contents of a JSON file should look something like this:
+	The contents of a JSON file or piped input should look something like this:
 	
 	{"name":{"firstName":"Stan","familyName":"Laurel"},"primaryEmail":"stan.laurel@company.com","password":"SecretPassword","changePasswordAtNextLogin":true}
 	{"name":{"givenName":"Oliver","familyName":"Hardy"},"primaryEmail":"oliver.hardy@company.com","password":"SecretPassword","changePasswordAtNextLogin":true}
@@ -82,7 +82,12 @@ func doBatchCrtUser(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if inputFile == "" {
+	scanner, err := cmn.InputFromStdIn(inputFile)
+	if err != nil {
+		return err
+	}
+
+	if inputFile == "" && scanner == nil {
 		err := errors.New("gmin: error - must provide inputfile")
 		return err
 	}
@@ -101,7 +106,7 @@ func doBatchCrtUser(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	case lwrFmt == "json":
-		err := btchCrtUsrProcessJSON(ds, inputFile)
+		err := btchCrtUsrProcessJSON(ds, inputFile, scanner)
 		if err != nil {
 			return err
 		}
@@ -264,16 +269,19 @@ func btchCrtUsrProcessCSV(ds *admin.Service, filePath string) error {
 	return nil
 }
 
-func btchCrtUsrProcessJSON(ds *admin.Service, filePath string) error {
+func btchCrtUsrProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner) error {
 	var users []*admin.User
 
-	file, err := os.Open(filePath)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
+	if filePath != "" {
+		file, err := os.Open(filePath)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
 
-	scanner := bufio.NewScanner(file)
+		scanner = bufio.NewScanner(file)
+	}
+
 	for scanner.Scan() {
 		jsonData := scanner.Text()
 
@@ -284,7 +292,7 @@ func btchCrtUsrProcessJSON(ds *admin.Service, filePath string) error {
 
 		users = append(users, userVar)
 	}
-	err = scanner.Err()
+	err := scanner.Err()
 	if err != nil {
 		return err
 	}

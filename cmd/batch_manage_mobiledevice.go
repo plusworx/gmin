@@ -47,13 +47,13 @@ var batchMngMobDevCmd = &cobra.Command{
 	Use:     "mobiledevices -i <input file>",
 	Aliases: []string{"mobiledevice", "mobdevices", "mobdevice", "mobdevs", "mobdev", "mdevs", "mdev"},
 	Short:   "Manages a batch of mobile devices",
-	Long: `Manages a batch of mobile devices where device details are provided in a Google Sheet or CSV/JSON input file.
+	Long: `Manages a batch of mobile devices where device details are provided in a Google Sheet, CSV/JSON input file or piped JSON.
 	
 	Examples:	gmin batch-manage mobiledevices -i inputfile.json
 			gmin bmng mdevs -i inputfile.csv -f csv
 			gmin bmng mdev -i 1odyAIp3jGspd3M4xeepxWD6aeQIUuHBgrZB2OHSu8MI -s 'Sheet1!A1:B25' -f gsheet
 			  
-	The JSON file should contain mobile device management details like this:
+	The JSON file or piped input should contain mobile device management details like this:
 	
 	{"resourceId":"4cx07eba348f09b3Yjklj93xjsol0kE30lkl","action":"admin_account_wipe"}
 	{"resourceId":"Hkj98764yKK4jw8yyoyq9987js07q1hs7y98","action":"approve"}
@@ -84,7 +84,12 @@ func doBatchMngMobDev(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if inputFile == "" {
+	scanner, err := cmn.InputFromStdIn(inputFile)
+	if err != nil {
+		return err
+	}
+
+	if inputFile == "" && scanner == nil {
 		err := errors.New("gmin: error - must provide inputfile")
 		return err
 	}
@@ -103,7 +108,7 @@ func doBatchMngMobDev(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	case lwrFmt == "json":
-		err := btchMngMobDevProcessJSON(ds, inputFile)
+		err := btchMngMobDevProcessJSON(ds, inputFile, scanner)
 		if err != nil {
 			return err
 		}
@@ -251,16 +256,19 @@ func btchMngMobDevProcessCSV(ds *admin.Service, filePath string) error {
 	return nil
 }
 
-func btchMngMobDevProcessJSON(ds *admin.Service, filePath string) error {
+func btchMngMobDevProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner) error {
 	var managedDevs []mdevs.ManagedDevice
 
-	file, err := os.Open(filePath)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
+	if filePath != "" {
+		file, err := os.Open(filePath)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
 
-	scanner := bufio.NewScanner(file)
+		scanner = bufio.NewScanner(file)
+	}
+
 	for scanner.Scan() {
 		jsonData := scanner.Text()
 
@@ -271,7 +279,7 @@ func btchMngMobDevProcessJSON(ds *admin.Service, filePath string) error {
 
 		managedDevs = append(managedDevs, mngMdevVar)
 	}
-	err = scanner.Err()
+	err := scanner.Err()
 	if err != nil {
 		return err
 	}

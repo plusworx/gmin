@@ -125,5 +125,4 @@ func init() {
 	batchDelCmd.AddCommand(batchDelMemberCmd)
 
 	batchDelMemberCmd.Flags().StringVarP(&inputFile, "inputfile", "i", "", "filepath to member data text file")
-	batchDelMemberCmd.MarkFlagRequired("inputfile")
 }

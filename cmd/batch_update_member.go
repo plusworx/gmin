@@ -47,13 +47,13 @@ var batchUpdMemberCmd = &cobra.Command{
 	Aliases: []string{"group-member", "grp-members", "grp-member", "gmembers", "gmember", "gmems", "gmem"},
 	Args:    cobra.ExactArgs(1),
 	Short:   "Updates a batch of group members",
-	Long: `Updates a batch of group members where group member details are provided in a Google Sheet or CSV/JSON input file.
+	Long: `Updates a batch of group members where group member details are provided in a Google Sheet, CSV/JSON input file or piped JSON.
 	
 	Examples:	gmin batch-update group-members sales@mycompany.com -i inputfile.json
 			gmin bupd gmems sales@mycompany.com -i inputfile.csv -f csv
 			gmin bupd gmem finance@mycompany.com -i 1odyAIp3jGspd3M4xeepxWD6aeQIUuHBgrZB2OHSu8MI -s 'Sheet1!A1:K25' -f gsheet
 			  
-	The contents of the JSON file should look something like this:
+	The contents of the JSON file or piped input should look something like this:
 	
 	{"memberKey":"rudolph.brown@mycompany.com","delivery_settings":"DIGEST","role":"MANAGER"}
 	{"memberKey":"emily.bronte@mycompany.com","delivery_settings":"DAILY","role":"MEMBER"}
@@ -77,7 +77,12 @@ func doBatchUpdMember(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if inputFile == "" {
+	scanner, err := cmn.InputFromStdIn(inputFile)
+	if err != nil {
+		return err
+	}
+
+	if inputFile == "" && scanner == nil {
 		err := errors.New("gmin: error - must provide inputfile")
 		return err
 	}
@@ -98,7 +103,7 @@ func doBatchUpdMember(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	case lwrFmt == "json":
-		err := btchUpdMemProcessJSON(ds, groupKey, inputFile)
+		err := btchUpdMemProcessJSON(ds, groupKey, inputFile, scanner)
 		if err != nil {
 			return err
 		}
@@ -253,19 +258,22 @@ func btchUpdMemProcessCSV(ds *admin.Service, groupKey string, filePath string) e
 	return nil
 }
 
-func btchUpdMemProcessJSON(ds *admin.Service, groupKey string, filePath string) error {
+func btchUpdMemProcessJSON(ds *admin.Service, groupKey string, filePath string, scanner *bufio.Scanner) error {
 	var (
 		memKeys []string
 		members []*admin.Member
 	)
 
-	file, err := os.Open(filePath)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
+	if filePath != "" {
+		file, err := os.Open(filePath)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
 
-	scanner := bufio.NewScanner(file)
+		scanner = bufio.NewScanner(file)
+	}
+
 	for scanner.Scan() {
 		jsonData := scanner.Text()
 
@@ -277,7 +285,7 @@ func btchUpdMemProcessJSON(ds *admin.Service, groupKey string, filePath string) 
 		memKeys = append(memKeys, memKey)
 		members = append(members, memVar)
 	}
-	err = scanner.Err()
+	err := scanner.Err()
 	if err != nil {
 		return err
 	}
@@ -381,6 +389,4 @@ func init() {
 	batchUpdMemberCmd.Flags().StringVarP(&inputFile, "inputfile", "i", "", "filepath to group member data file or sheet id")
 	batchUpdMemberCmd.Flags().StringVarP(&format, "format", "f", "json", "user data file format")
 	batchUpdMemberCmd.Flags().StringVarP(&sheetRange, "sheetrange", "s", "", "user data gsheet range")
-
-	batchUpdMemberCmd.MarkFlagRequired("inputfile")
 }

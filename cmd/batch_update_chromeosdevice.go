@@ -47,13 +47,13 @@ var batchUpdCrOSDevCmd = &cobra.Command{
 	Use:     "chromeosdevices -i <input file>",
 	Aliases: []string{"chromeosdevice", "crosdevices", "crosdevice", "crosdevs", "crosdev", "cdevs", "cdev"},
 	Short:   "Updates a batch of ChromeOS devices",
-	Long: `Updates a batch of ChromeOS devices with device details provided in a Google Sheet or CSV/JSON input file.
+	Long: `Updates a batch of ChromeOS devices with device details provided in a Google Sheet, CSV/JSON input file or piped JSON.
 	
 	Examples:	gmin batch-update chromeosdevices -i inputfile.json
 			gmin bupd cdevs -i inputfile.csv -f csv
 			gmin bupd cdev -i 1odyAIp3jGspd3M4xeepxWD6aeQIUuHBgrZB2OHSu8MI -s 'Sheet1!A1:K25' -f gsheet
 			
-	The JSON file should contain device update details like this:
+	The JSON file or piped input should contain device update details like this:
 	
 	{"deviceId":"5ac7be43-5906-394e-7c39-62d45a8f10e8","annotatedAssetId":"CB1","annotatedLocation":"Batcave","annotatedUser":"Bruce Wayne","notes":"Test machine","orgUnitPath":"/Anticrime"}
 	{"deviceId":"4ac7be43-5906-394e-7c39-62d45a8f10e8","annotatedAssetId":"CB2","annotatedLocation":"Wayne Manor","annotatedUser":"Alfred Pennyworth","notes":"Another test machine","orgUnitPath":"/Anticorruption"}
@@ -80,7 +80,12 @@ func doBatchUpdCrOSDev(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if inputFile == "" {
+	scanner, err := cmn.InputFromStdIn(inputFile)
+	if err != nil {
+		return err
+	}
+
+	if inputFile == "" && scanner == nil {
 		err := errors.New("gmin: error - must provide inputfile")
 		return err
 	}
@@ -99,7 +104,7 @@ func doBatchUpdCrOSDev(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	case lwrFmt == "json":
-		err := btchUpdCDevProcessJSON(ds, inputFile)
+		err := btchUpdCDevProcessJSON(ds, inputFile, scanner)
 		if err != nil {
 			return err
 		}
@@ -260,16 +265,19 @@ func btchUpdCDevProcessCSV(ds *admin.Service, filePath string) error {
 	return nil
 }
 
-func btchUpdCDevProcessJSON(ds *admin.Service, filePath string) error {
+func btchUpdCDevProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner) error {
 	var crosdevs []*admin.ChromeOsDevice
 
-	file, err := os.Open(filePath)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
+	if filePath != "" {
+		file, err := os.Open(filePath)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
 
-	scanner := bufio.NewScanner(file)
+		scanner = bufio.NewScanner(file)
+	}
+
 	for scanner.Scan() {
 		jsonData := scanner.Text()
 
@@ -280,7 +288,7 @@ func btchUpdCDevProcessJSON(ds *admin.Service, filePath string) error {
 
 		crosdevs = append(crosdevs, cdevVar)
 	}
-	err = scanner.Err()
+	err := scanner.Err()
 	if err != nil {
 		return err
 	}
@@ -389,6 +397,4 @@ func init() {
 	batchUpdCrOSDevCmd.Flags().StringVarP(&inputFile, "inputfile", "i", "", "filepath to device data file or sheet id")
 	batchUpdCrOSDevCmd.Flags().StringVarP(&format, "format", "f", "json", "user data file format")
 	batchUpdCrOSDevCmd.Flags().StringVarP(&sheetRange, "sheetrange", "s", "", "user data gsheet range")
-
-	batchUpdCrOSDevCmd.MarkFlagRequired("inputfile")
 }
