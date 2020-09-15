@@ -592,7 +592,7 @@ func CreateDirectoryService(scope ...string) (*admin.Service, error) {
 
 	srv, err := admin.NewService(ctx, option.WithTokenSource(ts))
 	if err != nil {
-		return nil, fmt.Errorf("NewService: %v", err)
+		return nil, fmt.Errorf("gmin: error - New Directory Service: %v", err)
 	}
 	return srv, nil
 }
@@ -628,7 +628,7 @@ func CreateSheetService(scope ...string) (*sheet.Service, error) {
 
 	srv, err := sheet.NewService(ctx, option.WithTokenSource(ts))
 	if err != nil {
-		return nil, fmt.Errorf("NewService: %v", err)
+		return nil, fmt.Errorf("gmin: error - New Sheet Service: %v", err)
 	}
 	return srv, nil
 }
