@@ -54,7 +54,7 @@ func doDeleteOU(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	oudc := ds.Orgunits.Delete(customerID, args)
+	oudc := ds.Orgunits.Delete(customerID, args[0])
 
 	err = oudc.Do()
 	if err != nil {

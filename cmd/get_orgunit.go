@@ -67,7 +67,7 @@ func doGetOrgUnit(cmd *cobra.Command, args []string) error {
 		args[0] = ou
 	}
 
-	ougc := ds.Orgunits.Get(customerID, args)
+	ougc := ds.Orgunits.Get(customerID, args[0])
 
 	if attrs != "" {
 		formattedAttrs, err := cmn.ParseOutputAttrs(attrs, ous.OrgUnitAttrMap)

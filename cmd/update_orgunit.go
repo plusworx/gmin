@@ -44,12 +44,8 @@ var updateOUCmd = &cobra.Command{
 }
 
 func doUpdateOU(cmd *cobra.Command, args []string) error {
-	var (
-		orgunit *admin.OrgUnit
-		ouPath  = []string{}
-	)
+	var orgunit *admin.OrgUnit
 
-	ouPath = append(ouPath, args[0])
 	orgunit = new(admin.OrgUnit)
 
 	if orgUnitName != "" {
@@ -83,7 +79,7 @@ func doUpdateOU(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	ouuc := ds.Orgunits.Update(customerID, ouPath, orgunit)
+	ouuc := ds.Orgunits.Update(customerID, args[0], orgunit)
 	_, err = ouuc.Do()
 	if err != nil {
 		return err

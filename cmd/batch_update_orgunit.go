@@ -167,8 +167,6 @@ func btchUpdJSONOrgUnit(ds *admin.Service, jsonData string) (*admin.OrgUnit, str
 }
 
 func btchUpdateOrgUnits(ds *admin.Service, orgunits []*admin.OrgUnit, ouKeys []string) error {
-	var ouPath = []string{}
-
 	wg := new(sync.WaitGroup)
 
 	customerID, err := cfg.ReadConfigString("customerid")
@@ -177,13 +175,11 @@ func btchUpdateOrgUnits(ds *admin.Service, orgunits []*admin.OrgUnit, ouKeys []s
 	}
 
 	for idx, ou := range orgunits {
-		ouPath = append(ouPath, ouKeys[idx])
-		ouuc := ds.Orgunits.Update(customerID, ouPath, ou)
+		ouuc := ds.Orgunits.Update(customerID, ouKeys[idx], ou)
 
 		wg.Add(1)
 
 		go btchOUUpdateProcess(ou, wg, ouuc, ouKeys[idx])
-		ouPath = []string{}
 	}
 
 	wg.Wait()

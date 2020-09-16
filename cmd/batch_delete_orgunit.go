@@ -56,8 +56,6 @@ var batchDelOrgUnitCmd = &cobra.Command{
 }
 
 func doBatchDelOrgUnit(cmd *cobra.Command, args []string) error {
-	var ouPaths = []string{}
-
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryOrgunitScope)
 	if err != nil {
 		return err
@@ -92,14 +90,12 @@ func doBatchDelOrgUnit(cmd *cobra.Command, args []string) error {
 
 	for scanner.Scan() {
 		text := scanner.Text()
-		ouPaths = []string{}
 
 		if text[0] == '/' {
 			text = text[1:]
 		}
-		ouPaths = append(ouPaths, text)
 
-		oudc := ds.Orgunits.Delete(customerID, ouPaths)
+		oudc := ds.Orgunits.Delete(customerID, text)
 
 		// Sleep for 2 seconds because only 1 orgunit can be created per second but 1 second interval
 		// still results in rate limit errors
@@ -107,7 +103,7 @@ func doBatchDelOrgUnit(cmd *cobra.Command, args []string) error {
 
 		wg.Add(1)
 
-		go deleteOU(wg, oudc, ouPaths)
+		go deleteOU(wg, oudc, text)
 	}
 
 	wg.Wait()
@@ -115,7 +111,7 @@ func doBatchDelOrgUnit(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func deleteOU(wg *sync.WaitGroup, oudc *admin.OrgunitsDeleteCall, ouPaths []string) {
+func deleteOU(wg *sync.WaitGroup, oudc *admin.OrgunitsDeleteCall, ouPath string) {
 	defer wg.Done()
 
 	b := backoff.NewExponentialBackOff()
@@ -126,13 +122,13 @@ func deleteOU(wg *sync.WaitGroup, oudc *admin.OrgunitsDeleteCall, ouPaths []stri
 
 		err = oudc.Do()
 		if err == nil {
-			fmt.Println(cmn.GminMessage("**** gmin: orgunit " + ouPaths[0] + " deleted ****"))
+			fmt.Println(cmn.GminMessage("**** gmin: orgunit " + ouPath + " deleted ****"))
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(errors.New(cmn.GminMessage("gmin: error - " + err.Error() + " " + ouPaths[0])))
+			return backoff.Permanent(errors.New(cmn.GminMessage("gmin: error - " + err.Error() + " " + ouPath)))
 		}
-		return errors.New(cmn.GminMessage("gmin: error - " + err.Error() + " " + ouPaths[0]))
+		return errors.New(cmn.GminMessage("gmin: error - " + err.Error() + " " + ouPath))
 	}, b)
 	if err != nil {
 		fmt.Println(err)
