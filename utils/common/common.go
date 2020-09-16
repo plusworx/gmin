@@ -42,6 +42,7 @@ import (
 	"crypto/sha1"
 
 	cfg "github.com/plusworx/gmin/utils/config"
+	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	admin "google.golang.org/api/admin/directory/v1"
 	"google.golang.org/api/googleapi"
@@ -563,32 +564,10 @@ var ValidPrimaryShowArgs = []string{
 
 // CreateDirectoryService function creates and returns Admin Service object
 func CreateDirectoryService(scope ...string) (*admin.Service, error) {
-	adminEmail, err := cfg.ReadConfigString("administrator")
+	ctx, ts, err := oauthSetup(scope)
 	if err != nil {
 		return nil, err
 	}
-
-	credentialPath, err := cfg.ReadConfigString("credentialpath")
-	if err != nil {
-		return nil, err
-	}
-
-	ctx := context.Background()
-
-	ServiceAccountFilePath := filepath.Join(filepath.ToSlash(credentialPath), cfg.CredentialFile)
-
-	jsonCredentials, err := ioutil.ReadFile(ServiceAccountFilePath)
-	if err != nil {
-		return nil, err
-	}
-
-	config, err := google.JWTConfigFromJSON(jsonCredentials, scope...)
-	if err != nil {
-		return nil, fmt.Errorf("JWTConfigFromJSON: %v", err)
-	}
-	config.Subject = adminEmail
-
-	ts := config.TokenSource(ctx)
 
 	srv, err := admin.NewService(ctx, option.WithTokenSource(ts))
 	if err != nil {
@@ -599,14 +578,27 @@ func CreateDirectoryService(scope ...string) (*admin.Service, error) {
 
 // CreateSheetService function creates and returns Sheet Service object
 func CreateSheetService(scope ...string) (*sheet.Service, error) {
-	adminEmail, err := cfg.ReadConfigString("administrator")
+	ctx, ts, err := oauthSetup(scope)
 	if err != nil {
 		return nil, err
 	}
 
+	srv, err := sheet.NewService(ctx, option.WithTokenSource(ts))
+	if err != nil {
+		return nil, fmt.Errorf("gmin: error - New Sheet Service: %v", err)
+	}
+	return srv, nil
+}
+
+func oauthSetup(scope []string) (context.Context, oauth2.TokenSource, error) {
+	adminEmail, err := cfg.ReadConfigString("administrator")
+	if err != nil {
+		return nil, nil, err
+	}
+
 	credentialPath, err := cfg.ReadConfigString("credentialpath")
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	ctx := context.Background()
@@ -615,22 +607,18 @@ func CreateSheetService(scope ...string) (*sheet.Service, error) {
 
 	jsonCredentials, err := ioutil.ReadFile(ServiceAccountFilePath)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	config, err := google.JWTConfigFromJSON(jsonCredentials, scope...)
 	if err != nil {
-		return nil, fmt.Errorf("JWTConfigFromJSON: %v", err)
+		return nil, nil, fmt.Errorf("gmin: error - JWTConfigFromJSON: %v", err)
 	}
 	config.Subject = adminEmail
 
 	ts := config.TokenSource(ctx)
 
-	srv, err := sheet.NewService(ctx, option.WithTokenSource(ts))
-	if err != nil {
-		return nil, fmt.Errorf("gmin: error - New Sheet Service: %v", err)
-	}
-	return srv, nil
+	return ctx, ts, nil
 }
 
 // deDupeStrSlice gets rid of duplicate values in a slice
