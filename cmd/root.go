@@ -23,15 +23,20 @@ THE SOFTWARE.
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
+	"time"
 
 	"github.com/mitchellh/go-homedir"
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 var (
@@ -62,6 +67,9 @@ var (
 	inputFile        string
 	lastName         string
 	location         string
+	logger           *zap.SugaredLogger
+	logLevel         string
+	logPath          string
 	maxResults       int64
 	noChangePassword bool
 	noGAL            bool
@@ -112,6 +120,16 @@ func init() {
 	cobra.OnInitialize(initConfig)
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.gmin.yaml)")
+	rootCmd.PersistentFlags().StringVar(&logLevel, "loglevel", "info", "log level (debug, info, warn, error, fatal)")
+
+	rootCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
+		zlog, err := setupLogging(logLevel)
+		if err != nil {
+			return err
+		}
+		logger = zlog.Sugar()
+		return nil
+	}
 }
 
 func initConfig() {
@@ -131,4 +149,53 @@ func initConfig() {
 
 	viper.AutomaticEnv()
 	viper.ReadInConfig()
+}
+
+func setupLogging(loglevel string) (*zap.Logger, error) {
+	var (
+		err  error
+		zlog *zap.Logger
+	)
+
+	zconf := zap.NewProductionConfig()
+
+	switch loglevel {
+	case "info":
+		zconf.Level.SetLevel(zapcore.InfoLevel)
+	case "warn":
+		zconf.Level.SetLevel(zapcore.WarnLevel)
+	case "error":
+		zconf.Level.SetLevel(zapcore.ErrorLevel)
+	case "fatal":
+		zconf.Level.SetLevel(zapcore.FatalLevel)
+	default:
+		return nil, errors.New("gmin: error - loglevel " + loglevel + "is invalid")
+	}
+
+	zconf.EncoderConfig.EncodeTime = zapcore.TimeEncoder(func(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
+		enc.AppendString(t.UTC().Format("2006-01-02T15:04:05Z0700"))
+	})
+	logpath, err := cfg.ReadConfigString("logpath")
+	if logpath == "" {
+		hmDir, err := homedir.Dir()
+		if err != nil {
+			log.Fatal(err)
+		}
+		logpath = hmDir
+	}
+	if logpath == "" && err != nil {
+		return nil, err
+	}
+	logFilePath := filepath.Join(filepath.ToSlash(logpath), cfg.LogFile)
+	zconf.OutputPaths = []string{logFilePath}
+
+	if loglevel == "debug" {
+		zlog, err = zap.NewDevelopment()
+	} else {
+		zlog, err = zconf.Build()
+	}
+	if err != nil {
+		return nil, err
+	}
+	return zlog, nil
 }

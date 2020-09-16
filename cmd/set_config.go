@@ -74,7 +74,16 @@ func doSetConfig(cmd *cobra.Command, args []string) error {
 		fmt.Printf("**** gmin: service account credential path set to %v ****\n", credentialPath)
 	}
 
-	if adminEmail == "" && customerID == "" && credentialPath == "" {
+	if logPath != "" {
+		viper.Set(cfg.ConfigLogPath, logPath)
+		err := viper.WriteConfig()
+		if err != nil {
+			return err
+		}
+		fmt.Printf("**** gmin: log path set to %v ****\n", logPath)
+	}
+
+	if adminEmail == "" && customerID == "" && credentialPath == "" && logPath == "" {
 		cmd.Help()
 	}
 
@@ -86,5 +95,6 @@ func init() {
 
 	setConfigCmd.Flags().StringVarP(&adminEmail, "admin", "a", "", "administrator email address")
 	setConfigCmd.Flags().StringVarP(&customerID, "customerid", "c", "", "customer id for domain")
+	setConfigCmd.Flags().StringVarP(&logPath, "logpath", "l", "", "log file path")
 	setConfigCmd.Flags().StringVarP(&credentialPath, "credentialpath", "p", "", "service account credential file path")
 }

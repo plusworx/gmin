@@ -39,7 +39,9 @@ const (
 	ConfigFileName string = ".gmin.yaml"
 	// ConfigFilePrefix is name of gmin config file without the .yaml suffix
 	ConfigFilePrefix string = ".gmin"
-	// CredentialFile holds service account credentials
+	// ConfigLogPath is config file log path variable name
+	ConfigLogPath string = "logpath"
+	// CredentialFile service account credentials file name
 	CredentialFile string = "gmin_credentials"
 	// DefaultCustID is default customer id value
 	DefaultCustID string = "my_customer"
@@ -51,6 +53,10 @@ const (
 	EnvVarCredPath string = "_CREDENTIALPATH"
 	// EnvVarCustID is gmin custormer id environment variable suffix
 	EnvVarCustID string = "_CUSTOMERID"
+	// EnvVarLogPath is gmin log path environment variable suffix
+	EnvVarLogPath string = "_LOGPATH"
+	// LogFile is gmin log file name
+	LogFile string = "gmin.log"
 )
 
 // File holds configuration data
@@ -58,6 +64,7 @@ type File struct {
 	Administrator  string `yaml:"administrator"`
 	CredentialPath string `yaml:"credentialpath"`
 	CustomerID     string `yaml:"customerid"`
+	LogPath        string `yaml:"logpath"`
 }
 
 // ReadConfigString gets a string item from config file

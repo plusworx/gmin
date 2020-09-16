@@ -63,6 +63,11 @@ func doShowConfig(cmd *cobra.Command, args []string) error {
 		fmt.Println(cfg.EnvPrefix+cfg.EnvVarCustID, ": ", custID)
 	}
 
+	logPath := os.Getenv(cfg.EnvPrefix + cfg.EnvVarLogPath)
+	if logPath != "" {
+		fmt.Println(cfg.EnvPrefix+cfg.EnvVarLogPath, ": ", logPath)
+	}
+
 	fmt.Println("")
 	fmt.Println("Config File")
 	fmt.Println("-----------")
@@ -77,6 +82,10 @@ func doShowConfig(cmd *cobra.Command, args []string) error {
 	cfgCustID := viper.GetString(cfg.ConfigCustID)
 	if cfgCustID != "" {
 		fmt.Println(cfg.ConfigCustID, ":\t\t", cfgCustID)
+	}
+	cfgLogPath := viper.GetString(cfg.ConfigLogPath)
+	if cfgLogPath != "" {
+		fmt.Println(cfg.ConfigLogPath, ":\t\t", cfgLogPath)
 	}
 
 	return nil

@@ -590,37 +590,6 @@ func CreateSheetService(scope ...string) (*sheet.Service, error) {
 	return srv, nil
 }
 
-func oauthSetup(scope []string) (context.Context, oauth2.TokenSource, error) {
-	adminEmail, err := cfg.ReadConfigString("administrator")
-	if err != nil {
-		return nil, nil, err
-	}
-
-	credentialPath, err := cfg.ReadConfigString("credentialpath")
-	if err != nil {
-		return nil, nil, err
-	}
-
-	ctx := context.Background()
-
-	ServiceAccountFilePath := filepath.Join(filepath.ToSlash(credentialPath), cfg.CredentialFile)
-
-	jsonCredentials, err := ioutil.ReadFile(ServiceAccountFilePath)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	config, err := google.JWTConfigFromJSON(jsonCredentials, scope...)
-	if err != nil {
-		return nil, nil, fmt.Errorf("gmin: error - JWTConfigFromJSON: %v", err)
-	}
-	config.Subject = adminEmail
-
-	ts := config.TokenSource(ctx)
-
-	return ctx, ts, nil
-}
-
 // deDupeStrSlice gets rid of duplicate values in a slice
 func deDupeStrSlice(strSlice []string) []string {
 
@@ -748,6 +717,37 @@ func NewQueryParser(b *bytes.Buffer) *QueryParser {
 func NewQueryScanner(b *bytes.Buffer) *QueryScanner {
 	scanr := &Scanner{strbuf: b}
 	return &QueryScanner{s: scanr}
+}
+
+func oauthSetup(scope []string) (context.Context, oauth2.TokenSource, error) {
+	adminEmail, err := cfg.ReadConfigString("administrator")
+	if err != nil {
+		return nil, nil, err
+	}
+
+	credentialPath, err := cfg.ReadConfigString("credentialpath")
+	if err != nil {
+		return nil, nil, err
+	}
+
+	ctx := context.Background()
+
+	ServiceAccountFilePath := filepath.Join(filepath.ToSlash(credentialPath), cfg.CredentialFile)
+
+	jsonCredentials, err := ioutil.ReadFile(ServiceAccountFilePath)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	config, err := google.JWTConfigFromJSON(jsonCredentials, scope...)
+	if err != nil {
+		return nil, nil, fmt.Errorf("gmin: error - JWTConfigFromJSON: %v", err)
+	}
+	config.Subject = adminEmail
+
+	ts := config.TokenSource(ctx)
+
+	return ctx, ts, nil
 }
 
 // ParseCustomField parses custom schema names argument
