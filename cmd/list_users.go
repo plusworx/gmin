@@ -111,7 +111,7 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 
 		if proj == "custom" {
 			if customField != "" {
-				cFields := cmn.ParseCustomField(customField)
+				cFields := cmn.ParseTildeField(customField)
 				mask := strings.Join(cFields, ",")
 				listCall := usrs.AddCustomFieldMask(ulc, mask)
 				ulc = listCall.(*admin.UsersListCall)

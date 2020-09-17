@@ -72,6 +72,7 @@ func doGetUser(cmd *cobra.Command, args []string) error {
 		proj := strings.ToLower(projection)
 		ok := cmn.SliceContainsStr(usrs.ValidProjections, proj)
 		if !ok {
+			logger.Errorf("invalid projection type: %s", projection)
 			return fmt.Errorf("gmin: error - %v is not a valid projection type", projection)
 		}
 
@@ -80,7 +81,7 @@ func doGetUser(cmd *cobra.Command, args []string) error {
 
 		if proj == "custom" {
 			if customField != "" {
-				cFields := cmn.ParseCustomField(customField)
+				cFields := cmn.ParseTildeField(customField)
 				mask := strings.Join(cFields, ",")
 				getCall := usrs.AddCustomFieldMask(ugc, mask)
 				ugc = getCall.(*admin.UsersGetCall)
