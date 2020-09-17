@@ -95,6 +95,6 @@ func init() {
 
 	setConfigCmd.Flags().StringVarP(&adminEmail, "admin", "a", "", "administrator email address")
 	setConfigCmd.Flags().StringVarP(&customerID, "customerid", "c", "", "customer id for domain")
-	setConfigCmd.Flags().StringVarP(&logPath, "logpath", "l", "", "log file path")
+	setConfigCmd.Flags().StringVarP(&logPath, "logpath", "l", "", "log file path (multiple paths allowed separated by ~)")
 	setConfigCmd.Flags().StringVarP(&credentialPath, "credentialpath", "p", "", "service account credential file path")
 }
