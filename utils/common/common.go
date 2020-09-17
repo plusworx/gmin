@@ -510,6 +510,10 @@ type Token int
 // eos is end of string rune
 var eos = rune(0)
 
+var globalFlagValues = []string{
+	"loglevel",
+}
+
 // tilde is tilde rune
 var tilde = '~'
 
@@ -521,6 +525,15 @@ var ValidFileFormats = []string{
 	"csv",
 	"gsheet",
 	"json",
+}
+
+// validLogLevels provides valid log level strings
+var validLogLevels = []string{
+	"debug",
+	"error",
+	"fatal",
+	"info",
+	"warn",
 }
 
 // ValidSortOrders provides valid sort order strings
@@ -895,6 +908,30 @@ func ShowAttrs(attrSlice []string, attrMap map[string]string, filter string) {
 			fmt.Println(s)
 		}
 	}
+}
+
+// ShowGlobalFlagValues displays enumerated global flag values
+func ShowGlobalFlagValues(lenArgs int, args []string) error {
+	if lenArgs == 1 {
+		for _, v := range globalFlagValues {
+			fmt.Println(v)
+		}
+	}
+
+	if lenArgs == 2 {
+		flag := strings.ToLower(args[1])
+
+		switch {
+		case flag == "loglevel":
+			for _, t := range validLogLevels {
+				fmt.Println(t)
+			}
+		default:
+			return fmt.Errorf("gmin: error - %v flag not recognized", args[1])
+		}
+	}
+
+	return nil
 }
 
 // ShowQueryableAttrs displays user queryable attributes

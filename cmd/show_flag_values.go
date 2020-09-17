@@ -28,6 +28,7 @@ import (
 	"strings"
 
 	cdevs "github.com/plusworx/gmin/utils/chromeosdevices"
+	cmn "github.com/plusworx/gmin/utils/common"
 	grps "github.com/plusworx/gmin/utils/groups"
 	gmems "github.com/plusworx/gmin/utils/members"
 	mdevs "github.com/plusworx/gmin/utils/mobiledevices"
@@ -45,6 +46,7 @@ var showFlagValsCmd = &cobra.Command{
 
 	Valid objects are:
 	chromeosdevice, crosdevice, crosdev, cdev
+	global
 	group, grp
 	group-member, grp-member, grp-mem, gmember, gmem
 	mobiledevice, mobdevice, mobdev, mdev
@@ -66,6 +68,11 @@ func doShowFlagVals(cmd *cobra.Command, args []string) error {
 	switch {
 	case obj == "chromeosdevice" || obj == "crosdevice" || obj == "crosdev" || obj == "cdev":
 		err := cdevs.ShowFlagValues(len(args), args)
+		if err != nil {
+			return err
+		}
+	case obj == "global":
+		err := cmn.ShowGlobalFlagValues(len(args), args)
 		if err != nil {
 			return err
 		}
