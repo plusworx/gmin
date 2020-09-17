@@ -41,4 +41,14 @@ func doBatchDelete(cmd *cobra.Command, args []string) {
 
 func init() {
 	rootCmd.AddCommand(batchDelCmd)
+	batchDelCmd.PersistentFlags().StringVar(&logLevel, "loglevel", "info", "log level (debug, info, warn, error, fatal)")
+
+	batchDelCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
+		zlog, err := setupLogging(logLevel)
+		if err != nil {
+			return err
+		}
+		logger = zlog.Sugar()
+		return nil
+	}
 }

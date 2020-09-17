@@ -27,7 +27,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"time"
@@ -136,16 +135,6 @@ func init() {
 	cobra.OnInitialize(initConfig)
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.gmin.yaml)")
-	rootCmd.PersistentFlags().StringVar(&logLevel, "loglevel", "info", "log level (debug, info, warn, error, fatal)")
-
-	rootCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
-		zlog, err := setupLogging(logLevel)
-		if err != nil {
-			return err
-		}
-		logger = zlog.Sugar()
-		return nil
-	}
 }
 
 func initConfig() {
@@ -189,16 +178,13 @@ func setupLogging(loglevel string) (*zap.Logger, error) {
 	}
 
 	zconf.EncoderConfig.EncodeTime = zapcore.TimeEncoder(func(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
-		enc.AppendString(t.UTC().Format("2006-01-02T15:04:05Z0700"))
+		enc.AppendString(t.Local().Format("2006-01-02T15:04:05Z0700"))
 	})
 	logpath, err := cfg.ReadConfigString("logpath")
-	if logpath == "" {
-		hmDir, err := homedir.Dir()
-		if err != nil {
-			log.Fatal(err)
-		}
-		logpath = filepath.Join(filepath.ToSlash(hmDir), cfg.LogFile)
+	if err != nil {
+		log.Fatal(err)
 	}
+
 	lpaths := cmn.ParseTildeField(logpath)
 	zconf.OutputPaths = lpaths
 
