@@ -38,8 +38,24 @@ import (
 var initCmd = &cobra.Command{
 	Use:   "init",
 	Short: "Creates gmin config file",
-	Long: `Asks for admin email address, credentials path, customer id and config file path before creating gmin
-configuration file (.gmin.yaml) in the default location (the home directory of the user) or at the specified path.`,
+	Long: `Asks for admin email address, credentials path, customer id, config file path and log file path
+before creating gmin configuration file (.gmin.yaml) in the default location (the home directory of the user)
+or at the specified path.
+
+N.B. Log file path must include the name of the log file and can contain multiple paths separated by tilde '~'.
+stdout is a valid path and will direct output to the console.
+
+Example log paths
+-----------------
+/tmp/logs/gmin.log
+stdout~/home/myuser/logs/gmin.log
+
+Defaults
+--------
+Credentials Path: <home directory>
+Customer ID: my_customer
+Config File Path: <home directory>
+Log File Path: <home directory>/gmin.log`,
 	RunE: doInit,
 }
 
