@@ -185,7 +185,7 @@ func setupLogging(loglevel string) (*zap.Logger, error) {
 	case "fatal":
 		zconf.Level.SetLevel(zapcore.FatalLevel)
 	default:
-		return nil, errors.New("gmin: error - loglevel " + loglevel + "is invalid")
+		return nil, errors.New("gmin: error - loglevel " + loglevel + " is invalid")
 	}
 
 	zconf.EncoderConfig.EncodeTime = zapcore.TimeEncoder(func(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
@@ -197,13 +197,10 @@ func setupLogging(loglevel string) (*zap.Logger, error) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		logpath = hmDir
+		logpath = filepath.Join(filepath.ToSlash(hmDir), cfg.LogFile)
 	}
-	if logpath == "" && err != nil {
-		return nil, err
-	}
-	logFilePath := filepath.Join(filepath.ToSlash(logpath), cfg.LogFile)
-	zconf.OutputPaths = []string{logFilePath}
+	lpaths := cmn.ParseTildeField(logpath)
+	zconf.OutputPaths = lpaths
 
 	if loglevel == "debug" {
 		zlog, err = zap.NewDevelopment()

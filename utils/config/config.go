@@ -55,7 +55,7 @@ const (
 	EnvVarCustID string = "_CUSTOMERID"
 	// EnvVarLogPath is gmin log path environment variable suffix
 	EnvVarLogPath string = "_LOGPATH"
-	// LogFile is gmin log file name
+	// LogFile is default gmin log file name
 	LogFile string = "gmin.log"
 )
 

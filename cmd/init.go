@@ -179,7 +179,7 @@ func doInit(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			log.Fatal(err)
 		}
-		answers.LogPath = hmDir
+		answers.LogPath = filepath.Join(filepath.ToSlash(hmDir), cfg.LogFile)
 	}
 
 	cfgFile := cfg.File{Administrator: answers.AdminEmail, CredentialPath: answers.CredentialPath,

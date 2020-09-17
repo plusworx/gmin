@@ -750,7 +750,7 @@ func oauthSetup(scope []string) (context.Context, oauth2.TokenSource, error) {
 	return ctx, ts, nil
 }
 
-// ParseTildeField parses custom schema names argument
+// ParseTildeField parses argument string with elements delimited by ~
 func ParseTildeField(cStr string) []string {
 	sArgs := strings.Split(cStr, "~")
 
