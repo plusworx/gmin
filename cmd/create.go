@@ -29,7 +29,9 @@ import (
 var createCmd = &cobra.Command{
 	Use:     "create",
 	Aliases: []string{"crt"},
+	Args:    cobra.NoArgs,
 	Short:   "Creates G Suite entities",
+	Long:    "Creates G Suite entities.",
 	Run:     doCreate,
 }
 

@@ -28,7 +28,9 @@ import (
 
 var setCmd = &cobra.Command{
 	Use:   "set",
+	Args:  cobra.NoArgs,
 	Short: "Sets configuration values",
+	Long:  "Sets configuration values.",
 	Run:   doSet,
 }
 

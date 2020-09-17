@@ -29,7 +29,9 @@ import (
 var undeleteCmd = &cobra.Command{
 	Use:     "undelete",
 	Aliases: []string{"und"},
+	Args:    cobra.NoArgs,
 	Short:   "Undeletes G Suite entities",
+	Long:    "Undeletes G Suite entities.",
 	Run:     doUndelete,
 }
 

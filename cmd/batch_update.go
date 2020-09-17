@@ -29,7 +29,9 @@ import (
 var batchUpdateCmd = &cobra.Command{
 	Use:     "batch-update",
 	Aliases: []string{"bupdate", "bupd"},
+	Args:    cobra.NoArgs,
 	Short:   "Updates a batch of G Suite entities",
+	Long:    "Updates a batch of G Suite entities.",
 	Run:     doBatchUpdate,
 }
 

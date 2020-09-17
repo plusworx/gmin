@@ -29,7 +29,9 @@ import (
 var deleteCmd = &cobra.Command{
 	Use:     "delete",
 	Aliases: []string{"del"},
+	Args:    cobra.NoArgs,
 	Short:   "Deletes G Suite entities",
+	Long:    "Deletes G Suite entities.",
 	Run:     doDelete,
 }
 

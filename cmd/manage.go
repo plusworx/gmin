@@ -29,7 +29,9 @@ import (
 var manageCmd = &cobra.Command{
 	Use:     "manage",
 	Aliases: []string{"mng"},
+	Args:    cobra.NoArgs,
 	Short:   "Manages G Suite devices",
+	Long:    "Manages G Suite devices.",
 	Run:     doManage,
 }
 

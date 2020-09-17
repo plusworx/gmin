@@ -29,7 +29,9 @@ import (
 var listCmd = &cobra.Command{
 	Use:     "list",
 	Aliases: []string{"ls"},
+	Args:    cobra.NoArgs,
 	Short:   "Outputs list of G Suite entities",
+	Long:    "Outputs list of G Suite entities.",
 	Run:     doList,
 }
 

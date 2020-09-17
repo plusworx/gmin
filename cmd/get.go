@@ -28,7 +28,9 @@ import (
 
 var getCmd = &cobra.Command{
 	Use:   "get",
+	Args:  cobra.NoArgs,
 	Short: "Outputs information about a G Suite entity",
+	Long:  "Outputs information about a G Suite entity.",
 	Run:   doGet,
 }
 

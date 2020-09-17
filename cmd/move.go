@@ -29,7 +29,9 @@ import (
 var moveCmd = &cobra.Command{
 	Use:     "move",
 	Aliases: []string{"mv"},
+	Args:    cobra.NoArgs,
 	Short:   "Moves G Suite device to another OU",
+	Long:    "Moves G Suite device to another OU.",
 	Run:     doMove,
 }
 

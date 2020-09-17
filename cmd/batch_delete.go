@@ -29,7 +29,9 @@ import (
 var batchDelCmd = &cobra.Command{
 	Use:     "batch-delete",
 	Aliases: []string{"bdelete", "bdel"},
+	Args:    cobra.NoArgs,
 	Short:   "Deletes a batch of G Suite entities",
+	Long:    "Deletes a batch of G Suite entities.",
 	Run:     doBatchDelete,
 }
 

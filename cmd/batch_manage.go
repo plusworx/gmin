@@ -29,7 +29,9 @@ import (
 var batchManageCmd = &cobra.Command{
 	Use:     "batch-manage",
 	Aliases: []string{"bmanage", "bmng"},
+	Args:    cobra.NoArgs,
 	Short:   "Manages a batch of G Suite devices",
+	Long:    "Manages a batch of G Suite devices.",
 	Run:     doBatchManage,
 }
 

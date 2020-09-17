@@ -28,7 +28,9 @@ import (
 
 var showCmd = &cobra.Command{
 	Use:   "show",
+	Args:  cobra.NoArgs,
 	Short: "Shows attribute names and valid values",
+	Long:  "Shows attribute names and valid values.",
 	Run:   doShow,
 }
 
