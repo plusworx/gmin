@@ -28,6 +28,8 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
+
 	"time"
 
 	"github.com/mitchellh/go-homedir"
@@ -105,15 +107,29 @@ var rootCmd = &cobra.Command{
 	Long: `gmin is a commandline interface (CLI) that enables the 
 	administration of G Suite domains. It aims to provide tools that
 	make G Suite administration from the commandline more manageable.`,
-	Version: "v0.8.0",
+	SilenceErrors: true,
+	SilenceUsage:  true,
+	Version:       "v0.8.0",
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(cmn.Timestamp() + err.Error())
+		fmt.Println(formatError(err.Error()))
 		os.Exit(1)
 	}
+}
+
+func formatError(errStr string) string {
+	var retStr string
+
+	if strings.HasPrefix(errStr, "gmin") {
+		retStr = cmn.Timestamp() + " " + errStr
+		return retStr
+	}
+
+	retStr = cmn.Timestamp() + " " + "gmin: error - " + errStr
+	return retStr
 }
 
 func init() {
