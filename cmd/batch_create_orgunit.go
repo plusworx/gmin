@@ -73,16 +73,19 @@ var batchCrtOrgUnitCmd = &cobra.Command{
 func doBatchCrtOrgUnit(cmd *cobra.Command, args []string) error {
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryOrgunitScope)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	scanner, err := cmn.InputFromStdIn(inputFile)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	if inputFile == "" && scanner == nil {
-		err := errors.New("gmin: error - must provide inputfile")
+		err := errors.New(cmn.ErrNoInputFile)
+		logger.Error(err)
 		return err
 	}
 
@@ -90,23 +93,28 @@ func doBatchCrtOrgUnit(cmd *cobra.Command, args []string) error {
 
 	ok := cmn.SliceContainsStr(cmn.ValidFileFormats, lwrFmt)
 	if !ok {
-		return fmt.Errorf("gmin: error - %v is not a valid file format", format)
+		err = fmt.Errorf(cmn.ErrInvalidFileFormat, format)
+		logger.Error(err)
+		return err
 	}
 
 	switch {
 	case lwrFmt == "csv":
 		err := btchOUProcessCSV(ds, inputFile)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 	case lwrFmt == "json":
 		err := btchOUProcessJSON(ds, inputFile, scanner)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 	case lwrFmt == "gsheet":
 		err := btchOUProcessSheet(ds, inputFile)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 	}
@@ -124,26 +132,31 @@ func btchCreateJSONOrgUnit(ds *admin.Service, jsonData string) (*admin.OrgUnit, 
 	jsonBytes := []byte(jsonData)
 
 	if !json.Valid(jsonBytes) {
-		return nil, errors.New("gmin: error - attribute string is not valid JSON")
+		logger.Error(cmn.ErrInvalidJSONAttr)
+		return nil, errors.New(cmn.ErrInvalidJSONAttr)
 	}
 
 	outStr, err := cmn.ParseInputAttrs(jsonBytes)
 	if err != nil {
+		logger.Error(err)
 		return nil, err
 	}
 
 	err = cmn.ValidateInputAttrs(outStr, ous.OrgUnitAttrMap)
 	if err != nil {
+		logger.Error(err)
 		return nil, err
 	}
 
 	err = json.Unmarshal(jsonBytes, &orgunit)
 	if err != nil {
+		logger.Error(err)
 		return nil, err
 	}
 
 	err = json.Unmarshal(jsonBytes, &emptyVals)
 	if err != nil {
+		logger.Error(err)
 		return nil, err
 	}
 	if len(emptyVals.ForceSendFields) > 0 {
@@ -156,6 +169,7 @@ func btchCreateJSONOrgUnit(ds *admin.Service, jsonData string) (*admin.OrgUnit, 
 func btchInsertNewOrgUnits(ds *admin.Service, orgunits []*admin.OrgUnit) error {
 	customerID, err := cfg.ReadConfigString("customerid")
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
@@ -163,13 +177,15 @@ func btchInsertNewOrgUnits(ds *admin.Service, orgunits []*admin.OrgUnit) error {
 
 	for _, ou := range orgunits {
 		if ou.Name == "" || ou.ParentOrgUnitPath == "" {
-			return errors.New("gmin: error - name and parentOrgUnitPath must be provided")
+			err = errors.New(cmn.ErrNoNameOrOuPath)
+			logger.Error(err)
+			return err
 		}
 
 		ouic := ds.Orgunits.Insert(customerID, ou)
 
 		// Sleep for 2 seconds because only 1 orgunit can be created per second but 1 second interval
-		// still results in rate limit errors
+		// still can result in rate limit errors
 		time.Sleep(2 * time.Second)
 
 		wg.Add(1)
@@ -192,15 +208,22 @@ func btchOUInsertProcess(orgunit *admin.OrgUnit, wg *sync.WaitGroup, ouic *admin
 		var err error
 		newOrgUnit, err := ouic.Do()
 		if err == nil {
-			fmt.Println(cmn.GminMessage("**** gmin: orgunit " + newOrgUnit.OrgUnitPath + " created ****"))
+			logger.Infof(cmn.InfoOUCreated, newOrgUnit.OrgUnitPath)
+			fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoOUCreated, newOrgUnit.OrgUnitPath)))
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(errors.New(cmn.GminMessage("gmin: error - " + err.Error() + " " + orgunit.Name)))
+			return backoff.Permanent(errors.New(cmn.GminMessage(fmt.Sprintf(cmn.ErrBatchOU, err.Error(), orgunit.Name))))
 		}
-		return errors.New(cmn.GminMessage("gmin: error - " + err.Error() + " " + orgunit.Name))
+		// Log the retries
+		logger.Errorw(err.Error(),
+			"retrying", b.Clock.Now().String(),
+			"orgunit", orgunit.Name)
+		return errors.New(cmn.GminMessage(fmt.Sprintf(cmn.ErrBatchOU, err.Error(), orgunit.Name)))
 	}, b)
 	if err != nil {
+		// Log final error
+		logger.Error(err)
 		fmt.Println(err)
 	}
 }
@@ -214,6 +237,7 @@ func btchOUProcessCSV(ds *admin.Service, filePath string) error {
 
 	csvfile, err := os.Open(filePath)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 	defer csvfile.Close()
@@ -227,6 +251,7 @@ func btchOUProcessCSV(ds *admin.Service, filePath string) error {
 			break
 		}
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 
@@ -238,6 +263,7 @@ func btchOUProcessCSV(ds *admin.Service, filePath string) error {
 			hdrMap = cmn.ProcessHeader(iSlice)
 			err = cmn.ValidateHeader(hdrMap, ous.OrgUnitAttrMap)
 			if err != nil {
+				logger.Error(err)
 				return err
 			}
 			count = count + 1
@@ -250,7 +276,8 @@ func btchOUProcessCSV(ds *admin.Service, filePath string) error {
 
 		ouVar, err := btchCrtProcessOrgUnit(hdrMap, iSlice)
 		if err != nil {
-			fmt.Println(err.Error())
+			logger.Error(err)
+			return err
 		}
 
 		orgunits = append(orgunits, ouVar)
@@ -260,6 +287,7 @@ func btchOUProcessCSV(ds *admin.Service, filePath string) error {
 
 	err = btchInsertNewOrgUnits(ds, orgunits)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 	return nil
@@ -271,6 +299,7 @@ func btchOUProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanne
 	if filePath != "" {
 		file, err := os.Open(filePath)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 		defer file.Close()
@@ -283,6 +312,7 @@ func btchOUProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanne
 
 		ouVar, err := btchCreateJSONOrgUnit(ds, jsonData)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 
@@ -290,11 +320,13 @@ func btchOUProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanne
 	}
 	err := scanner.Err()
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	err = btchInsertNewOrgUnits(ds, orgunits)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
@@ -305,27 +337,34 @@ func btchOUProcessSheet(ds *admin.Service, sheetID string) error {
 	var orgunits []*admin.OrgUnit
 
 	if sheetRange == "" {
-		return errors.New("gmin: error - sheetrange must be provided")
+		err := errors.New(cmn.ErrNoSheetRange)
+		logger.Error(err)
+		return err
 	}
 
 	ss, err := cmn.CreateSheetService(sheet.DriveReadonlyScope)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	ssvgc := ss.Spreadsheets.Values.Get(sheetID, sheetRange)
 	sValRange, err := ssvgc.Do()
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	if len(sValRange.Values) == 0 {
-		return errors.New("gmin: error - no data found in sheet " + sheetID + " range: " + sheetRange)
+		err = fmt.Errorf(cmn.ErrNoSheetDataFound, sheetID, sheetRange)
+		logger.Error(err)
+		return err
 	}
 
 	hdrMap := cmn.ProcessHeader(sValRange.Values[0])
 	err = cmn.ValidateHeader(hdrMap, ous.OrgUnitAttrMap)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
@@ -336,6 +375,7 @@ func btchOUProcessSheet(ds *admin.Service, sheetID string) error {
 
 		ouVar, err := btchCrtProcessOrgUnit(hdrMap, row)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 
@@ -344,6 +384,7 @@ func btchOUProcessSheet(ds *admin.Service, sheetID string) error {
 
 	err = btchInsertNewOrgUnits(ds, orgunits)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 

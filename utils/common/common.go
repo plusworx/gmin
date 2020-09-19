@@ -108,6 +108,35 @@ const (
 	VALUE
 )
 
+const (
+	// Messages
+	// Errors
+
+	ErrBatchGroup            string = "error - %s - group: %s"
+	ErrBatchMember           string = "error - %s - member: %s"
+	ErrBatchOU               string = "error - %s - orgunit: %s"
+	ErrBatchUser             string = "error - %s - user: %s"
+	ErrMissingUserData       string = "primaryEmail, givenName, familyName and password must all be provided"
+	ErrNoCustomFieldMask     string = "please provide a custom field mask for custom projection"
+	ErrNoGroupEmailAddress   string = "group email address must be provided"
+	ErrNoInputFile           string = "must provide inputfile"
+	ErrNoMemberEmailAddress  string = "member email address must be provided"
+	ErrNoNameOrOuPath        string = "name and parentOrgUnitPath must be provided"
+	ErrNoSheetDataFound      string = "no data found in sheet %s - range: %s"
+	ErrNoSheetRange          string = "sheetrange must be provided"
+	ErrInvalidFileFormat     string = "invalid file format: %v"
+	ErrInvalidJSONAttr       string = "attribute string is not valid JSON"
+	ErrInvalidProjectionType string = "invalid projection type: %v"
+	ErrInvalidViewType       string = "invalid view type: %v"
+
+	// Infos
+
+	InfoGroupCreated  string = "group created: %s"
+	InfoMemberCreated string = "member: %s created in group: %s"
+	InfoOUCreated     string = "orgunit created: %s"
+	InfoUserCreated   string = "user created: %s"
+)
+
 // EmptyValues is struct used to extract ForceSendFields from JSON
 type EmptyValues struct {
 	ForceSendFields []string
@@ -621,7 +650,7 @@ func deDupeStrSlice(strSlice []string) []string {
 
 // GminMessage constructs a message for output
 func GminMessage(msgTxt string) string {
-	return Timestamp() + msgTxt
+	return Timestamp() + " gmin: " + msgTxt
 }
 
 // HashPassword creates a password hash

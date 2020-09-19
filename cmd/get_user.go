@@ -53,6 +53,7 @@ func doGetUser(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserReadonlyScope)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
@@ -61,6 +62,7 @@ func doGetUser(cmd *cobra.Command, args []string) error {
 	if attrs != "" {
 		formattedAttrs, err := cmn.ParseOutputAttrs(attrs, usrs.UserAttrMap)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 
@@ -72,8 +74,9 @@ func doGetUser(cmd *cobra.Command, args []string) error {
 		proj := strings.ToLower(projection)
 		ok := cmn.SliceContainsStr(usrs.ValidProjections, proj)
 		if !ok {
-			logger.Errorf("invalid projection type: %s", projection)
-			return fmt.Errorf("gmin: error - %v is not a valid projection type", projection)
+			err = fmt.Errorf(cmn.ErrInvalidProjectionType, projection)
+			logger.Error(err)
+			return err
 		}
 
 		getCall := usrs.AddProjection(ugc, proj)
@@ -86,7 +89,9 @@ func doGetUser(cmd *cobra.Command, args []string) error {
 				getCall := usrs.AddCustomFieldMask(ugc, mask)
 				ugc = getCall.(*admin.UsersGetCall)
 			} else {
-				return errors.New("gmin: error - please provide a custom field mask for custom projection")
+				err = errors.New(cmn.ErrNoCustomFieldMask)
+				logger.Error(err)
+				return err
 			}
 		}
 	}
@@ -95,7 +100,9 @@ func doGetUser(cmd *cobra.Command, args []string) error {
 		vt := strings.ToLower(viewType)
 		ok := cmn.SliceContainsStr(usrs.ValidViewTypes, vt)
 		if !ok {
-			return fmt.Errorf("gmin: error - %v is not a valid view type", viewType)
+			err = fmt.Errorf(cmn.ErrInvalidViewType, viewType)
+			logger.Error(err)
+			return err
 		}
 
 		getCall := usrs.AddViewType(ugc, vt)
@@ -104,11 +111,13 @@ func doGetUser(cmd *cobra.Command, args []string) error {
 
 	user, err = usrs.DoGet(ugc)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	jsonData, err = json.MarshalIndent(user, "", "    ")
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 

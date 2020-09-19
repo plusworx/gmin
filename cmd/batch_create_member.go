@@ -72,16 +72,19 @@ var batchCrtMemberCmd = &cobra.Command{
 func doBatchCrtMember(cmd *cobra.Command, args []string) error {
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupMemberScope)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	scanner, err := cmn.InputFromStdIn(inputFile)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	if inputFile == "" && scanner == nil {
-		err := errors.New("gmin: error - must provide inputfile")
+		err := errors.New(cmn.ErrNoInputFile)
+		logger.Error(err)
 		return err
 	}
 
@@ -89,7 +92,9 @@ func doBatchCrtMember(cmd *cobra.Command, args []string) error {
 
 	ok := cmn.SliceContainsStr(cmn.ValidFileFormats, lwrFmt)
 	if !ok {
-		return fmt.Errorf("gmin: error - %v is not a valid file format", format)
+		err = fmt.Errorf(cmn.ErrInvalidFileFormat, format)
+		logger.Error(err)
+		return err
 	}
 
 	groupKey := args[0]
@@ -98,16 +103,19 @@ func doBatchCrtMember(cmd *cobra.Command, args []string) error {
 	case lwrFmt == "csv":
 		err := btchCrtMemProcessCSV(ds, groupKey, inputFile)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 	case lwrFmt == "json":
 		err := btchCrtMemProcessJSON(ds, groupKey, inputFile, scanner)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 	case lwrFmt == "gsheet":
 		err := btchCrtMemProcessSheet(ds, groupKey, inputFile)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 	}
@@ -124,23 +132,32 @@ func btchCreateJSONMember(ds *admin.Service, jsonData string) (*admin.Member, er
 	member = new(admin.Member)
 	jsonBytes := []byte(jsonData)
 
+	if !json.Valid(jsonBytes) {
+		logger.Error(cmn.ErrInvalidJSONAttr)
+		return nil, errors.New(cmn.ErrInvalidJSONAttr)
+	}
+
 	outStr, err := cmn.ParseInputAttrs(jsonBytes)
 	if err != nil {
+		logger.Error(err)
 		return nil, err
 	}
 
 	err = cmn.ValidateInputAttrs(outStr, mems.MemberAttrMap)
 	if err != nil {
+		logger.Error(err)
 		return nil, err
 	}
 
 	err = json.Unmarshal(jsonBytes, &member)
 	if err != nil {
+		logger.Error(err)
 		return nil, err
 	}
 
 	err = json.Unmarshal(jsonBytes, &emptyVals)
 	if err != nil {
+		logger.Error(err)
 		return nil, err
 	}
 	if len(emptyVals.ForceSendFields) > 0 {
@@ -155,7 +172,9 @@ func btchInsertNewMembers(ds *admin.Service, groupKey string, members []*admin.M
 
 	for _, m := range members {
 		if m.Email == "" {
-			return errors.New("gmin: error - email must be provided")
+			err := errors.New(cmn.ErrNoMemberEmailAddress)
+			logger.Error(err)
+			return err
 		}
 
 		mic := ds.Members.Insert(groupKey, m)
@@ -180,15 +199,23 @@ func btchMemInsertProcess(member *admin.Member, groupKey string, wg *sync.WaitGr
 		var err error
 		newMember, err := mic.Do()
 		if err == nil {
-			fmt.Println(cmn.GminMessage("**** gmin: member " + newMember.Email + " created in group " + groupKey + " ****"))
+			logger.Infof(cmn.InfoMemberCreated, newMember.Email, groupKey)
+			fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoMemberCreated, newMember.Email, groupKey)))
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(errors.New(cmn.GminMessage("gmin: error - " + err.Error() + " " + member.Email)))
+			return backoff.Permanent(errors.New(cmn.GminMessage(fmt.Sprintf(cmn.ErrBatchMember, err.Error(), member.Email))))
 		}
-		return errors.New(cmn.GminMessage("gmin: error - " + err.Error() + " " + member.Email))
+		// Log the retries
+		logger.Errorw(err.Error(),
+			"retrying", b.Clock.Now().String(),
+			"group", groupKey,
+			"member", member.Email)
+		return errors.New(cmn.GminMessage(fmt.Sprintf(cmn.ErrBatchMember, err.Error(), member.Email)))
 	}, b)
 	if err != nil {
+		// Log final error
+		logger.Error(err)
 		fmt.Println(err)
 	}
 }
@@ -215,6 +242,7 @@ func btchCrtMemProcessCSV(ds *admin.Service, groupKey string, filePath string) e
 			break
 		}
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 
@@ -226,6 +254,7 @@ func btchCrtMemProcessCSV(ds *admin.Service, groupKey string, filePath string) e
 			hdrMap = cmn.ProcessHeader(iSlice)
 			err = cmn.ValidateHeader(hdrMap, mems.MemberAttrMap)
 			if err != nil {
+				logger.Error(err)
 				return err
 			}
 			count = count + 1
@@ -238,7 +267,8 @@ func btchCrtMemProcessCSV(ds *admin.Service, groupKey string, filePath string) e
 
 		memVar, err := btchCrtProcessMember(hdrMap, iSlice)
 		if err != nil {
-			fmt.Println(err.Error())
+			logger.Error(err)
+			return err
 		}
 
 		members = append(members, memVar)
@@ -248,6 +278,7 @@ func btchCrtMemProcessCSV(ds *admin.Service, groupKey string, filePath string) e
 
 	err = btchInsertNewMembers(ds, groupKey, members)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 	return nil
@@ -259,6 +290,7 @@ func btchCrtMemProcessJSON(ds *admin.Service, groupKey, filePath string, scanner
 	if filePath != "" {
 		file, err := os.Open(filePath)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 		defer file.Close()
@@ -271,6 +303,7 @@ func btchCrtMemProcessJSON(ds *admin.Service, groupKey, filePath string, scanner
 
 		memVar, err := btchCreateJSONMember(ds, jsonData)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 
@@ -278,11 +311,13 @@ func btchCrtMemProcessJSON(ds *admin.Service, groupKey, filePath string, scanner
 	}
 	err := scanner.Err()
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	err = btchInsertNewMembers(ds, groupKey, members)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
@@ -293,27 +328,34 @@ func btchCrtMemProcessSheet(ds *admin.Service, groupKey string, sheetID string) 
 	var members []*admin.Member
 
 	if sheetRange == "" {
-		return errors.New("gmin: error - sheetrange must be provided")
+		err := errors.New(cmn.ErrNoSheetRange)
+		logger.Error(err)
+		return err
 	}
 
 	ss, err := cmn.CreateSheetService(sheet.DriveReadonlyScope)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	ssvgc := ss.Spreadsheets.Values.Get(sheetID, sheetRange)
 	sValRange, err := ssvgc.Do()
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	if len(sValRange.Values) == 0 {
-		return errors.New("gmin: error - no data found in sheet " + sheetID + " range: " + sheetRange)
+		err = fmt.Errorf(cmn.ErrNoSheetDataFound, sheetID, sheetRange)
+		logger.Error(err)
+		return err
 	}
 
 	hdrMap := cmn.ProcessHeader(sValRange.Values[0])
 	err = cmn.ValidateHeader(hdrMap, mems.MemberAttrMap)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
@@ -324,6 +366,7 @@ func btchCrtMemProcessSheet(ds *admin.Service, groupKey string, sheetID string) 
 
 		memVar, err := btchCrtProcessMember(hdrMap, row)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 
@@ -332,6 +375,7 @@ func btchCrtMemProcessSheet(ds *admin.Service, groupKey string, sheetID string) 
 
 	err = btchInsertNewMembers(ds, groupKey, members)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
@@ -351,6 +395,7 @@ func btchCrtProcessMember(hdrMap map[int]string, grpData []interface{}) (*admin.
 			sAttr := fmt.Sprintf("%v", attr)
 			validDS, err := mems.ValidateDeliverySetting(sAttr)
 			if err != nil {
+				logger.Error(err)
 				return nil, err
 			}
 			member.DeliverySettings = validDS
@@ -360,6 +405,7 @@ func btchCrtProcessMember(hdrMap map[int]string, grpData []interface{}) (*admin.
 			sAttr := fmt.Sprintf("%v", attr)
 			validRole, err := mems.ValidateRole(sAttr)
 			if err != nil {
+				logger.Error(err)
 				return nil, err
 			}
 			member.Role = validRole
