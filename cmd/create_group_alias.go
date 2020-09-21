@@ -51,16 +51,19 @@ func doCreateGroupAlias(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupScope)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	gaic := ds.Groups.Aliases.Insert(args[1], alias)
 	newAlias, err := gaic.Do()
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
-	fmt.Println(cmn.GminMessage("**** gmin: group alias " + newAlias.Alias + " created for group " + args[1] + " ****"))
+	logger.Infof(cmn.InfoGroupAliasCreated, newAlias.Alias, args[1])
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoGroupAliasCreated, newAlias.Alias, args[1])))
 
 	return nil
 }

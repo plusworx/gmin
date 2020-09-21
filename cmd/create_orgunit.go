@@ -66,21 +66,25 @@ func doCreateOU(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryOrgunitScope)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	customerID, err := cfg.ReadConfigString("customerid")
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	ouic := ds.Orgunits.Insert(customerID, orgunit)
 	newOrgUnit, err := ouic.Do()
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
-	fmt.Println(cmn.GminMessage("**** gmin: orgunit " + newOrgUnit.OrgUnitPath + " created ****"))
+	logger.Infof(cmn.InfoOUCreated, newOrgUnit.OrgUnitPath)
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoOUCreated, newOrgUnit.OrgUnitPath)))
 
 	return nil
 }

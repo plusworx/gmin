@@ -42,13 +42,13 @@ func TestDoCreateUser(t *testing.T) {
 			lastname:      "Mouse",
 			password:      "VeryStrongPassword",
 			recoveryPhone: "988787686",
-			expectedErr:   "gmin: error - invalid email address",
+			expectedErr:   "invalid email address: mickey.mouse",
 		},
 		{
 			args:        []string{"mickey.mouse@disney.com"},
 			firstname:   "Mickey",
 			lastname:    "Mouse",
-			expectedErr: "gmin: error - firstname, lastname and password must all be provided",
+			expectedErr: "firstname, lastname and password must all be provided",
 		},
 		{
 			args:        []string{"mickey.mouse@disney.com"},
@@ -56,7 +56,7 @@ func TestDoCreateUser(t *testing.T) {
 			firstname:   "Mickey",
 			lastname:    "Mouse",
 			password:    "SuperStrongPassword",
-			expectedErr: "gmin: error - attribute string is not valid JSON",
+			expectedErr: "attribute string is not valid JSON",
 		},
 		{
 			args:        []string{"mickey.mouse@disney.com"},
@@ -64,7 +64,7 @@ func TestDoCreateUser(t *testing.T) {
 			firstname:   "Mickey",
 			lastname:    "Mouse",
 			password:    "SuperStrongPassword",
-			expectedErr: "gmin: error - attribute string is not valid JSON",
+			expectedErr: "attribute string is not valid JSON",
 		},
 	}
 
@@ -75,6 +75,8 @@ func TestDoCreateUser(t *testing.T) {
 		password = c.password
 		recoveryPhone = c.recoveryPhone
 
+		initConfig()
+		createCmd.PersistentPreRunE(createUserCmd, c.args)
 		got := doCreateUser(createUserCmd, c.args)
 
 		if got.Error() != c.expectedErr {

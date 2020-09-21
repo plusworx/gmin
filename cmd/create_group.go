@@ -59,16 +59,19 @@ func doCreateGroup(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupScope)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	gic := ds.Groups.Insert(group)
 	newGroup, err := gic.Do()
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
-	fmt.Println(cmn.GminMessage("**** gmin: user " + newGroup.Email + " created ****"))
+	logger.Infof(cmn.InfoGroupCreated, newGroup.Email)
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoGroupCreated, newGroup.Email)))
 
 	return nil
 }

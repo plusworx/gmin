@@ -98,51 +98,62 @@ func doCreateSchema(cmd *cobra.Command, args []string) error {
 	schema = new(admin.Schema)
 
 	if inputFile == "" {
-		err := errors.New("gmin: error - must provide inputfile")
+		err := errors.New(cmn.ErrNoInputFile)
+		logger.Error(err)
 		return err
 	}
 
 	fileData, err := ioutil.ReadFile(inputFile)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	if !json.Valid(fileData) {
-		return errors.New("gmin: error - input file is not valid JSON")
+		err = errors.New(cmn.ErrInvalidJSONFile)
+		logger.Error(err)
+		return err
 	}
 
 	outStr, err := cmn.ParseInputAttrs(fileData)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	err = cmn.ValidateInputAttrs(outStr, scs.SchemaAttrMap)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	err = json.Unmarshal(fileData, &schema)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	customerID, err := cfg.ReadConfigString("customerid")
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserschemaScope)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	scic := ds.Schemas.Insert(customerID, schema)
 	newSchema, err := scic.Do()
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
-	fmt.Println(cmn.GminMessage("**** gmin: schema " + newSchema.SchemaName + " created ****"))
+	logger.Infof(cmn.InfoSchemaCreated, newSchema.SchemaName)
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoSchemaCreated, newSchema.SchemaName)))
 
 	return nil
 }
@@ -151,4 +162,5 @@ func init() {
 	createCmd.AddCommand(createSchemaCmd)
 
 	createSchemaCmd.Flags().StringVarP(&inputFile, "inputfile", "i", "", "filepath to schema data file")
+	createSchemaCmd.MarkFlagRequired("inputfile")
 }

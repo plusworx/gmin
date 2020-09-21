@@ -51,16 +51,19 @@ func doCreateUserAlias(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserAliasScope)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	uaic := ds.Users.Aliases.Insert(args[1], alias)
 	newAlias, err := uaic.Do()
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
-	fmt.Println(cmn.GminMessage("**** gmin: user alias " + newAlias.Alias + " created for user " + args[1] + " ****"))
+	logger.Infof(cmn.InfoUserAliasCreated, newAlias.Alias, args[1])
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoUserAliasCreated, newAlias.Alias, args[1])))
 
 	return nil
 }

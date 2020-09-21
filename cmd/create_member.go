@@ -53,6 +53,7 @@ func doCreateMember(cmd *cobra.Command, args []string) error {
 	if deliverySetting != "" {
 		validDS, err := mems.ValidateDeliverySetting(deliverySetting)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 		member.DeliverySettings = validDS
@@ -61,6 +62,7 @@ func doCreateMember(cmd *cobra.Command, args []string) error {
 	if role != "" {
 		validRole, err := mems.ValidateRole(role)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 		member.Role = validRole
@@ -68,16 +70,19 @@ func doCreateMember(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupMemberScope)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	mic := ds.Members.Insert(args[1], member)
 	newMember, err := mic.Do()
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
-	fmt.Println(cmn.GminMessage("**** gmin: member " + newMember.Email + " created in group " + args[1] + " ****"))
+	logger.Infof(cmn.InfoMemberCreated, newMember.Email, args[1])
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoMemberCreated, newMember.Email, args[1])))
 
 	return nil
 }

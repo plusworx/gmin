@@ -177,7 +177,7 @@ func btchInsertNewUsers(ds *admin.Service, users []*admin.User) error {
 
 	for _, u := range users {
 		if u.PrimaryEmail == "" || u.Name.GivenName == "" || u.Name.FamilyName == "" || u.Password == "" {
-			err := errors.New(cmn.ErrMissingUserData)
+			err := errors.New(cmn.ErrBatchMissingUserData)
 			logger.Error(err)
 			return err
 		}

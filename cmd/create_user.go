@@ -56,7 +56,9 @@ func doCreateUser(cmd *cobra.Command, args []string) error {
 
 	ok := valid.IsEmail(args[0])
 	if !ok {
-		return errors.New("gmin: error - invalid email address")
+		err := fmt.Errorf(cmn.ErrInvalidEmailAddress, args[0])
+		logger.Error(err)
+		return err
 	}
 
 	user.PrimaryEmail = args[0]
@@ -69,6 +71,7 @@ func doCreateUser(cmd *cobra.Command, args []string) error {
 	// Process command flags
 	err := processCrtUsrFlags(cmd, user, name, flagsPassed)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
@@ -79,26 +82,32 @@ func doCreateUser(cmd *cobra.Command, args []string) error {
 		emptyVals := cmn.EmptyValues{}
 		jsonBytes := []byte(attrs)
 		if !json.Valid(jsonBytes) {
-			return errors.New("gmin: error - attribute string is not valid JSON")
+			err = errors.New(cmn.ErrInvalidJSONAttr)
+			logger.Error(err)
+			return err
 		}
 
 		outStr, err := cmn.ParseInputAttrs(jsonBytes)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 
 		err = cmn.ValidateInputAttrs(outStr, usrs.UserAttrMap)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 
 		err = json.Unmarshal(jsonBytes, &attrUser)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 
 		err = json.Unmarshal(jsonBytes, &emptyVals)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 		if len(emptyVals.ForceSendFields) > 0 {
@@ -108,6 +117,7 @@ func doCreateUser(cmd *cobra.Command, args []string) error {
 		if user.Password == "" && attrUser.Password != "" {
 			pwd, err := cmn.HashPassword(attrUser.Password)
 			if err != nil {
+				logger.Error(err)
 				return err
 			}
 			attrUser.Password = pwd
@@ -116,26 +126,32 @@ func doCreateUser(cmd *cobra.Command, args []string) error {
 
 		err = mergo.Merge(user, attrUser)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 	}
 
 	if user.Name.GivenName == "" || user.Name.FamilyName == "" || user.Password == "" {
-		return errors.New("gmin: error - firstname, lastname and password must all be provided")
+		err = errors.New(cmn.ErrMissingUserData)
+		logger.Error(err)
+		return err
 	}
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserScope)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	uic := ds.Users.Insert(user)
 	newUser, err := uic.Do()
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
-	fmt.Println(cmn.GminMessage("**** gmin: user " + newUser.PrimaryEmail + " created ****"))
+	logger.Infof(cmn.InfoUserCreated, newUser.PrimaryEmail)
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoUserCreated, newUser.PrimaryEmail)))
 
 	return nil
 }
@@ -170,6 +186,7 @@ func processCrtUsrFlags(cmd *cobra.Command, user *admin.User, name *admin.UserNa
 		case "forceSend":
 			fields, err := cmn.ParseForceSend(forceSend, usrs.UserAttrMap)
 			if err != nil {
+				logger.Error(err)
 				return err
 			}
 			for _, fld := range fields {
@@ -184,25 +201,34 @@ func processCrtUsrFlags(cmd *cobra.Command, user *admin.User, name *admin.UserNa
 			user.OrgUnitPath = orgUnit
 		case "password":
 			if password == "" {
-				return errors.New("gmin: error - password cannot be empty string")
+				err := errors.New(cmn.ErrEmptyPassword)
+				logger.Error(err)
+				return err
 			}
 			pwd, err := cmn.HashPassword(password)
 			if err != nil {
+				logger.Error(err)
 				return err
 			}
 			user.Password = pwd
 			user.HashFunction = cmn.HashFunction
 		case "recoveryemail":
 			if recoveryEmail == "" {
-				return errors.New("gmin: error - recoveryemail cannot be empty string")
+				err := errors.New(cmn.ErrEmptyRecoveryEmail)
+				logger.Error(err)
+				return err
 			}
 			user.RecoveryEmail = recoveryEmail
 		case "recoveryphone":
 			if recoveryPhone == "" {
-				return errors.New("gmin: error - recoveryphone cannot be empty string")
+				err := errors.New(cmn.ErrEmptyRecoveryPhone)
+				logger.Error(err)
+				return err
 			}
 			if string(recoveryPhone[0]) != "+" {
-				return fmt.Errorf("gmin: error - recovery phone number %v must start with '+'", recoveryPhone)
+				err := fmt.Errorf(cmn.ErrInvalidRecoveryPhone, recoveryPhone)
+				logger.Error(err)
+				return err
 			}
 			user.RecoveryPhone = recoveryPhone
 		case "suspended":
