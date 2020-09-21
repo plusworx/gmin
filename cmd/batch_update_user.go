@@ -82,16 +82,19 @@ var batchUpdUserCmd = &cobra.Command{
 func doBatchUpdUser(cmd *cobra.Command, args []string) error {
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserScope)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	scanner, err := cmn.InputFromStdIn(inputFile)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	if inputFile == "" && scanner == nil {
-		err := errors.New("gmin: error - must provide inputfile")
+		err := errors.New(cmn.ErrNoInputFile)
+		logger.Error(err)
 		return err
 	}
 
@@ -99,23 +102,28 @@ func doBatchUpdUser(cmd *cobra.Command, args []string) error {
 
 	ok := cmn.SliceContainsStr(cmn.ValidFileFormats, lwrFmt)
 	if !ok {
-		return fmt.Errorf("gmin: error - %v is not a valid file format", format)
+		err = fmt.Errorf(cmn.ErrInvalidFileFormat, format)
+		logger.Error(err)
+		return err
 	}
 
 	switch {
 	case lwrFmt == "csv":
 		err := btchUpdUsrProcessCSV(ds, inputFile)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 	case lwrFmt == "json":
 		err := btchUpdUsrProcessJSON(ds, inputFile, scanner)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 	case lwrFmt == "gsheet":
 		err := btchUpdUsrProcessSheet(ds, inputFile)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 	}
@@ -134,35 +142,43 @@ func btchUpdJSONUser(ds *admin.Service, jsonData string) (*admin.User, string, e
 	jsonBytes := []byte(jsonData)
 
 	if !json.Valid(jsonBytes) {
-		return nil, "", errors.New("gmin: error - attribute string is not valid JSON")
+		logger.Error(cmn.ErrInvalidJSONAttr)
+		return nil, "", errors.New(cmn.ErrInvalidJSONAttr)
 	}
 
 	outStr, err := cmn.ParseInputAttrs(jsonBytes)
 	if err != nil {
+		logger.Error(err)
 		return nil, "", err
 	}
 
 	err = cmn.ValidateInputAttrs(outStr, usrs.UserAttrMap)
 	if err != nil {
+		logger.Error(err)
 		return nil, "", err
 	}
 
 	err = json.Unmarshal(jsonBytes, &usrKey)
 	if err != nil {
+		logger.Error(err)
 		return nil, "", err
 	}
 
 	if usrKey.UserKey == "" {
-		return nil, "", errors.New("gmin: error - userKey must be included in the JSON input string")
+		err = errors.New(cmn.ErrNoJSONUserKey)
+		logger.Error(err)
+		return nil, "", err
 	}
 
 	err = json.Unmarshal(jsonBytes, &user)
 	if err != nil {
+		logger.Error(err)
 		return nil, "", err
 	}
 
 	err = json.Unmarshal(jsonBytes, &emptyVals)
 	if err != nil {
+		logger.Error(err)
 		return nil, "", err
 	}
 	if len(emptyVals.ForceSendFields) > 0 {
@@ -180,6 +196,7 @@ func btchUpdateUsers(ds *admin.Service, users []*admin.User, userKeys []string) 
 			u.HashFunction = cmn.HashFunction
 			pwd, err := cmn.HashPassword(u.Password)
 			if err != nil {
+				logger.Error(err)
 				return err
 			}
 			u.Password = pwd
@@ -207,15 +224,22 @@ func btchUsrUpdateProcess(user *admin.User, wg *sync.WaitGroup, uuc *admin.Users
 		var err error
 		_, err = uuc.Do()
 		if err == nil {
-			fmt.Println(cmn.GminMessage("**** gmin: user " + userKey + " updated ****"))
+			logger.Infof(cmn.InfoUserUpdated, userKey)
+			fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoUserUpdated, userKey)))
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(errors.New(cmn.GminMessage("gmin: error - " + err.Error() + " " + userKey)))
+			return backoff.Permanent(errors.New(cmn.GminMessage(fmt.Sprintf(cmn.ErrBatchUser, err.Error(), userKey))))
 		}
-		return errors.New(cmn.GminMessage("gmin: error - " + err.Error() + " " + userKey))
+		// Log the retries
+		logger.Errorw(err.Error(),
+			"retrying", b.Clock.Now().String(),
+			"user", userKey)
+		return errors.New(cmn.GminMessage(fmt.Sprintf(cmn.ErrBatchUser, err.Error(), userKey)))
 	}, b)
 	if err != nil {
+		// Log final error
+		logger.Error(err)
 		fmt.Println(err)
 	}
 }
@@ -230,6 +254,7 @@ func btchUpdUsrProcessCSV(ds *admin.Service, filePath string) error {
 
 	csvfile, err := os.Open(filePath)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 	defer csvfile.Close()
@@ -243,6 +268,7 @@ func btchUpdUsrProcessCSV(ds *admin.Service, filePath string) error {
 			break
 		}
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 
@@ -254,6 +280,7 @@ func btchUpdUsrProcessCSV(ds *admin.Service, filePath string) error {
 			hdrMap = cmn.ProcessHeader(iSlice)
 			err = cmn.ValidateHeader(hdrMap, usrs.UserAttrMap)
 			if err != nil {
+				logger.Error(err)
 				return err
 			}
 			count = count + 1
@@ -266,7 +293,8 @@ func btchUpdUsrProcessCSV(ds *admin.Service, filePath string) error {
 
 		userVar, userKey, err := btchUpdProcessUser(hdrMap, iSlice)
 		if err != nil {
-			fmt.Println(err.Error())
+			logger.Error(err)
+			return err
 		}
 
 		users = append(users, userVar)
@@ -277,6 +305,7 @@ func btchUpdUsrProcessCSV(ds *admin.Service, filePath string) error {
 
 	err = btchUpdateUsers(ds, users, userKeys)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 	return nil
@@ -291,6 +320,7 @@ func btchUpdUsrProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Sc
 	if filePath != "" {
 		file, err := os.Open(filePath)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 		defer file.Close()
@@ -303,6 +333,7 @@ func btchUpdUsrProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Sc
 
 		userVar, userKey, err := btchUpdJSONUser(ds, jsonData)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 
@@ -311,11 +342,13 @@ func btchUpdUsrProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Sc
 	}
 	err := scanner.Err()
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	err = btchUpdateUsers(ds, users, userKeys)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
@@ -329,27 +362,34 @@ func btchUpdUsrProcessSheet(ds *admin.Service, sheetID string) error {
 	)
 
 	if sheetRange == "" {
-		return errors.New("gmin: error - sheetrange must be provided")
+		err := errors.New(cmn.ErrNoSheetRange)
+		logger.Error(err)
+		return err
 	}
 
 	ss, err := cmn.CreateSheetService(sheet.DriveReadonlyScope)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	ssvgc := ss.Spreadsheets.Values.Get(sheetID, sheetRange)
 	sValRange, err := ssvgc.Do()
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	if len(sValRange.Values) == 0 {
-		return errors.New("gmin: error - no data found in sheet " + sheetID + " range: " + sheetRange)
+		err = fmt.Errorf(cmn.ErrNoSheetDataFound, sheetID, sheetRange)
+		logger.Error(err)
+		return err
 	}
 
 	hdrMap := cmn.ProcessHeader(sValRange.Values[0])
 	err = cmn.ValidateHeader(hdrMap, usrs.UserAttrMap)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
@@ -360,6 +400,7 @@ func btchUpdUsrProcessSheet(ds *admin.Service, sheetID string) error {
 
 		userVar, userKey, err := btchUpdProcessUser(hdrMap, row)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 
@@ -369,6 +410,7 @@ func btchUpdUsrProcessSheet(ds *admin.Service, sheetID string) error {
 
 	err = btchUpdateUsers(ds, users, userKeys)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
@@ -437,6 +479,7 @@ func btchUpdProcessUser(hdrMap map[int]string, userData []interface{}) (*admin.U
 			if recPhone != "" {
 				err := cmn.ValidateRecoveryPhone(recPhone)
 				if err != nil {
+					logger.Error(err)
 					return nil, "", err
 				}
 			}

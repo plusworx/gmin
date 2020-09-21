@@ -463,6 +463,4 @@ func init() {
 	batchCrtUserCmd.Flags().StringVarP(&inputFile, "inputfile", "i", "", "filepath to user data file or sheet id")
 	batchCrtUserCmd.Flags().StringVarP(&format, "format", "f", "json", "user data file format")
 	batchCrtUserCmd.Flags().StringVarP(&sheetRange, "sheetrange", "s", "", "user data gsheet range")
-
-	batchCrtUserCmd.MarkFlagRequired("inputfile")
 }

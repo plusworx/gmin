@@ -77,16 +77,19 @@ var batchUpdCrOSDevCmd = &cobra.Command{
 func doBatchUpdCrOSDev(cmd *cobra.Command, args []string) error {
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryDeviceChromeosScope)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	scanner, err := cmn.InputFromStdIn(inputFile)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	if inputFile == "" && scanner == nil {
-		err := errors.New("gmin: error - must provide inputfile")
+		err := errors.New(cmn.ErrNoInputFile)
+		logger.Error(err)
 		return err
 	}
 
@@ -94,23 +97,28 @@ func doBatchUpdCrOSDev(cmd *cobra.Command, args []string) error {
 
 	ok := cmn.SliceContainsStr(cmn.ValidFileFormats, lwrFmt)
 	if !ok {
-		return fmt.Errorf("gmin: error - %v is not a valid file format", format)
+		err = fmt.Errorf(cmn.ErrInvalidFileFormat, format)
+		logger.Error(err)
+		return err
 	}
 
 	switch {
 	case lwrFmt == "csv":
 		err := btchUpdCDevProcessCSV(ds, inputFile)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 	case lwrFmt == "json":
 		err := btchUpdCDevProcessJSON(ds, inputFile, scanner)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 	case lwrFmt == "gsheet":
 		err := btchUpdCDevProcessSheet(ds, inputFile)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 	}
@@ -128,30 +136,37 @@ func btchUpdJSONCDev(ds *admin.Service, jsonData string) (*admin.ChromeOsDevice,
 	jsonBytes := []byte(jsonData)
 
 	if !json.Valid(jsonBytes) {
-		return nil, errors.New("gmin: error - attribute string is not valid JSON")
+		logger.Error(cmn.ErrInvalidJSONAttr)
+		return nil, errors.New(cmn.ErrInvalidJSONAttr)
 	}
 
 	outStr, err := cmn.ParseInputAttrs(jsonBytes)
 	if err != nil {
+		logger.Error(err)
 		return nil, err
 	}
 
 	err = cmn.ValidateInputAttrs(outStr, cdevs.CrOSDevAttrMap)
 	if err != nil {
+		logger.Error(err)
 		return nil, err
 	}
 
 	err = json.Unmarshal(jsonBytes, &crosdev)
 	if err != nil {
+		logger.Error(err)
 		return nil, err
 	}
 
 	if crosdev.DeviceId == "" {
-		return nil, errors.New("gmin: error - deviceId must be included in the JSON input string")
+		err = errors.New(cmn.ErrNoJSONDeviceID)
+		logger.Error(err)
+		return nil, err
 	}
 
 	err = json.Unmarshal(jsonBytes, &emptyVals)
 	if err != nil {
+		logger.Error(err)
 		return nil, err
 	}
 	if len(emptyVals.ForceSendFields) > 0 {
@@ -166,6 +181,7 @@ func btchUpdateCDevs(ds *admin.Service, crosdevs []*admin.ChromeOsDevice) error 
 
 	customerID, err := cfg.ReadConfigString("customerid")
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
@@ -192,15 +208,22 @@ func btchCDevUpdateProcess(crosdev *admin.ChromeOsDevice, wg *sync.WaitGroup, cd
 		var err error
 		_, err = cduc.Do()
 		if err == nil {
-			fmt.Println(cmn.GminMessage("**** gmin: ChromeOS device " + crosdev.DeviceId + " updated ****"))
+			logger.Infof(cmn.InfoCDevUpdated, crosdev.DeviceId)
+			fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoCDevUpdated, crosdev.DeviceId)))
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(errors.New(cmn.GminMessage("gmin: error - " + err.Error() + " " + crosdev.DeviceId)))
+			return backoff.Permanent(errors.New(cmn.GminMessage(fmt.Sprintf(cmn.ErrBatchChromeOSDevice, err.Error(), crosdev.DeviceId))))
 		}
-		return errors.New(cmn.GminMessage("gmin: error - " + err.Error() + " " + crosdev.DeviceId))
+		// Log the retries
+		logger.Errorw(err.Error(),
+			"retrying", b.Clock.Now().String(),
+			"ChromeOS device", crosdev.DeviceId)
+		return errors.New(cmn.GminMessage(fmt.Sprintf(cmn.ErrBatchChromeOSDevice, err.Error(), crosdev.DeviceId)))
 	}, b)
 	if err != nil {
+		// Log final error
+		logger.Error(err)
 		fmt.Println(err)
 	}
 }
@@ -214,6 +237,7 @@ func btchUpdCDevProcessCSV(ds *admin.Service, filePath string) error {
 
 	csvfile, err := os.Open(filePath)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 	defer csvfile.Close()
@@ -227,6 +251,7 @@ func btchUpdCDevProcessCSV(ds *admin.Service, filePath string) error {
 			break
 		}
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 
@@ -238,6 +263,7 @@ func btchUpdCDevProcessCSV(ds *admin.Service, filePath string) error {
 			hdrMap = cmn.ProcessHeader(iSlice)
 			err = cmn.ValidateHeader(hdrMap, cdevs.CrOSDevAttrMap)
 			if err != nil {
+				logger.Error(err)
 				return err
 			}
 			count = count + 1
@@ -250,7 +276,8 @@ func btchUpdCDevProcessCSV(ds *admin.Service, filePath string) error {
 
 		cdevVar, err := btchUpdProcessCDev(hdrMap, iSlice)
 		if err != nil {
-			fmt.Println(err.Error())
+			logger.Error(err)
+			return err
 		}
 
 		crosdevs = append(crosdevs, cdevVar)
@@ -260,6 +287,7 @@ func btchUpdCDevProcessCSV(ds *admin.Service, filePath string) error {
 
 	err = btchUpdateCDevs(ds, crosdevs)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 	return nil
@@ -271,6 +299,7 @@ func btchUpdCDevProcessJSON(ds *admin.Service, filePath string, scanner *bufio.S
 	if filePath != "" {
 		file, err := os.Open(filePath)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 		defer file.Close()
@@ -283,6 +312,7 @@ func btchUpdCDevProcessJSON(ds *admin.Service, filePath string, scanner *bufio.S
 
 		cdevVar, err := btchUpdJSONCDev(ds, jsonData)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 
@@ -290,11 +320,13 @@ func btchUpdCDevProcessJSON(ds *admin.Service, filePath string, scanner *bufio.S
 	}
 	err := scanner.Err()
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	err = btchUpdateCDevs(ds, crosdevs)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
@@ -305,27 +337,34 @@ func btchUpdCDevProcessSheet(ds *admin.Service, sheetID string) error {
 	var crosdevs []*admin.ChromeOsDevice
 
 	if sheetRange == "" {
-		return errors.New("gmin: error - sheetrange must be provided")
+		err := errors.New(cmn.ErrNoSheetRange)
+		logger.Error(err)
+		return err
 	}
 
 	ss, err := cmn.CreateSheetService(sheet.DriveReadonlyScope)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	ssvgc := ss.Spreadsheets.Values.Get(sheetID, sheetRange)
 	sValRange, err := ssvgc.Do()
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	if len(sValRange.Values) == 0 {
-		return errors.New("gmin: error - no data found in sheet " + sheetID + " range: " + sheetRange)
+		err = fmt.Errorf(cmn.ErrNoSheetDataFound, sheetID, sheetRange)
+		logger.Error(err)
+		return err
 	}
 
 	hdrMap := cmn.ProcessHeader(sValRange.Values[0])
 	err = cmn.ValidateHeader(hdrMap, cdevs.CrOSDevAttrMap)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
@@ -336,6 +375,7 @@ func btchUpdCDevProcessSheet(ds *admin.Service, sheetID string) error {
 
 		cdevVar, err := btchUpdProcessCDev(hdrMap, row)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 
@@ -344,6 +384,7 @@ func btchUpdCDevProcessSheet(ds *admin.Service, sheetID string) error {
 
 	err = btchUpdateCDevs(ds, crosdevs)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 

@@ -76,16 +76,19 @@ var batchUpdOUCmd = &cobra.Command{
 func doBatchUpdOU(cmd *cobra.Command, args []string) error {
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryOrgunitScope)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	scanner, err := cmn.InputFromStdIn(inputFile)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	if inputFile == "" && scanner == nil {
-		err := errors.New("gmin: error - must provide inputfile")
+		err := errors.New(cmn.ErrNoInputFile)
+		logger.Error(err)
 		return err
 	}
 
@@ -93,23 +96,28 @@ func doBatchUpdOU(cmd *cobra.Command, args []string) error {
 
 	ok := cmn.SliceContainsStr(cmn.ValidFileFormats, lwrFmt)
 	if !ok {
-		return fmt.Errorf("gmin: error - %v is not a valid file format", format)
+		err = fmt.Errorf(cmn.ErrInvalidFileFormat, format)
+		logger.Error(err)
+		return err
 	}
 
 	switch {
 	case lwrFmt == "csv":
 		err := btchUpdOUProcessCSV(ds, inputFile)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 	case lwrFmt == "json":
 		err := btchUpdOUProcessJSON(ds, inputFile, scanner)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 	case lwrFmt == "gsheet":
 		err := btchUpdOUProcessSheet(ds, inputFile)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 	}
@@ -128,35 +136,43 @@ func btchUpdJSONOrgUnit(ds *admin.Service, jsonData string) (*admin.OrgUnit, str
 	jsonBytes := []byte(jsonData)
 
 	if !json.Valid(jsonBytes) {
-		return nil, "", errors.New("gmin: error - attribute string is not valid JSON")
+		logger.Error(cmn.ErrInvalidJSONAttr)
+		return nil, "", errors.New(cmn.ErrInvalidJSONAttr)
 	}
 
 	outStr, err := cmn.ParseInputAttrs(jsonBytes)
 	if err != nil {
+		logger.Error(err)
 		return nil, "", err
 	}
 
 	err = cmn.ValidateInputAttrs(outStr, ous.OrgUnitAttrMap)
 	if err != nil {
+		logger.Error(err)
 		return nil, "", err
 	}
 
 	err = json.Unmarshal(jsonBytes, &ouKey)
 	if err != nil {
+		logger.Error(err)
 		return nil, "", err
 	}
 
 	if ouKey.OUKey == "" {
-		return nil, "", errors.New("gmin: error - ouKey must be included in the JSON input string")
+		err = errors.New(cmn.ErrNoJSONOUKey)
+		logger.Error(err)
+		return nil, "", err
 	}
 
 	err = json.Unmarshal(jsonBytes, &orgunit)
 	if err != nil {
+		logger.Error(err)
 		return nil, "", err
 	}
 
 	err = json.Unmarshal(jsonBytes, &emptyVals)
 	if err != nil {
+		logger.Error(err)
 		return nil, "", err
 	}
 	if len(emptyVals.ForceSendFields) > 0 {
@@ -171,6 +187,7 @@ func btchUpdateOrgUnits(ds *admin.Service, orgunits []*admin.OrgUnit, ouKeys []s
 
 	customerID, err := cfg.ReadConfigString("customerid")
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
@@ -197,15 +214,22 @@ func btchOUUpdateProcess(orgunit *admin.OrgUnit, wg *sync.WaitGroup, ouuc *admin
 		var err error
 		_, err = ouuc.Do()
 		if err == nil {
-			fmt.Println(cmn.GminMessage("**** gmin: orgunit " + ouKey + " updated ****"))
+			logger.Infof(cmn.InfoOUUpdated, ouKey)
+			fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoOUUpdated, ouKey)))
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(errors.New(cmn.GminMessage("gmin: error - " + err.Error() + " " + ouKey)))
+			return backoff.Permanent(errors.New(cmn.GminMessage(fmt.Sprintf(cmn.ErrBatchOU, err.Error(), ouKey))))
 		}
-		return errors.New(cmn.GminMessage("gmin: error - " + err.Error() + " " + ouKey))
+		// Log the retries
+		logger.Errorw(err.Error(),
+			"retrying", b.Clock.Now().String(),
+			"orgunit", ouKey)
+		return errors.New(cmn.GminMessage(fmt.Sprintf(cmn.ErrBatchOU, err.Error(), ouKey)))
 	}, b)
 	if err != nil {
+		// Log final error
+		logger.Error(err)
 		fmt.Println(err)
 	}
 }
@@ -220,6 +244,7 @@ func btchUpdOUProcessCSV(ds *admin.Service, filePath string) error {
 
 	csvfile, err := os.Open(filePath)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 	defer csvfile.Close()
@@ -233,6 +258,7 @@ func btchUpdOUProcessCSV(ds *admin.Service, filePath string) error {
 			break
 		}
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 
@@ -244,6 +270,7 @@ func btchUpdOUProcessCSV(ds *admin.Service, filePath string) error {
 			hdrMap = cmn.ProcessHeader(iSlice)
 			err = cmn.ValidateHeader(hdrMap, ous.OrgUnitAttrMap)
 			if err != nil {
+				logger.Error(err)
 				return err
 			}
 			count = count + 1
@@ -256,7 +283,8 @@ func btchUpdOUProcessCSV(ds *admin.Service, filePath string) error {
 
 		ouVar, ouKey, err := btchUpdProcessOrgUnit(hdrMap, iSlice)
 		if err != nil {
-			fmt.Println(err.Error())
+			logger.Error(err)
+			return err
 		}
 
 		orgunits = append(orgunits, ouVar)
@@ -267,6 +295,7 @@ func btchUpdOUProcessCSV(ds *admin.Service, filePath string) error {
 
 	err = btchUpdateOrgUnits(ds, orgunits, ouKeys)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 	return nil
@@ -281,6 +310,7 @@ func btchUpdOUProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Sca
 	if filePath != "" {
 		file, err := os.Open(filePath)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 		defer file.Close()
@@ -293,6 +323,7 @@ func btchUpdOUProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Sca
 
 		ouVar, ouKey, err := btchUpdJSONOrgUnit(ds, jsonData)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 
@@ -301,11 +332,13 @@ func btchUpdOUProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Sca
 	}
 	err := scanner.Err()
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	err = btchUpdateOrgUnits(ds, orgunits, ouKeys)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
@@ -319,27 +352,34 @@ func btchUpdOUProcessSheet(ds *admin.Service, sheetID string) error {
 	)
 
 	if sheetRange == "" {
-		return errors.New("gmin: error - sheetrange must be provided")
+		err := errors.New(cmn.ErrNoSheetRange)
+		logger.Error(err)
+		return err
 	}
 
 	ss, err := cmn.CreateSheetService(sheet.DriveReadonlyScope)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	ssvgc := ss.Spreadsheets.Values.Get(sheetID, sheetRange)
 	sValRange, err := ssvgc.Do()
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	if len(sValRange.Values) == 0 {
-		return errors.New("gmin: error - no data found in sheet " + sheetID + " range: " + sheetRange)
+		err = fmt.Errorf(cmn.ErrNoSheetDataFound, sheetID, sheetRange)
+		logger.Error(err)
+		return err
 	}
 
 	hdrMap := cmn.ProcessHeader(sValRange.Values[0])
 	err = cmn.ValidateHeader(hdrMap, ous.OrgUnitAttrMap)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
@@ -350,6 +390,7 @@ func btchUpdOUProcessSheet(ds *admin.Service, sheetID string) error {
 
 		ouVar, ouKey, err := btchUpdProcessOrgUnit(hdrMap, row)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 
@@ -359,6 +400,7 @@ func btchUpdOUProcessSheet(ds *admin.Service, sheetID string) error {
 
 	err = btchUpdateOrgUnits(ds, orgunits, ouKeys)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 

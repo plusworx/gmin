@@ -57,22 +57,26 @@ var batchDelUserCmd = &cobra.Command{
 func doBatchDelUser(cmd *cobra.Command, args []string) error {
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserScope)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	scanner, err := cmn.InputFromStdIn(inputFile)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	if inputFile == "" && scanner == nil {
-		err := errors.New("gmin: error - must provide inputfile")
+		err := errors.New(cmn.ErrNoInputFile)
+		logger.Error(err)
 		return err
 	}
 
 	if scanner == nil {
 		file, err := os.Open(inputFile)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 		defer file.Close()
@@ -108,15 +112,22 @@ func deleteUser(wg *sync.WaitGroup, udc *admin.UsersDeleteCall, user string) {
 
 		err = udc.Do()
 		if err == nil {
-			fmt.Println(cmn.GminMessage("**** gmin: user " + user + " deleted ****"))
+			logger.Infof(cmn.InfoUserDeleted, user)
+			fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoUserDeleted, user)))
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(errors.New(cmn.GminMessage("gmin: error - " + err.Error() + " " + user)))
+			return backoff.Permanent(errors.New(cmn.GminMessage(fmt.Sprintf(cmn.ErrBatchUser, err.Error(), user))))
 		}
-		return errors.New(cmn.GminMessage("gmin: error - " + err.Error() + " " + user))
+		// Log the retries
+		logger.Errorw(err.Error(),
+			"retrying", b.Clock.Now().String(),
+			"user", user)
+		return errors.New(cmn.GminMessage(fmt.Sprintf(cmn.ErrBatchUser, err.Error(), user)))
 	}, b)
 	if err != nil {
+		// Log final error
+		logger.Error(err)
 		fmt.Println(err)
 	}
 }

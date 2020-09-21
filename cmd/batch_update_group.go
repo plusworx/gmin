@@ -74,16 +74,19 @@ var batchUpdGrpCmd = &cobra.Command{
 func doBatchUpdGrp(cmd *cobra.Command, args []string) error {
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupScope)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	scanner, err := cmn.InputFromStdIn(inputFile)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	if inputFile == "" && scanner == nil {
-		err := errors.New("gmin: error - must provide inputfile")
+		err := errors.New(cmn.ErrNoInputFile)
+		logger.Error(err)
 		return err
 	}
 
@@ -91,23 +94,28 @@ func doBatchUpdGrp(cmd *cobra.Command, args []string) error {
 
 	ok := cmn.SliceContainsStr(cmn.ValidFileFormats, lwrFmt)
 	if !ok {
-		return fmt.Errorf("gmin: error - %v is not a valid file format", format)
+		err = fmt.Errorf(cmn.ErrInvalidFileFormat, format)
+		logger.Error(err)
+		return err
 	}
 
 	switch {
 	case lwrFmt == "csv":
 		err := btchUpdGrpProcessCSV(ds, inputFile)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 	case lwrFmt == "json":
 		err := btchUpdGrpProcessJSON(ds, inputFile, scanner)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 	case lwrFmt == "gsheet":
 		err := btchUpdGrpProcessSheet(ds, inputFile)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 	}
@@ -126,35 +134,43 @@ func btchUpdJSONGroup(ds *admin.Service, jsonData string) (*admin.Group, string,
 	jsonBytes := []byte(jsonData)
 
 	if !json.Valid(jsonBytes) {
-		return nil, "", errors.New("gmin: error - attribute string is not valid JSON")
+		logger.Error(cmn.ErrInvalidJSONAttr)
+		return nil, "", errors.New(cmn.ErrInvalidJSONAttr)
 	}
 
 	outStr, err := cmn.ParseInputAttrs(jsonBytes)
 	if err != nil {
+		logger.Error(err)
 		return nil, "", err
 	}
 
 	err = cmn.ValidateInputAttrs(outStr, grps.GroupAttrMap)
 	if err != nil {
+		logger.Error(err)
 		return nil, "", err
 	}
 
 	err = json.Unmarshal(jsonBytes, &grpKey)
 	if err != nil {
+		logger.Error(err)
 		return nil, "", err
 	}
 
 	if grpKey.GroupKey == "" {
-		return nil, "", errors.New("gmin: error - groupKey must be included in the JSON input string")
+		err = errors.New(cmn.ErrNoJSONGroupKey)
+		logger.Error(err)
+		return nil, "", err
 	}
 
 	err = json.Unmarshal(jsonBytes, &group)
 	if err != nil {
+		logger.Error(err)
 		return nil, "", err
 	}
 
 	err = json.Unmarshal(jsonBytes, &emptyVals)
 	if err != nil {
+		logger.Error(err)
 		return nil, "", err
 	}
 	if len(emptyVals.ForceSendFields) > 0 {
@@ -190,15 +206,22 @@ func btchGrpUpdateProcess(group *admin.Group, wg *sync.WaitGroup, guc *admin.Gro
 		var err error
 		_, err = guc.Do()
 		if err == nil {
-			fmt.Println(cmn.GminMessage("**** gmin: group " + groupKey + " updated ****"))
+			logger.Infof(cmn.InfoGroupUpdated, groupKey)
+			fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoGroupUpdated, groupKey)))
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(errors.New(cmn.GminMessage("gmin: error - " + err.Error() + " " + groupKey)))
+			return backoff.Permanent(errors.New(cmn.GminMessage(fmt.Sprintf(cmn.ErrBatchGroup, err.Error(), groupKey))))
 		}
-		return errors.New(cmn.GminMessage("gmin: error - " + err.Error() + " " + groupKey))
+		// Log the retries
+		logger.Errorw(err.Error(),
+			"retrying", b.Clock.Now().String(),
+			"group", groupKey)
+		return errors.New(cmn.GminMessage(fmt.Sprintf(cmn.ErrBatchGroup, err.Error(), groupKey)))
 	}, b)
 	if err != nil {
+		// Log final error
+		logger.Error(err)
 		fmt.Println(err)
 	}
 }
@@ -213,6 +236,7 @@ func btchUpdGrpProcessCSV(ds *admin.Service, filePath string) error {
 
 	csvfile, err := os.Open(filePath)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 	defer csvfile.Close()
@@ -226,6 +250,7 @@ func btchUpdGrpProcessCSV(ds *admin.Service, filePath string) error {
 			break
 		}
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 
@@ -237,6 +262,7 @@ func btchUpdGrpProcessCSV(ds *admin.Service, filePath string) error {
 			hdrMap = cmn.ProcessHeader(iSlice)
 			err = cmn.ValidateHeader(hdrMap, grps.GroupAttrMap)
 			if err != nil {
+				logger.Error(err)
 				return err
 			}
 			count = count + 1
@@ -249,7 +275,8 @@ func btchUpdGrpProcessCSV(ds *admin.Service, filePath string) error {
 
 		grpVar, groupKey, err := btchUpdProcessGroup(hdrMap, iSlice)
 		if err != nil {
-			fmt.Println(err.Error())
+			logger.Error(err)
+			return err
 		}
 
 		groups = append(groups, grpVar)
@@ -260,6 +287,7 @@ func btchUpdGrpProcessCSV(ds *admin.Service, filePath string) error {
 
 	err = btchUpdateGroups(ds, groups, groupKeys)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 	return nil
@@ -274,6 +302,7 @@ func btchUpdGrpProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Sc
 	if filePath != "" {
 		file, err := os.Open(filePath)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 		defer file.Close()
@@ -286,6 +315,7 @@ func btchUpdGrpProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Sc
 
 		grpVar, groupKey, err := btchUpdJSONGroup(ds, jsonData)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 
@@ -294,11 +324,13 @@ func btchUpdGrpProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Sc
 	}
 	err := scanner.Err()
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	err = btchUpdateGroups(ds, groups, groupKeys)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
@@ -312,27 +344,34 @@ func btchUpdGrpProcessSheet(ds *admin.Service, sheetID string) error {
 	)
 
 	if sheetRange == "" {
-		return errors.New("gmin: error - sheetrange must be provided")
+		err := errors.New(cmn.ErrNoSheetRange)
+		logger.Error(err)
+		return err
 	}
 
 	ss, err := cmn.CreateSheetService(sheet.DriveReadonlyScope)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	ssvgc := ss.Spreadsheets.Values.Get(sheetID, sheetRange)
 	sValRange, err := ssvgc.Do()
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	if len(sValRange.Values) == 0 {
-		return errors.New("gmin: error - no data found in sheet " + sheetID + " range: " + sheetRange)
+		err = fmt.Errorf(cmn.ErrNoSheetDataFound, sheetID, sheetRange)
+		logger.Error(err)
+		return err
 	}
 
 	hdrMap := cmn.ProcessHeader(sValRange.Values[0])
 	err = cmn.ValidateHeader(hdrMap, grps.GroupAttrMap)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
@@ -343,6 +382,7 @@ func btchUpdGrpProcessSheet(ds *admin.Service, sheetID string) error {
 
 		grpVar, groupKey, err := btchUpdProcessGroup(hdrMap, row)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 
@@ -352,6 +392,7 @@ func btchUpdGrpProcessSheet(ds *admin.Service, sheetID string) error {
 
 	err = btchUpdateGroups(ds, groups, groupKeys)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 

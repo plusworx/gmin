@@ -58,22 +58,26 @@ var batchDelMemberCmd = &cobra.Command{
 func doBatchDelMember(cmd *cobra.Command, args []string) error {
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupMemberScope)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	scanner, err := cmn.InputFromStdIn(inputFile)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	if inputFile == "" && scanner == nil {
-		err := errors.New("gmin: error - must provide inputfile")
+		err := errors.New(cmn.ErrNoInputFile)
+		logger.Error(err)
 		return err
 	}
 
 	if scanner == nil {
 		file, err := os.Open(inputFile)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 		defer file.Close()
@@ -108,15 +112,22 @@ func deleteMember(wg *sync.WaitGroup, mdc *admin.MembersDeleteCall, member strin
 		var err error
 		err = mdc.Do()
 		if err == nil {
-			fmt.Println(cmn.GminMessage("**** gmin: member " + member + " of group " + group + " deleted ****"))
+			logger.Infof(cmn.InfoMemberDeleted, member, group)
+			fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoMemberDeleted, member, group)))
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(errors.New(cmn.GminMessage("gmin: error - " + err.Error() + " " + member)))
+			return backoff.Permanent(errors.New(cmn.GminMessage(fmt.Sprintf(cmn.ErrBatchMember, err.Error(), member))))
 		}
-		return errors.New(cmn.GminMessage("gmin: error - " + err.Error() + " " + member))
+		logger.Errorw(err.Error(),
+			"retrying", b.Clock.Now().String(),
+			"group", group,
+			"member", member)
+		return errors.New(cmn.GminMessage(fmt.Sprintf(cmn.ErrBatchMember, err.Error(), member)))
 	}, b)
 	if err != nil {
+		// Log final error
+		logger.Error(err)
 		fmt.Println(err)
 	}
 }

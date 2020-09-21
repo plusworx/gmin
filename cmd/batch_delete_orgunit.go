@@ -58,27 +58,32 @@ var batchDelOrgUnitCmd = &cobra.Command{
 func doBatchDelOrgUnit(cmd *cobra.Command, args []string) error {
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryOrgunitScope)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	customerID, err := cfg.ReadConfigString("customerid")
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	scanner, err := cmn.InputFromStdIn(inputFile)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	if inputFile == "" && scanner == nil {
-		err := errors.New("gmin: error - must provide inputfile")
+		err := errors.New(cmn.ErrNoInputFile)
+		logger.Error(err)
 		return err
 	}
 
 	if scanner == nil {
 		file, err := os.Open(inputFile)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 		defer file.Close()
@@ -122,15 +127,22 @@ func deleteOU(wg *sync.WaitGroup, oudc *admin.OrgunitsDeleteCall, ouPath string)
 
 		err = oudc.Do()
 		if err == nil {
-			fmt.Println(cmn.GminMessage("**** gmin: orgunit " + ouPath + " deleted ****"))
+			logger.Infof(cmn.InfoOUDeleted, ouPath)
+			fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoOUDeleted, ouPath)))
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(errors.New(cmn.GminMessage("gmin: error - " + err.Error() + " " + ouPath)))
+			return backoff.Permanent(errors.New(cmn.GminMessage(fmt.Sprintf(cmn.ErrBatchOU, err.Error(), ouPath))))
 		}
-		return errors.New(cmn.GminMessage("gmin: error - " + err.Error() + " " + ouPath))
+		// Log the retries
+		logger.Errorw(err.Error(),
+			"retrying", b.Clock.Now().String(),
+			"orgunit", ouPath)
+		return errors.New(cmn.GminMessage(fmt.Sprintf(cmn.ErrBatchOU, err.Error(), ouPath)))
 	}, b)
 	if err != nil {
+		// Log final error
+		logger.Error(err)
 		fmt.Println(err)
 	}
 }

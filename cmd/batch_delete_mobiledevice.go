@@ -58,27 +58,32 @@ lkalkju9027ja98na65wqHaTBOOUgarTQKk9`,
 func doBatchDelMobDev(cmd *cobra.Command, args []string) error {
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryDeviceMobileScope)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	customerID, err := cfg.ReadConfigString("customerid")
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	scanner, err := cmn.InputFromStdIn(inputFile)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	if inputFile == "" && scanner == nil {
-		err := errors.New("gmin: error - must provide inputfile")
+		err := errors.New(cmn.ErrNoInputFile)
+		logger.Error(err)
 		return err
 	}
 
 	if scanner == nil {
 		file, err := os.Open(inputFile)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 		defer file.Close()
@@ -112,15 +117,22 @@ func deleteMobDev(wg *sync.WaitGroup, mdc *admin.MobiledevicesDeleteCall, resour
 		var err error
 		err = mdc.Do()
 		if err == nil {
-			fmt.Println(cmn.GminMessage("**** gmin: mobile device " + resourceID + " deleted ****"))
+			logger.Infof(cmn.InfoMobileDeviceDeleted, resourceID)
+			fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoMobileDeviceDeleted, resourceID)))
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(errors.New(cmn.GminMessage("gmin: error - " + err.Error() + " " + resourceID)))
+			return backoff.Permanent(errors.New(cmn.GminMessage(fmt.Sprintf(cmn.ErrBatchMobileDevice, err.Error(), resourceID))))
 		}
-		return errors.New(cmn.GminMessage("gmin: error - " + err.Error() + " " + resourceID))
+		// Log the retries
+		logger.Errorw(err.Error(),
+			"retrying", b.Clock.Now().String(),
+			"mobile device", resourceID)
+		return errors.New(cmn.GminMessage(fmt.Sprintf(cmn.ErrBatchMobileDevice, err.Error(), resourceID)))
 	}, b)
 	if err != nil {
+		// Log final error
+		logger.Error(err)
 		fmt.Println(err)
 	}
 }

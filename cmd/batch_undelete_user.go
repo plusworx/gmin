@@ -72,16 +72,19 @@ var batchUndelUserCmd = &cobra.Command{
 func doBatchUndelUser(cmd *cobra.Command, args []string) error {
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserScope)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	scanner, err := cmn.InputFromStdIn(inputFile)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	if inputFile == "" && scanner == nil {
-		err := errors.New("gmin: error - must provide inputfile")
+		err := errors.New(cmn.ErrNoInputFile)
+		logger.Error(err)
 		return err
 	}
 
@@ -89,23 +92,28 @@ func doBatchUndelUser(cmd *cobra.Command, args []string) error {
 
 	ok := cmn.SliceContainsStr(cmn.ValidFileFormats, lwrFmt)
 	if !ok {
-		return fmt.Errorf("gmin: error - %v is not a valid file format", format)
+		err = fmt.Errorf(cmn.ErrInvalidFileFormat, format)
+		logger.Error(err)
+		return err
 	}
 
 	switch {
 	case lwrFmt == "csv":
 		err := btchUndelUsrProcessCSV(ds, inputFile)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 	case lwrFmt == "json":
 		err := btchUndelUsrProcessJSON(ds, inputFile, scanner)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 	case lwrFmt == "gsheet":
 		err := btchUndelUsrProcessSheet(ds, inputFile)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 	}
@@ -118,21 +126,25 @@ func btchUndelJSONUser(ds *admin.Service, jsonData string) (usrs.UndeleteUser, e
 	jsonBytes := []byte(jsonData)
 
 	if !json.Valid(jsonBytes) {
-		return undelUser, errors.New("gmin: error - attribute string is not valid JSON")
+		logger.Error(cmn.ErrInvalidJSONAttr)
+		return undelUser, errors.New(cmn.ErrInvalidJSONAttr)
 	}
 
 	outStr, err := cmn.ParseInputAttrs(jsonBytes)
 	if err != nil {
+		logger.Error(err)
 		return undelUser, err
 	}
 
 	err = cmn.ValidateInputAttrs(outStr, usrs.UserAttrMap)
 	if err != nil {
+		logger.Error(err)
 		return undelUser, err
 	}
 
 	err = json.Unmarshal(jsonBytes, &undelUser)
 	if err != nil {
+		logger.Error(err)
 		return undelUser, err
 	}
 
@@ -173,15 +185,22 @@ func btchUsrUndelProcess(userKey string, wg *sync.WaitGroup, uuc *admin.UsersUnd
 		var err error
 		err = uuc.Do()
 		if err == nil {
-			fmt.Println(cmn.GminMessage("**** gmin: user " + userKey + " undeleted ****"))
+			logger.Infof(cmn.InfoUserUndeleted, userKey)
+			fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoUserUndeleted, userKey)))
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(errors.New(cmn.GminMessage("gmin: error - " + err.Error() + " " + userKey)))
+			return backoff.Permanent(errors.New(cmn.GminMessage(fmt.Sprintf(cmn.ErrBatchUser, err.Error(), userKey))))
 		}
-		return errors.New(cmn.GminMessage("gmin: error - " + err.Error() + " " + userKey))
+		// Log the retries
+		logger.Errorw(err.Error(),
+			"retrying", b.Clock.Now().String(),
+			"user", userKey)
+		return errors.New(cmn.GminMessage(fmt.Sprintf(cmn.ErrBatchUser, err.Error(), userKey)))
 	}, b)
 	if err != nil {
+		// Log final error
+		logger.Error(err)
 		fmt.Println(err)
 	}
 }
@@ -195,6 +214,7 @@ func btchUndelUsrProcessCSV(ds *admin.Service, filePath string) error {
 
 	csvfile, err := os.Open(filePath)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 	defer csvfile.Close()
@@ -208,6 +228,7 @@ func btchUndelUsrProcessCSV(ds *admin.Service, filePath string) error {
 			break
 		}
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 
@@ -219,6 +240,7 @@ func btchUndelUsrProcessCSV(ds *admin.Service, filePath string) error {
 			hdrMap = cmn.ProcessHeader(iSlice)
 			err = cmn.ValidateHeader(hdrMap, usrs.UserAttrMap)
 			if err != nil {
+				logger.Error(err)
 				return err
 			}
 			count = count + 1
@@ -231,7 +253,8 @@ func btchUndelUsrProcessCSV(ds *admin.Service, filePath string) error {
 
 		undelUserVar, err := btchUndelProcessUser(hdrMap, iSlice)
 		if err != nil {
-			fmt.Println(err.Error())
+			logger.Error(err)
+			return err
 		}
 
 		undelUsers = append(undelUsers, undelUserVar)
@@ -241,6 +264,7 @@ func btchUndelUsrProcessCSV(ds *admin.Service, filePath string) error {
 
 	err = btchUndelUsers(ds, undelUsers)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 	return nil
@@ -252,6 +276,7 @@ func btchUndelUsrProcessJSON(ds *admin.Service, filePath string, scanner *bufio.
 	if filePath != "" {
 		file, err := os.Open(filePath)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 		defer file.Close()
@@ -264,6 +289,7 @@ func btchUndelUsrProcessJSON(ds *admin.Service, filePath string, scanner *bufio.
 
 		undelUserVar, err := btchUndelJSONUser(ds, jsonData)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 
@@ -271,11 +297,13 @@ func btchUndelUsrProcessJSON(ds *admin.Service, filePath string, scanner *bufio.
 	}
 	err := scanner.Err()
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	err = btchUndelUsers(ds, undelUsers)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
@@ -286,27 +314,34 @@ func btchUndelUsrProcessSheet(ds *admin.Service, sheetID string) error {
 	var undelUsers []usrs.UndeleteUser
 
 	if sheetRange == "" {
-		return errors.New("gmin: error - sheetrange must be provided")
+		err := errors.New(cmn.ErrNoSheetRange)
+		logger.Error(err)
+		return err
 	}
 
 	ss, err := cmn.CreateSheetService(sheet.DriveReadonlyScope)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	ssvgc := ss.Spreadsheets.Values.Get(sheetID, sheetRange)
 	sValRange, err := ssvgc.Do()
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	if len(sValRange.Values) == 0 {
-		return errors.New("gmin: error - no data found in sheet " + sheetID + " range: " + sheetRange)
+		err = fmt.Errorf(cmn.ErrNoSheetDataFound, sheetID, sheetRange)
+		logger.Error(err)
+		return err
 	}
 
 	hdrMap := cmn.ProcessHeader(sValRange.Values[0])
 	err = cmn.ValidateHeader(hdrMap, usrs.UserAttrMap)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
@@ -317,6 +352,7 @@ func btchUndelUsrProcessSheet(ds *admin.Service, sheetID string) error {
 
 		undelUserVar, err := btchUndelProcessUser(hdrMap, row)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 
@@ -325,6 +361,7 @@ func btchUndelUsrProcessSheet(ds *admin.Service, sheetID string) error {
 
 	err = btchUndelUsers(ds, undelUsers)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 

@@ -85,16 +85,19 @@ var batchMngCrOSDevCmd = &cobra.Command{
 func doBatchMngCrOSDev(cmd *cobra.Command, args []string) error {
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryDeviceChromeosScope)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	scanner, err := cmn.InputFromStdIn(inputFile)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	if inputFile == "" && scanner == nil {
-		err := errors.New("gmin: error - must provide inputfile")
+		err := errors.New(cmn.ErrNoInputFile)
+		logger.Error(err)
 		return err
 	}
 
@@ -102,23 +105,28 @@ func doBatchMngCrOSDev(cmd *cobra.Command, args []string) error {
 
 	ok := cmn.SliceContainsStr(cmn.ValidFileFormats, lwrFmt)
 	if !ok {
-		return fmt.Errorf("gmin: error - %v is not a valid file format", format)
+		err = fmt.Errorf(cmn.ErrInvalidFileFormat, format)
+		logger.Error(err)
+		return err
 	}
 
 	switch {
 	case lwrFmt == "csv":
 		err := btchMngCrOSDevProcessCSV(ds, inputFile)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 	case lwrFmt == "json":
 		err := btchMngCrOSDevProcessJSON(ds, inputFile, scanner)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 	case lwrFmt == "gsheet":
 		err := btchMngCrOSDevProcessSheet(ds, inputFile)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 	}
@@ -131,21 +139,25 @@ func btchMngJSONCrOSDev(ds *admin.Service, jsonData string) (cdevs.ManagedDevice
 	jsonBytes := []byte(jsonData)
 
 	if !json.Valid(jsonBytes) {
-		return managedDev, errors.New("gmin: error - attribute string is not valid JSON")
+		logger.Error(cmn.ErrInvalidJSONAttr)
+		return managedDev, errors.New(cmn.ErrInvalidJSONAttr)
 	}
 
 	outStr, err := cmn.ParseInputAttrs(jsonBytes)
 	if err != nil {
+		logger.Error(err)
 		return managedDev, err
 	}
 
 	err = cmn.ValidateInputAttrs(outStr, cdevs.CrOSDevAttrMap)
 	if err != nil {
+		logger.Error(err)
 		return managedDev, err
 	}
 
 	err = json.Unmarshal(jsonBytes, &managedDev)
 	if err != nil {
+		logger.Error(err)
 		return managedDev, err
 	}
 
@@ -155,6 +167,7 @@ func btchMngJSONCrOSDev(ds *admin.Service, jsonData string) (cdevs.ManagedDevice
 func btchMngCrOSDevs(ds *admin.Service, managedDevs []cdevs.ManagedDevice) error {
 	customerID, err := cfg.ReadConfigString("customerid")
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
@@ -188,15 +201,22 @@ func btchMngCrOSDevProcess(deviceID string, action string, wg *sync.WaitGroup, c
 		var err error
 		err = cdac.Do()
 		if err == nil {
-			fmt.Println(cmn.GminMessage("**** gmin: " + action + " successfully performed on ChromeOS device " + deviceID + " ****"))
+			logger.Infof(cmn.InfoCDevActionPerformed, action, deviceID)
+			fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoCDevActionPerformed, action, deviceID)))
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(errors.New(cmn.GminMessage("gmin: error - " + err.Error() + " " + deviceID)))
+			return backoff.Permanent(errors.New(cmn.GminMessage(fmt.Sprintf(cmn.ErrBatchChromeOSDevice, err.Error(), deviceID))))
 		}
-		return errors.New(cmn.GminMessage("gmin: error - " + err.Error() + " " + deviceID))
+		// Log the retries
+		logger.Errorw(err.Error(),
+			"retrying", b.Clock.Now().String(),
+			"ChromeOS device", deviceID)
+		return errors.New(cmn.GminMessage(fmt.Sprintf(cmn.ErrBatchChromeOSDevice, err.Error(), deviceID)))
 	}, b)
 	if err != nil {
+		// Log final error
+		logger.Error(err)
 		fmt.Println(err)
 	}
 }
@@ -210,6 +230,7 @@ func btchMngCrOSDevProcessCSV(ds *admin.Service, filePath string) error {
 
 	csvfile, err := os.Open(filePath)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 	defer csvfile.Close()
@@ -223,6 +244,7 @@ func btchMngCrOSDevProcessCSV(ds *admin.Service, filePath string) error {
 			break
 		}
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 
@@ -234,6 +256,7 @@ func btchMngCrOSDevProcessCSV(ds *admin.Service, filePath string) error {
 			hdrMap = cmn.ProcessHeader(iSlice)
 			err = cmn.ValidateHeader(hdrMap, cdevs.CrOSDevAttrMap)
 			if err != nil {
+				logger.Error(err)
 				return err
 			}
 			count = count + 1
@@ -246,6 +269,7 @@ func btchMngCrOSDevProcessCSV(ds *admin.Service, filePath string) error {
 
 		mngCdevVar, err := btchMngProcessCrOSDev(hdrMap, iSlice)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 
@@ -256,6 +280,7 @@ func btchMngCrOSDevProcessCSV(ds *admin.Service, filePath string) error {
 
 	err = btchMngCrOSDevs(ds, managedDevs)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 	return nil
@@ -267,6 +292,7 @@ func btchMngCrOSDevProcessJSON(ds *admin.Service, filePath string, scanner *bufi
 	if filePath != "" {
 		file, err := os.Open(filePath)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 		defer file.Close()
@@ -279,6 +305,7 @@ func btchMngCrOSDevProcessJSON(ds *admin.Service, filePath string, scanner *bufi
 
 		mngCdevVar, err := btchMngJSONCrOSDev(ds, jsonData)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 
@@ -286,11 +313,13 @@ func btchMngCrOSDevProcessJSON(ds *admin.Service, filePath string, scanner *bufi
 	}
 	err := scanner.Err()
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	err = btchMngCrOSDevs(ds, managedDevs)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
@@ -301,27 +330,34 @@ func btchMngCrOSDevProcessSheet(ds *admin.Service, sheetID string) error {
 	var managedDevs []cdevs.ManagedDevice
 
 	if sheetRange == "" {
-		return errors.New("gmin: error - sheetrange must be provided")
+		err := errors.New(cmn.ErrNoSheetRange)
+		logger.Error(err)
+		return err
 	}
 
 	ss, err := cmn.CreateSheetService(sheet.DriveReadonlyScope)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	ssvgc := ss.Spreadsheets.Values.Get(sheetID, sheetRange)
 	sValRange, err := ssvgc.Do()
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	if len(sValRange.Values) == 0 {
-		return errors.New("gmin: error - no data found in sheet " + sheetID + " range: " + sheetRange)
+		err = fmt.Errorf(cmn.ErrNoSheetDataFound, sheetID, sheetRange)
+		logger.Error(err)
+		return err
 	}
 
 	hdrMap := cmn.ProcessHeader(sValRange.Values[0])
 	err = cmn.ValidateHeader(hdrMap, cdevs.CrOSDevAttrMap)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
@@ -332,6 +368,7 @@ func btchMngCrOSDevProcessSheet(ds *admin.Service, sheetID string) error {
 
 		mngCdevVar, err := btchMngProcessCrOSDev(hdrMap, row)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 
@@ -340,6 +377,7 @@ func btchMngCrOSDevProcessSheet(ds *admin.Service, sheetID string) error {
 
 	err = btchMngCrOSDevs(ds, managedDevs)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
@@ -357,7 +395,9 @@ func btchMngProcessCrOSDev(hdrMap map[int]string, cdevData []interface{}) (cdevs
 			lwrAction := strings.ToLower(fmt.Sprintf("%v", attr))
 			ok := cmn.SliceContainsStr(cdevs.ValidActions, lwrAction)
 			if !ok {
-				return managedDev, fmt.Errorf("gmin: error - %v is not a valid action type", fmt.Sprintf("%v", attr))
+				err := fmt.Errorf(cmn.ErrInvalidActionType, fmt.Sprintf("%v", attr))
+				logger.Error(err)
+				return managedDev, err
 			}
 			managedDev.Action = lwrAction
 		case attrName == "deviceId":
@@ -367,7 +407,9 @@ func btchMngProcessCrOSDev(hdrMap map[int]string, cdevData []interface{}) (cdevs
 			if lwrReason != "" {
 				ok := cmn.SliceContainsStr(cdevs.ValidDeprovisionReasons, lwrReason)
 				if !ok {
-					return managedDev, fmt.Errorf("gmin: error - %v is not a valid deprovision reason", fmt.Sprintf("%v", attr))
+					err := fmt.Errorf(cmn.ErrInvalidDeprovisionReason, fmt.Sprintf("%v", attr))
+					logger.Error(err)
+					return managedDev, err
 				}
 			}
 			managedDev.DeprovisionReason = fmt.Sprintf("%v", attr)
@@ -375,7 +417,9 @@ func btchMngProcessCrOSDev(hdrMap map[int]string, cdevData []interface{}) (cdevs
 	}
 
 	if managedDev.Action == "deprovision" && managedDev.DeprovisionReason == "" {
-		return managedDev, errors.New("gmin: error - must provide a deprovision reason")
+		err := errors.New(cmn.ErrNoDeprovisionReason)
+		logger.Error(err)
+		return managedDev, err
 	}
 
 	return managedDev, nil
@@ -387,6 +431,4 @@ func init() {
 	batchMngCrOSDevCmd.Flags().StringVarP(&inputFile, "inputfile", "i", "", "filepath to device data file")
 	batchMngCrOSDevCmd.Flags().StringVarP(&format, "format", "f", "json", "user data file format")
 	batchMngCrOSDevCmd.Flags().StringVarP(&sheetRange, "sheetrange", "s", "", "user data gsheet range")
-
-	batchMngCrOSDevCmd.MarkFlagRequired("inputfile")
 }

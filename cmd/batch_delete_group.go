@@ -57,22 +57,26 @@ unused_group@company.com`,
 func doBatchDelGroup(cmd *cobra.Command, args []string) error {
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupScope)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	scanner, err := cmn.InputFromStdIn(inputFile)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	if inputFile == "" && scanner == nil {
-		err := errors.New("gmin: error - must provide inputfile")
+		err := errors.New(cmn.ErrNoInputFile)
+		logger.Error(err)
 		return err
 	}
 
 	if scanner == nil {
 		file, err := os.Open(inputFile)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 		defer file.Close()
@@ -107,15 +111,22 @@ func deleteGroup(wg *sync.WaitGroup, gdc *admin.GroupsDeleteCall, group string) 
 
 		err = gdc.Do()
 		if err == nil {
-			fmt.Println(cmn.GminMessage("**** gmin: group " + group + " deleted ****"))
+			logger.Infof(cmn.InfoGroupDeleted, group)
+			fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoGroupDeleted, group)))
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(errors.New(cmn.GminMessage("gmin: error - " + err.Error() + " " + group)))
+			return backoff.Permanent(errors.New(cmn.GminMessage(fmt.Sprintf(cmn.ErrBatchGroup, err.Error(), group))))
 		}
-		return errors.New(cmn.GminMessage("gmin: error - " + err.Error() + " " + group))
+		// Log the retries
+		logger.Errorw(err.Error(),
+			"retrying", b.Clock.Now().String(),
+			"group", group)
+		return errors.New(cmn.GminMessage(fmt.Sprintf(cmn.ErrBatchGroup, err.Error(), group)))
 	}, b)
 	if err != nil {
+		// Log final error
+		logger.Error(err)
 		fmt.Println(err)
 	}
 }
