@@ -102,7 +102,7 @@ func doBatchDelOrgUnit(cmd *cobra.Command, args []string) error {
 
 		oudc := ds.Orgunits.Delete(customerID, text)
 
-		// Sleep for 2 seconds because only 1 orgunit can be created per second but 1 second interval
+		// Sleep for 2 seconds because only 1 orgunit can be deleted per second but 1 second interval
 		// still results in rate limit errors
 		time.Sleep(2 * time.Second)
 
@@ -132,18 +132,18 @@ func deleteOU(wg *sync.WaitGroup, oudc *admin.OrgunitsDeleteCall, ouPath string)
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(errors.New(cmn.GminMessage(fmt.Sprintf(cmn.ErrBatchOU, err.Error(), ouPath))))
+			return backoff.Permanent(fmt.Errorf(cmn.ErrBatchOU, err.Error(), ouPath))
 		}
 		// Log the retries
 		logger.Errorw(err.Error(),
 			"retrying", b.Clock.Now().String(),
 			"orgunit", ouPath)
-		return errors.New(cmn.GminMessage(fmt.Sprintf(cmn.ErrBatchOU, err.Error(), ouPath)))
+		return fmt.Errorf(cmn.ErrBatchOU, err.Error(), ouPath)
 	}, b)
 	if err != nil {
 		// Log final error
 		logger.Error(err)
-		fmt.Println(err)
+		fmt.Println(cmn.GminMessage(err.Error()))
 	}
 }
 

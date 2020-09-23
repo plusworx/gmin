@@ -117,18 +117,18 @@ func deleteMember(wg *sync.WaitGroup, mdc *admin.MembersDeleteCall, member strin
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(errors.New(cmn.GminMessage(fmt.Sprintf(cmn.ErrBatchMember, err.Error(), member))))
+			return backoff.Permanent(fmt.Errorf(cmn.ErrBatchMember, err.Error(), member))
 		}
 		logger.Errorw(err.Error(),
 			"retrying", b.Clock.Now().String(),
 			"group", group,
 			"member", member)
-		return errors.New(cmn.GminMessage(fmt.Sprintf(cmn.ErrBatchMember, err.Error(), member)))
+		return fmt.Errorf(cmn.ErrBatchMember, err.Error(), member)
 	}, b)
 	if err != nil {
 		// Log final error
 		logger.Error(err)
-		fmt.Println(err)
+		fmt.Println(cmn.GminMessage(err.Error()))
 	}
 }
 

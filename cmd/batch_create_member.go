@@ -204,19 +204,19 @@ func btchMemInsertProcess(member *admin.Member, groupKey string, wg *sync.WaitGr
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(errors.New(cmn.GminMessage(fmt.Sprintf(cmn.ErrBatchMember, err.Error(), member.Email))))
+			return backoff.Permanent(fmt.Errorf(cmn.ErrBatchMember, err.Error(), member.Email))
 		}
 		// Log the retries
 		logger.Errorw(err.Error(),
 			"retrying", b.Clock.Now().String(),
 			"group", groupKey,
 			"member", member.Email)
-		return errors.New(cmn.GminMessage(fmt.Sprintf(cmn.ErrBatchMember, err.Error(), member.Email)))
+		return fmt.Errorf(cmn.ErrBatchMember, err.Error(), member.Email)
 	}, b)
 	if err != nil {
 		// Log final error
 		logger.Error(err)
-		fmt.Println(err)
+		fmt.Println(cmn.GminMessage(err.Error()))
 	}
 }
 

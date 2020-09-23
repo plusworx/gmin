@@ -206,18 +206,18 @@ func btchMngCrOSDevProcess(deviceID string, action string, wg *sync.WaitGroup, c
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(errors.New(cmn.GminMessage(fmt.Sprintf(cmn.ErrBatchChromeOSDevice, err.Error(), deviceID))))
+			return backoff.Permanent(fmt.Errorf(cmn.ErrBatchChromeOSDevice, err.Error(), deviceID))
 		}
 		// Log the retries
 		logger.Errorw(err.Error(),
 			"retrying", b.Clock.Now().String(),
 			"ChromeOS device", deviceID)
-		return errors.New(cmn.GminMessage(fmt.Sprintf(cmn.ErrBatchChromeOSDevice, err.Error(), deviceID)))
+		return fmt.Errorf(cmn.ErrBatchChromeOSDevice, err.Error(), deviceID)
 	}, b)
 	if err != nil {
 		// Log final error
 		logger.Error(err)
-		fmt.Println(err)
+		fmt.Println(cmn.GminMessage(err.Error()))
 	}
 }
 

@@ -190,18 +190,18 @@ func btchUsrUndelProcess(userKey string, wg *sync.WaitGroup, uuc *admin.UsersUnd
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(errors.New(cmn.GminMessage(fmt.Sprintf(cmn.ErrBatchUser, err.Error(), userKey))))
+			return backoff.Permanent(fmt.Errorf(cmn.ErrBatchUser, err.Error(), userKey))
 		}
 		// Log the retries
 		logger.Errorw(err.Error(),
 			"retrying", b.Clock.Now().String(),
 			"user", userKey)
-		return errors.New(cmn.GminMessage(fmt.Sprintf(cmn.ErrBatchUser, err.Error(), userKey)))
+		return fmt.Errorf(cmn.ErrBatchUser, err.Error(), userKey)
 	}, b)
 	if err != nil {
 		// Log final error
 		logger.Error(err)
-		fmt.Println(err)
+		fmt.Println(cmn.GminMessage(err.Error()))
 	}
 }
 

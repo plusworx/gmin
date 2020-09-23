@@ -117,18 +117,18 @@ func deleteUser(wg *sync.WaitGroup, udc *admin.UsersDeleteCall, user string) {
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(errors.New(cmn.GminMessage(fmt.Sprintf(cmn.ErrBatchUser, err.Error(), user))))
+			return backoff.Permanent(fmt.Errorf(cmn.ErrBatchUser, err.Error(), user))
 		}
 		// Log the retries
 		logger.Errorw(err.Error(),
 			"retrying", b.Clock.Now().String(),
 			"user", user)
-		return errors.New(cmn.GminMessage(fmt.Sprintf(cmn.ErrBatchUser, err.Error(), user)))
+		return fmt.Errorf(cmn.ErrBatchUser, err.Error(), user)
 	}, b)
 	if err != nil {
 		// Log final error
 		logger.Error(err)
-		fmt.Println(err)
+		fmt.Println(cmn.GminMessage(err.Error()))
 	}
 }
 

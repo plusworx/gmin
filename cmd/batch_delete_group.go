@@ -116,18 +116,18 @@ func deleteGroup(wg *sync.WaitGroup, gdc *admin.GroupsDeleteCall, group string) 
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(errors.New(cmn.GminMessage(fmt.Sprintf(cmn.ErrBatchGroup, err.Error(), group))))
+			return backoff.Permanent(fmt.Errorf(cmn.ErrBatchGroup, err.Error(), group))
 		}
 		// Log the retries
 		logger.Errorw(err.Error(),
 			"retrying", b.Clock.Now().String(),
 			"group", group)
-		return errors.New(cmn.GminMessage(fmt.Sprintf(cmn.ErrBatchGroup, err.Error(), group)))
+		return fmt.Errorf(cmn.ErrBatchGroup, err.Error(), group)
 	}, b)
 	if err != nil {
 		// Log final error
 		logger.Error(err)
-		fmt.Println(err)
+		fmt.Println(cmn.GminMessage(err.Error()))
 	}
 }
 

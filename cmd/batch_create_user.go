@@ -217,18 +217,18 @@ func btchUsrInsertProcess(user *admin.User, wg *sync.WaitGroup, uic *admin.Users
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(errors.New(cmn.GminMessage(fmt.Sprintf(cmn.ErrBatchUser, err.Error(), user.PrimaryEmail))))
+			return backoff.Permanent(fmt.Errorf(cmn.ErrBatchUser, err.Error(), user.PrimaryEmail))
 		}
 		// Log the retries
 		logger.Errorw(err.Error(),
 			"retrying", b.Clock.Now().String(),
 			"user", user.PrimaryEmail)
-		return errors.New(cmn.GminMessage(fmt.Sprintf(cmn.ErrBatchUser, err.Error(), user.PrimaryEmail)))
+		return fmt.Errorf(cmn.ErrBatchUser, err.Error(), user.PrimaryEmail)
 	}, b)
 	if err != nil {
 		// Log final error
 		logger.Error(err)
-		fmt.Println(err)
+		fmt.Println(cmn.GminMessage(err.Error()))
 	}
 }
 

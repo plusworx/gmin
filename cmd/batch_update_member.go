@@ -203,19 +203,19 @@ func btchMemUpdateProcess(member *admin.Member, groupKey string, wg *sync.WaitGr
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(errors.New(cmn.GminMessage(fmt.Sprintf(cmn.ErrBatchMember, err.Error(), memKey))))
+			return backoff.Permanent(fmt.Errorf(cmn.ErrBatchMember, err.Error(), memKey))
 		}
 		// Log the retries
 		logger.Errorw(err.Error(),
 			"retrying", b.Clock.Now().String(),
 			"group", groupKey,
 			"member", memKey)
-		return errors.New(cmn.GminMessage(fmt.Sprintf(cmn.ErrBatchMember, err.Error(), memKey)))
+		return fmt.Errorf(cmn.ErrBatchMember, err.Error(), memKey)
 	}, b)
 	if err != nil {
 		// Log final error
 		logger.Error(err)
-		fmt.Println(err)
+		fmt.Println(cmn.GminMessage(err.Error()))
 	}
 }
 

@@ -211,18 +211,18 @@ func btchGrpUpdateProcess(group *admin.Group, wg *sync.WaitGroup, guc *admin.Gro
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(errors.New(cmn.GminMessage(fmt.Sprintf(cmn.ErrBatchGroup, err.Error(), groupKey))))
+			return backoff.Permanent(fmt.Errorf(cmn.ErrBatchGroup, err.Error(), groupKey))
 		}
 		// Log the retries
 		logger.Errorw(err.Error(),
 			"retrying", b.Clock.Now().String(),
 			"group", groupKey)
-		return errors.New(cmn.GminMessage(fmt.Sprintf(cmn.ErrBatchGroup, err.Error(), groupKey)))
+		return fmt.Errorf(cmn.ErrBatchGroup, err.Error(), groupKey)
 	}, b)
 	if err != nil {
 		// Log final error
 		logger.Error(err)
-		fmt.Println(err)
+		fmt.Println(cmn.GminMessage(err.Error()))
 	}
 }
 

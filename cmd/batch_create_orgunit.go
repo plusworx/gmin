@@ -213,18 +213,18 @@ func btchOUInsertProcess(orgunit *admin.OrgUnit, wg *sync.WaitGroup, ouic *admin
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(errors.New(cmn.GminMessage(fmt.Sprintf(cmn.ErrBatchOU, err.Error(), orgunit.Name))))
+			return backoff.Permanent(fmt.Errorf(cmn.ErrBatchOU, err.Error(), orgunit.Name))
 		}
 		// Log the retries
 		logger.Errorw(err.Error(),
 			"retrying", b.Clock.Now().String(),
 			"orgunit", orgunit.Name)
-		return errors.New(cmn.GminMessage(fmt.Sprintf(cmn.ErrBatchOU, err.Error(), orgunit.Name)))
+		return fmt.Errorf(cmn.ErrBatchOU, err.Error(), orgunit.Name)
 	}, b)
 	if err != nil {
 		// Log final error
 		logger.Error(err)
-		fmt.Println(err)
+		fmt.Println(cmn.GminMessage(err.Error()))
 	}
 }
 

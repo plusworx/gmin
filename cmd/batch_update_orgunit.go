@@ -223,18 +223,18 @@ func btchOUUpdateProcess(orgunit *admin.OrgUnit, wg *sync.WaitGroup, ouuc *admin
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(errors.New(cmn.GminMessage(fmt.Sprintf(cmn.ErrBatchOU, err.Error(), ouKey))))
+			return backoff.Permanent(fmt.Errorf(cmn.ErrBatchOU, err.Error(), ouKey))
 		}
 		// Log the retries
 		logger.Errorw(err.Error(),
 			"retrying", b.Clock.Now().String(),
 			"orgunit", ouKey)
-		return errors.New(cmn.GminMessage(fmt.Sprintf(cmn.ErrBatchOU, err.Error(), ouKey)))
+		return fmt.Errorf(cmn.ErrBatchOU, err.Error(), ouKey)
 	}, b)
 	if err != nil {
 		// Log final error
 		logger.Error(err)
-		fmt.Println(err)
+		fmt.Println(cmn.GminMessage(err.Error()))
 	}
 }
 
