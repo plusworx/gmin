@@ -55,6 +55,7 @@ func doUpdateMember(cmd *cobra.Command, args []string) error {
 	if deliverySetting != "" {
 		validDS, err := mems.ValidateDeliverySetting(deliverySetting)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 		member.DeliverySettings = validDS
@@ -63,6 +64,7 @@ func doUpdateMember(cmd *cobra.Command, args []string) error {
 	if role != "" {
 		validRole, err := mems.ValidateRole(role)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 		member.Role = validRole
@@ -70,16 +72,19 @@ func doUpdateMember(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupMemberScope, admin.AdminDirectoryGroupScope)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	muc := ds.Members.Update(args[1], memberKey, member)
 	_, err = muc.Do()
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
-	fmt.Println(cmn.GminMessage("**** gmin: member " + memberKey + " updated in group " + args[1] + " ****"))
+	logger.Infof(cmn.InfoMemberUpdated, memberKey, args[1])
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoMemberUpdated, memberKey, args[1])))
 
 	return nil
 }

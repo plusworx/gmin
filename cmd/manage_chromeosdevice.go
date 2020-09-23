@@ -52,25 +52,31 @@ func doManageCrOSDev(cmd *cobra.Command, args []string) error {
 
 	customerID, err := cfg.ReadConfigString("customerid")
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	action := strings.ToLower(args[1])
 	ok := cmn.SliceContainsStr(cdevs.ValidActions, action)
 	if !ok {
-		return fmt.Errorf("gmin: error - %v is not a valid action type", args[1])
+		err = fmt.Errorf(cmn.ErrInvalidActionType, args[1])
+		logger.Error(err)
+		return err
 	}
 
 	devAction.Action = action
 	if action == "deprovision" {
 		if reason == "" {
-			return errors.New("gmin: error - must provide a reason for deprovision")
+			err = errors.New(cmn.ErrNoDeprovisionReason)
+			logger.Error(err)
+			return err
 		}
 		devAction.DeprovisionReason = reason
 	}
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryDeviceChromeosScope)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
@@ -79,6 +85,7 @@ func doManageCrOSDev(cmd *cobra.Command, args []string) error {
 	if attrs != "" {
 		manageAttrs, err := cmn.ParseOutputAttrs(attrs, cdevs.CrOSDevAttrMap)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 		formattedAttrs := cdevs.StartChromeDevicesField + manageAttrs + cdevs.EndField
@@ -88,10 +95,12 @@ func doManageCrOSDev(cmd *cobra.Command, args []string) error {
 
 	err = cdac.Do()
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
-	fmt.Println(cmn.GminMessage("**** gmin : " + args[1] + " successfully performed on ChromeOS device " + args[0] + " ****"))
+	logger.Infof(cmn.InfoCDevActionPerformed, args[1], args[0])
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoCDevActionPerformed, args[1], args[0])))
 
 	return nil
 }

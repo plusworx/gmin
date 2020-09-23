@@ -23,7 +23,10 @@ THE SOFTWARE.
 package cmd
 
 import (
+	"fmt"
 	"testing"
+
+	cmn "github.com/plusworx/gmin/utils/common"
 )
 
 func TestDoShowAttrs(t *testing.T) {
@@ -35,50 +38,50 @@ func TestDoShowAttrs(t *testing.T) {
 	}{
 		{
 			args:        []string{"user", "name", "givenname", "anothername"},
-			expectedErr: "gmin: error - maximum of 3 arguments exceeded",
+			expectedErr: cmn.ErrMax3ArgsExceeded,
 		},
 		{
 			args:        []string{"grp"},
 			composite:   true,
 			queryable:   true,
-			expectedErr: "gmin: error - cannot provide both --composite and --queryable flags",
+			expectedErr: cmn.ErrQueryAndCompositeFlags,
 		},
 		{
 			args:        []string{"user-alias", "email"},
 			queryable:   true,
-			expectedErr: "gmin: error - only one argument is allowed with --queryable flag",
+			expectedErr: cmn.ErrQueryableFlag1Arg,
 		},
 		{
 			args:        []string{"unrecognized"},
-			expectedErr: "gmin: error - unrecognized not found",
+			expectedErr: fmt.Sprintf(cmn.ErrObjectNotFound, "unrecognized"),
 		},
 		{
 			args:        []string{"schema", "fieldspec", "numericindexingspec"},
 			composite:   true,
-			expectedErr: "gmin: error - numericindexingspec does not have any composite attributes",
+			expectedErr: fmt.Sprintf(cmn.ErrNoCompositeAttrs, "numericindexingspec"),
 		},
 		{
 			args:        []string{"group", "email", "id"},
-			expectedErr: "gmin: error - email does not have any composite attributes",
+			expectedErr: fmt.Sprintf(cmn.ErrNoCompositeAttrs, "email"),
 		},
 		{
 			args:        []string{"cdev", "recentusers"},
 			composite:   true,
-			expectedErr: "gmin: error - recentusers does not have any composite attributes",
+			expectedErr: fmt.Sprintf(cmn.ErrNoCompositeAttrs, "recentusers"),
 		},
 		{
 			args:        []string{"ou", "name"},
-			expectedErr: "gmin: error - ou does not have any composite attributes",
+			expectedErr: fmt.Sprintf(cmn.ErrNoCompositeAttrs, "ou"),
 		},
 		{
 			args:        []string{"ga"},
 			queryable:   true,
-			expectedErr: "gmin: error - ga does not have any queryable attributes",
+			expectedErr: fmt.Sprintf(cmn.ErrNoQueryableAttrs, "ga"),
 		},
 		{
 			args:        []string{"gmem"},
 			composite:   true,
-			expectedErr: "gmin: error - group members do not have any composite attributes",
+			expectedErr: fmt.Sprintf(cmn.ErrNoCompositeAttrs, "gmem"),
 		},
 	}
 

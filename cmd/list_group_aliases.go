@@ -49,6 +49,7 @@ func doListGroupAliases(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupReadonlyScope)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
@@ -57,6 +58,7 @@ func doListGroupAliases(cmd *cobra.Command, args []string) error {
 	if attrs != "" {
 		listAttrs, err := cmn.ParseOutputAttrs(attrs, gas.GroupAliasAttrMap)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 		formattedAttrs := gas.StartAliasesField + listAttrs + gas.EndField
@@ -66,11 +68,13 @@ func doListGroupAliases(cmd *cobra.Command, args []string) error {
 
 	aliases, err = gas.DoList(galc)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	jsonData, err := json.MarshalIndent(aliases, "", "    ")
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 

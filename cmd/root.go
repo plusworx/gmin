@@ -167,12 +167,8 @@ func setupLogging(loglevel string) (*zap.Logger, error) {
 	switch loglevel {
 	case "info":
 		zconf.Level.SetLevel(zapcore.InfoLevel)
-	case "warn":
-		zconf.Level.SetLevel(zapcore.WarnLevel)
 	case "error":
 		zconf.Level.SetLevel(zapcore.ErrorLevel)
-	case "fatal":
-		zconf.Level.SetLevel(zapcore.FatalLevel)
 	default:
 		return nil, errors.New("gmin: error - loglevel " + loglevel + " is invalid")
 	}

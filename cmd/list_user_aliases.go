@@ -49,6 +49,7 @@ func doListUserAliases(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserAliasReadonlyScope)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
@@ -57,6 +58,7 @@ func doListUserAliases(cmd *cobra.Command, args []string) error {
 	if attrs != "" {
 		listAttrs, err := cmn.ParseOutputAttrs(attrs, uas.UserAliasAttrMap)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 		formattedAttrs := uas.StartAliasesField + listAttrs + uas.EndField
@@ -66,11 +68,13 @@ func doListUserAliases(cmd *cobra.Command, args []string) error {
 
 	aliases, err = uas.DoList(ualc)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	jsonData, err := json.MarshalIndent(aliases, "", "    ")
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 

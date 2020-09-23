@@ -53,11 +53,13 @@ func doGetOrgUnit(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryOrgunitReadonlyScope)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	customerID, err := cfg.ReadConfigString("customerid")
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
@@ -72,6 +74,7 @@ func doGetOrgUnit(cmd *cobra.Command, args []string) error {
 	if attrs != "" {
 		formattedAttrs, err := cmn.ParseOutputAttrs(attrs, ous.OrgUnitAttrMap)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 		getCall := ous.AddFields(ougc, formattedAttrs)
@@ -80,11 +83,13 @@ func doGetOrgUnit(cmd *cobra.Command, args []string) error {
 
 	orgUnit, err = ous.DoGet(ougc)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	jsonData, err = json.MarshalIndent(orgUnit, "", "    ")
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 

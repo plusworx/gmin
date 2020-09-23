@@ -60,7 +60,7 @@ var showFlagValsCmd = &cobra.Command{
 
 func doShowFlagVals(cmd *cobra.Command, args []string) error {
 	if len(args) > 2 {
-		return errors.New("gmin: error - exceeded maximum 2 arguments")
+		return errors.New(cmn.ErrMax2ArgsExceeded)
 	}
 
 	obj := strings.ToLower(args[0])
@@ -102,7 +102,7 @@ func doShowFlagVals(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	default:
-		return fmt.Errorf("gmin: error - %v is not recognized", args[0])
+		return fmt.Errorf(cmn.ErrObjectNotRecognized, args[0])
 	}
 	return nil
 }

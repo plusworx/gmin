@@ -45,6 +45,7 @@ var deleteUserAliasCmd = &cobra.Command{
 func doDeleteUserAlias(cmd *cobra.Command, args []string) error {
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserAliasScope)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
@@ -52,10 +53,12 @@ func doDeleteUserAlias(cmd *cobra.Command, args []string) error {
 
 	err = uadc.Do()
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
-	fmt.Println(cmn.GminMessage("**** gmin: user alias " + args[0] + " for user " + args[1] + " deleted ****"))
+	logger.Infof(cmn.InfoUserAliasDeleted, args[0], args[1])
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoUserAliasDeleted, args[0], args[1])))
 
 	return nil
 }

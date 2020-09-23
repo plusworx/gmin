@@ -64,6 +64,7 @@ func doUpdateUser(cmd *cobra.Command, args []string) error {
 	// Process command flags
 	err := processUpdUsrFlags(cmd, user, name, flagsPassed)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
@@ -76,26 +77,32 @@ func doUpdateUser(cmd *cobra.Command, args []string) error {
 		emptyVals := cmn.EmptyValues{}
 		jsonBytes := []byte(attrs)
 		if !json.Valid(jsonBytes) {
-			return errors.New("gmin: error - attribute string is not valid JSON")
+			err = errors.New(cmn.ErrInvalidJSONAttr)
+			logger.Error(err)
+			return err
 		}
 
 		outStr, err := cmn.ParseInputAttrs(jsonBytes)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 
 		err = cmn.ValidateInputAttrs(outStr, usrs.UserAttrMap)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 
 		err = json.Unmarshal(jsonBytes, &attrUser)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 
 		err = json.Unmarshal(jsonBytes, &emptyVals)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 		if len(emptyVals.ForceSendFields) > 0 {
@@ -104,22 +111,26 @@ func doUpdateUser(cmd *cobra.Command, args []string) error {
 
 		err = mergo.Merge(user, attrUser)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 	}
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserScope)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	uuc := ds.Users.Update(userKey, user)
 	_, err = uuc.Do()
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
-	fmt.Println(cmn.GminMessage("**** gmin: user " + userKey + " updated ****"))
+	logger.Infof(cmn.InfoUserUpdated, userKey)
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoUserUpdated, userKey)))
 
 	return nil
 }
@@ -151,7 +162,9 @@ func processUpdUsrFlags(cmd *cobra.Command, user *admin.User, name *admin.UserNa
 			user.ChangePasswordAtNextLogin = true
 		case "email":
 			if userEmail == "" {
-				return errors.New("gmin: error - email cannot be empty string")
+				err := errors.New(cmn.ErrEmptyEmail)
+				logger.Error(err)
+				return err
 			}
 			user.PrimaryEmail = userEmail
 		case "firstname":
@@ -159,6 +172,7 @@ func processUpdUsrFlags(cmd *cobra.Command, user *admin.User, name *admin.UserNa
 		case "forceSend":
 			fields, err := cmn.ParseForceSend(forceSend, usrs.UserAttrMap)
 			if err != nil {
+				logger.Error(err)
 				return err
 			}
 			for _, fld := range fields {
@@ -178,10 +192,13 @@ func processUpdUsrFlags(cmd *cobra.Command, user *admin.User, name *admin.UserNa
 			user.OrgUnitPath = orgUnit
 		case "password":
 			if password == "" {
-				return errors.New("gmin: error - password cannot be empty string")
+				err := errors.New(cmn.ErrEmptyPassword)
+				logger.Error(err)
+				return err
 			}
 			pwd, err := cmn.HashPassword(password)
 			if err != nil {
+				logger.Error(err)
 				return err
 			}
 			user.Password = pwd
@@ -191,7 +208,8 @@ func processUpdUsrFlags(cmd *cobra.Command, user *admin.User, name *admin.UserNa
 			user.ForceSendFields = append(user.ForceSendFields, "RecoveryEmail")
 		case "recoveryphone":
 			if recoveryPhone != "" && string(recoveryPhone[0]) != "+" {
-				err := fmt.Errorf("gmin: error - recovery phone number %v must start with '+'", recoveryPhone)
+				err := fmt.Errorf(cmn.ErrInvalidRecoveryPhone, recoveryPhone)
+				logger.Error(err)
 				return err
 			}
 			user.RecoveryPhone = recoveryPhone

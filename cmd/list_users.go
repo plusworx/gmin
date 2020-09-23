@@ -56,19 +56,26 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 	)
 
 	if strings.ToLower(projection) == "custom" && customField == "" {
-		return errors.New("gmin: error - must provide --customfieldmask for custom projection")
+		err := errors.New(cmn.ErrNoCustomFieldMask)
+		logger.Error(err)
+		return err
 	}
 
 	if customField != "" && strings.ToLower(projection) != "custom" {
-		return errors.New("gmin: error - must provide --projection custom to use --customfieldmask")
+		err := errors.New(cmn.ErrProjectionFlagNotCustom)
+		logger.Error(err)
+		return err
 	}
 
 	if query != "" && deleted {
-		return errors.New("gmin: error - cannot provide both --query and --deleted flags")
+		err := errors.New(cmn.ErrQueryAndDeletedFlags)
+		logger.Error(err)
+		return err
 	}
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserReadonlyScope)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
@@ -77,6 +84,7 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 	if attrs != "" {
 		listAttrs, err := cmn.ParseOutputAttrs(attrs, usrs.UserAttrMap)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 		formattedAttrs := usrs.StartUsersField + listAttrs + usrs.EndField
@@ -94,6 +102,7 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 	} else {
 		customerID, err := cfg.ReadConfigString("customerid")
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 		ulc = usrs.AddCustomer(ulc, customerID)
@@ -103,7 +112,9 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 		proj := strings.ToLower(projection)
 		ok := cmn.SliceContainsStr(usrs.ValidProjections, proj)
 		if !ok {
-			return fmt.Errorf("gmin: error - %v is not a valid projection type", projection)
+			err = fmt.Errorf(cmn.ErrInvalidProjectionType, projection)
+			logger.Error(err)
+			return err
 		}
 
 		listCall := usrs.AddProjection(ulc, proj)
@@ -116,7 +127,9 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 				listCall := usrs.AddCustomFieldMask(ulc, mask)
 				ulc = listCall.(*admin.UsersListCall)
 			} else {
-				return errors.New("gmin: error - please provide a custom field mask for custom projection")
+				err = errors.New(cmn.ErrNoCustomFieldMask)
+				logger.Error(err)
+				return err
 			}
 		}
 	}
@@ -124,6 +137,7 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 	if query != "" {
 		formattedQuery, err := cmn.ParseQuery(query, usrs.QueryAttrMap)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 
@@ -134,7 +148,8 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 		ob := strings.ToLower(orderBy)
 		ok := cmn.SliceContainsStr(usrs.ValidOrderByStrs, ob)
 		if !ok {
-			err = fmt.Errorf("gmin: error - %v is not a valid order by field", orderBy)
+			err = fmt.Errorf(cmn.ErrInvalidOrderBy, orderBy)
+			logger.Error(err)
 			return err
 		}
 
@@ -143,6 +158,7 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 		if ob != "email" {
 			validOrderBy, err = cmn.IsValidAttr(ob, usrs.UserAttrMap)
 			if err != nil {
+				logger.Error(err)
 				return err
 			}
 		}
@@ -153,6 +169,7 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 			so := strings.ToLower(sortOrder)
 			validSortOrder, err := cmn.IsValidAttr(so, cmn.ValidSortOrders)
 			if err != nil {
+				logger.Error(err)
 				return err
 			}
 
@@ -164,7 +181,9 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 		vt := strings.ToLower(viewType)
 		ok := cmn.SliceContainsStr(usrs.ValidViewTypes, vt)
 		if !ok {
-			return fmt.Errorf("gmin: error - %v is not a valid view type", viewType)
+			err = fmt.Errorf(cmn.ErrInvalidViewType, viewType)
+			logger.Error(err)
+			return err
 		}
 
 		listCall := usrs.AddViewType(ulc, vt)
@@ -175,18 +194,21 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 
 	users, err = usrs.DoList(ulc)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	if pages != "" {
 		err = doUserPages(ulc, users, pages)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 	}
 
 	jsonData, err = json.MarshalIndent(users, "", "    ")
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
@@ -204,6 +226,7 @@ func doUserAllPages(ulc *admin.UsersListCall, users *admin.Users) error {
 		ulc = usrs.AddPageToken(ulc, users.NextPageToken)
 		nxtUsers, err := usrs.DoList(ulc)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 		users.Users = append(users.Users, nxtUsers.Users...)
@@ -223,6 +246,7 @@ func doUserNumPages(ulc *admin.UsersListCall, users *admin.Users, numPages int) 
 		ulc = usrs.AddPageToken(ulc, users.NextPageToken)
 		nxtUsers, err := usrs.DoList(ulc)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 		users.Users = append(users.Users, nxtUsers.Users...)
@@ -241,17 +265,21 @@ func doUserPages(ulc *admin.UsersListCall, users *admin.Users, pages string) err
 	if pages == "all" {
 		err := doUserAllPages(ulc, users)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 	} else {
 		numPages, err := strconv.Atoi(pages)
 		if err != nil {
-			return errors.New("gmin: error - pages must be 'all' or a number")
+			err = errors.New(cmn.ErrInvalidPagesArgument)
+			logger.Error(err)
+			return err
 		}
 
 		if numPages > 1 {
 			err = doUserNumPages(ulc, users, numPages-1)
 			if err != nil {
+				logger.Error(err)
 				return err
 			}
 		}

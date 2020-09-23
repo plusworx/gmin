@@ -40,7 +40,7 @@ func doGet(cmd *cobra.Command, args []string) {
 
 func init() {
 	rootCmd.AddCommand(getCmd)
-	getCmd.PersistentFlags().StringVar(&logLevel, "loglevel", "info", "log level (debug, info, warn, error, fatal)")
+	getCmd.PersistentFlags().StringVar(&logLevel, "loglevel", "info", "log level (debug, info, error)")
 
 	getCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
 		zlog, err := setupLogging(logLevel)

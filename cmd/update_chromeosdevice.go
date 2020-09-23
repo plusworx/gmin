@@ -51,11 +51,13 @@ func doUpdateCrOSDev(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryDeviceChromeosScope)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	customerID, err := cfg.ReadConfigString("customerid")
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
@@ -84,6 +86,7 @@ func doUpdateCrOSDev(cmd *cobra.Command, args []string) error {
 	if attrs != "" {
 		updAttrs, err := cmn.ParseOutputAttrs(attrs, cdevs.CrOSDevAttrMap)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 		formattedAttrs := cdevs.StartChromeDevicesField + updAttrs + cdevs.EndField
@@ -95,7 +98,9 @@ func doUpdateCrOSDev(cmd *cobra.Command, args []string) error {
 		proj := strings.ToLower(projection)
 		ok := cmn.SliceContainsStr(cdevs.ValidProjections, proj)
 		if !ok {
-			return fmt.Errorf("gmin: error - %v is not a valid projection type", projection)
+			err = fmt.Errorf(cmn.ErrInvalidProjectionType, projection)
+			logger.Error(err)
+			return err
 		}
 
 		updCall := cdevs.AddProjection(cduc, proj)
@@ -104,13 +109,16 @@ func doUpdateCrOSDev(cmd *cobra.Command, args []string) error {
 
 	updCrOSDev, err := cduc.Do()
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
-	fmt.Println(cmn.GminMessage("**** gmin: ChromeOS device " + updCrOSDev.DeviceId + " updated ****"))
+	logger.Infof(cmn.InfoCDevUpdated, updCrOSDev.DeviceId)
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoCDevUpdated, updCrOSDev.DeviceId)))
 
 	jsonData, err := json.MarshalIndent(updCrOSDev, "", "    ")
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 

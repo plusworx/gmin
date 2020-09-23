@@ -55,6 +55,7 @@ func doUndeleteUser(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserScope)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
@@ -62,10 +63,12 @@ func doUndeleteUser(cmd *cobra.Command, args []string) error {
 
 	err = uuc.Do()
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
-	fmt.Println(cmn.GminMessage("**** gmin: user " + args[0] + " undeleted ****"))
+	logger.Infof(cmn.InfoUserUndeleted, args[0])
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoUserUndeleted, args[0])))
 
 	return nil
 }

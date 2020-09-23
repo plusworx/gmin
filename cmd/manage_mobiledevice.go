@@ -51,19 +51,23 @@ func doManageMobDev(cmd *cobra.Command, args []string) error {
 
 	customerID, err := cfg.ReadConfigString("customerid")
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	action := strings.ToLower(args[1])
 	ok := cmn.SliceContainsStr(mdevs.ValidActions, action)
 	if !ok {
-		return fmt.Errorf("gmin: error - %v is not a valid action type", args[1])
+		err = fmt.Errorf(cmn.ErrInvalidActionType, args[1])
+		logger.Error(err)
+		return err
 	}
 
 	devAction.Action = action
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryDeviceMobileActionScope)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
@@ -72,6 +76,7 @@ func doManageMobDev(cmd *cobra.Command, args []string) error {
 	if attrs != "" {
 		manageAttrs, err := cmn.ParseOutputAttrs(attrs, mdevs.MobDevAttrMap)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 		formattedAttrs := mdevs.StartMobDevicesField + manageAttrs + mdevs.EndField
@@ -81,10 +86,12 @@ func doManageMobDev(cmd *cobra.Command, args []string) error {
 
 	err = mdac.Do()
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
-	fmt.Println(cmn.GminMessage("**** gmin : " + args[1] + " successfully performed on mobile device " + args[0] + " ****"))
+	logger.Infof(cmn.InfoMDevActionPerformed, args[1], args[0])
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoMDevActionPerformed, args[1], args[0])))
 
 	return nil
 }

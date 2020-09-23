@@ -55,11 +55,13 @@ func doListCrOSDevs(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryDeviceChromeosReadonlyScope)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	customerID, err := cfg.ReadConfigString("customerid")
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
@@ -68,6 +70,7 @@ func doListCrOSDevs(cmd *cobra.Command, args []string) error {
 	if attrs != "" {
 		listAttrs, err := cmn.ParseOutputAttrs(attrs, cdevs.CrOSDevAttrMap)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 		formattedAttrs := cdevs.StartChromeDevicesField + listAttrs + cdevs.EndField
@@ -79,12 +82,14 @@ func doListCrOSDevs(cmd *cobra.Command, args []string) error {
 		ob := strings.ToLower(orderBy)
 		ok := cmn.SliceContainsStr(cdevs.ValidOrderByStrs, ob)
 		if !ok {
-			err = fmt.Errorf("gmin: error - %v is not a valid order by field", orderBy)
+			err = fmt.Errorf(cmn.ErrInvalidOrderBy, orderBy)
+			logger.Error(err)
 			return err
 		}
 
 		validOrderBy, err := cmn.IsValidAttr(ob, cdevs.CrOSDevAttrMap)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 
@@ -94,6 +99,7 @@ func doListCrOSDevs(cmd *cobra.Command, args []string) error {
 			so := strings.ToLower(sortOrder)
 			validSortOrder, err := cmn.IsValidAttr(so, cmn.ValidSortOrders)
 			if err != nil {
+				logger.Error(err)
 				return err
 			}
 
@@ -109,7 +115,9 @@ func doListCrOSDevs(cmd *cobra.Command, args []string) error {
 		proj := strings.ToLower(projection)
 		ok := cmn.SliceContainsStr(cdevs.ValidProjections, proj)
 		if !ok {
-			return fmt.Errorf("gmin: error - %v is not a valid projection type", projection)
+			err = fmt.Errorf(cmn.ErrInvalidProjectionType, projection)
+			logger.Error(err)
+			return err
 		}
 
 		listCall := cdevs.AddProjection(cdlc, proj)
@@ -119,6 +127,7 @@ func doListCrOSDevs(cmd *cobra.Command, args []string) error {
 	if query != "" {
 		formattedQuery, err := cmn.ParseQuery(query, cdevs.QueryAttrMap)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 
@@ -129,18 +138,21 @@ func doListCrOSDevs(cmd *cobra.Command, args []string) error {
 
 	crosdevs, err = cdevs.DoList(cdlc)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	if pages != "" {
 		err = doCrOSDevPages(cdlc, crosdevs, pages)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 	}
 
 	jsonData, err := json.MarshalIndent(crosdevs, "", "    ")
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
@@ -158,6 +170,7 @@ func doCrOSDevAllPages(cdlc *admin.ChromeosdevicesListCall, crosdevs *admin.Chro
 		cdlc = cdevs.AddPageToken(cdlc, crosdevs.NextPageToken)
 		nxtCrOSDevs, err := cdevs.DoList(cdlc)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 		crosdevs.Chromeosdevices = append(crosdevs.Chromeosdevices, nxtCrOSDevs.Chromeosdevices...)
@@ -177,6 +190,7 @@ func doCrOSDevNumPages(cdlc *admin.ChromeosdevicesListCall, crosdevs *admin.Chro
 		cdlc = cdevs.AddPageToken(cdlc, crosdevs.NextPageToken)
 		nxtCrOSDevs, err := cdevs.DoList(cdlc)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 		crosdevs.Chromeosdevices = append(crosdevs.Chromeosdevices, nxtCrOSDevs.Chromeosdevices...)
@@ -195,17 +209,21 @@ func doCrOSDevPages(cdlc *admin.ChromeosdevicesListCall, crosdevs *admin.ChromeO
 	if pages == "all" {
 		err := doCrOSDevAllPages(cdlc, crosdevs)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 	} else {
 		numPages, err := strconv.Atoi(pages)
 		if err != nil {
-			return errors.New("gmin: error - pages must be 'all' or a number")
+			err = errors.New(cmn.ErrInvalidPagesArgument)
+			logger.Error(err)
+			return err
 		}
 
 		if numPages > 1 {
 			err = doCrOSDevNumPages(cdlc, crosdevs, numPages-1)
 			if err != nil {
+				logger.Error(err)
 				return err
 			}
 		}

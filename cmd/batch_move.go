@@ -41,7 +41,7 @@ func doBatchMove(cmd *cobra.Command, args []string) {
 
 func init() {
 	rootCmd.AddCommand(batchMoveCmd)
-	batchMoveCmd.PersistentFlags().StringVar(&logLevel, "loglevel", "info", "log level (debug, info, warn, error, fatal)")
+	batchMoveCmd.PersistentFlags().StringVar(&logLevel, "loglevel", "info", "log level (debug, info, error)")
 
 	batchMoveCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
 		zlog, err := setupLogging(logLevel)

@@ -54,11 +54,13 @@ func doListOUs(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryOrgunitReadonlyScope)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	customerID, err := cfg.ReadConfigString("customerid")
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
@@ -67,6 +69,7 @@ func doListOUs(cmd *cobra.Command, args []string) error {
 	if attrs != "" {
 		listAttrs, err := cmn.ParseOutputAttrs(attrs, ous.OrgUnitAttrMap)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 		formattedAttrs := ous.StartOrgUnitsField + listAttrs + ous.EndField
@@ -83,18 +86,21 @@ func doListOUs(cmd *cobra.Command, args []string) error {
 
 	ok := cmn.SliceContainsStr(ous.ValidSearchTypes, searchType)
 	if !ok {
-		err := fmt.Errorf("gmin: error - %v is not a valid OrgunitsListCall type", searchType)
+		err := fmt.Errorf(cmn.ErrInvalidSearchType, searchType)
+		logger.Error(err)
 		return err
 	}
 	oulc = ous.AddType(oulc, searchType)
 
 	orgUnits, err = ous.DoList(oulc)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	jsonData, err = json.MarshalIndent(orgUnits, "", "    ")
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 

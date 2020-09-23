@@ -35,7 +35,7 @@ func TestDoListUser(t *testing.T) {
 		{
 			deleted:     true,
 			query:       "name:Brown",
-			expectedErr: "gmin: error - cannot provide both --query and --deleted flags",
+			expectedErr: "cannot provide both --query and --deleted flags",
 		},
 	}
 

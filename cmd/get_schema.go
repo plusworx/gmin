@@ -53,11 +53,13 @@ func doGetSchema(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserschemaReadonlyScope)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	customerID, err := cfg.ReadConfigString("customerid")
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
@@ -66,6 +68,7 @@ func doGetSchema(cmd *cobra.Command, args []string) error {
 	if attrs != "" {
 		formattedAttrs, err := cmn.ParseOutputAttrs(attrs, scs.SchemaAttrMap)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 		getCall := scs.AddFields(scgc, formattedAttrs)
@@ -74,11 +77,13 @@ func doGetSchema(cmd *cobra.Command, args []string) error {
 
 	schema, err = scs.DoGet(scgc)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	jsonData, err = json.MarshalIndent(schema, "", "    ")
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 

@@ -55,11 +55,13 @@ func doListMobDevs(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryDeviceMobileReadonlyScope)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	customerID, err := cfg.ReadConfigString("customerid")
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
@@ -68,6 +70,7 @@ func doListMobDevs(cmd *cobra.Command, args []string) error {
 	if attrs != "" {
 		listAttrs, err := cmn.ParseOutputAttrs(attrs, mdevs.MobDevAttrMap)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 		formattedAttrs := mdevs.StartMobDevicesField + listAttrs + mdevs.EndField
@@ -79,12 +82,14 @@ func doListMobDevs(cmd *cobra.Command, args []string) error {
 		ob := strings.ToLower(orderBy)
 		ok := cmn.SliceContainsStr(mdevs.ValidOrderByStrs, ob)
 		if !ok {
-			err = fmt.Errorf("gmin: error - %v is not a valid order by field", orderBy)
+			err = fmt.Errorf(cmn.ErrInvalidOrderBy, orderBy)
+			logger.Error(err)
 			return err
 		}
 
 		validOrderBy, err := cmn.IsValidAttr(ob, mdevs.MobDevAttrMap)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 
@@ -94,6 +99,7 @@ func doListMobDevs(cmd *cobra.Command, args []string) error {
 			so := strings.ToLower(sortOrder)
 			validSortOrder, err := cmn.IsValidAttr(so, cmn.ValidSortOrders)
 			if err != nil {
+				logger.Error(err)
 				return err
 			}
 
@@ -109,7 +115,9 @@ func doListMobDevs(cmd *cobra.Command, args []string) error {
 		proj := strings.ToLower(projection)
 		ok := cmn.SliceContainsStr(mdevs.ValidProjections, proj)
 		if !ok {
-			return fmt.Errorf("gmin: error - %v is not a valid projection type", projection)
+			err = fmt.Errorf(cmn.ErrInvalidProjectionType, projection)
+			logger.Error(err)
+			return err
 		}
 
 		listCall := mdevs.AddProjection(mdlc, proj)
@@ -119,6 +127,7 @@ func doListMobDevs(cmd *cobra.Command, args []string) error {
 	if query != "" {
 		formattedQuery, err := cmn.ParseQuery(query, mdevs.QueryAttrMap)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 
@@ -129,18 +138,21 @@ func doListMobDevs(cmd *cobra.Command, args []string) error {
 
 	mobdevs, err = mdevs.DoList(mdlc)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	if pages != "" {
 		err = doMobDevPages(mdlc, mobdevs, pages)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 	}
 
 	jsonData, err := json.MarshalIndent(mobdevs, "", "    ")
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
@@ -158,6 +170,7 @@ func doMobDevAllPages(mdlc *admin.MobiledevicesListCall, mobdevs *admin.MobileDe
 		mdlc = mdevs.AddPageToken(mdlc, mobdevs.NextPageToken)
 		nxtMobDevs, err := mdevs.DoList(mdlc)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 		mobdevs.Mobiledevices = append(mobdevs.Mobiledevices, nxtMobDevs.Mobiledevices...)
@@ -177,6 +190,7 @@ func doMobDevNumPages(mdlc *admin.MobiledevicesListCall, mobdevs *admin.MobileDe
 		mdlc = mdevs.AddPageToken(mdlc, mobdevs.NextPageToken)
 		nxtMobDevs, err := mdevs.DoList(mdlc)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 		mobdevs.Mobiledevices = append(mobdevs.Mobiledevices, nxtMobDevs.Mobiledevices...)
@@ -195,17 +209,21 @@ func doMobDevPages(mdlc *admin.MobiledevicesListCall, mobdevs *admin.MobileDevic
 	if pages == "all" {
 		err := doMobDevAllPages(mdlc, mobdevs)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 	} else {
 		numPages, err := strconv.Atoi(pages)
 		if err != nil {
-			return errors.New("gmin: error - pages must be 'all' or a number")
+			err = errors.New(cmn.ErrInvalidPagesArgument)
+			logger.Error(err)
+			return err
 		}
 
 		if numPages > 1 {
 			err = doMobDevNumPages(mdlc, mobdevs, numPages-1)
 			if err != nil {
+				logger.Error(err)
 				return err
 			}
 		}

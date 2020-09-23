@@ -46,11 +46,13 @@ var deleteSchemaCmd = &cobra.Command{
 func doDeleteSchema(cmd *cobra.Command, args []string) error {
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserschemaScope)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	customerID, err := cfg.ReadConfigString("customerid")
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
@@ -58,10 +60,12 @@ func doDeleteSchema(cmd *cobra.Command, args []string) error {
 
 	err = scdc.Do()
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
-	fmt.Println(cmn.GminMessage("**** gmin: schema " + args[0] + " deleted ****"))
+	logger.Infof(cmn.InfoSchemaDeleted, args[0])
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoSchemaDeleted, args[0])))
 
 	return nil
 }

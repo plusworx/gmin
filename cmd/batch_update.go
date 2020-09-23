@@ -41,7 +41,7 @@ func doBatchUpdate(cmd *cobra.Command, args []string) {
 
 func init() {
 	rootCmd.AddCommand(batchUpdateCmd)
-	batchUpdateCmd.PersistentFlags().StringVar(&logLevel, "loglevel", "info", "log level (debug, info, warn, error, fatal)")
+	batchUpdateCmd.PersistentFlags().StringVar(&logLevel, "loglevel", "info", "log level (debug, info, error)")
 
 	batchUpdateCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
 		zlog, err := setupLogging(logLevel)

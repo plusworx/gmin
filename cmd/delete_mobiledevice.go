@@ -46,21 +46,25 @@ var deleteMobDevCmd = &cobra.Command{
 func doDeleteMobDev(cmd *cobra.Command, args []string) error {
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryDeviceMobileScope)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	customerID, err := cfg.ReadConfigString("customerid")
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 	mdc := ds.Mobiledevices.Delete(customerID, args[0])
 
 	err = mdc.Do()
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
-	fmt.Println(cmn.GminMessage("**** gmin: mobile device " + args[0] + " deleted ****"))
+	logger.Infof(cmn.InfoMDevDeleted, args[0])
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoMDevDeleted, args[0])))
 
 	return nil
 }

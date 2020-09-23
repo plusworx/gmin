@@ -50,6 +50,7 @@ func doMoveCrOSDev(cmd *cobra.Command, args []string) error {
 
 	customerID, err := cfg.ReadConfigString("customerid")
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
@@ -57,6 +58,7 @@ func doMoveCrOSDev(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryDeviceChromeosScope)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
@@ -65,6 +67,7 @@ func doMoveCrOSDev(cmd *cobra.Command, args []string) error {
 	if attrs != "" {
 		moveAttrs, err := cmn.ParseOutputAttrs(attrs, cdevs.CrOSDevAttrMap)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 		formattedAttrs := cdevs.StartChromeDevicesField + moveAttrs + cdevs.EndField
@@ -74,10 +77,12 @@ func doMoveCrOSDev(cmd *cobra.Command, args []string) error {
 
 	err = cdmc.Do()
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
-	fmt.Println(cmn.GminMessage("**** gmin: ChromeOS device " + args[0] + " moved to " + args[1] + " ****"))
+	logger.Infof(cmn.InfoCDevMovePerformed, args[0], args[1])
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoCDevMovePerformed, args[0], args[1])))
 
 	return nil
 }

@@ -54,11 +54,13 @@ func doGetCrOSDev(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryDeviceChromeosReadonlyScope)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	customerID, err := cfg.ReadConfigString("customerid")
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 	cdgc := ds.Chromeosdevices.Get(customerID, args[0])
@@ -66,6 +68,7 @@ func doGetCrOSDev(cmd *cobra.Command, args []string) error {
 	if attrs != "" {
 		formattedAttrs, err := cmn.ParseOutputAttrs(attrs, cdevs.CrOSDevAttrMap)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 
@@ -77,7 +80,9 @@ func doGetCrOSDev(cmd *cobra.Command, args []string) error {
 		proj := strings.ToLower(projection)
 		ok := cmn.SliceContainsStr(cdevs.ValidProjections, proj)
 		if !ok {
-			return fmt.Errorf("gmin: error - %v is not a valid projection type", projection)
+			err = fmt.Errorf(cmn.ErrInvalidProjectionType, projection)
+			logger.Error(err)
+			return err
 		}
 
 		getCall := cdevs.AddProjection(cdgc, proj)
@@ -86,11 +91,13 @@ func doGetCrOSDev(cmd *cobra.Command, args []string) error {
 
 	crosdev, err = cdevs.DoGet(cdgc)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	jsonData, err = json.MarshalIndent(crosdev, "", "    ")
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 

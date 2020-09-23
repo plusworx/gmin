@@ -45,6 +45,7 @@ var deleteGroupCmd = &cobra.Command{
 func doDeleteGroup(cmd *cobra.Command, args []string) error {
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupScope)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
@@ -52,10 +53,12 @@ func doDeleteGroup(cmd *cobra.Command, args []string) error {
 
 	err = gdc.Do()
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
-	fmt.Println(cmn.GminMessage("**** gmin: group " + args[0] + " deleted ****"))
+	logger.Infof(cmn.InfoGroupDeleted, args[0])
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoGroupDeleted, args[0])))
 
 	return nil
 }

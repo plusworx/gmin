@@ -49,6 +49,7 @@ func doGetMember(cmd *cobra.Command, args []string) error {
 
 	jsonData, err := processGroupMember(args[0], attrs, args[1])
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
@@ -71,6 +72,7 @@ func processGroupMember(memID string, attrs string, groupEmail string) ([]byte, 
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupMemberReadonlyScope)
 	if err != nil {
+		logger.Error(err)
 		return nil, err
 	}
 
@@ -79,6 +81,7 @@ func processGroupMember(memID string, attrs string, groupEmail string) ([]byte, 
 	if attrs != "" {
 		formattedAttrs, err := cmn.ParseOutputAttrs(attrs, mems.MemberAttrMap)
 		if err != nil {
+			logger.Error(err)
 			return nil, err
 		}
 
@@ -88,11 +91,13 @@ func processGroupMember(memID string, attrs string, groupEmail string) ([]byte, 
 
 	member, err = mems.DoGet(mgc)
 	if err != nil {
+		logger.Error(err)
 		return nil, err
 	}
 
 	jsonData, err = json.MarshalIndent(member, "", "    ")
 	if err != nil {
+		logger.Error(err)
 		return nil, err
 	}
 

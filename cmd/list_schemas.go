@@ -53,11 +53,13 @@ func doListSchemas(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserschemaReadonlyScope)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	customerID, err := cfg.ReadConfigString("customerid")
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
@@ -66,6 +68,7 @@ func doListSchemas(cmd *cobra.Command, args []string) error {
 	if attrs != "" {
 		listAttrs, err := cmn.ParseOutputAttrs(attrs, scs.SchemaAttrMap)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 		formattedAttrs := scs.StartSchemasField + listAttrs + scs.EndField
@@ -76,11 +79,13 @@ func doListSchemas(cmd *cobra.Command, args []string) error {
 
 	schemas, err = scs.DoList(sclc)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	jsonData, err = json.MarshalIndent(schemas, "", "    ")
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 

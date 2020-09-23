@@ -54,11 +54,13 @@ func doGetMobDev(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryDeviceMobileReadonlyScope)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	customerID, err := cfg.ReadConfigString("customerid")
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 	mdgc := ds.Mobiledevices.Get(customerID, args[0])
@@ -66,6 +68,7 @@ func doGetMobDev(cmd *cobra.Command, args []string) error {
 	if attrs != "" {
 		formattedAttrs, err := cmn.ParseOutputAttrs(attrs, mdevs.MobDevAttrMap)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 
@@ -77,7 +80,9 @@ func doGetMobDev(cmd *cobra.Command, args []string) error {
 		proj := strings.ToLower(projection)
 		ok := cmn.SliceContainsStr(mdevs.ValidProjections, proj)
 		if !ok {
-			return fmt.Errorf("gmin: error - %v is not a valid projection type", projection)
+			err = fmt.Errorf(cmn.ErrInvalidProjectionType, projection)
+			logger.Error(err)
+			return err
 		}
 
 		getCall := mdevs.AddProjection(mdgc, proj)
@@ -86,11 +91,13 @@ func doGetMobDev(cmd *cobra.Command, args []string) error {
 
 	mobdev, err = mdevs.DoGet(mdgc)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	jsonData, err = json.MarshalIndent(mobdev, "", "    ")
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 

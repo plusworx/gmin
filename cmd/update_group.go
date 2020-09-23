@@ -66,16 +66,19 @@ func doUpdateGroup(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupScope)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	guc := ds.Groups.Update(groupKey, group)
 	_, err = guc.Do()
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
-	fmt.Println(cmn.GminMessage("**** gmin: group " + groupKey + " updated ****"))
+	logger.Infof(cmn.InfoGroupUpdated, groupKey)
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoGroupUpdated, groupKey)))
 
 	return nil
 }

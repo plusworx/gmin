@@ -41,7 +41,7 @@ func doList(cmd *cobra.Command, args []string) {
 
 func init() {
 	rootCmd.AddCommand(listCmd)
-	listCmd.PersistentFlags().StringVar(&logLevel, "loglevel", "info", "log level (debug, info, warn, error, fatal)")
+	listCmd.PersistentFlags().StringVar(&logLevel, "loglevel", "info", "log level (debug, info, error)")
 
 	listCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
 		zlog, err := setupLogging(logLevel)

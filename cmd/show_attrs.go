@@ -67,20 +67,20 @@ func doShowAttrs(cmd *cobra.Command, args []string) error {
 	lArgs := len(args)
 
 	if lArgs > 3 {
-		return fmt.Errorf("gmin: error - maximum of 3 arguments exceeded")
+		return errors.New(cmn.ErrMax3ArgsExceeded)
 	}
 
 	if composite && queryable {
-		return errors.New("gmin: error - cannot provide both --composite and --queryable flags")
+		return errors.New(cmn.ErrQueryAndCompositeFlags)
 	}
 
 	if queryable && lArgs > 1 {
-		return errors.New("gmin: error - only one argument is allowed with --queryable flag")
+		return errors.New(cmn.ErrQueryableFlag1Arg)
 	}
 
 	ok := validateShowSlice(strings.ToLower(args[0]), cmn.ValidPrimaryShowArgs)
 	if !ok {
-		return fmt.Errorf("gmin: error - %v not found", args[0])
+		return fmt.Errorf(cmn.ErrObjectNotFound, args[0])
 	}
 
 	err := processShowArgs(args, lArgs)
@@ -127,14 +127,14 @@ func threeArgs(arg1 string, arg2 string, arg3 string) error {
 	switch {
 	case obj == "schema" || obj == "sc":
 		if composite {
-			return fmt.Errorf("gmin: error - %v does not have any composite attributes", arg3)
+			return fmt.Errorf(cmn.ErrNoCompositeAttrs, arg3)
 		}
 		err := scs.ShowSubSubAttrs(subAttr)
 		if err != nil {
 			return err
 		}
 	default:
-		return fmt.Errorf("gmin: error - %v does not have any composite attributes", arg2)
+		return fmt.Errorf(cmn.ErrNoCompositeAttrs, arg2)
 	}
 
 	return nil
@@ -145,7 +145,7 @@ func twoArgs(arg1 string, arg2 string) error {
 	switch {
 	case obj == "chromeosdevice" || obj == "crosdevice" || obj == "crosdev" || obj == "cdev":
 		if composite {
-			return fmt.Errorf("gmin: error - %v does not have any composite attributes", arg2)
+			return fmt.Errorf(cmn.ErrNoCompositeAttrs, arg2)
 		}
 		err := cdevs.ShowSubAttrs(arg2, filter)
 		if err != nil {
@@ -153,7 +153,7 @@ func twoArgs(arg1 string, arg2 string) error {
 		}
 	case obj == "mobiledevice" || obj == "mobdevice" || obj == "mobdev" || obj == "mdev":
 		if composite {
-			return fmt.Errorf("gmin: error - %v does not have any composite attributes", arg2)
+			return fmt.Errorf(cmn.ErrNoCompositeAttrs, arg2)
 		}
 		err := mdevs.ShowSubAttrs(arg2, filter)
 		if err != nil {
@@ -174,14 +174,14 @@ func twoArgs(arg1 string, arg2 string) error {
 		}
 	case obj == "user":
 		if composite {
-			return fmt.Errorf("gmin: error - %v does not have any composite attributes", arg2)
+			return fmt.Errorf(cmn.ErrNoCompositeAttrs, arg2)
 		}
 		err := usrs.ShowSubAttrs(arg2, filter)
 		if err != nil {
 			return err
 		}
 	default:
-		return fmt.Errorf("gmin: error - %v does not have any composite attributes", arg1)
+		return fmt.Errorf(cmn.ErrNoCompositeAttrs, arg1)
 	}
 
 	return nil
@@ -201,7 +201,7 @@ func oneArg(arg string) error {
 		case obj == "user":
 			cmn.ShowQueryableAttrs(filter, usrs.QueryAttrMap)
 		default:
-			return fmt.Errorf("gmin: error - %v does not have any queryable attributes", arg)
+			return fmt.Errorf(cmn.ErrNoQueryableAttrs, arg)
 		}
 		return nil
 	}
@@ -215,17 +215,17 @@ func oneArg(arg string) error {
 		cdevs.ShowAttrs(filter)
 	case obj == "group" || obj == "grp":
 		if composite {
-			return errors.New("gmin: error - groups do not have any composite attributes")
+			return fmt.Errorf(cmn.ErrNoCompositeAttrs, obj)
 		}
 		grps.ShowAttrs(filter)
 	case obj == "group-alias" || obj == "grp-alias" || obj == "galias" || obj == "ga":
 		if composite {
-			return errors.New("gmin: error - group aliases do not have any composite attributes")
+			return fmt.Errorf(cmn.ErrNoCompositeAttrs, obj)
 		}
 		gas.ShowAttrs(filter)
 	case obj == "group-member" || obj == "grp-member" || obj == "grp-mem" || obj == "gmember" || obj == "gmem":
 		if composite {
-			return errors.New("gmin: error - group members do not have any composite attributes")
+			return fmt.Errorf(cmn.ErrNoCompositeAttrs, obj)
 		}
 		mems.ShowAttrs(filter)
 	case obj == "mobiledevice" || obj == "mobdevice" || obj == "mobdev" || obj == "mdev":
@@ -236,7 +236,7 @@ func oneArg(arg string) error {
 		mdevs.ShowAttrs(filter)
 	case obj == "orgunit" || obj == "ou":
 		if composite {
-			return errors.New("gmin: error - orgunits do not have any composite attributes")
+			return fmt.Errorf(cmn.ErrNoCompositeAttrs, obj)
 		}
 		ous.ShowAttrs(filter)
 	case obj == "schema" || obj == "sc":
@@ -253,7 +253,7 @@ func oneArg(arg string) error {
 		usrs.ShowAttrs(filter)
 	case obj == "user-alias" || obj == "ualias" || obj == "ua":
 		if composite {
-			return errors.New("gmin: error - user aliases do not have any composite attributes")
+			return fmt.Errorf(cmn.ErrNoCompositeAttrs, obj)
 		}
 		uas.ShowAttrs(filter)
 	}

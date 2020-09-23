@@ -52,6 +52,7 @@ func doGetGroup(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupReadonlyScope)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
@@ -60,6 +61,7 @@ func doGetGroup(cmd *cobra.Command, args []string) error {
 	if attrs != "" {
 		formattedAttrs, err := cmn.ParseOutputAttrs(attrs, grps.GroupAttrMap)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 
@@ -69,11 +71,13 @@ func doGetGroup(cmd *cobra.Command, args []string) error {
 
 	group, err = grps.DoGet(ggc)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	jsonData, err = json.MarshalIndent(group, "", "    ")
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 

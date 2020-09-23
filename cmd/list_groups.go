@@ -57,6 +57,7 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupReadonlyScope)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
@@ -65,6 +66,7 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 	if attrs != "" {
 		listAttrs, err := cmn.ParseOutputAttrs(attrs, grps.GroupAttrMap)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 		formattedAttrs := grps.StartGroupsField + listAttrs + grps.EndField
@@ -78,6 +80,7 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 	} else {
 		customerID, err := cfg.ReadConfigString("customerid")
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 		glc = grps.AddCustomer(glc, customerID)
@@ -86,6 +89,7 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 	if query != "" {
 		formattedQuery, err := cmn.ParseQuery(query, grps.QueryAttrMap)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 
@@ -96,12 +100,14 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 		ob := strings.ToLower(orderBy)
 		ok := cmn.SliceContainsStr(grps.ValidOrderByStrs, ob)
 		if !ok {
-			err = fmt.Errorf("gmin: error - %v is not a valid order by field", orderBy)
+			err = fmt.Errorf(cmn.ErrInvalidOrderBy, orderBy)
+			logger.Error(err)
 			return err
 		}
 
 		validOrderBy, err = cmn.IsValidAttr(ob, grps.GroupAttrMap)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 
@@ -111,6 +117,7 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 			so := strings.ToLower(sortOrder)
 			validSortOrder, err := cmn.IsValidAttr(so, cmn.ValidSortOrders)
 			if err != nil {
+				logger.Error(err)
 				return err
 			}
 
@@ -122,7 +129,9 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 		if domain != "" {
 			glc = grps.AddUserKey(glc, userKey)
 		} else {
-			return errors.New("gmin: error - you must provide a domain in addition to userkey")
+			err = errors.New(cmn.ErrNoDomainWithUserKey)
+			logger.Error(err)
+			return err
 		}
 	}
 
@@ -130,18 +139,21 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 
 	groups, err = grps.DoList(glc)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	if pages != "" {
 		err = doGrpPages(glc, groups, pages)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 	}
 
 	jsonData, err = json.MarshalIndent(groups, "", "    ")
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
@@ -159,6 +171,7 @@ func doGrpAllPages(glc *admin.GroupsListCall, groups *admin.Groups) error {
 		glc = grps.AddPageToken(glc, groups.NextPageToken)
 		nxtGroups, err := grps.DoList(glc)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 		groups.Groups = append(groups.Groups, nxtGroups.Groups...)
@@ -178,6 +191,7 @@ func doGrpNumPages(glc *admin.GroupsListCall, groups *admin.Groups, numPages int
 		glc = grps.AddPageToken(glc, groups.NextPageToken)
 		nxtGroups, err := grps.DoList(glc)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 		groups.Groups = append(groups.Groups, nxtGroups.Groups...)
@@ -196,17 +210,21 @@ func doGrpPages(glc *admin.GroupsListCall, groups *admin.Groups, pages string) e
 	if pages == "all" {
 		err := doGrpAllPages(glc, groups)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 	} else {
 		numPages, err := strconv.Atoi(pages)
 		if err != nil {
-			return errors.New("gmin: error - pages must be 'all' or a number")
+			err = errors.New(cmn.ErrInvalidPagesArgument)
+			logger.Error(err)
+			return err
 		}
 
 		if numPages > 1 {
 			err = doGrpNumPages(glc, groups, numPages-1)
 			if err != nil {
+				logger.Error(err)
 				return err
 			}
 		}

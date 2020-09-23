@@ -45,6 +45,7 @@ var deleteGroupAliasCmd = &cobra.Command{
 func doDeleteGroupAlias(cmd *cobra.Command, args []string) error {
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupScope)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
@@ -52,10 +53,12 @@ func doDeleteGroupAlias(cmd *cobra.Command, args []string) error {
 
 	err = gadc.Do()
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
-	fmt.Println(cmn.GminMessage("**** gmin: group alias " + args[0] + " for group " + args[1] + " deleted ****"))
+	logger.Infof(cmn.InfoGroupAliasDeleted, args[0], args[1])
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoGroupAliasDeleted, args[0], args[1])))
 
 	return nil
 }

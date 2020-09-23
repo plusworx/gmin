@@ -71,21 +71,25 @@ func doUpdateOU(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryOrgunitScope)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	customerID, err := cfg.ReadConfigString("customerid")
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	ouuc := ds.Orgunits.Update(customerID, args[0], orgunit)
 	_, err = ouuc.Do()
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
-	fmt.Println(cmn.GminMessage("**** gmin: orgunit " + args[0] + " updated ****"))
+	logger.Infof(cmn.InfoOUUpdated, args[0])
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoOUUpdated, args[0])))
 
 	return nil
 }

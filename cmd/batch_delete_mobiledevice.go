@@ -117,8 +117,8 @@ func deleteMobDev(wg *sync.WaitGroup, mdc *admin.MobiledevicesDeleteCall, resour
 		var err error
 		err = mdc.Do()
 		if err == nil {
-			logger.Infof(cmn.InfoMobileDeviceDeleted, resourceID)
-			fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoMobileDeviceDeleted, resourceID)))
+			logger.Infof(cmn.InfoMDevDeleted, resourceID)
+			fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoMDevDeleted, resourceID)))
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {

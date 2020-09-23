@@ -46,11 +46,13 @@ var deleteOUCmd = &cobra.Command{
 func doDeleteOU(cmd *cobra.Command, args []string) error {
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryOrgunitScope)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	customerID, err := cfg.ReadConfigString("customerid")
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
@@ -58,10 +60,12 @@ func doDeleteOU(cmd *cobra.Command, args []string) error {
 
 	err = oudc.Do()
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
-	fmt.Println(cmn.GminMessage("**** gmin: orgunit " + args[0] + " deleted ****"))
+	logger.Infof(cmn.InfoOUDeleted, args[0])
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoOUDeleted, args[0])))
 
 	return nil
 }

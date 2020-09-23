@@ -54,6 +54,7 @@ func doListMembers(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupMemberReadonlyScope)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
@@ -62,6 +63,7 @@ func doListMembers(cmd *cobra.Command, args []string) error {
 	if attrs != "" {
 		listAttrs, err := cmn.ParseOutputAttrs(attrs, mems.MemberAttrMap)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 		formattedAttrs := mems.StartMembersField + listAttrs + mems.EndField
@@ -73,6 +75,7 @@ func doListMembers(cmd *cobra.Command, args []string) error {
 	if role != "" {
 		formattedRoles, err := cmn.ParseOutputAttrs(role, mems.RoleMap)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 		mlc = mems.AddRoles(mlc, formattedRoles)
@@ -82,18 +85,21 @@ func doListMembers(cmd *cobra.Command, args []string) error {
 
 	members, err = mems.DoList(mlc)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
 	if pages != "" {
 		err = doMemPages(mlc, members, pages)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 	}
 
 	jsonData, err = json.MarshalIndent(members, "", "    ")
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
 
@@ -111,6 +117,7 @@ func doMemAllPages(mlc *admin.MembersListCall, members *admin.Members) error {
 		mlc = mems.AddPageToken(mlc, members.NextPageToken)
 		nxtMems, err := mems.DoList(mlc)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 		members.Members = append(members.Members, nxtMems.Members...)
@@ -130,6 +137,7 @@ func doMemNumPages(mlc *admin.MembersListCall, members *admin.Members, numPages 
 		mlc = mems.AddPageToken(mlc, members.NextPageToken)
 		nxtMems, err := mems.DoList(mlc)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 		members.Members = append(members.Members, nxtMems.Members...)
@@ -148,17 +156,21 @@ func doMemPages(mlc *admin.MembersListCall, members *admin.Members, pages string
 	if pages == "all" {
 		err := doMemAllPages(mlc, members)
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 	} else {
 		numPages, err := strconv.Atoi(pages)
 		if err != nil {
-			return errors.New("gmin: error - pages must be 'all' or a number")
+			err = errors.New(cmn.ErrInvalidPagesArgument)
+			logger.Error(err)
+			return err
 		}
 
 		if numPages > 1 {
 			err = doMemNumPages(mlc, members, numPages-1)
 			if err != nil {
+				logger.Error(err)
 				return err
 			}
 		}
