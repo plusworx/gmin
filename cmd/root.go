@@ -165,6 +165,8 @@ func setupLogging(loglevel string) (*zap.Logger, error) {
 	zconf := zap.NewProductionConfig()
 
 	switch loglevel {
+	case "debug":
+		zconf.Level.SetLevel(zapcore.DebugLevel)
 	case "info":
 		zconf.Level.SetLevel(zapcore.InfoLevel)
 	case "error":
@@ -184,11 +186,7 @@ func setupLogging(loglevel string) (*zap.Logger, error) {
 	lpaths := cmn.ParseTildeField(logpath)
 	zconf.OutputPaths = lpaths
 
-	if loglevel == "debug" {
-		zlog, err = zap.NewDevelopment()
-	} else {
-		zlog, err = zconf.Build()
-	}
+	zlog, err = zconf.Build()
 	if err != nil {
 		return nil, err
 	}
