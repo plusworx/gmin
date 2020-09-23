@@ -73,17 +73,6 @@ func doManageMobDev(cmd *cobra.Command, args []string) error {
 
 	mdac := ds.Mobiledevices.Action(customerID, args[0], &devAction)
 
-	if attrs != "" {
-		manageAttrs, err := cmn.ParseOutputAttrs(attrs, mdevs.MobDevAttrMap)
-		if err != nil {
-			logger.Error(err)
-			return err
-		}
-		formattedAttrs := mdevs.StartMobDevicesField + manageAttrs + mdevs.EndField
-		actionCall := mdevs.AddFields(mdac, formattedAttrs)
-		mdac = actionCall.(*admin.MobiledevicesActionCall)
-	}
-
 	err = mdac.Do()
 	if err != nil {
 		logger.Error(err)
@@ -98,6 +87,4 @@ func doManageMobDev(cmd *cobra.Command, args []string) error {
 
 func init() {
 	manageCmd.AddCommand(manageMobDevCmd)
-
-	manageMobDevCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "device's attributes to display (separated by ~)")
 }

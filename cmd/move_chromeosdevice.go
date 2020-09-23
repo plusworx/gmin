@@ -25,7 +25,6 @@ package cmd
 import (
 	"fmt"
 
-	cdevs "github.com/plusworx/gmin/utils/chromeosdevices"
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
 	"github.com/spf13/cobra"
@@ -64,17 +63,6 @@ func doMoveCrOSDev(cmd *cobra.Command, args []string) error {
 
 	cdmc := ds.Chromeosdevices.MoveDevicesToOu(customerID, args[1], &move)
 
-	if attrs != "" {
-		moveAttrs, err := cmn.ParseOutputAttrs(attrs, cdevs.CrOSDevAttrMap)
-		if err != nil {
-			logger.Error(err)
-			return err
-		}
-		formattedAttrs := cdevs.StartChromeDevicesField + moveAttrs + cdevs.EndField
-		moveCall := cdevs.AddFields(cdmc, formattedAttrs)
-		cdmc = moveCall.(*admin.ChromeosdevicesMoveDevicesToOuCall)
-	}
-
 	err = cdmc.Do()
 	if err != nil {
 		logger.Error(err)
@@ -89,6 +77,4 @@ func doMoveCrOSDev(cmd *cobra.Command, args []string) error {
 
 func init() {
 	moveCmd.AddCommand(moveCrOSDevCmd)
-
-	moveCrOSDevCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "device's attributes to display (separated by ~)")
 }

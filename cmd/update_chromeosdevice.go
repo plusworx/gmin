@@ -23,7 +23,6 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -83,17 +82,6 @@ func doUpdateCrOSDev(cmd *cobra.Command, args []string) error {
 
 	cduc := ds.Chromeosdevices.Update(customerID, args[0], &crosdev)
 
-	if attrs != "" {
-		updAttrs, err := cmn.ParseOutputAttrs(attrs, cdevs.CrOSDevAttrMap)
-		if err != nil {
-			logger.Error(err)
-			return err
-		}
-		formattedAttrs := cdevs.StartChromeDevicesField + updAttrs + cdevs.EndField
-		updCall := cdevs.AddFields(cduc, formattedAttrs)
-		cduc = updCall.(*admin.ChromeosdevicesUpdateCall)
-	}
-
 	if projection != "" {
 		proj := strings.ToLower(projection)
 		ok := cmn.SliceContainsStr(cdevs.ValidProjections, proj)
@@ -116,21 +104,12 @@ func doUpdateCrOSDev(cmd *cobra.Command, args []string) error {
 	logger.Infof(cmn.InfoCDevUpdated, updCrOSDev.DeviceId)
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoCDevUpdated, updCrOSDev.DeviceId)))
 
-	jsonData, err := json.MarshalIndent(updCrOSDev, "", "    ")
-	if err != nil {
-		logger.Error(err)
-		return err
-	}
-
-	fmt.Println(string(jsonData))
-
 	return nil
 }
 
 func init() {
 	updateCmd.AddCommand(updateCrOSDevCmd)
 
-	updateCrOSDevCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required device attributes (separated by ~)")
 	updateCrOSDevCmd.Flags().StringVarP(&assetID, "assetid", "d", "", "device asset id")
 	updateCrOSDevCmd.Flags().StringVarP(&projection, "projection", "j", "", "type of projection")
 	updateCrOSDevCmd.Flags().StringVarP(&location, "location", "l", "", "device location")

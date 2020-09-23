@@ -82,17 +82,6 @@ func doManageCrOSDev(cmd *cobra.Command, args []string) error {
 
 	cdac := ds.Chromeosdevices.Action(customerID, args[0], &devAction)
 
-	if attrs != "" {
-		manageAttrs, err := cmn.ParseOutputAttrs(attrs, cdevs.CrOSDevAttrMap)
-		if err != nil {
-			logger.Error(err)
-			return err
-		}
-		formattedAttrs := cdevs.StartChromeDevicesField + manageAttrs + cdevs.EndField
-		actionCall := cdevs.AddFields(cdac, formattedAttrs)
-		cdac = actionCall.(*admin.ChromeosdevicesActionCall)
-	}
-
 	err = cdac.Do()
 	if err != nil {
 		logger.Error(err)
@@ -108,6 +97,5 @@ func doManageCrOSDev(cmd *cobra.Command, args []string) error {
 func init() {
 	manageCmd.AddCommand(manageCrOSDevCmd)
 
-	manageCrOSDevCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "device's attributes to display (separated by ~)")
 	manageCrOSDevCmd.Flags().StringVarP(&reason, "reason", "r", "", "device deprovision reason")
 }
