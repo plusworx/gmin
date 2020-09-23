@@ -196,6 +196,10 @@ func btchUpdateOrgUnits(ds *admin.Service, orgunits []*admin.OrgUnit, ouKeys []s
 
 		wg.Add(1)
 
+		// Sleep for 2 seconds because only 1 orgunit can be updated per second but 1 second interval
+		// still can result in rate limit errors
+		time.Sleep(2 * time.Second)
+
 		go btchOUUpdateProcess(ou, wg, ouuc, ouKeys[idx])
 	}
 
