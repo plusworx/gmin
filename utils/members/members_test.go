@@ -120,7 +120,7 @@ func TestValidateDeliverySetting(t *testing.T) {
 		},
 		{
 			delSetting:      "Unknown",
-			expectedErr:     "gmin: error - Unknown is not a valid delivery setting",
+			expectedErr:     "invalid delivery setting: Unknown",
 			expectedSetting: "",
 		},
 	}
@@ -154,7 +154,7 @@ func TestValidateRole(t *testing.T) {
 		},
 		{
 			role:         "Unknown",
-			expectedErr:  "gmin: error - Unknown is not a valid role",
+			expectedErr:  "invalid role: Unknown",
 			expectedRole: "",
 		},
 	}

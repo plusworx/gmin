@@ -27,6 +27,7 @@ import (
 	"sort"
 	"strings"
 
+	cmn "github.com/plusworx/gmin/utils/common"
 	admin "google.golang.org/api/admin/directory/v1"
 	"google.golang.org/api/googleapi"
 )
@@ -166,7 +167,7 @@ func ShowFlagValues(lenArgs int, args []string) error {
 				fmt.Println(t)
 			}
 		default:
-			return fmt.Errorf("gmin: error - %v flag not recognized", args[1])
+			return fmt.Errorf(cmn.ErrFlagNotRecognized, args[1])
 		}
 	}
 

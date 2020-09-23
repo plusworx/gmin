@@ -23,7 +23,6 @@ THE SOFTWARE.
 package mobiledevices
 
 import (
-	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -349,7 +348,7 @@ func ShowAttrs(filter string) {
 // ShowAttrValues displays enumerated attribute values
 func ShowAttrValues(lenArgs int, args []string) error {
 	if lenArgs > 2 {
-		return errors.New("gmin: error - too many arguments, mobiledevice has maximum of 2")
+		return fmt.Errorf(cmn.ErrTooManyArgsMax2, "mobiledevice")
 	}
 
 	if lenArgs == 1 {
@@ -367,7 +366,7 @@ func ShowAttrValues(lenArgs int, args []string) error {
 			}
 		} else {
 
-			return fmt.Errorf("gmin: error - %v attribute not recognized", args[1])
+			return fmt.Errorf(cmn.ErrAttrNotRecognized, args[1])
 		}
 	}
 
@@ -433,7 +432,7 @@ func ShowFlagValues(lenArgs int, args []string) error {
 				fmt.Println(so)
 			}
 		default:
-			return fmt.Errorf("gmin: error - %v flag not recognized", args[1])
+			return fmt.Errorf(cmn.ErrFlagNotRecognized, args[1])
 		}
 	}
 
@@ -447,7 +446,7 @@ func ShowSubAttrs(compAttr string, filter string) error {
 	case "applications":
 		cmn.ShowAttrs(mobDevApplicationsAttrs, MobDevAttrMap, filter)
 	default:
-		return fmt.Errorf("gmin: error - %v is not a composite attribute", compAttr)
+		return fmt.Errorf(cmn.ErrNotCompositeAttr, compAttr)
 	}
 
 	return nil

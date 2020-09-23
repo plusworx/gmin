@@ -84,6 +84,5 @@ func ShowAttrs(filter string) {
 		if strings.Contains(k, strings.ToLower(filter)) {
 			fmt.Println(UserAliasAttrMap[k])
 		}
-
 	}
 }

@@ -237,7 +237,7 @@ func ShowFlagValues(lenArgs int, args []string) error {
 				fmt.Println(so)
 			}
 		default:
-			return fmt.Errorf("gmin: error - %v flag not recognized", args[1])
+			return fmt.Errorf(cmn.ErrFlagNotRecognized, args[1])
 		}
 	}
 	return nil

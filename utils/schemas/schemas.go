@@ -186,7 +186,7 @@ func ShowCompAttrs(filter string) {
 // ShowSubCompAttrs displays schema field spec composite attributes
 func ShowSubCompAttrs(subAttr string, filter string) error {
 	if subAttr != "fieldspec" {
-		return fmt.Errorf("gmin: error - %v is not a valid schema composite attribute", subAttr)
+		return fmt.Errorf(cmn.ErrInvalidSchemaCompAttr, subAttr)
 	}
 
 	keys := make([]string, 0, len(schemaFieldSpecCompAttrs))
@@ -211,7 +211,7 @@ func ShowSubCompAttrs(subAttr string, filter string) error {
 // ShowSubAttrs displays attributes of composite attributes
 func ShowSubAttrs(subAttr string, filter string) error {
 	if strings.ToLower(subAttr) != "fieldspec" {
-		return fmt.Errorf("gmin: error - %v is not a composite attribute", subAttr)
+		return fmt.Errorf(cmn.ErrNotCompositeAttr, subAttr)
 	}
 
 	for _, a := range fieldSpecAttrs {
@@ -241,7 +241,7 @@ func ShowSubAttrs(subAttr string, filter string) error {
 // ShowSubSubAttrs displays attributes of composite attributes
 func ShowSubSubAttrs(subAttr string) error {
 	if strings.ToLower(subAttr) != "numericindexingspec" {
-		return fmt.Errorf("gmin: error - %v is not a composite attribute", subAttr)
+		return fmt.Errorf(cmn.ErrNotCompositeAttr, subAttr)
 	}
 
 	for _, a := range schemaFieldSpecNumIdxSpecAttrs {

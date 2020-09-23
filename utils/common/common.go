@@ -112,6 +112,7 @@ const (
 	// Messages
 	// Errors
 
+	ErrAttrNotRecognized        string = "%v attribute is not recognized"
 	ErrBatchChromeOSDevice      string = "error - %s - ChromeOS device: %s"
 	ErrBatchGroup               string = "error - %s - group: %s"
 	ErrBatchMember              string = "error - %s - member: %s"
@@ -123,7 +124,9 @@ const (
 	ErrEmptyPassword            string = "password cannot be empty string"
 	ErrEmptyRecoveryEmail       string = "recovery email cannot be empty string"
 	ErrEmptyRecoveryPhone       string = "recovery phone cannot be empty string"
+	ErrFlagNotRecognized        string = "%v flag is not recognized"
 	ErrInvalidActionType        string = "invalid action type: %v"
+	ErrInvalidDeliverySetting   string = "invalid delivery setting: %v"
 	ErrInvalidDeprovisionReason string = "invalid deprovision reason: %v"
 	ErrInvalidEmailAddress      string = "invalid email address: %v"
 	ErrInvalidFileFormat        string = "invalid file format: %v"
@@ -133,6 +136,8 @@ const (
 	ErrInvalidPagesArgument     string = "pages argument must be 'all' or a number"
 	ErrInvalidProjectionType    string = "invalid projection type: %v"
 	ErrInvalidRecoveryPhone     string = "recovery phone number %v must start with '+'"
+	ErrInvalidRole              string = "invalid role: %v"
+	ErrInvalidSchemaCompAttr    string = "invalid schema composite attribute: %v"
 	ErrInvalidSearchType        string = "invalid search type: %v"
 	ErrInvalidViewType          string = "invalid view type: %v"
 	ErrMax2ArgsExceeded         string = "exceeded maxumum 2 arguments"
@@ -154,9 +159,11 @@ const (
 	ErrNoQueryableAttrs         string = "%v does not have any queryable attributes"
 	ErrNoSheetDataFound         string = "no data found in sheet %s - range: %s"
 	ErrNoSheetRange             string = "sheetrange must be provided"
+	ErrNotCompositeAttr         string = "%v is not a composite attribute"
 	ErrObjectNotFound           string = "%v not found"
 	ErrObjectNotRecognized      string = " %v is not recognized"
 	ErrProjectionFlagNotCustom  string = "--projection must be set to 'custom' in order to use custom field mask"
+	ErrTooManyArgsMax2          string = "too many arguments, %v has maximum of 2"
 	ErrQueryableFlag1Arg        string = "only one argument is allowed with --queryable flag"
 	ErrQueryAndCompositeFlags   string = "cannot provide both --composite and --queryable flags"
 	ErrQueryAndDeletedFlags     string = "cannot provide both --query and --deleted flags"

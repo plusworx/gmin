@@ -818,7 +818,7 @@ func ShowAttrValues(lenArgs int, args []string) error {
 		case attr == "posixaccount":
 			fmt.Println("operatingSystemType")
 		default:
-			return fmt.Errorf("gmin: error - %v attribute not recognized", args[1])
+			return fmt.Errorf(cmn.ErrAttrNotRecognized, args[1])
 		}
 	}
 
@@ -833,7 +833,7 @@ func ShowAttrValues(lenArgs int, args []string) error {
 					fmt.Println(val)
 				}
 			} else {
-				return fmt.Errorf("gmin: error - %v attribute not recognized", args[2])
+				return fmt.Errorf(cmn.ErrAttrNotRecognized, args[2])
 			}
 		case attr2 == "email":
 			if attr3 == "type" {
@@ -841,7 +841,7 @@ func ShowAttrValues(lenArgs int, args []string) error {
 					fmt.Println(val)
 				}
 			} else {
-				return fmt.Errorf("gmin: error - %v attribute not recognized", args[2])
+				return fmt.Errorf(cmn.ErrAttrNotRecognized, args[2])
 			}
 		case attr2 == "externalid":
 			if attr3 == "type" {
@@ -849,7 +849,7 @@ func ShowAttrValues(lenArgs int, args []string) error {
 					fmt.Println(val)
 				}
 			} else {
-				return fmt.Errorf("gmin: error - %v attribute not recognized", args[2])
+				return fmt.Errorf(cmn.ErrAttrNotRecognized, args[2])
 			}
 		case attr2 == "gender":
 			if attr3 == "type" {
@@ -857,7 +857,7 @@ func ShowAttrValues(lenArgs int, args []string) error {
 					fmt.Println(val)
 				}
 			} else {
-				return fmt.Errorf("gmin: error - %v attribute not recognized", args[2])
+				return fmt.Errorf(cmn.ErrAttrNotRecognized, args[2])
 			}
 		case attr2 == "keyword":
 			if attr3 == "type" {
@@ -865,7 +865,7 @@ func ShowAttrValues(lenArgs int, args []string) error {
 					fmt.Println(val)
 				}
 			} else {
-				return fmt.Errorf("gmin: error - %v attribute not recognized", args[2])
+				return fmt.Errorf(cmn.ErrAttrNotRecognized, args[2])
 			}
 		case attr2 == "location":
 			if attr3 == "type" {
@@ -873,7 +873,7 @@ func ShowAttrValues(lenArgs int, args []string) error {
 					fmt.Println(val)
 				}
 			} else {
-				return fmt.Errorf("gmin: error - %v attribute not recognized", args[2])
+				return fmt.Errorf(cmn.ErrAttrNotRecognized, args[2])
 			}
 		case attr2 == "notes":
 			if attr3 == "type" {
@@ -881,7 +881,7 @@ func ShowAttrValues(lenArgs int, args []string) error {
 					fmt.Println(val)
 				}
 			} else {
-				return fmt.Errorf("gmin: error - %v attribute not recognized", args[2])
+				return fmt.Errorf(cmn.ErrAttrNotRecognized, args[2])
 			}
 		case attr2 == "organization":
 			if attr3 == "type" {
@@ -889,7 +889,7 @@ func ShowAttrValues(lenArgs int, args []string) error {
 					fmt.Println(val)
 				}
 			} else {
-				return fmt.Errorf("gmin: error - %v attribute not recognized", args[2])
+				return fmt.Errorf(cmn.ErrAttrNotRecognized, args[2])
 			}
 		case attr2 == "phone":
 			if attr3 == "type" {
@@ -897,7 +897,7 @@ func ShowAttrValues(lenArgs int, args []string) error {
 					fmt.Println(val)
 				}
 			} else {
-				return fmt.Errorf("gmin: error - %v attribute not recognized", args[2])
+				return fmt.Errorf(cmn.ErrAttrNotRecognized, args[2])
 			}
 		case attr2 == "posixaccount":
 			if attr3 == "operatingsystemtype" {
@@ -905,7 +905,7 @@ func ShowAttrValues(lenArgs int, args []string) error {
 					fmt.Println(val)
 				}
 			} else {
-				return fmt.Errorf("gmin: error - %v attribute not recognized", args[2])
+				return fmt.Errorf(cmn.ErrAttrNotRecognized, args[2])
 			}
 		case attr2 == "relation":
 			if attr3 == "type" {
@@ -913,7 +913,7 @@ func ShowAttrValues(lenArgs int, args []string) error {
 					fmt.Println(val)
 				}
 			} else {
-				return fmt.Errorf("gmin: error - %v attribute not recognized", args[2])
+				return fmt.Errorf(cmn.ErrAttrNotRecognized, args[2])
 			}
 		case attr2 == "website":
 			if attr3 == "type" {
@@ -921,7 +921,7 @@ func ShowAttrValues(lenArgs int, args []string) error {
 					fmt.Println(val)
 				}
 			} else {
-				return fmt.Errorf("gmin: error - %v attribute not recognized", args[2])
+				return fmt.Errorf(cmn.ErrAttrNotRecognized, args[2])
 			}
 		case attr2 == "im":
 			if attr3 == "protocol" {
@@ -933,10 +933,10 @@ func ShowAttrValues(lenArgs int, args []string) error {
 					fmt.Println(val)
 				}
 			} else {
-				return fmt.Errorf("gmin: error - %v attribute not recognized", args[2])
+				return fmt.Errorf(cmn.ErrAttrNotRecognized, args[2])
 			}
 		default:
-			return fmt.Errorf("gmin: error - %v attribute not recognized", args[1])
+			return fmt.Errorf(cmn.ErrAttrNotRecognized, args[1])
 		}
 	}
 
@@ -1006,7 +1006,7 @@ func ShowFlagValues(lenArgs int, args []string) error {
 				fmt.Println(vt)
 			}
 		default:
-			return fmt.Errorf("gmin: error - %v flag not recognized", args[1])
+			return fmt.Errorf(cmn.ErrFlagNotRecognized, args[1])
 		}
 	}
 
@@ -1050,7 +1050,7 @@ func ShowSubAttrs(compAttr string, filter string) error {
 	case "website":
 		cmn.ShowAttrs(websiteAttrs, UserAttrMap, filter)
 	default:
-		return fmt.Errorf("gmin: error - %v is not a composite attribute", compAttr)
+		return fmt.Errorf(cmn.ErrNotCompositeAttr, compAttr)
 	}
 
 	return nil

@@ -23,11 +23,11 @@ THE SOFTWARE.
 package members
 
 import (
-	"errors"
 	"fmt"
 	"sort"
 	"strings"
 
+	cmn "github.com/plusworx/gmin/utils/common"
 	admin "google.golang.org/api/admin/directory/v1"
 	"google.golang.org/api/googleapi"
 )
@@ -175,7 +175,7 @@ func ShowAttrs(filter string) {
 // ShowAttrValues displays enumerated attribute values
 func ShowAttrValues(lenArgs int, args []string) error {
 	if lenArgs > 2 {
-		return errors.New("gmin: error - too many arguments, group-member has maximum of 2")
+		return fmt.Errorf(cmn.ErrTooManyArgsMax2, "group-member")
 	}
 
 	if lenArgs == 1 {
@@ -206,7 +206,7 @@ func ShowAttrValues(lenArgs int, args []string) error {
 				fmt.Println(s)
 			}
 		default:
-			return fmt.Errorf("gmin: error - %v attribute not recognized", args[1])
+			return fmt.Errorf(cmn.ErrAttrNotRecognized, args[1])
 		}
 	}
 
@@ -235,7 +235,7 @@ func ShowFlagValues(lenArgs int, args []string) error {
 				fmt.Println(s)
 			}
 		} else {
-			return fmt.Errorf("gmin: error - %v flag not recognized", args[1])
+			return fmt.Errorf(cmn.ErrFlagNotRecognized, args[1])
 		}
 	}
 
@@ -248,7 +248,7 @@ func ValidateDeliverySetting(ds string) (string, error) {
 
 	validSetting := deliverySettingMap[lowerDS]
 	if validSetting == "" {
-		return "", fmt.Errorf("gmin: error - %v is not a valid delivery setting", ds)
+		return "", fmt.Errorf(cmn.ErrInvalidDeliverySetting, ds)
 	}
 
 	return validSetting, nil
@@ -260,7 +260,7 @@ func ValidateRole(role string) (string, error) {
 
 	validRole := RoleMap[lowerRole]
 	if validRole == "" {
-		return "", fmt.Errorf("gmin: error - %v is not a valid role", role)
+		return "", fmt.Errorf(cmn.ErrInvalidRole, role)
 	}
 
 	return validRole, nil
