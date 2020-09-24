@@ -23,7 +23,6 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -171,8 +170,10 @@ func setupLogging(loglevel string) (*zap.Logger, error) {
 		zconf.Level.SetLevel(zapcore.InfoLevel)
 	case "error":
 		zconf.Level.SetLevel(zapcore.ErrorLevel)
+	case "warn":
+		zconf.Level.SetLevel(zapcore.WarnLevel)
 	default:
-		return nil, errors.New("gmin: error - loglevel " + loglevel + " is invalid")
+		return nil, fmt.Errorf(cmn.ErrInvalidLogLevel, loglevel)
 	}
 
 	zconf.EncoderConfig.EncodeTime = zapcore.TimeEncoder(func(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
