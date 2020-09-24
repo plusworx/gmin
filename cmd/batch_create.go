@@ -23,6 +23,8 @@ THE SOFTWARE.
 package cmd
 
 import (
+	"os"
+
 	"github.com/spf13/cobra"
 )
 
@@ -41,14 +43,21 @@ func doBatchCreate(cmd *cobra.Command, args []string) {
 
 func init() {
 	rootCmd.AddCommand(batchCreateCmd)
+	batchCreateCmd.PersistentFlags().BoolVar(&silent, "silent", false, "suppress console output")
 	batchCreateCmd.PersistentFlags().StringVar(&logLevel, "loglevel", "info", "log level (debug, info, error, warn)")
 
 	batchCreateCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
+		// Set log level
 		zlog, err := setupLogging(logLevel)
 		if err != nil {
 			return err
 		}
 		logger = zlog.Sugar()
+		// Suppress console output according to silent flag
+		if silent {
+			os.Stdout = nil
+			os.Stderr = nil
+		}
 		return nil
 	}
 }

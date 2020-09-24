@@ -90,6 +90,7 @@ var (
 	recoveryPhone    string
 	role             string
 	searchType       string
+	silent           bool
 	sortOrder        string
 	suspended        bool
 	unblockInherit   bool

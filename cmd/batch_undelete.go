@@ -23,6 +23,8 @@ THE SOFTWARE.
 package cmd
 
 import (
+	"os"
+
 	"github.com/spf13/cobra"
 )
 
@@ -41,14 +43,21 @@ func doBatchUndelete(cmd *cobra.Command, args []string) {
 
 func init() {
 	rootCmd.AddCommand(batchUndeleteCmd)
+	batchUndeleteCmd.PersistentFlags().BoolVar(&silent, "silent", false, "suppress console output")
 	batchUndeleteCmd.PersistentFlags().StringVar(&logLevel, "loglevel", "info", "log level (debug, info, error, warn)")
 
 	batchUndeleteCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
+		// Set loglevel
 		zlog, err := setupLogging(logLevel)
 		if err != nil {
 			return err
 		}
 		logger = zlog.Sugar()
+		// Suppress console output according to silent flag
+		if silent {
+			os.Stdout = nil
+			os.Stderr = nil
+		}
 		return nil
 	}
 }
