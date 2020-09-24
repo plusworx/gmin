@@ -55,6 +55,9 @@ var batchDelUserCmd = &cobra.Command{
 }
 
 func doBatchDelUser(cmd *cobra.Command, args []string) error {
+	logger.Debugw("starting doBatchDelUser()",
+		"args", args)
+
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserScope)
 	if err != nil {
 		logger.Error(err)
@@ -98,10 +101,14 @@ func doBatchDelUser(cmd *cobra.Command, args []string) error {
 
 	wg.Wait()
 
+	logger.Debug("finished doBatchDelUser()")
 	return nil
 }
 
 func deleteUser(wg *sync.WaitGroup, udc *admin.UsersDeleteCall, user string) {
+	logger.Debugw("starting deleteUser()",
+		"user", user)
+
 	defer wg.Done()
 
 	b := backoff.NewExponentialBackOff()
@@ -120,8 +127,8 @@ func deleteUser(wg *sync.WaitGroup, udc *admin.UsersDeleteCall, user string) {
 			return backoff.Permanent(fmt.Errorf(cmn.ErrBatchUser, err.Error(), user))
 		}
 		// Log the retries
-		logger.Errorw(err.Error(),
-			"retrying", b.Clock.Now().String(),
+		logger.Warnw(err.Error(),
+			"retrying", b.GetElapsedTime().String(),
 			"user", user)
 		return fmt.Errorf(cmn.ErrBatchUser, err.Error(), user)
 	}, b)
@@ -130,6 +137,7 @@ func deleteUser(wg *sync.WaitGroup, udc *admin.UsersDeleteCall, user string) {
 		logger.Error(err)
 		fmt.Println(cmn.GminMessage(err.Error()))
 	}
+	logger.Debug("finished deleteUser()")
 }
 
 func init() {

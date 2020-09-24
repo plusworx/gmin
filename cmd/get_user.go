@@ -46,6 +46,9 @@ var getUserCmd = &cobra.Command{
 }
 
 func doGetUser(cmd *cobra.Command, args []string) error {
+	logger.Debugw("starting doGetUser()",
+		"args", args)
+
 	var (
 		jsonData []byte
 		user     *admin.User
@@ -123,6 +126,7 @@ func doGetUser(cmd *cobra.Command, args []string) error {
 
 	fmt.Println(string(jsonData))
 
+	logger.Debug("finished doGetUser()")
 	return nil
 }
 

@@ -132,6 +132,7 @@ const (
 	ErrInvalidFileFormat        string = "invalid file format: %v"
 	ErrInvalidJSONAttr          string = "attribute string is not valid JSON"
 	ErrInvalidJSONFile          string = "input file is not valid JSON"
+	ErrInvalidLogLevel          string = "invalid loglevel: %v"
 	ErrInvalidOrderBy           string = "invalid order by field: %v"
 	ErrInvalidPagesArgument     string = "pages argument must be 'all' or a number"
 	ErrInvalidProjectionType    string = "invalid projection type: %v"
@@ -625,6 +626,7 @@ var validLogLevels = []string{
 	"debug",
 	"error",
 	"info",
+	"warn",
 }
 
 // ValidSortOrders provides valid sort order strings

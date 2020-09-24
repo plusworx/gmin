@@ -79,6 +79,9 @@ var batchMngMobDevCmd = &cobra.Command{
 }
 
 func doBatchMngMobDev(cmd *cobra.Command, args []string) error {
+	logger.Debugw("starting doBatchMngMobDev()",
+		"args", args)
+
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryDeviceMobileActionScope)
 	if err != nil {
 		logger.Error(err)
@@ -126,11 +129,14 @@ func doBatchMngMobDev(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	}
-
+	logger.Debug("finished doBatchMngMobDev()")
 	return nil
 }
 
 func btchMngJSONMobDev(ds *admin.Service, jsonData string) (mdevs.ManagedDevice, error) {
+	logger.Debugw("starting btchMngJSONMobDev()",
+		"jsonData", jsonData)
+
 	managedDev := mdevs.ManagedDevice{}
 	jsonBytes := []byte(jsonData)
 
@@ -156,11 +162,13 @@ func btchMngJSONMobDev(ds *admin.Service, jsonData string) (mdevs.ManagedDevice,
 		logger.Error(err)
 		return managedDev, err
 	}
-
+	logger.Debug("finished btchMngJSONMobDev()")
 	return managedDev, nil
 }
 
 func btchMngMobDevs(ds *admin.Service, managedDevs []mdevs.ManagedDevice) error {
+	logger.Debug("starting btchMngMobDevs()")
+
 	customerID, err := cfg.ReadConfigString("customerid")
 	if err != nil {
 		logger.Error(err)
@@ -183,10 +191,15 @@ func btchMngMobDevs(ds *admin.Service, managedDevs []mdevs.ManagedDevice) error 
 
 	wg.Wait()
 
+	logger.Debug("finished btchMngMobDevs()")
 	return nil
 }
 
 func btchMngMobDevProcess(resourceID string, action string, wg *sync.WaitGroup, mdac *admin.MobiledevicesActionCall) {
+	logger.Debugw("starting btchMngMobDevProcess()",
+		"action", action,
+		"resourceID", resourceID)
+
 	defer wg.Done()
 
 	b := backoff.NewExponentialBackOff()
@@ -204,8 +217,8 @@ func btchMngMobDevProcess(resourceID string, action string, wg *sync.WaitGroup, 
 			return backoff.Permanent(fmt.Errorf(cmn.ErrBatchMobileDevice, err.Error(), resourceID))
 		}
 		// Log the retries
-		logger.Errorw(err.Error(),
-			"retrying", b.Clock.Now().String(),
+		logger.Warnw(err.Error(),
+			"retrying", b.GetElapsedTime().String(),
 			"mobile device", resourceID)
 		return fmt.Errorf(cmn.ErrBatchMobileDevice, err.Error(), resourceID)
 	}, b)
@@ -214,9 +227,13 @@ func btchMngMobDevProcess(resourceID string, action string, wg *sync.WaitGroup, 
 		logger.Error(err)
 		fmt.Println(cmn.GminMessage(err.Error()))
 	}
+	logger.Debug("finished btchMngMobDevProcess()")
 }
 
 func btchMngMobDevProcessCSV(ds *admin.Service, filePath string) error {
+	logger.Debugw("starting btchMngMobDevProcessCSV()",
+		"filePath", filePath)
+
 	var (
 		iSlice      []interface{}
 		hdrMap      = map[int]string{}
@@ -278,10 +295,14 @@ func btchMngMobDevProcessCSV(ds *admin.Service, filePath string) error {
 		logger.Error(err)
 		return err
 	}
+	logger.Debug("finished btchMngMobDevProcessCSV()")
 	return nil
 }
 
 func btchMngMobDevProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner) error {
+	logger.Debugw("starting btchMngMobDevProcessJSON()",
+		"filePath", filePath)
+
 	var managedDevs []mdevs.ManagedDevice
 
 	if filePath != "" {
@@ -317,11 +338,14 @@ func btchMngMobDevProcessJSON(ds *admin.Service, filePath string, scanner *bufio
 		logger.Error(err)
 		return err
 	}
-
+	logger.Debug("finished btchMngMobDevProcessJSON()")
 	return nil
 }
 
 func btchMngMobDevProcessSheet(ds *admin.Service, sheetID string) error {
+	logger.Debugw("starting btchMngMobDevProcessSheet()",
+		"sheetID", sheetID)
+
 	var managedDevs []mdevs.ManagedDevice
 
 	if sheetRange == "" {
@@ -375,11 +399,14 @@ func btchMngMobDevProcessSheet(ds *admin.Service, sheetID string) error {
 		logger.Error(err)
 		return err
 	}
-
+	logger.Debug("finished btchMngMobDevProcessSheet()")
 	return nil
 }
 
 func btchMngProcessMobDev(hdrMap map[int]string, mdevData []interface{}) (mdevs.ManagedDevice, error) {
+	logger.Debugw("starting btchMngProcessMobDev()",
+		"hdrMap", hdrMap)
+
 	managedDev := mdevs.ManagedDevice{}
 
 	for idx, attr := range mdevData {
@@ -399,7 +426,7 @@ func btchMngProcessMobDev(hdrMap map[int]string, mdevData []interface{}) (mdevs.
 			managedDev.ResourceId = fmt.Sprintf("%v", attr)
 		}
 	}
-
+	logger.Debug("finished btchMngProcessMobDev()")
 	return managedDev, nil
 }
 

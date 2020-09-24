@@ -56,6 +56,9 @@ var batchDelOrgUnitCmd = &cobra.Command{
 }
 
 func doBatchDelOrgUnit(cmd *cobra.Command, args []string) error {
+	logger.Debugw("starting doBatchDelOrgUnit()",
+		"args", args)
+
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryOrgunitScope)
 	if err != nil {
 		logger.Error(err)
@@ -113,10 +116,14 @@ func doBatchDelOrgUnit(cmd *cobra.Command, args []string) error {
 
 	wg.Wait()
 
+	logger.Debug("finished doBatchDelOrgUnit()")
 	return nil
 }
 
 func deleteOU(wg *sync.WaitGroup, oudc *admin.OrgunitsDeleteCall, ouPath string) {
+	logger.Debugw("starting deleteOU()",
+		"ouPath", ouPath)
+
 	defer wg.Done()
 
 	b := backoff.NewExponentialBackOff()
@@ -135,8 +142,8 @@ func deleteOU(wg *sync.WaitGroup, oudc *admin.OrgunitsDeleteCall, ouPath string)
 			return backoff.Permanent(fmt.Errorf(cmn.ErrBatchOU, err.Error(), ouPath))
 		}
 		// Log the retries
-		logger.Errorw(err.Error(),
-			"retrying", b.Clock.Now().String(),
+		logger.Warnw(err.Error(),
+			"retrying", b.GetElapsedTime().String(),
 			"orgunit", ouPath)
 		return fmt.Errorf(cmn.ErrBatchOU, err.Error(), ouPath)
 	}, b)
@@ -145,6 +152,7 @@ func deleteOU(wg *sync.WaitGroup, oudc *admin.OrgunitsDeleteCall, ouPath string)
 		logger.Error(err)
 		fmt.Println(cmn.GminMessage(err.Error()))
 	}
+	logger.Debug("finished deleteOU()")
 }
 
 func init() {

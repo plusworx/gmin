@@ -71,6 +71,9 @@ var batchCrtOrgUnitCmd = &cobra.Command{
 }
 
 func doBatchCrtOrgUnit(cmd *cobra.Command, args []string) error {
+	logger.Debugw("starting doBatchCrtOrgUnit()",
+		"args", args)
+
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryOrgunitScope)
 	if err != nil {
 		logger.Error(err)
@@ -118,11 +121,14 @@ func doBatchCrtOrgUnit(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	}
-
+	logger.Debug("finished doBatchCrtOrgUnit()")
 	return nil
 }
 
 func btchCreateJSONOrgUnit(ds *admin.Service, jsonData string) (*admin.OrgUnit, error) {
+	logger.Debugw("starting btchCreateJSONOrgUnit()",
+		"jsonData", jsonData)
+
 	var (
 		emptyVals = cmn.EmptyValues{}
 		orgunit   *admin.OrgUnit
@@ -162,11 +168,13 @@ func btchCreateJSONOrgUnit(ds *admin.Service, jsonData string) (*admin.OrgUnit, 
 	if len(emptyVals.ForceSendFields) > 0 {
 		orgunit.ForceSendFields = emptyVals.ForceSendFields
 	}
-
+	logger.Debug("finished btchCreateJSONOrgUnit()")
 	return orgunit, nil
 }
 
 func btchInsertNewOrgUnits(ds *admin.Service, orgunits []*admin.OrgUnit) error {
+	logger.Debug("starting btchInsertNewOrgUnits()")
+
 	customerID, err := cfg.ReadConfigString("customerid")
 	if err != nil {
 		logger.Error(err)
@@ -195,10 +203,13 @@ func btchInsertNewOrgUnits(ds *admin.Service, orgunits []*admin.OrgUnit) error {
 
 	wg.Wait()
 
+	logger.Debug("finished btchInsertNewOrgUnits()")
 	return nil
 }
 
 func btchOUInsertProcess(orgunit *admin.OrgUnit, wg *sync.WaitGroup, ouic *admin.OrgunitsInsertCall) {
+	logger.Debug("starting btchOUInsertProcess()")
+
 	defer wg.Done()
 
 	b := backoff.NewExponentialBackOff()
@@ -216,8 +227,8 @@ func btchOUInsertProcess(orgunit *admin.OrgUnit, wg *sync.WaitGroup, ouic *admin
 			return backoff.Permanent(fmt.Errorf(cmn.ErrBatchOU, err.Error(), orgunit.Name))
 		}
 		// Log the retries
-		logger.Errorw(err.Error(),
-			"retrying", b.Clock.Now().String(),
+		logger.Warnw(err.Error(),
+			"retrying", b.GetElapsedTime().String(),
 			"orgunit", orgunit.Name)
 		return fmt.Errorf(cmn.ErrBatchOU, err.Error(), orgunit.Name)
 	}, b)
@@ -226,9 +237,13 @@ func btchOUInsertProcess(orgunit *admin.OrgUnit, wg *sync.WaitGroup, ouic *admin
 		logger.Error(err)
 		fmt.Println(cmn.GminMessage(err.Error()))
 	}
+	logger.Debug("finished btchOUInsertProcess()")
 }
 
 func btchOUProcessCSV(ds *admin.Service, filePath string) error {
+	logger.Debugw("starting btchOUProcessCSV()",
+		"filePath", filePath)
+
 	var (
 		iSlice   []interface{}
 		hdrMap   = map[int]string{}
@@ -290,10 +305,14 @@ func btchOUProcessCSV(ds *admin.Service, filePath string) error {
 		logger.Error(err)
 		return err
 	}
+	logger.Debug("finished btchOUProcessCSV()")
 	return nil
 }
 
 func btchOUProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner) error {
+	logger.Debugw("starting btchOUProcessJSON()",
+		"filePath", filePath)
+
 	var orgunits []*admin.OrgUnit
 
 	if filePath != "" {
@@ -329,11 +348,14 @@ func btchOUProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanne
 		logger.Error(err)
 		return err
 	}
-
+	logger.Debug("finished btchOUProcessJSON()")
 	return nil
 }
 
 func btchOUProcessSheet(ds *admin.Service, sheetID string) error {
+	logger.Debugw("starting btchOUProcessSheet()",
+		"sheetID", sheetID)
+
 	var orgunits []*admin.OrgUnit
 
 	if sheetRange == "" {
@@ -387,11 +409,14 @@ func btchOUProcessSheet(ds *admin.Service, sheetID string) error {
 		logger.Error(err)
 		return err
 	}
-
+	logger.Debug("finished btchOUProcessSheet()")
 	return nil
 }
 
 func btchCrtProcessOrgUnit(hdrMap map[int]string, ouData []interface{}) (*admin.OrgUnit, error) {
+	logger.Debugw("starting btchCrtProcessOrgUnit()",
+		"hdrMap", hdrMap)
+
 	var orgunit *admin.OrgUnit
 
 	orgunit = new(admin.OrgUnit)
@@ -413,7 +438,7 @@ func btchCrtProcessOrgUnit(hdrMap map[int]string, ouData []interface{}) (*admin.
 			orgunit.ParentOrgUnitPath = fmt.Sprintf("%v", attr)
 		}
 	}
-
+	logger.Debug("finished btchCrtProcessOrgUnit()")
 	return orgunit, nil
 }
 

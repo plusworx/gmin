@@ -56,6 +56,9 @@ var batchDelMemberCmd = &cobra.Command{
 }
 
 func doBatchDelMember(cmd *cobra.Command, args []string) error {
+	logger.Debugw("starting doBatchDelMember()",
+		"args", args)
+
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupMemberScope)
 	if err != nil {
 		logger.Error(err)
@@ -99,10 +102,15 @@ func doBatchDelMember(cmd *cobra.Command, args []string) error {
 
 	wg.Wait()
 
+	logger.Debug("finished doBatchDelMember()")
 	return nil
 }
 
 func deleteMember(wg *sync.WaitGroup, mdc *admin.MembersDeleteCall, member string, group string) {
+	logger.Debugw("starting deleteMember()",
+		"group", group,
+		"member", member)
+
 	defer wg.Done()
 
 	b := backoff.NewExponentialBackOff()
@@ -119,8 +127,8 @@ func deleteMember(wg *sync.WaitGroup, mdc *admin.MembersDeleteCall, member strin
 		if !cmn.IsErrRetryable(err) {
 			return backoff.Permanent(fmt.Errorf(cmn.ErrBatchMember, err.Error(), member))
 		}
-		logger.Errorw(err.Error(),
-			"retrying", b.Clock.Now().String(),
+		logger.Warnw(err.Error(),
+			"retrying", b.GetElapsedTime().String(),
 			"group", group,
 			"member", member)
 		return fmt.Errorf(cmn.ErrBatchMember, err.Error(), member)
@@ -130,6 +138,7 @@ func deleteMember(wg *sync.WaitGroup, mdc *admin.MembersDeleteCall, member strin
 		logger.Error(err)
 		fmt.Println(cmn.GminMessage(err.Error()))
 	}
+	logger.Debug("finished deleteMember()")
 }
 
 func init() {

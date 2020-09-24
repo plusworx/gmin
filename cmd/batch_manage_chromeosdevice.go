@@ -83,6 +83,9 @@ var batchMngCrOSDevCmd = &cobra.Command{
 }
 
 func doBatchMngCrOSDev(cmd *cobra.Command, args []string) error {
+	logger.Debugw("starting doBatchMngCrOSDev()",
+		"args", args)
+
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryDeviceChromeosScope)
 	if err != nil {
 		logger.Error(err)
@@ -130,11 +133,14 @@ func doBatchMngCrOSDev(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	}
-
+	logger.Debug("finished doBatchMngCrOSDev()")
 	return nil
 }
 
 func btchMngJSONCrOSDev(ds *admin.Service, jsonData string) (cdevs.ManagedDevice, error) {
+	logger.Debugw("starting btchMngJSONCrOSDev()",
+		"jsonData", jsonData)
+
 	managedDev := cdevs.ManagedDevice{}
 	jsonBytes := []byte(jsonData)
 
@@ -161,10 +167,13 @@ func btchMngJSONCrOSDev(ds *admin.Service, jsonData string) (cdevs.ManagedDevice
 		return managedDev, err
 	}
 
+	logger.Debug("finished btchMngJSONCrOSDev()")
 	return managedDev, nil
 }
 
 func btchMngCrOSDevs(ds *admin.Service, managedDevs []cdevs.ManagedDevice) error {
+	logger.Debug("starting btchMngCrOSDevs()")
+
 	customerID, err := cfg.ReadConfigString("customerid")
 	if err != nil {
 		logger.Error(err)
@@ -188,10 +197,15 @@ func btchMngCrOSDevs(ds *admin.Service, managedDevs []cdevs.ManagedDevice) error
 
 	wg.Wait()
 
+	logger.Debug("finished btchMngCrOSDevs()")
 	return nil
 }
 
 func btchMngCrOSDevProcess(deviceID string, action string, wg *sync.WaitGroup, cdac *admin.ChromeosdevicesActionCall) {
+	logger.Debugw("starting btchMngCrOSDevProcess()",
+		"action", action,
+		"deviceID", deviceID)
+
 	defer wg.Done()
 
 	b := backoff.NewExponentialBackOff()
@@ -209,8 +223,8 @@ func btchMngCrOSDevProcess(deviceID string, action string, wg *sync.WaitGroup, c
 			return backoff.Permanent(fmt.Errorf(cmn.ErrBatchChromeOSDevice, err.Error(), deviceID))
 		}
 		// Log the retries
-		logger.Errorw(err.Error(),
-			"retrying", b.Clock.Now().String(),
+		logger.Warnw(err.Error(),
+			"retrying", b.GetElapsedTime().String(),
 			"ChromeOS device", deviceID)
 		return fmt.Errorf(cmn.ErrBatchChromeOSDevice, err.Error(), deviceID)
 	}, b)
@@ -219,9 +233,13 @@ func btchMngCrOSDevProcess(deviceID string, action string, wg *sync.WaitGroup, c
 		logger.Error(err)
 		fmt.Println(cmn.GminMessage(err.Error()))
 	}
+	logger.Debug("finished btchMngCrOSDevProcess()")
 }
 
 func btchMngCrOSDevProcessCSV(ds *admin.Service, filePath string) error {
+	logger.Debugw("starting btchMngCrOSDevProcessCSV()",
+		"filePath", filePath)
+
 	var (
 		iSlice      []interface{}
 		hdrMap      = map[int]string{}
@@ -283,10 +301,14 @@ func btchMngCrOSDevProcessCSV(ds *admin.Service, filePath string) error {
 		logger.Error(err)
 		return err
 	}
+	logger.Debug("finished btchMngCrOSDevProcessCSV()")
 	return nil
 }
 
 func btchMngCrOSDevProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner) error {
+	logger.Debugw("starting btchMngCrOSDevProcessJSON()",
+		"filePath", filePath)
+
 	var managedDevs []cdevs.ManagedDevice
 
 	if filePath != "" {
@@ -322,11 +344,14 @@ func btchMngCrOSDevProcessJSON(ds *admin.Service, filePath string, scanner *bufi
 		logger.Error(err)
 		return err
 	}
-
+	logger.Debug("finished btchMngCrOSDevProcessJSON()")
 	return nil
 }
 
 func btchMngCrOSDevProcessSheet(ds *admin.Service, sheetID string) error {
+	logger.Debugw("starting btchMngCrOSDevProcessSheet()",
+		"sheetID", sheetID)
+
 	var managedDevs []cdevs.ManagedDevice
 
 	if sheetRange == "" {
@@ -380,11 +405,14 @@ func btchMngCrOSDevProcessSheet(ds *admin.Service, sheetID string) error {
 		logger.Error(err)
 		return err
 	}
-
+	logger.Debug("finished btchMngCrOSDevProcessSheet()")
 	return nil
 }
 
 func btchMngProcessCrOSDev(hdrMap map[int]string, cdevData []interface{}) (cdevs.ManagedDevice, error) {
+	logger.Debugw("starting btchMngProcessCrOSDev()",
+		"hdrMap", hdrMap)
+
 	managedDev := cdevs.ManagedDevice{}
 
 	for idx, attr := range cdevData {
@@ -421,7 +449,7 @@ func btchMngProcessCrOSDev(hdrMap map[int]string, cdevData []interface{}) (cdevs
 		logger.Error(err)
 		return managedDev, err
 	}
-
+	logger.Debug("finished btchMngProcessCrOSDev()")
 	return managedDev, nil
 }
 

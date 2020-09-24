@@ -75,6 +75,9 @@ var batchUpdCrOSDevCmd = &cobra.Command{
 }
 
 func doBatchUpdCrOSDev(cmd *cobra.Command, args []string) error {
+	logger.Debugw("starting doBatchUpdCrOSDev()",
+		"args", args)
+
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryDeviceChromeosScope)
 	if err != nil {
 		logger.Error(err)
@@ -122,11 +125,14 @@ func doBatchUpdCrOSDev(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	}
-
+	logger.Debug("finished doBatchUpdCrOSDev()")
 	return nil
 }
 
 func btchUpdJSONCDev(ds *admin.Service, jsonData string) (*admin.ChromeOsDevice, error) {
+	logger.Debugw("starting btchUpdJSONCDev()",
+		"jsonData", jsonData)
+
 	var (
 		crosdev   *admin.ChromeOsDevice
 		emptyVals = cmn.EmptyValues{}
@@ -172,11 +178,12 @@ func btchUpdJSONCDev(ds *admin.Service, jsonData string) (*admin.ChromeOsDevice,
 	if len(emptyVals.ForceSendFields) > 0 {
 		crosdev.ForceSendFields = emptyVals.ForceSendFields
 	}
-
+	logger.Debug("finished btchUpdJSONCDev()")
 	return crosdev, nil
 }
 
 func btchUpdateCDevs(ds *admin.Service, crosdevs []*admin.ChromeOsDevice) error {
+	logger.Debug("starting btchUpdateCDevs()")
 	wg := new(sync.WaitGroup)
 
 	customerID, err := cfg.ReadConfigString("customerid")
@@ -195,10 +202,12 @@ func btchUpdateCDevs(ds *admin.Service, crosdevs []*admin.ChromeOsDevice) error 
 
 	wg.Wait()
 
+	logger.Debug("finished btchUpdateCDevs()")
 	return nil
 }
 
 func btchCDevUpdateProcess(crosdev *admin.ChromeOsDevice, wg *sync.WaitGroup, cduc *admin.ChromeosdevicesUpdateCall) {
+	logger.Debug("starting btchCDevUpdateProcess()")
 	defer wg.Done()
 
 	b := backoff.NewExponentialBackOff()
@@ -216,8 +225,8 @@ func btchCDevUpdateProcess(crosdev *admin.ChromeOsDevice, wg *sync.WaitGroup, cd
 			return backoff.Permanent(fmt.Errorf(cmn.ErrBatchChromeOSDevice, err.Error(), crosdev.DeviceId))
 		}
 		// Log the retries
-		logger.Errorw(err.Error(),
-			"retrying", b.Clock.Now().String(),
+		logger.Warnw(err.Error(),
+			"retrying", b.GetElapsedTime().String(),
 			"ChromeOS device", crosdev.DeviceId)
 		return fmt.Errorf(cmn.ErrBatchChromeOSDevice, err.Error(), crosdev.DeviceId)
 	}, b)
@@ -226,9 +235,13 @@ func btchCDevUpdateProcess(crosdev *admin.ChromeOsDevice, wg *sync.WaitGroup, cd
 		logger.Error(err)
 		fmt.Println(cmn.GminMessage(err.Error()))
 	}
+	logger.Debug("finished btchCDevUpdateProcess()")
 }
 
 func btchUpdCDevProcessCSV(ds *admin.Service, filePath string) error {
+	logger.Debugw("starting btchUpdCDevProcessCSV()",
+		"filePath", filePath)
+
 	var (
 		iSlice   []interface{}
 		hdrMap   = map[int]string{}
@@ -290,10 +303,14 @@ func btchUpdCDevProcessCSV(ds *admin.Service, filePath string) error {
 		logger.Error(err)
 		return err
 	}
+	logger.Debug("finished btchUpdCDevProcessCSV()")
 	return nil
 }
 
 func btchUpdCDevProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner) error {
+	logger.Debugw("starting btchUpdCDevProcessJSON()",
+		"filePath", filePath)
+
 	var crosdevs []*admin.ChromeOsDevice
 
 	if filePath != "" {
@@ -329,11 +346,14 @@ func btchUpdCDevProcessJSON(ds *admin.Service, filePath string, scanner *bufio.S
 		logger.Error(err)
 		return err
 	}
-
+	logger.Debug("finished btchUpdCDevProcessJSON()")
 	return nil
 }
 
 func btchUpdCDevProcessSheet(ds *admin.Service, sheetID string) error {
+	logger.Debugw("starting btchUpdCDevProcessSheet()",
+		"sheetID", sheetID)
+
 	var crosdevs []*admin.ChromeOsDevice
 
 	if sheetRange == "" {
@@ -387,11 +407,14 @@ func btchUpdCDevProcessSheet(ds *admin.Service, sheetID string) error {
 		logger.Error(err)
 		return err
 	}
-
+	logger.Debug("finished btchUpdCDevProcessSheet()")
 	return nil
 }
 
 func btchUpdProcessCDev(hdrMap map[int]string, cdevData []interface{}) (*admin.ChromeOsDevice, error) {
+	logger.Debugw("starting btchUpdProcessCDev()",
+		"hdrMap", hdrMap)
+
 	var crosdev *admin.ChromeOsDevice
 
 	crosdev = new(admin.ChromeOsDevice)
@@ -428,7 +451,7 @@ func btchUpdProcessCDev(hdrMap map[int]string, cdevData []interface{}) (*admin.C
 			crosdev.OrgUnitPath = fmt.Sprintf("%v", attr)
 		}
 	}
-
+	logger.Debug("finished btchUpdProcessCDev()")
 	return crosdev, nil
 }
 

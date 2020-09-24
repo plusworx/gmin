@@ -69,6 +69,9 @@ var batchCrtGroupCmd = &cobra.Command{
 }
 
 func doBatchCrtGroup(cmd *cobra.Command, args []string) error {
+	logger.Debugw("starting doBatchCrtGroup()",
+		"args", args)
+
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupScope)
 	if err != nil {
 		return err
@@ -115,11 +118,14 @@ func doBatchCrtGroup(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	}
-
+	logger.Debug("finished doBatchCrtGroup()")
 	return nil
 }
 
 func btchCreateJSONGroup(ds *admin.Service, jsonData string) (*admin.Group, error) {
+	logger.Debugw("starting btchCreateJSONGroup()",
+		"jsonData", jsonData)
+
 	var (
 		emptyVals = cmn.EmptyValues{}
 		group     *admin.Group
@@ -159,11 +165,13 @@ func btchCreateJSONGroup(ds *admin.Service, jsonData string) (*admin.Group, erro
 	if len(emptyVals.ForceSendFields) > 0 {
 		group.ForceSendFields = emptyVals.ForceSendFields
 	}
-
+	logger.Debug("finished btchCreateJSONGroup()")
 	return group, nil
 }
 
 func btchInsertNewGroups(ds *admin.Service, groups []*admin.Group) error {
+	logger.Debug("starting btchInsertNewGroups()")
+
 	wg := new(sync.WaitGroup)
 
 	for _, g := range groups {
@@ -182,10 +190,13 @@ func btchInsertNewGroups(ds *admin.Service, groups []*admin.Group) error {
 
 	wg.Wait()
 
+	logger.Debug("finished btchInsertNewGroups()")
 	return nil
 }
 
 func btchGrpInsertProcess(group *admin.Group, wg *sync.WaitGroup, gic *admin.GroupsInsertCall) {
+	logger.Debug("starting btchGrpInsertProcess()")
+
 	defer wg.Done()
 
 	b := backoff.NewExponentialBackOff()
@@ -203,8 +214,8 @@ func btchGrpInsertProcess(group *admin.Group, wg *sync.WaitGroup, gic *admin.Gro
 			return backoff.Permanent(fmt.Errorf(cmn.ErrBatchGroup, err.Error(), group.Email))
 		}
 		// Log the retries
-		logger.Errorw(err.Error(),
-			"retrying", b.Clock.Now().String(),
+		logger.Warnw(err.Error(),
+			"retrying", b.GetElapsedTime().String(),
 			"group", group.Email)
 		return fmt.Errorf(cmn.ErrBatchGroup, err.Error(), group.Email)
 	}, b)
@@ -213,9 +224,13 @@ func btchGrpInsertProcess(group *admin.Group, wg *sync.WaitGroup, gic *admin.Gro
 		logger.Error(err)
 		fmt.Println(cmn.GminMessage(err.Error()))
 	}
+	logger.Debug("finished btchGrpInsertProcess()")
 }
 
 func btchGrpProcessCSV(ds *admin.Service, filePath string) error {
+	logger.Debugw("starting btchGrpProcessCSV()",
+		"filePath", filePath)
+
 	var (
 		iSlice []interface{}
 		hdrMap = map[int]string{}
@@ -277,10 +292,14 @@ func btchGrpProcessCSV(ds *admin.Service, filePath string) error {
 		logger.Error(err)
 		return err
 	}
+	logger.Debug("finished btchGrpProcessCSV()")
 	return nil
 }
 
 func btchGrpProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner) error {
+	logger.Debugw("starting btchGrpProcessJSON",
+		"filePath", filePath)
+
 	var groups []*admin.Group
 
 	if filePath != "" {
@@ -316,11 +335,14 @@ func btchGrpProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scann
 		logger.Error(err)
 		return err
 	}
-
+	logger.Debug("finished btchGrpProcessJSON()")
 	return nil
 }
 
 func btchGrpProcessSheet(ds *admin.Service, sheetID string) error {
+	logger.Debugw("starting btchGrpProcessSheet()",
+		"sheetID", sheetID)
+
 	var groups []*admin.Group
 
 	if sheetRange == "" {
@@ -374,11 +396,14 @@ func btchGrpProcessSheet(ds *admin.Service, sheetID string) error {
 		logger.Error(err)
 		return err
 	}
-
+	logger.Debug("finished btchGrpProcessSheet()")
 	return nil
 }
 
 func btchCrtProcessGroup(hdrMap map[int]string, grpData []interface{}) (*admin.Group, error) {
+	logger.Debugw("starting btchCrtProcessGroup()",
+		"hdrMap", hdrMap)
+
 	var group *admin.Group
 
 	group = new(admin.Group)
@@ -395,7 +420,7 @@ func btchCrtProcessGroup(hdrMap map[int]string, grpData []interface{}) (*admin.G
 			group.Name = fmt.Sprintf("%v", attr)
 		}
 	}
-
+	logger.Debug("finished btchCrtProcessGroup()")
 	return group, nil
 }
 

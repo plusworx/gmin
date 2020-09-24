@@ -69,6 +69,9 @@ var batchMoveCrOSDevCmd = &cobra.Command{
 }
 
 func doBatchMoveCrOSDev(cmd *cobra.Command, args []string) error {
+	logger.Debugw("starting doBatchMoveCrOSDev()",
+		"args", args)
+
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryDeviceChromeosScope)
 	if err != nil {
 		logger.Error(err)
@@ -116,11 +119,14 @@ func doBatchMoveCrOSDev(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	}
-
+	logger.Debug("finished doBatchMoveCrOSDev()")
 	return nil
 }
 
 func btchMoveJSONCrOSDev(ds *admin.Service, jsonData string) (cdevs.MovedDevice, error) {
+	logger.Debugw("starting btchMoveJSONCrOSDev()",
+		"jsonData", jsonData)
+
 	movedDev := cdevs.MovedDevice{}
 	jsonBytes := []byte(jsonData)
 
@@ -146,11 +152,13 @@ func btchMoveJSONCrOSDev(ds *admin.Service, jsonData string) (cdevs.MovedDevice,
 		logger.Error(err)
 		return movedDev, err
 	}
-
+	logger.Debug("finished btchMoveJSONCrOSDev()")
 	return movedDev, nil
 }
 
 func btchMoveCrOSDevs(ds *admin.Service, movedDevs []cdevs.MovedDevice) error {
+	logger.Debug("starting btchMoveCrOSDevs()")
+
 	customerID, err := cfg.ReadConfigString("customerid")
 	if err != nil {
 		logger.Error(err)
@@ -175,10 +183,15 @@ func btchMoveCrOSDevs(ds *admin.Service, movedDevs []cdevs.MovedDevice) error {
 
 	wg.Wait()
 
+	logger.Debug("finished btchMoveCrOSDevs()")
 	return nil
 }
 
 func btchMoveCrOSDevProcess(deviceID string, ouPath string, wg *sync.WaitGroup, cdmc *admin.ChromeosdevicesMoveDevicesToOuCall) {
+	logger.Debugw("starting btchMoveCrOSDevProcess()",
+		"deviceID", deviceID,
+		"ouPath", ouPath)
+
 	defer wg.Done()
 
 	b := backoff.NewExponentialBackOff()
@@ -196,8 +209,8 @@ func btchMoveCrOSDevProcess(deviceID string, ouPath string, wg *sync.WaitGroup, 
 			return backoff.Permanent(fmt.Errorf(cmn.ErrBatchChromeOSDevice, err.Error(), deviceID))
 		}
 		// Log the retries
-		logger.Errorw(err.Error(),
-			"retrying", b.Clock.Now().String(),
+		logger.Warnw(err.Error(),
+			"retrying", b.GetElapsedTime().String(),
 			"ChromeOS device", deviceID,
 			"orgunit", ouPath)
 		return fmt.Errorf(cmn.ErrBatchChromeOSDevice, err.Error(), deviceID)
@@ -207,9 +220,13 @@ func btchMoveCrOSDevProcess(deviceID string, ouPath string, wg *sync.WaitGroup, 
 		logger.Error(err)
 		fmt.Println(cmn.GminMessage(err.Error()))
 	}
+	logger.Debug("finished btchMoveCrOSDevProcess()")
 }
 
 func btchMoveCrOSDevProcessCSV(ds *admin.Service, filePath string) error {
+	logger.Debugw("starting btchMoveCrOSDevProcessCSV()",
+		"filePath", filePath)
+
 	var (
 		iSlice    []interface{}
 		hdrMap    = map[int]string{}
@@ -271,10 +288,14 @@ func btchMoveCrOSDevProcessCSV(ds *admin.Service, filePath string) error {
 		logger.Error(err)
 		return err
 	}
+	logger.Debug("finished btchMoveCrOSDevProcessCSV()")
 	return nil
 }
 
 func btchMoveCrOSDevProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner) error {
+	logger.Debugw("starting btchMoveCrOSDevProcessJSON()",
+		"filePath", filePath)
+
 	var movedDevs []cdevs.MovedDevice
 
 	if filePath != "" {
@@ -310,11 +331,14 @@ func btchMoveCrOSDevProcessJSON(ds *admin.Service, filePath string, scanner *buf
 		logger.Error(err)
 		return err
 	}
-
+	logger.Debug("finished btchMoveCrOSDevProcessJSON()")
 	return nil
 }
 
 func btchMoveCrOSDevProcessSheet(ds *admin.Service, sheetID string) error {
+	logger.Debugw("starting btchMoveCrOSDevProcessSheet()",
+		"sheetID", sheetID)
+
 	var movedDevs []cdevs.MovedDevice
 
 	if sheetRange == "" {
@@ -368,11 +392,14 @@ func btchMoveCrOSDevProcessSheet(ds *admin.Service, sheetID string) error {
 		logger.Error(err)
 		return err
 	}
-
+	logger.Debug("finished btchMoveCrOSDevProcessSheet()")
 	return nil
 }
 
 func btchMoveProcessCrOSDev(hdrMap map[int]string, cdevData []interface{}) (cdevs.MovedDevice, error) {
+	logger.Debugw("starting btchMoveProcessCrOSDev()",
+		"hdrMap", hdrMap)
+
 	movedDev := cdevs.MovedDevice{}
 
 	for idx, attr := range cdevData {
@@ -385,7 +412,7 @@ func btchMoveProcessCrOSDev(hdrMap map[int]string, cdevData []interface{}) (cdev
 			movedDev.OrgUnitPath = fmt.Sprintf("%v", attr)
 		}
 	}
-
+	logger.Debug("finished btchMoveProcessCrOSDev()")
 	return movedDev, nil
 }
 

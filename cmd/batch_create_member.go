@@ -70,6 +70,9 @@ var batchCrtMemberCmd = &cobra.Command{
 }
 
 func doBatchCrtMember(cmd *cobra.Command, args []string) error {
+	logger.Debugw("starting doBatchCrtMember()",
+		"args", args)
+
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupMemberScope)
 	if err != nil {
 		logger.Error(err)
@@ -119,11 +122,14 @@ func doBatchCrtMember(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	}
-
+	logger.Debug("finished doBatchCrtMember()")
 	return nil
 }
 
 func btchCreateJSONMember(ds *admin.Service, jsonData string) (*admin.Member, error) {
+	logger.Debugw("starting btchCreateJSONMember()",
+		"jsonData", jsonData)
+
 	var (
 		emptyVals = cmn.EmptyValues{}
 		member    *admin.Member
@@ -163,11 +169,14 @@ func btchCreateJSONMember(ds *admin.Service, jsonData string) (*admin.Member, er
 	if len(emptyVals.ForceSendFields) > 0 {
 		member.ForceSendFields = emptyVals.ForceSendFields
 	}
-
+	logger.Debug("finished btchCreateJSONMember()")
 	return member, nil
 }
 
 func btchInsertNewMembers(ds *admin.Service, groupKey string, members []*admin.Member) error {
+	logger.Debugw("starting btchInsertNewMembers()",
+		"groupKey", groupKey)
+
 	wg := new(sync.WaitGroup)
 
 	for _, m := range members {
@@ -186,10 +195,14 @@ func btchInsertNewMembers(ds *admin.Service, groupKey string, members []*admin.M
 
 	wg.Wait()
 
+	logger.Debug("finished btchInsertNewMembers()")
 	return nil
 }
 
 func btchMemInsertProcess(member *admin.Member, groupKey string, wg *sync.WaitGroup, mic *admin.MembersInsertCall) {
+	logger.Debugw("starting btchMemInsertProcess()",
+		"groupKey", groupKey)
+
 	defer wg.Done()
 
 	b := backoff.NewExponentialBackOff()
@@ -207,8 +220,8 @@ func btchMemInsertProcess(member *admin.Member, groupKey string, wg *sync.WaitGr
 			return backoff.Permanent(fmt.Errorf(cmn.ErrBatchMember, err.Error(), member.Email))
 		}
 		// Log the retries
-		logger.Errorw(err.Error(),
-			"retrying", b.Clock.Now().String(),
+		logger.Warnw(err.Error(),
+			"retrying", b.GetElapsedTime().String(),
 			"group", groupKey,
 			"member", member.Email)
 		return fmt.Errorf(cmn.ErrBatchMember, err.Error(), member.Email)
@@ -218,9 +231,14 @@ func btchMemInsertProcess(member *admin.Member, groupKey string, wg *sync.WaitGr
 		logger.Error(err)
 		fmt.Println(cmn.GminMessage(err.Error()))
 	}
+	logger.Debug("finished btchMemInsertProcess()")
 }
 
 func btchCrtMemProcessCSV(ds *admin.Service, groupKey string, filePath string) error {
+	logger.Debugw("starting btchCrtMemProcessCSV()",
+		"filePath", filePath,
+		"groupKey", groupKey)
+
 	var (
 		iSlice  []interface{}
 		hdrMap  = map[int]string{}
@@ -281,10 +299,15 @@ func btchCrtMemProcessCSV(ds *admin.Service, groupKey string, filePath string) e
 		logger.Error(err)
 		return err
 	}
+	logger.Debug("finished btchCrtMemProcessCSV")
 	return nil
 }
 
 func btchCrtMemProcessJSON(ds *admin.Service, groupKey, filePath string, scanner *bufio.Scanner) error {
+	logger.Debugw("starting btchCrtMemProcessJSON()",
+		"filePath", filePath,
+		"groupKey", groupKey)
+
 	var members []*admin.Member
 
 	if filePath != "" {
@@ -320,11 +343,15 @@ func btchCrtMemProcessJSON(ds *admin.Service, groupKey, filePath string, scanner
 		logger.Error(err)
 		return err
 	}
-
+	logger.Debug("finished btchCrtMemProcessJSON()")
 	return nil
 }
 
 func btchCrtMemProcessSheet(ds *admin.Service, groupKey string, sheetID string) error {
+	logger.Debugw("starting btchCrtMemProcessSheet()",
+		"groupKey", groupKey,
+		"sheetID", sheetID)
+
 	var members []*admin.Member
 
 	if sheetRange == "" {
@@ -378,11 +405,14 @@ func btchCrtMemProcessSheet(ds *admin.Service, groupKey string, sheetID string) 
 		logger.Error(err)
 		return err
 	}
-
+	logger.Debug("finished btchCrtMemProcessSheet()")
 	return nil
 }
 
 func btchCrtProcessMember(hdrMap map[int]string, grpData []interface{}) (*admin.Member, error) {
+	logger.Debugw("starting btchCrtProcessMember()",
+		"hdrMap", hdrMap)
+
 	var member *admin.Member
 
 	member = new(admin.Member)
@@ -411,7 +441,7 @@ func btchCrtProcessMember(hdrMap map[int]string, grpData []interface{}) (*admin.
 			member.Role = validRole
 		}
 	}
-
+	logger.Debug("finished btchCrtProcessMember()")
 	return member, nil
 }
 

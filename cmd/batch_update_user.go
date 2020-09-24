@@ -80,6 +80,9 @@ var batchUpdUserCmd = &cobra.Command{
 }
 
 func doBatchUpdUser(cmd *cobra.Command, args []string) error {
+	logger.Debugw("starting doBatchUpdUser()",
+		"args", args)
+
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserScope)
 	if err != nil {
 		logger.Error(err)
@@ -127,11 +130,14 @@ func doBatchUpdUser(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	}
-
+	logger.Debug("finished doBatchUpdUser()")
 	return nil
 }
 
 func btchUpdJSONUser(ds *admin.Service, jsonData string) (*admin.User, string, error) {
+	logger.Debugw("starting btchUpdJSONUser()",
+		"jsonData", jsonData)
+
 	var (
 		emptyVals = cmn.EmptyValues{}
 		user      *admin.User
@@ -184,11 +190,14 @@ func btchUpdJSONUser(ds *admin.Service, jsonData string) (*admin.User, string, e
 	if len(emptyVals.ForceSendFields) > 0 {
 		user.ForceSendFields = emptyVals.ForceSendFields
 	}
-
+	logger.Debug("finished btchUpdJSONUser()")
 	return user, usrKey.UserKey, nil
 }
 
 func btchUpdateUsers(ds *admin.Service, users []*admin.User, userKeys []string) error {
+	logger.Debugw("starting btchUpdateUsers()",
+		"userKeys", userKeys)
+
 	wg := new(sync.WaitGroup)
 
 	for idx, u := range users {
@@ -211,10 +220,14 @@ func btchUpdateUsers(ds *admin.Service, users []*admin.User, userKeys []string) 
 
 	wg.Wait()
 
+	logger.Debug("finished btchUpdateUsers()")
 	return nil
 }
 
 func btchUsrUpdateProcess(user *admin.User, wg *sync.WaitGroup, uuc *admin.UsersUpdateCall, userKey string) {
+	logger.Debugw("starting btchUsrUpdateProcess()",
+		"userKey", userKey)
+
 	defer wg.Done()
 
 	b := backoff.NewExponentialBackOff()
@@ -232,8 +245,8 @@ func btchUsrUpdateProcess(user *admin.User, wg *sync.WaitGroup, uuc *admin.Users
 			return backoff.Permanent(fmt.Errorf(cmn.ErrBatchUser, err.Error(), userKey))
 		}
 		// Log the retries
-		logger.Errorw(err.Error(),
-			"retrying", b.Clock.Now().String(),
+		logger.Warnw(err.Error(),
+			"retrying", b.GetElapsedTime().String(),
 			"user", userKey)
 		return fmt.Errorf(cmn.ErrBatchUser, err.Error(), userKey)
 	}, b)
@@ -242,9 +255,13 @@ func btchUsrUpdateProcess(user *admin.User, wg *sync.WaitGroup, uuc *admin.Users
 		logger.Error(err)
 		fmt.Println(cmn.GminMessage(err.Error()))
 	}
+	logger.Debug("finished btchUsrUpdateProcess()")
 }
 
 func btchUpdUsrProcessCSV(ds *admin.Service, filePath string) error {
+	logger.Debugw("starting btchUpdUsrProcessCSV()",
+		"filePath", filePath)
+
 	var (
 		iSlice   []interface{}
 		hdrMap   = map[int]string{}
@@ -308,10 +325,14 @@ func btchUpdUsrProcessCSV(ds *admin.Service, filePath string) error {
 		logger.Error(err)
 		return err
 	}
+	logger.Debug("finished btchUpdUsrProcessCSV()")
 	return nil
 }
 
 func btchUpdUsrProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner) error {
+	logger.Debugw("starting btchUpdUsrProcessJSON()",
+		"filePath", filePath)
+
 	var (
 		userKeys []string
 		users    []*admin.User
@@ -351,11 +372,14 @@ func btchUpdUsrProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Sc
 		logger.Error(err)
 		return err
 	}
-
+	logger.Debug("finished btchUpdUsrProcessJSON()")
 	return nil
 }
 
 func btchUpdUsrProcessSheet(ds *admin.Service, sheetID string) error {
+	logger.Debugw("starting btchUpdUsrProcessSheet()",
+		"sheetID", sheetID)
+
 	var (
 		userKeys []string
 		users    []*admin.User
@@ -413,11 +437,14 @@ func btchUpdUsrProcessSheet(ds *admin.Service, sheetID string) error {
 		logger.Error(err)
 		return err
 	}
-
+	logger.Debug("finished btchUpdUsrProcessSheet()")
 	return nil
 }
 
 func btchUpdProcessUser(hdrMap map[int]string, userData []interface{}) (*admin.User, string, error) {
+	logger.Debugw("starting btchUpdProcessUser()",
+		"hdrMap", hdrMap)
+
 	var (
 		name    *admin.UserName
 		user    *admin.User
@@ -504,7 +531,7 @@ func btchUpdProcessUser(hdrMap map[int]string, userData []interface{}) (*admin.U
 	if name.FamilyName != "" || name.GivenName != "" || name.FullName != "" {
 		user.Name = name
 	}
-
+	logger.Debug("finished btchUpdProcessUser()")
 	return user, userKey, nil
 }
 

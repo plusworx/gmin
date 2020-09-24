@@ -56,6 +56,9 @@ lkalkju9027ja98na65wqHaTBOOUgarTQKk9`,
 }
 
 func doBatchDelMobDev(cmd *cobra.Command, args []string) error {
+	logger.Debugw("starting doBatchDelMobDev()",
+		"args", args)
+
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryDeviceMobileScope)
 	if err != nil {
 		logger.Error(err)
@@ -104,10 +107,14 @@ func doBatchDelMobDev(cmd *cobra.Command, args []string) error {
 
 	wg.Wait()
 
+	logger.Debug("finished doBatchDelMobDev()")
 	return nil
 }
 
 func deleteMobDev(wg *sync.WaitGroup, mdc *admin.MobiledevicesDeleteCall, resourceID string) {
+	logger.Debugw("starting deleteMobDev()",
+		"resourceID", resourceID)
+
 	defer wg.Done()
 
 	b := backoff.NewExponentialBackOff()
@@ -125,8 +132,8 @@ func deleteMobDev(wg *sync.WaitGroup, mdc *admin.MobiledevicesDeleteCall, resour
 			return backoff.Permanent(fmt.Errorf(cmn.ErrBatchMobileDevice, err.Error(), resourceID))
 		}
 		// Log the retries
-		logger.Errorw(err.Error(),
-			"retrying", b.Clock.Now().String(),
+		logger.Warnw(err.Error(),
+			"retrying", b.GetElapsedTime().String(),
 			"mobile device", resourceID)
 		return fmt.Errorf(cmn.ErrBatchMobileDevice, err.Error(), resourceID)
 	}, b)
@@ -135,6 +142,7 @@ func deleteMobDev(wg *sync.WaitGroup, mdc *admin.MobiledevicesDeleteCall, resour
 		logger.Error(err)
 		fmt.Println(cmn.GminMessage(err.Error()))
 	}
+	logger.Debug("finished deleteMobDev()")
 }
 
 func init() {

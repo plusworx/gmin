@@ -55,6 +55,9 @@ unused_group@company.com`,
 }
 
 func doBatchDelGroup(cmd *cobra.Command, args []string) error {
+	logger.Debugw("starting doBatchDelGroup()",
+		"args", args)
+
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupScope)
 	if err != nil {
 		logger.Error(err)
@@ -97,10 +100,14 @@ func doBatchDelGroup(cmd *cobra.Command, args []string) error {
 
 	wg.Wait()
 
+	logger.Debug("finished doBatchDelGroup()")
 	return nil
 }
 
 func deleteGroup(wg *sync.WaitGroup, gdc *admin.GroupsDeleteCall, group string) {
+	logger.Debugw("starting deleteGroup()",
+		"group", group)
+
 	defer wg.Done()
 
 	b := backoff.NewExponentialBackOff()
@@ -119,8 +126,8 @@ func deleteGroup(wg *sync.WaitGroup, gdc *admin.GroupsDeleteCall, group string) 
 			return backoff.Permanent(fmt.Errorf(cmn.ErrBatchGroup, err.Error(), group))
 		}
 		// Log the retries
-		logger.Errorw(err.Error(),
-			"retrying", b.Clock.Now().String(),
+		logger.Warnw(err.Error(),
+			"retrying", b.GetElapsedTime().String(),
 			"group", group)
 		return fmt.Errorf(cmn.ErrBatchGroup, err.Error(), group)
 	}, b)
@@ -129,6 +136,7 @@ func deleteGroup(wg *sync.WaitGroup, gdc *admin.GroupsDeleteCall, group string) 
 		logger.Error(err)
 		fmt.Println(cmn.GminMessage(err.Error()))
 	}
+	logger.Debug("finished deleteGroup()")
 }
 
 func init() {

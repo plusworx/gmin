@@ -70,6 +70,9 @@ var batchUndelUserCmd = &cobra.Command{
 }
 
 func doBatchUndelUser(cmd *cobra.Command, args []string) error {
+	logger.Debugw("starting doBatchUndelUser()",
+		"args", args)
+
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserScope)
 	if err != nil {
 		logger.Error(err)
@@ -117,11 +120,14 @@ func doBatchUndelUser(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	}
-
+	logger.Debug("finished doBatchUndelUser()")
 	return nil
 }
 
 func btchUndelJSONUser(ds *admin.Service, jsonData string) (usrs.UndeleteUser, error) {
+	logger.Debugw("starting btchUndelJSONUser()",
+		"jsonData", jsonData)
+
 	undelUser := usrs.UndeleteUser{}
 	jsonBytes := []byte(jsonData)
 
@@ -147,11 +153,12 @@ func btchUndelJSONUser(ds *admin.Service, jsonData string) (usrs.UndeleteUser, e
 		logger.Error(err)
 		return undelUser, err
 	}
-
+	logger.Debug("finished btchUndelJSONUser()")
 	return undelUser, nil
 }
 
 func btchUndelUsers(ds *admin.Service, undelUsers []usrs.UndeleteUser) error {
+	logger.Debug("starting btchUndelUsers()")
 	wg := new(sync.WaitGroup)
 
 	for _, u := range undelUsers {
@@ -172,10 +179,14 @@ func btchUndelUsers(ds *admin.Service, undelUsers []usrs.UndeleteUser) error {
 
 	wg.Wait()
 
+	logger.Debug("finished btchUndelUsers()")
 	return nil
 }
 
 func btchUsrUndelProcess(userKey string, wg *sync.WaitGroup, uuc *admin.UsersUndeleteCall) {
+	logger.Debugw("starting btchUsrUndelProcess()",
+		"userKey", userKey)
+
 	defer wg.Done()
 
 	b := backoff.NewExponentialBackOff()
@@ -193,8 +204,8 @@ func btchUsrUndelProcess(userKey string, wg *sync.WaitGroup, uuc *admin.UsersUnd
 			return backoff.Permanent(fmt.Errorf(cmn.ErrBatchUser, err.Error(), userKey))
 		}
 		// Log the retries
-		logger.Errorw(err.Error(),
-			"retrying", b.Clock.Now().String(),
+		logger.Warnw(err.Error(),
+			"retrying", b.GetElapsedTime().String(),
 			"user", userKey)
 		return fmt.Errorf(cmn.ErrBatchUser, err.Error(), userKey)
 	}, b)
@@ -203,9 +214,13 @@ func btchUsrUndelProcess(userKey string, wg *sync.WaitGroup, uuc *admin.UsersUnd
 		logger.Error(err)
 		fmt.Println(cmn.GminMessage(err.Error()))
 	}
+	logger.Debug("finished btchUsrUndelProcess()")
 }
 
 func btchUndelUsrProcessCSV(ds *admin.Service, filePath string) error {
+	logger.Debugw("starting btchUndelUsrProcessCSV()",
+		"filePath", filePath)
+
 	var (
 		iSlice     []interface{}
 		hdrMap     = map[int]string{}
@@ -267,10 +282,14 @@ func btchUndelUsrProcessCSV(ds *admin.Service, filePath string) error {
 		logger.Error(err)
 		return err
 	}
+	logger.Debug("finished btchUndelUsrProcessCSV()")
 	return nil
 }
 
 func btchUndelUsrProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner) error {
+	logger.Debugw("starting btchUndelUsrProcessJSON()",
+		"filePath", filePath)
+
 	var undelUsers []usrs.UndeleteUser
 
 	if filePath != "" {
@@ -306,11 +325,14 @@ func btchUndelUsrProcessJSON(ds *admin.Service, filePath string, scanner *bufio.
 		logger.Error(err)
 		return err
 	}
-
+	logger.Debug("finished btchUndelUsrProcessJSON()")
 	return nil
 }
 
 func btchUndelUsrProcessSheet(ds *admin.Service, sheetID string) error {
+	logger.Debugw("starting btchUndelUsrProcessSheet()",
+		"sheetID", sheetID)
+
 	var undelUsers []usrs.UndeleteUser
 
 	if sheetRange == "" {
@@ -364,11 +386,14 @@ func btchUndelUsrProcessSheet(ds *admin.Service, sheetID string) error {
 		logger.Error(err)
 		return err
 	}
-
+	logger.Debug("finished btchUndelUsrProcessSheet()")
 	return nil
 }
 
 func btchUndelProcessUser(hdrMap map[int]string, userData []interface{}) (usrs.UndeleteUser, error) {
+	logger.Debugw("starting btchUndelProcessUser()",
+		"hdrMap", hdrMap)
+
 	undelUser := usrs.UndeleteUser{}
 
 	for idx, attr := range userData {
@@ -381,7 +406,7 @@ func btchUndelProcessUser(hdrMap map[int]string, userData []interface{}) (usrs.U
 			undelUser.OrgUnitPath = fmt.Sprintf("%v", attr)
 		}
 	}
-
+	logger.Debug("finished btchUndelProcessUser()")
 	return undelUser, nil
 }
 

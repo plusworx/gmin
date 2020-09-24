@@ -72,6 +72,9 @@ var batchUpdMemberCmd = &cobra.Command{
 }
 
 func doBatchUpdMember(cmd *cobra.Command, args []string) error {
+	logger.Debugw("starting doBatchUpdMember()",
+		"args", args)
+
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupMemberScope)
 	if err != nil {
 		logger.Error(err)
@@ -121,11 +124,14 @@ func doBatchUpdMember(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	}
-
+	logger.Debug("finished doBatchUpdMember()")
 	return nil
 }
 
 func btchUpdJSONMember(ds *admin.Service, jsonData string) (*admin.Member, string, error) {
+	logger.Debugw("starting btchUpdJSONMember()",
+		"jsonData", jsonData)
+
 	var (
 		member *admin.Member
 		memKey = mems.Key{}
@@ -168,11 +174,15 @@ func btchUpdJSONMember(ds *admin.Service, jsonData string) (*admin.Member, strin
 		logger.Error(err)
 		return nil, "", err
 	}
-
+	logger.Debug("finished btchUpdJSONMember()")
 	return member, memKey.MemberKey, nil
 }
 
 func btchUpdateMembers(ds *admin.Service, groupKey string, members []*admin.Member, memKeys []string) error {
+	logger.Debugw("starting btchUpdateMembers()",
+		"groupKey", groupKey,
+		"memKeys", memKeys)
+
 	wg := new(sync.WaitGroup)
 
 	for idx, m := range members {
@@ -185,10 +195,15 @@ func btchUpdateMembers(ds *admin.Service, groupKey string, members []*admin.Memb
 
 	wg.Wait()
 
+	logger.Debug("finished btchUpdateMembers()")
 	return nil
 }
 
 func btchMemUpdateProcess(member *admin.Member, groupKey string, wg *sync.WaitGroup, muc *admin.MembersUpdateCall, memKey string) {
+	logger.Debugw("starting btchMemUpdateProcess()",
+		"groupKey", groupKey,
+		"memKey", memKey)
+
 	defer wg.Done()
 
 	b := backoff.NewExponentialBackOff()
@@ -206,8 +221,8 @@ func btchMemUpdateProcess(member *admin.Member, groupKey string, wg *sync.WaitGr
 			return backoff.Permanent(fmt.Errorf(cmn.ErrBatchMember, err.Error(), memKey))
 		}
 		// Log the retries
-		logger.Errorw(err.Error(),
-			"retrying", b.Clock.Now().String(),
+		logger.Warnw(err.Error(),
+			"retrying", b.GetElapsedTime().String(),
 			"group", groupKey,
 			"member", memKey)
 		return fmt.Errorf(cmn.ErrBatchMember, err.Error(), memKey)
@@ -217,9 +232,14 @@ func btchMemUpdateProcess(member *admin.Member, groupKey string, wg *sync.WaitGr
 		logger.Error(err)
 		fmt.Println(cmn.GminMessage(err.Error()))
 	}
+	logger.Debug("finished btchMemUpdateProcess()")
 }
 
 func btchUpdMemProcessCSV(ds *admin.Service, groupKey string, filePath string) error {
+	logger.Debugw("starting btchUpdMemProcessCSV()",
+		"filePath", filePath,
+		"groupKey", groupKey)
+
 	var (
 		iSlice  []interface{}
 		hdrMap  = map[int]string{}
@@ -283,10 +303,15 @@ func btchUpdMemProcessCSV(ds *admin.Service, groupKey string, filePath string) e
 		logger.Error(err)
 		return err
 	}
+	logger.Debug("finished btchUpdMemProcessCSV()")
 	return nil
 }
 
 func btchUpdMemProcessJSON(ds *admin.Service, groupKey string, filePath string, scanner *bufio.Scanner) error {
+	logger.Debugw("starting btchUpdMemProcessJSON()",
+		"groupKey", groupKey,
+		"filePath", filePath)
+
 	var (
 		memKeys []string
 		members []*admin.Member
@@ -326,11 +351,15 @@ func btchUpdMemProcessJSON(ds *admin.Service, groupKey string, filePath string, 
 		logger.Error(err)
 		return err
 	}
-
+	logger.Debug("finished btchUpdMemProcessJSON()")
 	return nil
 }
 
 func btchUpdMemProcessSheet(ds *admin.Service, groupKey string, sheetID string) error {
+	logger.Debugw("starting btchUpdMemProcessSheet()",
+		"groupKey", groupKey,
+		"sheetID", sheetID)
+
 	var (
 		memKeys []string
 		members []*admin.Member
@@ -388,11 +417,14 @@ func btchUpdMemProcessSheet(ds *admin.Service, groupKey string, sheetID string) 
 		logger.Error(err)
 		return err
 	}
-
+	logger.Debug("finished btchUpdMemProcessSheet()")
 	return nil
 }
 
 func btchUpdProcessMember(hdrMap map[int]string, memData []interface{}) (*admin.Member, string, error) {
+	logger.Debugw("starting btchUpdProcessMember()",
+		"hdrMap", hdrMap)
+
 	var (
 		member *admin.Member
 		memKey string
@@ -422,7 +454,7 @@ func btchUpdProcessMember(hdrMap map[int]string, memData []interface{}) (*admin.
 			memKey = fmt.Sprintf("%v", attr)
 		}
 	}
-
+	logger.Debug("finished btchUpdProcessMember()")
 	return member, memKey, nil
 }
 
