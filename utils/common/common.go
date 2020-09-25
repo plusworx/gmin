@@ -181,6 +181,7 @@ const (
 	InfoGroupAliasCreated   string = "group alias: %s created for group: %s"
 	InfoGroupAliasDeleted   string = "group alias: %s deleted for group: %s"
 	InfoGroupDeleted        string = "group deleted: %s"
+	InfoInitCompleted       string = "init completed successfully"
 	InfoGroupUpdated        string = "group updated: %s"
 	InfoLogPathSet          string = "log path set to: %v"
 	InfoMDevActionPerformed string = "%s successfully performed on mobile device: %s"
