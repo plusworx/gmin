@@ -44,6 +44,9 @@ var deleteSchemaCmd = &cobra.Command{
 }
 
 func doDeleteSchema(cmd *cobra.Command, args []string) error {
+	logger.Debugw("starting doDeleteSchema()",
+		"args", args)
+
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserschemaScope)
 	if err != nil {
 		logger.Error(err)
@@ -67,6 +70,7 @@ func doDeleteSchema(cmd *cobra.Command, args []string) error {
 	logger.Infof(cmn.InfoSchemaDeleted, args[0])
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoSchemaDeleted, args[0])))
 
+	logger.Debug("finished doDeleteSchema()")
 	return nil
 }
 

@@ -44,6 +44,9 @@ var createOUCmd = &cobra.Command{
 }
 
 func doCreateOU(cmd *cobra.Command, args []string) error {
+	logger.Debugw("starting doCreateOU()",
+		"args", args)
+
 	var orgunit *admin.OrgUnit
 
 	orgunit = new(admin.OrgUnit)
@@ -86,6 +89,7 @@ func doCreateOU(cmd *cobra.Command, args []string) error {
 	logger.Infof(cmn.InfoOUCreated, newOrgUnit.OrgUnitPath)
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoOUCreated, newOrgUnit.OrgUnitPath)))
 
+	logger.Debug("finished doCreateOU()")
 	return nil
 }
 

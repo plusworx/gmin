@@ -48,6 +48,9 @@ var manageCrOSDevCmd = &cobra.Command{
 }
 
 func doManageCrOSDev(cmd *cobra.Command, args []string) error {
+	logger.Debugw("starting doManageCrOSDev()",
+		"args", args)
+
 	var devAction = admin.ChromeOsDeviceAction{}
 
 	customerID, err := cfg.ReadConfigString("customerid")
@@ -91,6 +94,7 @@ func doManageCrOSDev(cmd *cobra.Command, args []string) error {
 	logger.Infof(cmn.InfoCDevActionPerformed, args[1], args[0])
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoCDevActionPerformed, args[1], args[0])))
 
+	logger.Debug("finished doManageCrOSDev()")
 	return nil
 }
 

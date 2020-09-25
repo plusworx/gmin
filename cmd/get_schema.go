@@ -46,6 +46,9 @@ var getSchemaCmd = &cobra.Command{
 }
 
 func doGetSchema(cmd *cobra.Command, args []string) error {
+	logger.Debugw("starting doGetSchema()",
+		"args", args)
+
 	var (
 		jsonData []byte
 		schema   *admin.Schema
@@ -89,6 +92,7 @@ func doGetSchema(cmd *cobra.Command, args []string) error {
 
 	fmt.Println(string(jsonData))
 
+	logger.Debug("finished doGetSchema()")
 	return nil
 }
 

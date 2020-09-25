@@ -44,6 +44,9 @@ var deleteOUCmd = &cobra.Command{
 }
 
 func doDeleteOU(cmd *cobra.Command, args []string) error {
+	logger.Debugw("starting doDeleteOU()",
+		"args", args)
+
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryOrgunitScope)
 	if err != nil {
 		logger.Error(err)
@@ -67,6 +70,7 @@ func doDeleteOU(cmd *cobra.Command, args []string) error {
 	logger.Infof(cmn.InfoOUDeleted, args[0])
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoOUDeleted, args[0])))
 
+	logger.Debug("finished doDeleteOU()")
 	return nil
 }
 

@@ -47,6 +47,9 @@ var listMembersCmd = &cobra.Command{
 }
 
 func doListMembers(cmd *cobra.Command, args []string) error {
+	logger.Debugw("starting doListMembers()",
+		"args", args)
+
 	var (
 		jsonData []byte
 		members  *admin.Members
@@ -109,10 +112,13 @@ func doListMembers(cmd *cobra.Command, args []string) error {
 		fmt.Println(string(jsonData))
 	}
 
+	logger.Debug("finished doListMembers()")
 	return nil
 }
 
 func doMemAllPages(mlc *admin.MembersListCall, members *admin.Members) error {
+	logger.Debug("starting doMemAllPages()")
+
 	if members.NextPageToken != "" {
 		mlc = mems.AddPageToken(mlc, members.NextPageToken)
 		nxtMems, err := mems.DoList(mlc)
@@ -129,10 +135,14 @@ func doMemAllPages(mlc *admin.MembersListCall, members *admin.Members) error {
 		}
 	}
 
+	logger.Debug("finished doMemAllPages()")
 	return nil
 }
 
 func doMemNumPages(mlc *admin.MembersListCall, members *admin.Members, numPages int) error {
+	logger.Debugw("starting doMemNumPages()",
+		"numPages", numPages)
+
 	if members.NextPageToken != "" && numPages > 0 {
 		mlc = mems.AddPageToken(mlc, members.NextPageToken)
 		nxtMems, err := mems.DoList(mlc)
@@ -149,10 +159,14 @@ func doMemNumPages(mlc *admin.MembersListCall, members *admin.Members, numPages 
 		}
 	}
 
+	logger.Debug("finished doMemNumPages()")
 	return nil
 }
 
 func doMemPages(mlc *admin.MembersListCall, members *admin.Members, pages string) error {
+	logger.Debugw("starting doMemPages()",
+		"pages", pages)
+
 	if pages == "all" {
 		err := doMemAllPages(mlc, members)
 		if err != nil {
@@ -176,6 +190,7 @@ func doMemPages(mlc *admin.MembersListCall, members *admin.Members, pages string
 		}
 	}
 
+	logger.Debug("finished doMemPages()")
 	return nil
 }
 

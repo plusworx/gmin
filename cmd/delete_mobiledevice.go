@@ -44,6 +44,9 @@ var deleteMobDevCmd = &cobra.Command{
 }
 
 func doDeleteMobDev(cmd *cobra.Command, args []string) error {
+	logger.Debugw("starting doDeleteMobDev()",
+		"args", args)
+
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryDeviceMobileScope)
 	if err != nil {
 		logger.Error(err)
@@ -66,6 +69,7 @@ func doDeleteMobDev(cmd *cobra.Command, args []string) error {
 	logger.Infof(cmn.InfoMDevDeleted, args[0])
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoMDevDeleted, args[0])))
 
+	logger.Debug("finished doDeleteMobDev()")
 	return nil
 }
 

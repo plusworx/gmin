@@ -45,6 +45,9 @@ var getMemberCmd = &cobra.Command{
 }
 
 func doGetMember(cmd *cobra.Command, args []string) error {
+	logger.Debugw("starting doGetMember()",
+		"args", args)
+
 	var jsonData []byte
 
 	jsonData, err := processGroupMember(args[0], attrs, args[1])
@@ -55,6 +58,7 @@ func doGetMember(cmd *cobra.Command, args []string) error {
 
 	fmt.Println(string(jsonData))
 
+	logger.Debug("finished doGetMember()")
 	return nil
 }
 
@@ -65,6 +69,11 @@ func init() {
 }
 
 func processGroupMember(memID string, attrs string, groupEmail string) ([]byte, error) {
+	logger.Debugw("starting processGroupMember()",
+		"attrs", attrs,
+		"groupEmail", groupEmail,
+		"memID", memID)
+
 	var (
 		jsonData []byte
 		member   *admin.Member
@@ -101,5 +110,6 @@ func processGroupMember(memID string, attrs string, groupEmail string) ([]byte, 
 		return nil, err
 	}
 
+	logger.Debug("finished processGroupMember()")
 	return jsonData, nil
 }

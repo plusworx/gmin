@@ -49,6 +49,9 @@ var listMobDevsCmd = &cobra.Command{
 }
 
 func doListMobDevs(cmd *cobra.Command, args []string) error {
+	logger.Debugw("starting doListMobDevs()",
+		"args", args)
+
 	var (
 		mobdevs *admin.MobileDevices
 	)
@@ -162,10 +165,13 @@ func doListMobDevs(cmd *cobra.Command, args []string) error {
 		fmt.Println(string(jsonData))
 	}
 
+	logger.Debug("finished doListMobDevs()")
 	return nil
 }
 
 func doMobDevAllPages(mdlc *admin.MobiledevicesListCall, mobdevs *admin.MobileDevices) error {
+	logger.Debug("starting doMobDevAllPages()")
+
 	if mobdevs.NextPageToken != "" {
 		mdlc = mdevs.AddPageToken(mdlc, mobdevs.NextPageToken)
 		nxtMobDevs, err := mdevs.DoList(mdlc)
@@ -182,10 +188,14 @@ func doMobDevAllPages(mdlc *admin.MobiledevicesListCall, mobdevs *admin.MobileDe
 		}
 	}
 
+	logger.Debug("finished doMobDevAllPages()")
 	return nil
 }
 
 func doMobDevNumPages(mdlc *admin.MobiledevicesListCall, mobdevs *admin.MobileDevices, numPages int) error {
+	logger.Debugw("starting doMobDevNumPages()",
+		"numPages", numPages)
+
 	if mobdevs.NextPageToken != "" && numPages > 0 {
 		mdlc = mdevs.AddPageToken(mdlc, mobdevs.NextPageToken)
 		nxtMobDevs, err := mdevs.DoList(mdlc)
@@ -202,10 +212,14 @@ func doMobDevNumPages(mdlc *admin.MobiledevicesListCall, mobdevs *admin.MobileDe
 		}
 	}
 
+	logger.Debug("finished doMobDevNumPages()")
 	return nil
 }
 
 func doMobDevPages(mdlc *admin.MobiledevicesListCall, mobdevs *admin.MobileDevices, pages string) error {
+	logger.Debugw("starting doMobDevPages()",
+		"pages", pages)
+
 	if pages == "all" {
 		err := doMobDevAllPages(mdlc, mobdevs)
 		if err != nil {
@@ -229,6 +243,7 @@ func doMobDevPages(mdlc *admin.MobiledevicesListCall, mobdevs *admin.MobileDevic
 		}
 	}
 
+	logger.Debug("finished doMobDevPages()")
 	return nil
 }
 

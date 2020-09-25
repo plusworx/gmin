@@ -45,6 +45,9 @@ var getGroupCmd = &cobra.Command{
 }
 
 func doGetGroup(cmd *cobra.Command, args []string) error {
+	logger.Debugw("starting doGetGroup()",
+		"args", args)
+
 	var (
 		jsonData []byte
 		group    *admin.Group
@@ -83,6 +86,7 @@ func doGetGroup(cmd *cobra.Command, args []string) error {
 
 	fmt.Println(string(jsonData))
 
+	logger.Debug("finished doGetGroup()")
 	return nil
 }
 

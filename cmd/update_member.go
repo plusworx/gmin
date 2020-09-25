@@ -44,6 +44,9 @@ var updateMemberCmd = &cobra.Command{
 }
 
 func doUpdateMember(cmd *cobra.Command, args []string) error {
+	logger.Debugw("starting doUpdateMember()",
+		"args", args)
+
 	var (
 		member    *admin.Member
 		memberKey string
@@ -86,6 +89,7 @@ func doUpdateMember(cmd *cobra.Command, args []string) error {
 	logger.Infof(cmn.InfoMemberUpdated, memberKey, args[1])
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoMemberUpdated, memberKey, args[1])))
 
+	logger.Debug("finished doUpdateMember()")
 	return nil
 }
 

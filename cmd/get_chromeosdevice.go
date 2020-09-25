@@ -47,6 +47,9 @@ var getCrOSDevCmd = &cobra.Command{
 }
 
 func doGetCrOSDev(cmd *cobra.Command, args []string) error {
+	logger.Debugw("starting doGetCrOSDev()",
+		"args", args)
+
 	var (
 		jsonData []byte
 		crosdev  *admin.ChromeOsDevice
@@ -103,6 +106,7 @@ func doGetCrOSDev(cmd *cobra.Command, args []string) error {
 
 	fmt.Println(string(jsonData))
 
+	logger.Debug("finished doGetCrOSDev()")
 	return nil
 }
 

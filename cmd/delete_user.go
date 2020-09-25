@@ -42,6 +42,9 @@ var deleteUserCmd = &cobra.Command{
 }
 
 func doDeleteUser(cmd *cobra.Command, args []string) error {
+	logger.Debugw("starting doDeleteUser()",
+		"args", args)
+
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserScope)
 	if err != nil {
 		logger.Error(err)
@@ -59,6 +62,7 @@ func doDeleteUser(cmd *cobra.Command, args []string) error {
 	logger.Infof(cmn.InfoUserDeleted, args[0])
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoUserDeleted, args[0])))
 
+	logger.Debug("finished doDeleteUser()")
 	return nil
 }
 

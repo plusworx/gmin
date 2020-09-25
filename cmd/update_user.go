@@ -47,6 +47,9 @@ var updateUserCmd = &cobra.Command{
 }
 
 func doUpdateUser(cmd *cobra.Command, args []string) error {
+	logger.Debugw("starting doUpdateUser()",
+		"args", args)
+
 	var (
 		flagsPassed []string
 		userKey     string
@@ -132,6 +135,7 @@ func doUpdateUser(cmd *cobra.Command, args []string) error {
 	logger.Infof(cmn.InfoUserUpdated, userKey)
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoUserUpdated, userKey)))
 
+	logger.Debug("finished doUpdateUser()")
 	return nil
 }
 
@@ -156,6 +160,9 @@ func init() {
 }
 
 func processUpdUsrFlags(cmd *cobra.Command, user *admin.User, name *admin.UserName, flagNames []string) error {
+	logger.Debugw("starting processUpdUsrFlags()",
+		"flagNames", flagNames)
+
 	for _, flName := range flagNames {
 		switch flName {
 		case "changepassword":
@@ -222,5 +229,6 @@ func processUpdUsrFlags(cmd *cobra.Command, user *admin.User, name *admin.UserNa
 		}
 	}
 
+	logger.Debug("finished processUpdUsrFlags()")
 	return nil
 }

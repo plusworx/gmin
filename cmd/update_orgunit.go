@@ -44,6 +44,9 @@ var updateOUCmd = &cobra.Command{
 }
 
 func doUpdateOU(cmd *cobra.Command, args []string) error {
+	logger.Debugw("starting doUpdateOU()",
+		"args", args)
+
 	var orgunit *admin.OrgUnit
 
 	orgunit = new(admin.OrgUnit)
@@ -91,6 +94,7 @@ func doUpdateOU(cmd *cobra.Command, args []string) error {
 	logger.Infof(cmn.InfoOUUpdated, args[0])
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoOUUpdated, args[0])))
 
+	logger.Debug("finished doUpdateOU()")
 	return nil
 }
 

@@ -46,6 +46,9 @@ var updateCrOSDevCmd = &cobra.Command{
 }
 
 func doUpdateCrOSDev(cmd *cobra.Command, args []string) error {
+	logger.Debugw("starting doUpdateCrOSDev()",
+		"args", args)
+
 	var crosdev = admin.ChromeOsDevice{}
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryDeviceChromeosScope)
@@ -104,6 +107,7 @@ func doUpdateCrOSDev(cmd *cobra.Command, args []string) error {
 	logger.Infof(cmn.InfoCDevUpdated, updCrOSDev.DeviceId)
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoCDevUpdated, updCrOSDev.DeviceId)))
 
+	logger.Debug("finished doUpdateCrOSDev()")
 	return nil
 }
 

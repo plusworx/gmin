@@ -44,6 +44,9 @@ var createMemberCmd = &cobra.Command{
 }
 
 func doCreateMember(cmd *cobra.Command, args []string) error {
+	logger.Debugw("starting doCreateMember()",
+		"args", args)
+
 	var member *admin.Member
 
 	member = new(admin.Member)
@@ -84,6 +87,7 @@ func doCreateMember(cmd *cobra.Command, args []string) error {
 	logger.Infof(cmn.InfoMemberCreated, newMember.Email, args[1])
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoMemberCreated, newMember.Email, args[1])))
 
+	logger.Debug("finished doCreateMember()")
 	return nil
 }
 

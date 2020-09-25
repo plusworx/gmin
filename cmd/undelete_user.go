@@ -44,6 +44,9 @@ var undeleteUserCmd = &cobra.Command{
 }
 
 func doUndeleteUser(cmd *cobra.Command, args []string) error {
+	logger.Debugw("starting doUndeleteUser()",
+		"args", args)
+
 	var userUndelete *admin.UserUndelete
 	userUndelete = new(admin.UserUndelete)
 
@@ -70,6 +73,7 @@ func doUndeleteUser(cmd *cobra.Command, args []string) error {
 	logger.Infof(cmn.InfoUserUndeleted, args[0])
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoUserUndeleted, args[0])))
 
+	logger.Debug("finished doUndeleteUser()")
 	return nil
 }
 

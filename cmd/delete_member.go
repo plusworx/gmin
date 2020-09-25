@@ -43,6 +43,9 @@ var deleteMemberCmd = &cobra.Command{
 }
 
 func doDeleteMember(cmd *cobra.Command, args []string) error {
+	logger.Debugw("starting doDeleteMember()",
+		"args", args)
+
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupMemberScope)
 	if err != nil {
 		logger.Error(err)
@@ -60,6 +63,7 @@ func doDeleteMember(cmd *cobra.Command, args []string) error {
 	logger.Infof(cmn.InfoMemberDeleted, args[0], args[1])
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoMemberDeleted, args[0], args[1])))
 
+	logger.Debug("finished doDeleteMember()")
 	return nil
 }
 

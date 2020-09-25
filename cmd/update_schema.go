@@ -93,6 +93,9 @@ var updateSchemaCmd = &cobra.Command{
 }
 
 func doUpdateSchema(cmd *cobra.Command, args []string) error {
+	logger.Debugw("starting doUpdateSchema()",
+		"args", args)
+
 	var schema *admin.Schema
 
 	schema = new(admin.Schema)
@@ -155,6 +158,7 @@ func doUpdateSchema(cmd *cobra.Command, args []string) error {
 	logger.Infof(cmn.InfoSchemaUpdated, args[0])
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoSchemaUpdated, args[0])))
 
+	logger.Debug("finished doUpdateSchema()")
 	return nil
 }
 

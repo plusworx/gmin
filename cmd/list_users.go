@@ -49,6 +49,9 @@ var listUsersCmd = &cobra.Command{
 }
 
 func doListUsers(cmd *cobra.Command, args []string) error {
+	logger.Debugw("starting doListUsers()",
+		"args", args)
+
 	var (
 		jsonData     []byte
 		users        *admin.Users
@@ -218,10 +221,13 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 		fmt.Println(string(jsonData))
 	}
 
+	logger.Debug("finished doListUsers()")
 	return nil
 }
 
 func doUserAllPages(ulc *admin.UsersListCall, users *admin.Users) error {
+	logger.Debug("starting doUserAllPages()")
+
 	if users.NextPageToken != "" {
 		ulc = usrs.AddPageToken(ulc, users.NextPageToken)
 		nxtUsers, err := usrs.DoList(ulc)
@@ -238,10 +244,14 @@ func doUserAllPages(ulc *admin.UsersListCall, users *admin.Users) error {
 		}
 	}
 
+	logger.Debug("finished doUserAllPages()")
 	return nil
 }
 
 func doUserNumPages(ulc *admin.UsersListCall, users *admin.Users, numPages int) error {
+	logger.Debugw("starting doUserNumPages()",
+		"numPages", numPages)
+
 	if users.NextPageToken != "" && numPages > 0 {
 		ulc = usrs.AddPageToken(ulc, users.NextPageToken)
 		nxtUsers, err := usrs.DoList(ulc)
@@ -258,10 +268,14 @@ func doUserNumPages(ulc *admin.UsersListCall, users *admin.Users, numPages int) 
 		}
 	}
 
+	logger.Debug("finished doUserNumPages()")
 	return nil
 }
 
 func doUserPages(ulc *admin.UsersListCall, users *admin.Users, pages string) error {
+	logger.Debugw("starting doUserPages()",
+		"pages", pages)
+
 	if pages == "all" {
 		err := doUserAllPages(ulc, users)
 		if err != nil {
@@ -285,6 +299,7 @@ func doUserPages(ulc *admin.UsersListCall, users *admin.Users, pages string) err
 		}
 	}
 
+	logger.Debug("finished doUserPages()")
 	return nil
 }
 

@@ -49,6 +49,9 @@ var listCrOSDevsCmd = &cobra.Command{
 }
 
 func doListCrOSDevs(cmd *cobra.Command, args []string) error {
+	logger.Debugw("starting doListCrOSDevs()",
+		"args", args)
+
 	var (
 		crosdevs *admin.ChromeOsDevices
 	)
@@ -162,10 +165,13 @@ func doListCrOSDevs(cmd *cobra.Command, args []string) error {
 		fmt.Println(string(jsonData))
 	}
 
+	logger.Debug("finished doListCrOSDevs()")
 	return nil
 }
 
 func doCrOSDevAllPages(cdlc *admin.ChromeosdevicesListCall, crosdevs *admin.ChromeOsDevices) error {
+	logger.Debug("starting doCrOSDevAllPages()")
+
 	if crosdevs.NextPageToken != "" {
 		cdlc = cdevs.AddPageToken(cdlc, crosdevs.NextPageToken)
 		nxtCrOSDevs, err := cdevs.DoList(cdlc)
@@ -182,10 +188,14 @@ func doCrOSDevAllPages(cdlc *admin.ChromeosdevicesListCall, crosdevs *admin.Chro
 		}
 	}
 
+	logger.Debug("finished doCrOSDevAllPages()")
 	return nil
 }
 
 func doCrOSDevNumPages(cdlc *admin.ChromeosdevicesListCall, crosdevs *admin.ChromeOsDevices, numPages int) error {
+	logger.Debugw("starting doCrOSDevNumPages()",
+		"numPages", numPages)
+
 	if crosdevs.NextPageToken != "" && numPages > 0 {
 		cdlc = cdevs.AddPageToken(cdlc, crosdevs.NextPageToken)
 		nxtCrOSDevs, err := cdevs.DoList(cdlc)
@@ -202,10 +212,14 @@ func doCrOSDevNumPages(cdlc *admin.ChromeosdevicesListCall, crosdevs *admin.Chro
 		}
 	}
 
+	logger.Debug("finished doCrOSDevNumPages()")
 	return nil
 }
 
 func doCrOSDevPages(cdlc *admin.ChromeosdevicesListCall, crosdevs *admin.ChromeOsDevices, pages string) error {
+	logger.Debugw("starting doCrOSDevPages()",
+		"pages", pages)
+
 	if pages == "all" {
 		err := doCrOSDevAllPages(cdlc, crosdevs)
 		if err != nil {
@@ -229,6 +243,7 @@ func doCrOSDevPages(cdlc *admin.ChromeosdevicesListCall, crosdevs *admin.ChromeO
 		}
 	}
 
+	logger.Debug("finished doCrOSDevPages()")
 	return nil
 }
 

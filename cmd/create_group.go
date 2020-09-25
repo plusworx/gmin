@@ -43,6 +43,9 @@ var createGroupCmd = &cobra.Command{
 }
 
 func doCreateGroup(cmd *cobra.Command, args []string) error {
+	logger.Debugw("starting doCreateGroup()",
+		"args", args)
+
 	var group *admin.Group
 
 	group = new(admin.Group)
@@ -73,6 +76,7 @@ func doCreateGroup(cmd *cobra.Command, args []string) error {
 	logger.Infof(cmn.InfoGroupCreated, newGroup.Email)
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoGroupCreated, newGroup.Email)))
 
+	logger.Debug("finished doCreateGroup()")
 	return nil
 }
 

@@ -49,6 +49,9 @@ var listGroupsCmd = &cobra.Command{
 }
 
 func doListGroups(cmd *cobra.Command, args []string) error {
+	logger.Debugw("starting doListGroups()",
+		"args", args)
+
 	var (
 		groups       *admin.Groups
 		jsonData     []byte
@@ -163,10 +166,13 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 		fmt.Println(string(jsonData))
 	}
 
+	logger.Debug("finished doListGroups()")
 	return nil
 }
 
 func doGrpAllPages(glc *admin.GroupsListCall, groups *admin.Groups) error {
+	logger.Debug("starting doGrpAllPages()")
+
 	if groups.NextPageToken != "" {
 		glc = grps.AddPageToken(glc, groups.NextPageToken)
 		nxtGroups, err := grps.DoList(glc)
@@ -183,10 +189,14 @@ func doGrpAllPages(glc *admin.GroupsListCall, groups *admin.Groups) error {
 		}
 	}
 
+	logger.Debug("finished doGrpAllPages()")
 	return nil
 }
 
 func doGrpNumPages(glc *admin.GroupsListCall, groups *admin.Groups, numPages int) error {
+	logger.Debugw("starting doGrpNumPages()",
+		"numPages", numPages)
+
 	if groups.NextPageToken != "" && numPages > 0 {
 		glc = grps.AddPageToken(glc, groups.NextPageToken)
 		nxtGroups, err := grps.DoList(glc)
@@ -203,10 +213,14 @@ func doGrpNumPages(glc *admin.GroupsListCall, groups *admin.Groups, numPages int
 		}
 	}
 
+	logger.Debug("finished doGrpNumPages()")
 	return nil
 }
 
 func doGrpPages(glc *admin.GroupsListCall, groups *admin.Groups, pages string) error {
+	logger.Debugw("starting doGrpPages()",
+		"pages", pages)
+
 	if pages == "all" {
 		err := doGrpAllPages(glc, groups)
 		if err != nil {
@@ -230,6 +244,7 @@ func doGrpPages(glc *admin.GroupsListCall, groups *admin.Groups, pages string) e
 		}
 	}
 
+	logger.Debug("finished doGrpPages()")
 	return nil
 }
 

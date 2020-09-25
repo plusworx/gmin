@@ -45,6 +45,9 @@ var listUserAliasesCmd = &cobra.Command{
 }
 
 func doListUserAliases(cmd *cobra.Command, args []string) error {
+	logger.Debugw("starting doListUserAliases()",
+		"args", args)
+
 	var aliases *admin.Aliases
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserAliasReadonlyScope)
@@ -80,6 +83,7 @@ func doListUserAliases(cmd *cobra.Command, args []string) error {
 
 	fmt.Println(string(jsonData))
 
+	logger.Debug("finished doListUserAliases()")
 	return nil
 }
 

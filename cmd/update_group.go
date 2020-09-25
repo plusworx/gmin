@@ -44,6 +44,9 @@ var updateGroupCmd = &cobra.Command{
 }
 
 func doUpdateGroup(cmd *cobra.Command, args []string) error {
+	logger.Debugw("starting doUpdateGroup()",
+		"args", args)
+
 	var (
 		group    *admin.Group
 		groupKey string
@@ -80,6 +83,7 @@ func doUpdateGroup(cmd *cobra.Command, args []string) error {
 	logger.Infof(cmn.InfoGroupUpdated, groupKey)
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoGroupUpdated, groupKey)))
 
+	logger.Debug("finished doUpdateGroup()")
 	return nil
 }
 

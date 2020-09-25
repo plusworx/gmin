@@ -46,6 +46,9 @@ var getOrgUnitCmd = &cobra.Command{
 }
 
 func doGetOrgUnit(cmd *cobra.Command, args []string) error {
+	logger.Debugw("starting doGetOrgUnit()",
+		"args", args)
+
 	var (
 		jsonData []byte
 		orgUnit  *admin.OrgUnit
@@ -95,6 +98,7 @@ func doGetOrgUnit(cmd *cobra.Command, args []string) error {
 
 	fmt.Println(string(jsonData))
 
+	logger.Debug("finished doGetOrgUnit()")
 	return nil
 }
 

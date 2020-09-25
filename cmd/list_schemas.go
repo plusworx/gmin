@@ -46,6 +46,9 @@ var listSchemasCmd = &cobra.Command{
 }
 
 func doListSchemas(cmd *cobra.Command, args []string) error {
+	logger.Debugw("starting doListSchemas()",
+		"args", args)
+
 	var (
 		jsonData []byte
 		schemas  *admin.Schemas
@@ -95,6 +98,7 @@ func doListSchemas(cmd *cobra.Command, args []string) error {
 		fmt.Println(string(jsonData))
 	}
 
+	logger.Debug("finished doListSchemas()")
 	return nil
 }
 

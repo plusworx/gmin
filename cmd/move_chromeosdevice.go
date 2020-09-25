@@ -45,6 +45,9 @@ var moveCrOSDevCmd = &cobra.Command{
 }
 
 func doMoveCrOSDev(cmd *cobra.Command, args []string) error {
+	logger.Debugw("starting doMoveCrOSDev()",
+		"args", args)
+
 	var move = admin.ChromeOsMoveDevicesToOu{}
 
 	customerID, err := cfg.ReadConfigString("customerid")
@@ -72,6 +75,7 @@ func doMoveCrOSDev(cmd *cobra.Command, args []string) error {
 	logger.Infof(cmn.InfoCDevMovePerformed, args[0], args[1])
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoCDevMovePerformed, args[0], args[1])))
 
+	logger.Debug("finished doMoveCrOSDev()")
 	return nil
 }
 

@@ -49,6 +49,9 @@ var createUserCmd = &cobra.Command{
 }
 
 func doCreateUser(cmd *cobra.Command, args []string) error {
+	logger.Debugw("starting doCreateUser()",
+		"args", args)
+
 	var flagsPassed []string
 
 	user := new(admin.User)
@@ -153,6 +156,7 @@ func doCreateUser(cmd *cobra.Command, args []string) error {
 	logger.Infof(cmn.InfoUserCreated, newUser.PrimaryEmail)
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoUserCreated, newUser.PrimaryEmail)))
 
+	logger.Debug("finished doCreateUser()")
 	return nil
 }
 

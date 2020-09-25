@@ -43,6 +43,9 @@ var createUserAliasCmd = &cobra.Command{
 }
 
 func doCreateUserAlias(cmd *cobra.Command, args []string) error {
+	logger.Debugw("starting doCreateUserAlias()",
+		"args", args)
+
 	var alias *admin.Alias
 
 	alias = new(admin.Alias)
@@ -65,6 +68,7 @@ func doCreateUserAlias(cmd *cobra.Command, args []string) error {
 	logger.Infof(cmn.InfoUserAliasCreated, newAlias.Alias, args[1])
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoUserAliasCreated, newAlias.Alias, args[1])))
 
+	logger.Debug("finished doCreateUserAlias()")
 	return nil
 }
 

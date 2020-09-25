@@ -47,6 +47,9 @@ var manageMobDevCmd = &cobra.Command{
 }
 
 func doManageMobDev(cmd *cobra.Command, args []string) error {
+	logger.Debugw("starting doManageMobDev()",
+		"args", args)
+
 	var devAction = admin.MobileDeviceAction{}
 
 	customerID, err := cfg.ReadConfigString("customerid")
@@ -82,6 +85,7 @@ func doManageMobDev(cmd *cobra.Command, args []string) error {
 	logger.Infof(cmn.InfoMDevActionPerformed, args[1], args[0])
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoMDevActionPerformed, args[1], args[0])))
 
+	logger.Debug("finished doManageMobDev()")
 	return nil
 }
 

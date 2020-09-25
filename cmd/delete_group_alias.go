@@ -43,6 +43,9 @@ var deleteGroupAliasCmd = &cobra.Command{
 }
 
 func doDeleteGroupAlias(cmd *cobra.Command, args []string) error {
+	logger.Debugw("starting doDeleteGroupAlias()",
+		"args", args)
+
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupScope)
 	if err != nil {
 		logger.Error(err)
@@ -60,6 +63,7 @@ func doDeleteGroupAlias(cmd *cobra.Command, args []string) error {
 	logger.Infof(cmn.InfoGroupAliasDeleted, args[0], args[1])
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoGroupAliasDeleted, args[0], args[1])))
 
+	logger.Debug("finished doDeleteGroupAlias()")
 	return nil
 }
 

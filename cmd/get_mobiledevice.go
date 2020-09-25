@@ -47,6 +47,9 @@ var getMobDevCmd = &cobra.Command{
 }
 
 func doGetMobDev(cmd *cobra.Command, args []string) error {
+	logger.Debugw("starting doGetMobDev()",
+		"args", args)
+
 	var (
 		jsonData []byte
 		mobdev   *admin.MobileDevice
@@ -103,6 +106,7 @@ func doGetMobDev(cmd *cobra.Command, args []string) error {
 
 	fmt.Println(string(jsonData))
 
+	logger.Debug("finished doGetMobDev()")
 	return nil
 }
 

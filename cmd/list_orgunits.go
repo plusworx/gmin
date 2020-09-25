@@ -47,6 +47,9 @@ var listOUsCmd = &cobra.Command{
 }
 
 func doListOUs(cmd *cobra.Command, args []string) error {
+	logger.Debugw("starting doListOUs()",
+		"args", args)
+
 	var (
 		jsonData []byte
 		orgUnits *admin.OrgUnits
@@ -110,6 +113,7 @@ func doListOUs(cmd *cobra.Command, args []string) error {
 		fmt.Println(string(jsonData))
 	}
 
+	logger.Debug("finished doListOUs()")
 	return nil
 }
 

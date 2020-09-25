@@ -93,6 +93,9 @@ var createSchemaCmd = &cobra.Command{
 }
 
 func doCreateSchema(cmd *cobra.Command, args []string) error {
+	logger.Debugw("starting doCreateSchema()",
+		"args", args)
+
 	var schema *admin.Schema
 
 	schema = new(admin.Schema)
@@ -155,6 +158,7 @@ func doCreateSchema(cmd *cobra.Command, args []string) error {
 	logger.Infof(cmn.InfoSchemaCreated, newSchema.SchemaName)
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoSchemaCreated, newSchema.SchemaName)))
 
+	logger.Debug("finished doCreateSchema()")
 	return nil
 }
 

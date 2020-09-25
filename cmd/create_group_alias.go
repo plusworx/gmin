@@ -43,6 +43,9 @@ var createGroupAliasCmd = &cobra.Command{
 }
 
 func doCreateGroupAlias(cmd *cobra.Command, args []string) error {
+	logger.Debugw("starting doCreateGroupAlias()",
+		"args", args)
+
 	var alias *admin.Alias
 
 	alias = new(admin.Alias)
@@ -65,6 +68,7 @@ func doCreateGroupAlias(cmd *cobra.Command, args []string) error {
 	logger.Infof(cmn.InfoGroupAliasCreated, newAlias.Alias, args[1])
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoGroupAliasCreated, newAlias.Alias, args[1])))
 
+	logger.Debug("finished doCreateGroupAlias()")
 	return nil
 }
 
