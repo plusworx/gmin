@@ -30,6 +30,7 @@ import (
 
 	valid "github.com/asaskevich/govalidator"
 	"github.com/mitchellh/go-homedir"
+	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
@@ -212,7 +213,7 @@ func doInit(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Println("**** gmin: init completed successfully ****")
+	fmt.Println(cmn.GminMessage(cmn.InfoInitCompleted))
 
 	return nil
 }
