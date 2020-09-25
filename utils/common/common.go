@@ -176,6 +176,7 @@ const (
 	InfoCDevMovePerformed   string = "ChromeOS device: %s moved to: %s"
 	InfoCDevUpdated         string = "ChromeOS device updated: %s"
 	InfoCredentialPathSet   string = "service account credential path set to: %v"
+	InfoCredentialsSet      string = "credentials set using: %v"
 	InfoCustomerIDSet       string = "customer ID set to: %v"
 	InfoGroupCreated        string = "group created: %s"
 	InfoGroupAliasCreated   string = "group alias: %s created for group: %s"
