@@ -53,6 +53,8 @@ import (
 const (
 	// HashFunction specifies password hash function
 	HashFunction string = "SHA-1"
+	// Quit is used for terminating commands
+	Quit int = 99
 )
 
 const (
@@ -124,12 +126,14 @@ const (
 	ErrEmptyPassword            string = "password cannot be empty string"
 	ErrEmptyRecoveryEmail       string = "recovery email cannot be empty string"
 	ErrEmptyRecoveryPhone       string = "recovery phone cannot be empty string"
+	ErrFileNumberRequired       string = "a file number is required - try again"
 	ErrFlagNotRecognized        string = "%v flag is not recognized"
 	ErrInvalidActionType        string = "invalid action type: %v"
 	ErrInvalidDeliverySetting   string = "invalid delivery setting: %v"
 	ErrInvalidDeprovisionReason string = "invalid deprovision reason: %v"
 	ErrInvalidEmailAddress      string = "invalid email address: %v"
 	ErrInvalidFileFormat        string = "invalid file format: %v"
+	ErrInvalidFileNumber        string = "file number is invalid - try again"
 	ErrInvalidJSONAttr          string = "attribute string is not valid JSON"
 	ErrInvalidJSONFile          string = "input file is not valid JSON"
 	ErrInvalidLogLevel          string = "invalid loglevel: %v"
@@ -196,6 +200,7 @@ const (
 	InfoSchemaCreated       string = "schema created: %s"
 	InfoSchemaDeleted       string = "schema deleted: %s"
 	InfoSchemaUpdated       string = "schema updated: %s"
+	InfoSetCommandCancelled string = "set command cancelled"
 	InfoUserCreated         string = "user created: %s"
 	InfoUserAliasCreated    string = "user alias: %s created for user: %s"
 	InfoUserAliasDeleted    string = "user alias: %s deleted for user: %s"

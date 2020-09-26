@@ -62,22 +62,26 @@ func askForCredentialsFile(nFiles int) int {
 	var response string
 
 	fmt.Println("")
-	fmt.Print("Please choose a file by typing the number: ")
+	fmt.Print("Please choose a file by typing the number (q to quit): ")
 
 	_, err := fmt.Scanln(&response)
 	if err != nil {
-		fmt.Println("a file number is required - try again")
+		fmt.Println(cmn.ErrFileNumberRequired)
 		return askForCredentialsFile(nFiles)
+	}
+
+	if response == "q" {
+		return cmn.Quit
 	}
 
 	fileNum, err := strconv.Atoi(response)
 	if err != nil {
-		fmt.Println("file number is invalid - try again")
+		fmt.Println(cmn.ErrInvalidFileNumber)
 		return askForCredentialsFile(nFiles)
 	}
 
 	if fileNum > nFiles || fileNum < 1 {
-		fmt.Println("file number is invalid - try again")
+		fmt.Println(cmn.ErrInvalidFileNumber)
 		return askForCredentialsFile(nFiles)
 	}
 
@@ -116,6 +120,10 @@ func doSetCredentials(cmd *cobra.Command, args []string) error {
 	}
 
 	fileNum := askForCredentialsFile(len(validFiles))
+	if fileNum == cmn.Quit {
+		fmt.Println(cmn.InfoSetCommandCancelled)
+		return nil
+	}
 
 	// Copy new credentials file
 	usedName := validFiles[fileNum-1].Name()
