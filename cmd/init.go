@@ -63,7 +63,7 @@ Log File Path: <home directory>/gmin.log`,
 func askForConfigPath() string {
 	var response string
 
-	fmt.Print("Please enter a full config file path\n(Press <Enter> for default value): ")
+	fmt.Print("Please enter a full config file path (q to quit)\n(Press <Enter> for default value): ")
 
 	_, err := fmt.Scanln(&response)
 
@@ -72,7 +72,7 @@ func askForConfigPath() string {
 	}
 
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println(cmn.ErrInvalidConfigPath)
 		return askForConfigPath()
 	}
 
@@ -82,7 +82,7 @@ func askForConfigPath() string {
 func askForCredentialPath() string {
 	var response string
 
-	fmt.Print("Please enter a full credentials file path\n(Press <Enter> for default value): ")
+	fmt.Print("Please enter a full credentials file path (q to quit)\n(Press <Enter> for default value): ")
 
 	_, err := fmt.Scanln(&response)
 
@@ -91,7 +91,7 @@ func askForCredentialPath() string {
 	}
 
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println(cmn.ErrInvalidCredPath)
 		return askForCredentialPath()
 	}
 
@@ -101,7 +101,7 @@ func askForCredentialPath() string {
 func askForCustomerID() string {
 	var response string
 
-	fmt.Print("Please enter customer ID\n(Press <Enter> for default value): ")
+	fmt.Print("Please enter customer ID (q to quit)\n(Press <Enter> for default value): ")
 
 	_, err := fmt.Scanln(&response)
 
@@ -110,7 +110,7 @@ func askForCustomerID() string {
 	}
 
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println(cmn.ErrInvalidCustID)
 		return askForCustomerID()
 	}
 
@@ -120,17 +120,21 @@ func askForCustomerID() string {
 func askForEmail() string {
 	var response string
 
-	fmt.Print("Please enter an administrator email address: ")
+	fmt.Print("Please enter an administrator email address (q to quit): ")
 
 	_, err := fmt.Scanln(&response)
 	if err != nil {
-		fmt.Println("an email address is required - try again")
+		fmt.Println(cmn.ErrAdminEmailRequired)
 		return askForEmail()
+	}
+
+	if response == "q" {
+		return response
 	}
 
 	ok := valid.IsEmail(response)
 	if !ok {
-		fmt.Println("invalid email address - try again")
+		fmt.Println(cmn.ErrInvalidAdminEmail)
 		return askForEmail()
 	}
 
@@ -140,7 +144,7 @@ func askForEmail() string {
 func askForLogPath() string {
 	var response string
 
-	fmt.Print("Please enter a full log file path\n(Press <Enter> for default value): ")
+	fmt.Print("Please enter a full log file path (q to quit)\n(Press <Enter> for default value): ")
 
 	_, err := fmt.Scanln(&response)
 
@@ -149,7 +153,7 @@ func askForLogPath() string {
 	}
 
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println(cmn.ErrInvalidLogPath)
 		return askForLogPath()
 	}
 
@@ -166,10 +170,30 @@ func doInit(cmd *cobra.Command, args []string) error {
 	}{}
 
 	answers.AdminEmail = askForEmail()
+	if answers.AdminEmail == "q" {
+		fmt.Println(cmn.InfoInitCancelled)
+		return nil
+	}
 	answers.ConfigPath = askForConfigPath()
+	if answers.ConfigPath == "q" {
+		fmt.Println(cmn.InfoInitCancelled)
+		return nil
+	}
 	answers.CredentialPath = askForCredentialPath()
+	if answers.CredentialPath == "q" {
+		fmt.Println(cmn.InfoInitCancelled)
+		return nil
+	}
 	answers.CustomerID = askForCustomerID()
+	if answers.CustomerID == "q" {
+		fmt.Println(cmn.InfoInitCancelled)
+		return nil
+	}
 	answers.LogPath = askForLogPath()
+	if answers.LogPath == "q" {
+		fmt.Println(cmn.InfoInitCancelled)
+		return nil
+	}
 
 	if answers.ConfigPath == "" {
 		hmDir, err := homedir.Dir()
@@ -213,7 +237,7 @@ func doInit(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Println(cmn.GminMessage(cmn.InfoInitCompleted))
+	fmt.Println(cmn.InfoInitCompleted)
 
 	return nil
 }

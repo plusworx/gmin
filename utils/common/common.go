@@ -114,6 +114,7 @@ const (
 	// Messages
 	// Errors
 
+	ErrAdminEmailRequired       string = "an email address is required - try again"
 	ErrAttrNotRecognized        string = "%v attribute is not recognized"
 	ErrBatchChromeOSDevice      string = "error - %s - ChromeOS device: %s"
 	ErrBatchGroup               string = "error - %s - group: %s"
@@ -129,6 +130,10 @@ const (
 	ErrFileNumberRequired       string = "a file number is required - try again"
 	ErrFlagNotRecognized        string = "%v flag is not recognized"
 	ErrInvalidActionType        string = "invalid action type: %v"
+	ErrInvalidAdminEmail        string = "invalid admin email - try again"
+	ErrInvalidConfigPath        string = "invalid config path - try again"
+	ErrInvalidCredPath          string = "invalid credentials path - try again"
+	ErrInvalidCustID            string = "invalid customer id - try again"
 	ErrInvalidDeliverySetting   string = "invalid delivery setting: %v"
 	ErrInvalidDeprovisionReason string = "invalid deprovision reason: %v"
 	ErrInvalidEmailAddress      string = "invalid email address: %v"
@@ -137,6 +142,7 @@ const (
 	ErrInvalidJSONAttr          string = "attribute string is not valid JSON"
 	ErrInvalidJSONFile          string = "input file is not valid JSON"
 	ErrInvalidLogLevel          string = "invalid loglevel: %v"
+	ErrInvalidLogPath           string = "invalid log path - try again"
 	ErrInvalidOrderBy           string = "invalid order by field: %v"
 	ErrInvalidPagesArgument     string = "pages argument must be 'all' or a number"
 	ErrInvalidProjectionType    string = "invalid projection type: %v"
@@ -186,6 +192,7 @@ const (
 	InfoGroupAliasCreated   string = "group alias: %s created for group: %s"
 	InfoGroupAliasDeleted   string = "group alias: %s deleted for group: %s"
 	InfoGroupDeleted        string = "group deleted: %s"
+	InfoInitCancelled       string = "init command cancelled"
 	InfoInitCompleted       string = "init completed successfully"
 	InfoGroupUpdated        string = "group updated: %s"
 	InfoLogPathSet          string = "log path set to: %v"
