@@ -40,18 +40,17 @@ var batchDelMemberCmd = &cobra.Command{
 	Use:     "group-members <group email address or id> [-i input file path]",
 	Aliases: []string{"group-member", "grp-members", "grp-member", "gmembers", "gmember", "gmems", "gmem"},
 	Args:    cobra.ExactArgs(1),
-	Short:   "Deletes a batch of group members",
+	Example: `gmin batch-delete group-members somegroup@mycompany.com -i inputfile.txt
+gmin bdel gmems somegroup@mycompany.com -i inputfile.txt
+gmin ls gmem mygroup@mycompany.co.uk -a email | jq '.members[] | .email' -r | ./gmin bdel gmem mygroup@mycompany.co.uk`,
+	Short: "Deletes a batch of group members",
 	Long: `Deletes a batch of group members where group member details are provided in a text input file or through a pipe.
-	
-	Examples:	gmin batch-delete group-members somegroup@mycompany.com -i inputfile.txt
-			gmin bdel gmems somegroup@mycompany.com -i inputfile.txt
-			gmin ls gmem mygroup@mycompany.co.uk -a email | jq '.members[] | .email' -r | ./gmin bdel gmem mygroup@mycompany.co.uk
 			
-	The input should have the group member email addresses, aliases or ids to be deleted on separate lines like this:
-	
-	frank.castle@mycompany.com
-	bruce.wayne@mycompany.com
-	peter.parker@mycompany.com`,
+The input should have the group member email addresses, aliases or ids to be deleted on separate lines like this:
+
+frank.castle@mycompany.com
+bruce.wayne@mycompany.com
+peter.parker@mycompany.com`,
 	RunE: doBatchDelMember,
 }
 

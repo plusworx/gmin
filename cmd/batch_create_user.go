@@ -45,34 +45,33 @@ import (
 var batchCrtUserCmd = &cobra.Command{
 	Use:     "users -i <input file path or google sheet id>",
 	Aliases: []string{"user"},
-	Short:   "Creates a batch of users",
+	Example: `gmin batch-create users -i inputfile.json
+gmin bcrt user -i inputfile.csv -f csv
+gmin bcrt user -i 1odyAIp3jGspd3M4xeepxWD6aeQIUuHBgrZB2OHSu8MI -s 'Sheet1!A1:K25' -f gsheet`,
+	Short: "Creates a batch of users",
 	Long: `Creates a batch of users where user details are provided in a Google Sheet,CSV/JSON input file or piped JSON.
-	
-	Examples:	gmin batch-create users -i inputfile.json
-			gmin bcrt user -i inputfile.csv -f csv
-			gmin bcrt user -i 1odyAIp3jGspd3M4xeepxWD6aeQIUuHBgrZB2OHSu8MI -s 'Sheet1!A1:K25' -f gsheet
 			
-	The contents of a JSON file or piped input should look something like this:
-	
-	{"name":{"firstName":"Stan","familyName":"Laurel"},"primaryEmail":"stan.laurel@company.com","password":"SecretPassword","changePasswordAtNextLogin":true}
-	{"name":{"givenName":"Oliver","familyName":"Hardy"},"primaryEmail":"oliver.hardy@company.com","password":"SecretPassword","changePasswordAtNextLogin":true}
-	{"name":{"givenName":"Harold","familyName":"Lloyd"},"primaryEmail":"harold.lloyd@company.com","password":"SecretPassword","changePasswordAtNextLogin":true}
-	
-	CSV and Google sheets must have a header row with the following column names being the only ones that are valid:
-	
-	changePasswordAtNextLogin [value true or false]
-	firstName [required]
-	includeInGlobalAddressList [value true or false]
-	ipWhitelisted [value true or false]
-	lastName [required]
-	orgUnitPath
-	password [required]
-	primaryEmail [required]
-	recoveryEmail
-	recoveryPhone [must start with '+' in E.164 format]
-	suspended [value true or false]
-	
-	The column names are case insensitive and can be in any order. firstName can be replaced by givenName and lastName can be replaced by familyName.`,
+The contents of a JSON file or piped input should look something like this:
+
+{"name":{"firstName":"Stan","familyName":"Laurel"},"primaryEmail":"stan.laurel@company.com","password":"SecretPassword","changePasswordAtNextLogin":true}
+{"name":{"givenName":"Oliver","familyName":"Hardy"},"primaryEmail":"oliver.hardy@company.com","password":"SecretPassword","changePasswordAtNextLogin":true}
+{"name":{"givenName":"Harold","familyName":"Lloyd"},"primaryEmail":"harold.lloyd@company.com","password":"SecretPassword","changePasswordAtNextLogin":true}
+
+CSV and Google sheets must have a header row with the following column names being the only ones that are valid:
+
+changePasswordAtNextLogin [value true or false]
+firstName [required]
+includeInGlobalAddressList [value true or false]
+ipWhitelisted [value true or false]
+lastName [required]
+orgUnitPath
+password [required]
+primaryEmail [required]
+recoveryEmail
+recoveryPhone [must start with '+' in E.164 format]
+suspended [value true or false]
+
+The column names are case insensitive and can be in any order. firstName can be replaced by givenName and lastName can be replaced by familyName.`,
 	RunE: doBatchCrtUser,
 }
 

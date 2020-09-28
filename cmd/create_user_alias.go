@@ -34,12 +34,11 @@ var createUserAliasCmd = &cobra.Command{
 	Use:     "user-alias <alias email address> <user email address or id>",
 	Aliases: []string{"ualias", "ua"},
 	Args:    cobra.ExactArgs(2),
-	Short:   "Creates a user alias",
-	Long: `Creates a user alias.
-	
-	Examples:	gmin create user-alias my.alias@mycompany.com brian.cox@mycompany.com
-			gmin crt ua my.alias@mycompany.com brian.cox@mycompany.com`,
-	RunE: doCreateUserAlias,
+	Example: `gmin create user-alias my.alias@mycompany.com brian.cox@mycompany.com
+gmin crt ua my.alias@mycompany.com brian.cox@mycompany.com`,
+	Short: "Creates a user alias",
+	Long:  `Creates a user alias.`,
+	RunE:  doCreateUserAlias,
 }
 
 func doCreateUserAlias(cmd *cobra.Command, args []string) error {

@@ -41,20 +41,19 @@ var showFlagValsCmd = &cobra.Command{
 	Use:     "flag-values <object> [flag with predefined values]",
 	Aliases: []string{"flag-vals", "fvals"},
 	Args:    cobra.MinimumNArgs(1),
-	Short:   "Shows object flag predefined value information",
+	Example: `gmin show flag-values user projection
+gmin show fvals user orderby`,
+	Short: "Shows object flag predefined value information",
 	Long: `Shows object flag predefined value information.
 
-	Valid objects are:
-	chromeosdevice, crosdevice, crosdev, cdev
-	global
-	group, grp
-	group-member, grp-member, grp-mem, gmember, gmem
-	mobiledevice, mobdevice, mobdev, mdev
-	orgunit, ou
-	user
-	
-	Examples:	gmin show flag-values user projection
-			gmin show fvals user orderby`,
+Valid objects are:
+chromeosdevice, crosdevice, crosdev, cdev
+global
+group, grp
+group-member, grp-member, grp-mem, gmember, gmem
+mobiledevice, mobdevice, mobdev, mdev
+orgunit, ou
+user`,
 	RunE: doShowFlagVals,
 }
 

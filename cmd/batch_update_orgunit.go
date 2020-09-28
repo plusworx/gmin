@@ -46,30 +46,29 @@ import (
 var batchUpdOUCmd = &cobra.Command{
 	Use:     "orgunits -i <input file path>",
 	Aliases: []string{"orgunit", "ous", "ou"},
-	Short:   "Updates a batch of orgunits",
+	Example: `gmin batch-update orgunits -i inputfile.json
+gmin bupd ous -i inputfile.csv -f csv
+gmin bupd ou -i 1odyAIp3jGspd3M4xeepxWD6aeQIUuHBgrZB2OHSu8MI -s 'Sheet1!A1:K25' -f gsheet`,
+	Short: "Updates a batch of orgunits",
 	Long: `Updates a batch of orgunits where orgunit details are provided in a Google Sheet, CSV/JSON input file or piped JSON.
-	
-	Examples:	gmin batch-update orgunits -i inputfile.json
-			gmin bupd ous -i inputfile.csv -f csv
-			gmin bupd ou -i 1odyAIp3jGspd3M4xeepxWD6aeQIUuHBgrZB2OHSu8MI -s 'Sheet1!A1:K25' -f gsheet
 			  
-	The contents of the JSON file or piped input should look something like this:
-	
-	{"ouKey":"Credit","parentOrgUnitPath":"/Finance","name":"Credit_Control"}
-	{"ouKey":"Audit","parentOrgUnitPath":"/Finance","name":"Audit_Governance"}
-	{"ouKey":"Planning","parentOrgUnitPath":"/Finance","name":"Planning_Reporting"}
-	
-	N.B. ouKey (full orgunit path or id) must be provided.
-	
-	CSV and Google sheets must have a header row with the following column names being the only ones that are valid:
-	
-	blockInheritance [value true or false]
-	description
-	name
-	ouKey [required]
-	parentOrgUnitPath
-	
-	The column names are case insensitive and can be in any order.`,
+The contents of the JSON file or piped input should look something like this:
+
+{"ouKey":"Credit","parentOrgUnitPath":"/Finance","name":"Credit_Control"}
+{"ouKey":"Audit","parentOrgUnitPath":"/Finance","name":"Audit_Governance"}
+{"ouKey":"Planning","parentOrgUnitPath":"/Finance","name":"Planning_Reporting"}
+
+N.B. ouKey (full orgunit path or id) must be provided.
+
+CSV and Google sheets must have a header row with the following column names being the only ones that are valid:
+
+blockInheritance [value true or false]
+description
+name
+ouKey [required]
+parentOrgUnitPath
+
+The column names are case insensitive and can be in any order.`,
 	RunE: doBatchUpdOU,
 }
 

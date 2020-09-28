@@ -38,12 +38,11 @@ var getMobDevCmd = &cobra.Command{
 	Use:     "mobiledevice <resource id>",
 	Aliases: []string{"mobdevice", "mobdev", "mdev"},
 	Args:    cobra.ExactArgs(1),
-	Short:   "Outputs information about a mobile device",
-	Long: `Outputs information about a mobile device.
-	
-	Examples:	gmin get mobiledevice AFiQxQ83IZT4llDfTWPZt69JvwSJU0YECe1TVyVZC4x
-			gmin get mdev AFiQxQ83IZT4llDfTWPZt69JvwSJU0YECe1TVyVZC4x -a serialnumber`,
-	RunE: doGetMobDev,
+	Example: `gmin get mobiledevice AFiQxQ83IZT4llDfTWPZt69JvwSJU0YECe1TVyVZC4x
+gmin get mdev AFiQxQ83IZT4llDfTWPZt69JvwSJU0YECe1TVyVZC4x -a serialnumber`,
+	Short: "Outputs information about a mobile device",
+	Long:  `Outputs information about a mobile device.`,
+	RunE:  doGetMobDev,
 }
 
 func doGetMobDev(cmd *cobra.Command, args []string) error {

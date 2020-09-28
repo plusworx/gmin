@@ -36,12 +36,11 @@ var moveCrOSDevCmd = &cobra.Command{
 	Use:     "chromeosdevice <device id> <orgunitpath>",
 	Aliases: []string{"crosdevice", "crosdev", "cdev"},
 	Args:    cobra.ExactArgs(2),
-	Short:   "Moves a ChromeOS device to another orgunit",
-	Long: `Moves a ChromeOS device to another orgunit.
-	
-	Examples:	gmin move chromeosdevice 4cx07eba348f09b3 /Sales
-			gmin mv cdev 4cx07eba348f09b3 /IT`,
-	RunE: doMoveCrOSDev,
+	Example: `gmin move chromeosdevice 4cx07eba348f09b3 /Sales
+gmin mv cdev 4cx07eba348f09b3 /IT`,
+	Short: "Moves a ChromeOS device to another orgunit",
+	Long:  `Moves a ChromeOS device to another orgunit.`,
+	RunE:  doMoveCrOSDev,
 }
 
 func doMoveCrOSDev(cmd *cobra.Command, args []string) error {

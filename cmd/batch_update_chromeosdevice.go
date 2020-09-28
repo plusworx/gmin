@@ -46,31 +46,30 @@ import (
 var batchUpdCrOSDevCmd = &cobra.Command{
 	Use:     "chromeosdevices -i <input file>",
 	Aliases: []string{"chromeosdevice", "crosdevices", "crosdevice", "crosdevs", "crosdev", "cdevs", "cdev"},
-	Short:   "Updates a batch of ChromeOS devices",
+	Example: `gmin batch-update chromeosdevices -i inputfile.json
+gmin bupd cdevs -i inputfile.csv -f csv
+gmin bupd cdev -i 1odyAIp3jGspd3M4xeepxWD6aeQIUuHBgrZB2OHSu8MI -s 'Sheet1!A1:K25' -f gsheet`,
+	Short: "Updates a batch of ChromeOS devices",
 	Long: `Updates a batch of ChromeOS devices with device details provided in a Google Sheet, CSV/JSON input file or piped JSON.
-	
-	Examples:	gmin batch-update chromeosdevices -i inputfile.json
-			gmin bupd cdevs -i inputfile.csv -f csv
-			gmin bupd cdev -i 1odyAIp3jGspd3M4xeepxWD6aeQIUuHBgrZB2OHSu8MI -s 'Sheet1!A1:K25' -f gsheet
 			
-	The JSON file or piped input should contain device update details like this:
-	
-	{"deviceId":"5ac7be43-5906-394e-7c39-62d45a8f10e8","annotatedAssetId":"CB1","annotatedLocation":"Batcave","annotatedUser":"Bruce Wayne","notes":"Test machine","orgUnitPath":"/Anticrime"}
-	{"deviceId":"4ac7be43-5906-394e-7c39-62d45a8f10e8","annotatedAssetId":"CB2","annotatedLocation":"Wayne Manor","annotatedUser":"Alfred Pennyworth","notes":"Another test machine","orgUnitPath":"/Anticorruption"}
-	{"deviceId":"3ac7be43-5906-394e-7c39-62d45a8f10e8","annotatedAssetId":"CB3","annotatedLocation":"Wayne Towers","annotatedUser":"The Big Enchilada","notes":"Yet another test machine","orgUnitPath":"/Legal"}
-	
-	N.B. deviceId must be provided.
-	
-	CSV and Google sheets must have a header row with the following column names being the only ones that are valid:
-	
-	annotatedAssetId
-	annotatedLocation
-	annotatedUser
-	deviceId [required]
-	notes
-	orgUnitPath
-	
-	The column names are case insensitive and can be in any order.`,
+The JSON file or piped input should contain device update details like this:
+
+{"deviceId":"5ac7be43-5906-394e-7c39-62d45a8f10e8","annotatedAssetId":"CB1","annotatedLocation":"Batcave","annotatedUser":"Bruce Wayne","notes":"Test machine","orgUnitPath":"/Anticrime"}
+{"deviceId":"4ac7be43-5906-394e-7c39-62d45a8f10e8","annotatedAssetId":"CB2","annotatedLocation":"Wayne Manor","annotatedUser":"Alfred Pennyworth","notes":"Another test machine","orgUnitPath":"/Anticorruption"}
+{"deviceId":"3ac7be43-5906-394e-7c39-62d45a8f10e8","annotatedAssetId":"CB3","annotatedLocation":"Wayne Towers","annotatedUser":"The Big Enchilada","notes":"Yet another test machine","orgUnitPath":"/Legal"}
+
+N.B. deviceId must be provided.
+
+CSV and Google sheets must have a header row with the following column names being the only ones that are valid:
+
+annotatedAssetId
+annotatedLocation
+annotatedUser
+deviceId [required]
+notes
+orgUnitPath
+
+The column names are case insensitive and can be in any order.`,
 	RunE: doBatchUpdCrOSDev,
 }
 

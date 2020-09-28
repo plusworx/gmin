@@ -45,26 +45,25 @@ import (
 var batchCrtGroupCmd = &cobra.Command{
 	Use:     "groups -i <input file path or google sheet id>",
 	Aliases: []string{"group", "grps", "grp"},
-	Short:   "Creates a batch of groups",
+	Example: `gmin batch-create groups -i inputfile.json
+gmin bcrt grps -i inputfile.csv -f csv
+gmin bcrt grp -i 1odyAIp3jGspd3M4xeepxWD6aeQIUuHBgrZB2OHSu8MI -s 'Sheet1!A1:K25' -f gsheet`,
+	Short: "Creates a batch of groups",
 	Long: `Creates a batch of groups where group details are provided in a Google Sheet, CSV/JSON input file or piped JSON.
+				  
+The contents of the JSON file or piped input should look something like this:
 	
-	Examples: 	gmin batch-create groups -i inputfile.json
-			gmin bcrt grps -i inputfile.csv -f csv
-			gmin bcrt grp -i 1odyAIp3jGspd3M4xeepxWD6aeQIUuHBgrZB2OHSu8MI -s 'Sheet1!A1:K25' -f gsheet
-			  
-	The contents of the JSON file or piped input should look something like this:
+{"description":"Finance group","email":"finance@mycompany.com","name":"Finance"}
+{"description":"Marketing group","email":"marketing@mycompany.com","name":"Marketing"}
+{"description":"Sales group","email":"sales@mycompany.com","name":"Sales"}
 	
-	{"description":"Finance group","email":"finance@mycompany.com","name":"Finance"}
-	{"description":"Marketing group","email":"marketing@mycompany.com","name":"Marketing"}
-	{"description":"Sales group","email":"sales@mycompany.com","name":"Sales"}
+CSV and Google sheets must have a header row with the following column names being the only ones that are valid:
 	
-	CSV and Google sheets must have a header row with the following column names being the only ones that are valid:
-	
-	description
-	email [required]
-	name
+description
+email [required]
+name
 
-	The column names are case insensitive and can be in any order.`,
+The column names are case insensitive and can be in any order.`,
 	RunE: doBatchCrtGroup,
 }
 

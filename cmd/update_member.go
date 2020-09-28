@@ -35,12 +35,11 @@ var updateMemberCmd = &cobra.Command{
 	Use:     "group-member <member email address, alias or id> <group email address, alias or id>",
 	Aliases: []string{"grp-member", "gmember", "gmem"},
 	Args:    cobra.ExactArgs(2),
-	Short:   "Updates a group member",
-	Long: `Updates a group member.
-	
-	Examples:	gmin update group-member another.user@mycompany.com office@mycompany.com -d DAILY
-			gmin upd gmem finance.person@mycompany.com finance@mycompany.com -r MEMBER`,
-	RunE: doUpdateMember,
+	Example: `gmin update group-member another.user@mycompany.com office@mycompany.com -d DAILY
+gmin upd gmem finance.person@mycompany.com finance@mycompany.com -r MEMBER`,
+	Short: "Updates a group member",
+	Long:  `Updates a group member.`,
+	RunE:  doUpdateMember,
 }
 
 func doUpdateMember(cmd *cobra.Command, args []string) error {

@@ -39,12 +39,11 @@ var manageCrOSDevCmd = &cobra.Command{
 	Use:     "chromeosdevice <device id> <action>",
 	Aliases: []string{"crosdevice", "crosdev", "cdev"},
 	Args:    cobra.ExactArgs(2),
-	Short:   "Performs an action on a ChromeOS device",
-	Long: `Performs an action on a ChromeOS device.
-	
-	Examples:	gmin manage chromeosdevice 4cx07eba348f09b3 disable
-			gmin mng cdev 4cx07eba348f09b3 reenable`,
-	RunE: doManageCrOSDev,
+	Example: `gmin manage chromeosdevice 4cx07eba348f09b3 disable
+gmin mng cdev 4cx07eba348f09b3 reenable`,
+	Short: "Performs an action on a ChromeOS device",
+	Long:  `Performs an action on a ChromeOS device.`,
+	RunE:  doManageCrOSDev,
 }
 
 func doManageCrOSDev(cmd *cobra.Command, args []string) error {

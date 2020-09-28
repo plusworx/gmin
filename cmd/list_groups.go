@@ -40,12 +40,11 @@ var listGroupsCmd = &cobra.Command{
 	Use:     "groups",
 	Aliases: []string{"group", "grp", "grps"},
 	Args:    cobra.NoArgs,
-	Short:   "Outputs a list of groups",
-	Long: `Outputs a list of groups.
-	
-	Examples:	gmin list groups -a email~description~id
-			gmin ls grp -q email=mygroup@domain.com`,
-	RunE: doListGroups,
+	Example: `gmin list groups -a email~description~id
+gmin ls grp -q email=mygroup@domain.com`,
+	Short: "Outputs a list of groups",
+	Long:  `Outputs a list of groups.`,
+	RunE:  doListGroups,
 }
 
 func doListGroups(cmd *cobra.Command, args []string) error {

@@ -35,12 +35,11 @@ var deleteMobDevCmd = &cobra.Command{
 	Use:     "mobiledevice <resource id>",
 	Aliases: []string{"mobdevice", "mobdev", "mdev"},
 	Args:    cobra.ExactArgs(1),
-	Short:   "Deletes a mobile device",
-	Long: `Deletes a mobile device.
-	
-	Examples:	gmin delete mobiledevice AFiQxQ83IZT4llDfTWPZt69JvwSJU0YECe1TVyVZC4x
-			gmin del mdev AFiQxQ83IZT4llDfTWPZt69JvwSJU0YECe1TVyVZC4x`,
-	RunE: doDeleteMobDev,
+	Example: `gmin delete mobiledevice AFiQxQ83IZT4llDfTWPZt69JvwSJU0YECe1TVyVZC4x
+gmin del mdev AFiQxQ83IZT4llDfTWPZt69JvwSJU0YECe1TVyVZC4x`,
+	Short: "Deletes a mobile device",
+	Long:  `Deletes a mobile device.`,
+	RunE:  doDeleteMobDev,
 }
 
 func doDeleteMobDev(cmd *cobra.Command, args []string) error {

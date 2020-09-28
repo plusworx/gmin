@@ -35,12 +35,11 @@ var createOUCmd = &cobra.Command{
 	Use:     "orgunit <orgunit name>",
 	Aliases: []string{"ou"},
 	Args:    cobra.ExactArgs(1),
-	Short:   "Creates an orgunit",
-	Long: `Creates an orgunit.
-	
-	Examples:	gmin create orgunit Sales -d "Sales Department"
-			gmin crt ou Finance -d "Finance Department"`,
-	RunE: doCreateOU,
+	Example: `gmin create orgunit Sales -d "Sales Department"
+gmin crt ou Finance -d "Finance Department"`,
+	Short: "Creates an orgunit",
+	Long:  `Creates an orgunit.`,
+	RunE:  doCreateOU,
 }
 
 func doCreateOU(cmd *cobra.Command, args []string) error {

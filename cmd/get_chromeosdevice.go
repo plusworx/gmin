@@ -38,12 +38,11 @@ var getCrOSDevCmd = &cobra.Command{
 	Use:     "chromeosdevice <device id>",
 	Aliases: []string{"crosdevice", "crosdev", "cdev"},
 	Args:    cobra.ExactArgs(1),
-	Short:   "Outputs information about a ChromeOS device",
-	Long: `Outputs information about a ChromeOS device.
-	
-	Examples:	gmin get chromeosdevice 5ad9ae43-5996-394e-9c39-12d45a8f10e8
-			gmin get cdev 5ad9ae43-5996-394e-9c39-12d45a8f10e8 -a serialnumber`,
-	RunE: doGetCrOSDev,
+	Example: `gmin get chromeosdevice 5ad9ae43-5996-394e-9c39-12d45a8f10e8
+gmin get cdev 5ad9ae43-5996-394e-9c39-12d45a8f10e8 -a serialnumber`,
+	Short: "Outputs information about a ChromeOS device",
+	Long:  `Outputs information about a ChromeOS device.`,
+	RunE:  doGetCrOSDev,
 }
 
 func doGetCrOSDev(cmd *cobra.Command, args []string) error {

@@ -36,12 +36,11 @@ var listUserAliasesCmd = &cobra.Command{
 	Use:     "user-aliases <user email address or id>",
 	Aliases: []string{"user-alias", "ualiases", "ualias", "uas", "ua"},
 	Args:    cobra.ExactArgs(1),
-	Short:   "Outputs a list of user aliases",
-	Long: `Outputs a list of user aliases.
-	
-	Examples:	gmin list user-aliases myuser@mycompany.com
-			gmin ls uas myuser@mycompany.com`,
-	RunE: doListUserAliases,
+	Example: `gmin list user-aliases myuser@mycompany.com
+gmin ls uas myuser@mycompany.com`,
+	Short: "Outputs a list of user aliases",
+	Long:  `Outputs a list of user aliases.`,
+	RunE:  doListUserAliases,
 }
 
 func doListUserAliases(cmd *cobra.Command, args []string) error {

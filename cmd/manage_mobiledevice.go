@@ -38,12 +38,11 @@ var manageMobDevCmd = &cobra.Command{
 	Use:     "mobiledevice <resource id> <action>",
 	Aliases: []string{"mobdevice", "mobdev", "mdev"},
 	Args:    cobra.ExactArgs(2),
-	Short:   "Performs an action on a mobile device",
-	Long: `Performs an action on a mobile device.
-	
-	Examples:	gmin manage mobiledevice 4cx07eba348f09b3 block
-			gmin mng mdev 4cx07eba348f09b3 admin_remote_wipe`,
-	RunE: doManageMobDev,
+	Example: `gmin manage mobiledevice 4cx07eba348f09b3 block
+gmin mng mdev 4cx07eba348f09b3 admin_remote_wipe`,
+	Short: "Performs an action on a mobile device",
+	Long:  `Performs an action on a mobile device.`,
+	RunE:  doManageMobDev,
 }
 
 func doManageMobDev(cmd *cobra.Command, args []string) error {

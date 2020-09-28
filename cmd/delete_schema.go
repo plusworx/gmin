@@ -35,12 +35,11 @@ var deleteSchemaCmd = &cobra.Command{
 	Use:     "schema <name or id>",
 	Aliases: []string{"sc"},
 	Args:    cobra.ExactArgs(1),
-	Short:   "Deletes schema",
-	Long: `Deletes schema.
-	
-	Examples:	gmin delete schema TestSchema
-			gmin del sc TestSchema`,
-	RunE: doDeleteSchema,
+	Example: `gmin delete schema TestSchema
+gmin del sc TestSchema`,
+	Short: "Deletes schema",
+	Long:  `Deletes schema.`,
+	RunE:  doDeleteSchema,
 }
 
 func doDeleteSchema(cmd *cobra.Command, args []string) error {

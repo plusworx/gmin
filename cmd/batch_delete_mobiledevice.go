@@ -40,12 +40,11 @@ import (
 var batchDelMobDevCmd = &cobra.Command{
 	Use:     "mobiledevices [-i input file path]",
 	Aliases: []string{"mobiledevice", "mobdevices", "mobdevice", "mobdevs", "mobdev", "mdevs", "mdev"},
-	Short:   "Deletes a batch of mobile devices",
+	Example: `gmin batch-delete mobiledevices -i inputfile.txt
+	gmin bdel mdevs -i inputfile.txt
+	gmin ls mdevs -q user:William* -a resourceId | jq '.mobiledevices[] | .resourceId' -r | gmin bdel mdevs`,
+	Short: "Deletes a batch of mobile devices",
 	Long: `Deletes a batch of mobile devices where mobile device details are provided in a text input file or through a pipe.
-	
-	Examples:	gmin batch-delete mobiledevices -i inputfile.txt
-			gmin bdel mdevs -i inputfile.txt
-			gmin ls mdevs -q user:William* -a resourceId | jq '.mobiledevices[] | .resourceId' -r | gmin bdel mdevs
 			
 The input should have the mobile device resource ids to be deleted on separate lines like this:
 

@@ -40,18 +40,17 @@ import (
 var batchDelOrgUnitCmd = &cobra.Command{
 	Use:     "orgunits [-i input file path]",
 	Aliases: []string{"orgunit", "ous", "ou"},
-	Short:   "Deletes a batch of orgunits",
+	Example: `gmin batch-delete orgunits -i inputfile.txt
+gmin bdel ous -i inputfile.txt
+gmin ls ous -o TestOU -a orgunitpath | jq '.organizationUnits[] | .orgUnitPath' -r | gmin bdel ou`,
+	Short: "Deletes a batch of orgunits",
 	Long: `Deletes a batch of orgunits where orgunit details are provided in a text input file or through a pipe.
-	
-	Examples:	gmin batch-delete orgunits -i inputfile.txt
-			gmin bdel ous -i inputfile.txt
-			gmin ls ous -o TestOU -a orgunitpath | jq '.organizationUnits[] | .orgUnitPath' -r | gmin bdel ou
 			
-	The input should have the orgunit paths or ids to be deleted on separate lines like this:
-	
-	Engineering/Skunkworx
-	Engineering/SecretOps
-	Engineering/Surplus`,
+The input should have the orgunit paths or ids to be deleted on separate lines like this:
+
+Engineering/Skunkworx
+Engineering/SecretOps
+Engineering/Surplus`,
 	RunE: doBatchDelOrgUnit,
 }
 

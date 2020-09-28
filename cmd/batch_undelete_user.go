@@ -45,27 +45,26 @@ import (
 var batchUndelUserCmd = &cobra.Command{
 	Use:     "users -i <input file path>",
 	Aliases: []string{"user"},
-	Short:   "Undeletes a batch of users",
+	Example: `gmin batch-undelete users -i inputfile.json
+gmin bund user -i inputfile.csv -f csv
+gmin bund user -i 1odyAIp3jGspd3M4xeepxWD6aeQIUuHBgrZB2OHSu8MI -s 'Sheet1!A1:B25' -f gsheet`,
+	Short: "Undeletes a batch of users",
 	Long: `Undeletes a batch of users where user details are provided in a Google Sheet, CSV/JSON input file or piped JSON.
-	
-	Examples:	gmin batch-undelete users -i inputfile.json
-			gmin bund user -i inputfile.csv -f csv
-			gmin bund user -i 1odyAIp3jGspd3M4xeepxWD6aeQIUuHBgrZB2OHSu8MI -s 'Sheet1!A1:B25' -f gsheet
 			
-	The contents of a JSON file or piped input should look something like this:
-	
-	{"userKey":"417578192529765228417","orgUnitPath":"/Sales"}
-	{"userKey":"308127142904731923463","orgUnitPath":"/"}
-	{"userKey":"107967172367714327529","orgUnitPath":"/Engineering"}
+The contents of a JSON file or piped input should look something like this:
 
-	N.B. userKey must be the unique user id and NOT email address
-	
-	CSV and Google sheets must have a header row with the following column names being the only ones that are valid:
-	
-	orgUnitPath [required]
-	userKey [required]
-	
-	The column names are case insensitive and can be in any order.`,
+{"userKey":"417578192529765228417","orgUnitPath":"/Sales"}
+{"userKey":"308127142904731923463","orgUnitPath":"/"}
+{"userKey":"107967172367714327529","orgUnitPath":"/Engineering"}
+
+N.B. userKey must be the unique user id and NOT email address
+
+CSV and Google sheets must have a header row with the following column names being the only ones that are valid:
+
+orgUnitPath [required]
+userKey [required]
+
+The column names are case insensitive and can be in any order.`,
 	RunE: doBatchUndelUser,
 }
 

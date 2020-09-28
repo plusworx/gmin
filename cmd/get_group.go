@@ -36,12 +36,11 @@ var getGroupCmd = &cobra.Command{
 	Use:     "group <email address or id>",
 	Aliases: []string{"grp"},
 	Args:    cobra.ExactArgs(1),
-	Short:   "Outputs information about a group",
-	Long: `Outputs information about a group.
-	
-	Examples:	gmin get group agroup@mydomain.org
-			gmin get grp 042yioqz3p5ulpk -a email`,
-	RunE: doGetGroup,
+	Example: `gmin get group agroup@mydomain.org
+gmin get grp 042yioqz3p5ulpk -a email`,
+	Short: "Outputs information about a group",
+	Long:  `Outputs information about a group.`,
+	RunE:  doGetGroup,
 }
 
 func doGetGroup(cmd *cobra.Command, args []string) error {

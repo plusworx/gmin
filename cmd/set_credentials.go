@@ -39,22 +39,21 @@ import (
 var setCredentialsCmd = &cobra.Command{
 	Use:     "credentials",
 	Aliases: []string{"creds", "cred"},
-	Short:   "Sets gmin service account credentials",
+	Example: `gmin set credentials
+gmin set creds`,
+	Short: "Sets gmin service account credentials",
 	Long: `Sets gmin service account credentials.
-	
-	Examples:	gmin set credentials
-			gmin set creds
 			
-	User is presented with a list of .json files contained in the credentials path directory. The dialogue will look
-	like this:
-	
-	1) mycompany.json
-	2) another_company.json
-	3) yet_another_company.json
-	
-	Please choose a file by typing the number:
-	
-	Once the user chooses a file, that file is copied to gmin_credentials in the credentials path directory.`,
+User is presented with a list of files contained in the credentials path directory. The dialogue will look
+like this:
+
+1) mycompany.json
+2) another_company.json
+3) yet_another_company.json
+
+Please choose a file by typing the number:
+
+Once the user chooses a file, that file is copied to gmin_credentials in the credentials path directory.`,
 	RunE: doSetCredentials,
 }
 

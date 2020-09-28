@@ -46,26 +46,25 @@ var batchCrtMemberCmd = &cobra.Command{
 	Use:     "group-members <group email address or id> -i <input file path or google sheet id>",
 	Aliases: []string{"group-member", "grp-members", "grp-member", "gmembers", "gmember", "gmems", "gmem"},
 	Args:    cobra.ExactArgs(1),
-	Short:   "Creates a batch of group members",
+	Example: `gmin batch-create group-members engineering@mycompany.com -i inputfile.json
+gmin bcrt gmems sales@mycompany.com -i inputfile.csv -f csv
+gmin bcrt gmem finance@mycompany.com -i 1odyAIp3jGspd3M4xeepxWD6aeQIUuHBgrZB2OHSu8MI -s 'Sheet1!A1:K25' -f gsheet`,
+	Short: "Creates a batch of group members",
 	Long: `Creates a batch of group members where group member details are provided in a Google Sheet, CSV/JSON input file or piped JSON.
-	
-	Examples:	gmin batch-create group-members engineering@mycompany.com -i inputfile.json
-			gmin bcrt gmems sales@mycompany.com -i inputfile.csv -f csv
-			gmin bcrt gmem finance@mycompany.com -i 1odyAIp3jGspd3M4xeepxWD6aeQIUuHBgrZB2OHSu8MI -s 'Sheet1!A1:K25' -f gsheet
 			
-	The contents of the JSON file or piped input should look something like this:
+The contents of the JSON file or piped input should look something like this:
 	
-	{"delivery_settings":"DIGEST","email":"kayden.yundt@mycompany.com","role":"MEMBER"}
-	{"delivery_settings":"ALL_MAIL","email":"kenyatta.tillman@mycompany.com","role":"MANAGER"}
-	{"delivery_settings":"DAILY","email":"keon.stroman@mycompany.com","role":"MEMBER"}
+{"delivery_settings":"DIGEST","email":"kayden.yundt@mycompany.com","role":"MEMBER"}
+{"delivery_settings":"ALL_MAIL","email":"kenyatta.tillman@mycompany.com","role":"MANAGER"}
+{"delivery_settings":"DAILY","email":"keon.stroman@mycompany.com","role":"MEMBER"}
 	
-	CSV and Google sheets must have a header row with the following column names being the only ones that are valid:
+CSV and Google sheets must have a header row with the following column names being the only ones that are valid:
 	
-	delivery_settings
-	email [required]
-	role
+delivery_settings
+email [required]
+role
 
-	The column names are case insensitive and can be in any order.`,
+The column names are case insensitive and can be in any order.`,
 	RunE: doBatchCrtMember,
 }
 

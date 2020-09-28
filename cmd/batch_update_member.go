@@ -46,28 +46,27 @@ var batchUpdMemberCmd = &cobra.Command{
 	Use:     "group-members <group email address, alias or id> -i <input file path>",
 	Aliases: []string{"group-member", "grp-members", "grp-member", "gmembers", "gmember", "gmems", "gmem"},
 	Args:    cobra.ExactArgs(1),
-	Short:   "Updates a batch of group members",
+	Example: `gmin batch-update group-members sales@mycompany.com -i inputfile.json
+gmin bupd gmems sales@mycompany.com -i inputfile.csv -f csv
+gmin bupd gmem finance@mycompany.com -i 1odyAIp3jGspd3M4xeepxWD6aeQIUuHBgrZB2OHSu8MI -s 'Sheet1!A1:K25' -f gsheet`,
+	Short: "Updates a batch of group members",
 	Long: `Updates a batch of group members where group member details are provided in a Google Sheet, CSV/JSON input file or piped JSON.
-	
-	Examples:	gmin batch-update group-members sales@mycompany.com -i inputfile.json
-			gmin bupd gmems sales@mycompany.com -i inputfile.csv -f csv
-			gmin bupd gmem finance@mycompany.com -i 1odyAIp3jGspd3M4xeepxWD6aeQIUuHBgrZB2OHSu8MI -s 'Sheet1!A1:K25' -f gsheet
 			  
-	The contents of the JSON file or piped input should look something like this:
-	
-	{"memberKey":"rudolph.brown@mycompany.com","delivery_settings":"DIGEST","role":"MANAGER"}
-	{"memberKey":"emily.bronte@mycompany.com","delivery_settings":"DAILY","role":"MEMBER"}
-	{"memberKey":"charles.dickens@mycompany.com","delivery_settings":"NONE","role":"MEMBER"}
+The contents of the JSON file or piped input should look something like this:
 
-	N.B. memberKey (member email address, alias or id) must be provided.
-	
-	CSV and Google sheets must have a header row with the following column names being the only ones that are valid:
-	
-	delivery_settings
-	memberKey [required]
-	role
+{"memberKey":"rudolph.brown@mycompany.com","delivery_settings":"DIGEST","role":"MANAGER"}
+{"memberKey":"emily.bronte@mycompany.com","delivery_settings":"DAILY","role":"MEMBER"}
+{"memberKey":"charles.dickens@mycompany.com","delivery_settings":"NONE","role":"MEMBER"}
 
-	The column names are case insensitive and can be in any order.`,
+N.B. memberKey (member email address, alias or id) must be provided.
+
+CSV and Google sheets must have a header row with the following column names being the only ones that are valid:
+
+delivery_settings
+memberKey [required]
+role
+
+The column names are case insensitive and can be in any order.`,
 	RunE: doBatchUpdMember,
 }
 

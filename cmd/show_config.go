@@ -35,11 +35,10 @@ var showConfigCmd = &cobra.Command{
 	Use:     "config",
 	Aliases: []string{"cfg"},
 	Args:    cobra.NoArgs,
+	Example: `gmin show config`,
 	Short:   "Shows configuration information",
-	Long: `Shows configuration information.
-	
-	Example:	gmin show config`,
-	RunE: doShowConfig,
+	Long:    `Shows configuration information.`,
+	RunE:    doShowConfig,
 }
 
 func doShowConfig(cmd *cobra.Command, args []string) error {

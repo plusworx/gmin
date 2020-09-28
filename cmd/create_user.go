@@ -38,14 +38,13 @@ import (
 )
 
 var createUserCmd = &cobra.Command{
-	Use:   "user <user email address>",
-	Args:  cobra.ExactArgs(1),
+	Use:  "user <user email address>",
+	Args: cobra.ExactArgs(1),
+	Example: `gmin create user another.user@mycompany.com  -f Another -l User -p strongpassword
+gmin crt user finance.person@mycompany.com -f Finance -l Person -p greatpassword -c`,
 	Short: "Creates a user",
-	Long: `Creates a user.
-	
-	Examples:	gmin create user another.user@mycompany.com  -f Another -l User -p strongpassword
-			gmin crt user finance.person@mycompany.com -f Finance -l Person -p greatpassword -c`,
-	RunE: doCreateUser,
+	Long:  `Creates a user.`,
+	RunE:  doCreateUser,
 }
 
 func doCreateUser(cmd *cobra.Command, args []string) error {

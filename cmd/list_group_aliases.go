@@ -36,12 +36,11 @@ var listGroupAliasesCmd = &cobra.Command{
 	Use:     "group-aliases <group email address or id>",
 	Aliases: []string{"group-alias", "grp-aliases", "grp-alias", "galiases", "galias", "gas", "ga"},
 	Args:    cobra.ExactArgs(1),
-	Short:   "Outputs a list of group aliases",
-	Long: `Outputs a list of group aliases.
-	
-	Examples:	gmin list group-aliases mygroup@mycompany.com
-			gmin ls gas mygroup@mycompany.com`,
-	RunE: doListGroupAliases,
+	Example: `gmin list group-aliases mygroup@mycompany.com
+gmin ls gas mygroup@mycompany.com`,
+	Short: "Outputs a list of group aliases",
+	Long:  `Outputs a list of group aliases.`,
+	RunE:  doListGroupAliases,
 }
 
 func doListGroupAliases(cmd *cobra.Command, args []string) error {

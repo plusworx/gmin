@@ -38,57 +38,56 @@ import (
 var createSchemaCmd = &cobra.Command{
 	Use:     "schema -i <input file path>",
 	Aliases: []string{"sc"},
-	Short:   "Creates a schema",
+	Example: `gmin create schema -i inputfile.json
+gmin crt sc -i inputfile.json`,
+	Short: "Creates a schema",
 	Long: `Creates a schema where schema details are provided in a JSON input file.
-	
-	Examples:	gmin create schema -i inputfile.json
-			gmin crt sc -i inputfile.json
 			
-	The contents of the JSON file should look something like this:
-	
-	{
-        "displayName": "Test Schema",
-        "fields": [
-                        {
-                                "displayName": "Projects",
-                                "fieldName": "projects",
-                                "fieldType": "STRING",
-                                "multiValued":true,
-                                "readAccessType": "ADMINS_AND_SELF"
-                        },
-                        {
-                                "displayName": "Location",
-                                "fieldName": "location",
-                                "fieldType": "STRING",
-                                "readAccessType": "ADMINS_AND_SELF"
-                        },
-                        {
-                                "displayName": "Start Date",
-                                "fieldName": "startDate",
-                                "fieldType": "DATE",
-                                "readAccessType": "ADMINS_AND_SELF"
-                        },
-                        {
-                                "displayName": "End Date",
-                                "fieldName": "endDate",
-                                "fieldType": "DATE",
-                                "readAccessType": "ADMINS_AND_SELF"
-                        },
-                        {
-                                "displayName": "Job Level",
-                                "fieldName": "jobLevel",
-                                "fieldType": "INT64",
-                                "indexed":true,
-                                "numericIndexingSpec":
-                                        {
-                                          "minValue":1,
-                                          "maxValue":7
-                                        },  
-                                "readAccessType": "ADMINS_AND_SELF"
-                        }
-                ],
-                "schemaName": "TestSchema"
-        }`,
+The contents of the JSON file should look something like this:
+
+{
+	"displayName": "Test Schema",
+	"fields": [
+		{
+			"displayName": "Projects",
+			"fieldName": "projects",
+			"fieldType": "STRING",
+			"multiValued":true,
+			"readAccessType": "ADMINS_AND_SELF"
+		},
+		{
+			"displayName": "Location",
+			"fieldName": "location",
+			"fieldType": "STRING",
+			"readAccessType": "ADMINS_AND_SELF"
+		},
+		{
+			"displayName": "Start Date",
+			"fieldName": "startDate",
+			"fieldType": "DATE",
+			"readAccessType": "ADMINS_AND_SELF"
+		},
+		{
+			"displayName": "End Date",
+			"fieldName": "endDate",
+			"fieldType": "DATE",
+			"readAccessType": "ADMINS_AND_SELF"
+		},
+		{
+			"displayName": "Job Level",
+			"fieldName": "jobLevel",
+			"fieldType": "INT64",
+			"indexed":true,
+			"numericIndexingSpec":
+				{
+					"minValue":1,
+					"maxValue":7
+				},  
+			"readAccessType": "ADMINS_AND_SELF"
+		}
+	],
+	"schemaName": "TestSchema"
+}`,
 	RunE: doCreateSchema,
 }
 

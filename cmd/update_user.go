@@ -36,14 +36,13 @@ import (
 )
 
 var updateUserCmd = &cobra.Command{
-	Use:   "user <user email address, alias or id>",
-	Args:  cobra.ExactArgs(1),
+	Use:  "user <user email address, alias or id>",
+	Args: cobra.ExactArgs(1),
+	Example: `gmin update user another.user@mycompany.com -p strongpassword -s
+gmin upd user finance.person@mycompany.com -l Newlastname`,
 	Short: "Updates a user",
-	Long: `Updates a user.
-	
-	Examples:	gmin update user another.user@mycompany.com -p strongpassword -s
-			gmin upd user finance.person@mycompany.com -l Newlastname`,
-	RunE: doUpdateUser,
+	Long:  `Updates a user.`,
+	RunE:  doUpdateUser,
 }
 
 func doUpdateUser(cmd *cobra.Command, args []string) error {

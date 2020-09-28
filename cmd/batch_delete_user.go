@@ -39,18 +39,17 @@ import (
 var batchDelUserCmd = &cobra.Command{
 	Use:     "users [-i input file path]",
 	Aliases: []string{"user"},
-	Short:   "Deletes a batch of users",
+	Example: `gmin batch-delete users -i inputfile.txt
+gmin bdel user -i inputfile.txt
+gmin ls user -a primaryemail -q orgunitpath=/TestOU | jq '.users[] | .primaryEmail' -r | gmin bdel user`,
+	Short: "Deletes a batch of users",
 	Long: `Deletes a batch of users where user details are provided in a text input file or from a pipe.
-	
-	Examples:	gmin batch-delete users -i inputfile.txt
-			gmin bdel user -i inputfile.txt
-			gmin ls user -a primaryemail -q orgunitpath=/TestOU | jq '.users[] | .primaryEmail' -r | gmin bdel user
 			
-	The input should provide the user email addresses, aliases or ids to be deleted on separate lines like this:
-	
-	frank.castle@mycompany.com
-	bruce.wayne@mycompany.com
-	peter.parker@mycompany.com`,
+The input should provide the user email addresses, aliases or ids to be deleted on separate lines like this:
+
+frank.castle@mycompany.com
+bruce.wayne@mycompany.com
+peter.parker@mycompany.com`,
 	RunE: doBatchDelUser,
 }
 

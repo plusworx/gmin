@@ -44,22 +44,21 @@ var showAttrsCmd = &cobra.Command{
 	Use:     "attributes <object> [composite attributes]",
 	Aliases: []string{"attrs"},
 	Args:    cobra.MinimumNArgs(1),
-	Short:   "Shows object attribute information",
+	Example: `gmin show attributes user -f pass
+gmin show attrs user name`,
+	Short: "Shows object attribute information",
 	Long: `Shows object attribute information.
 	
-	Valid objects are:
-	chromeosdevice, crosdevice, crosdev, cdev
-	group, grp
-	group-alias, grp-alias, galias, ga
-	group-member, grp-member, grp-mem, gmember, gmem
-	mobiledevice, mobdevice, mobdev, mdev
-	orgunit, ou
-	schema, sc
-	user
-	user-alias, ualias, ua
-
-	Examples:	gmin show attributes user -f pass
-			gmin show attrs user name`,
+Valid objects are:
+chromeosdevice, crosdevice, crosdev, cdev
+group, grp
+group-alias, grp-alias, galias, ga
+group-member, grp-member, grp-mem, gmember, gmem
+mobiledevice, mobdevice, mobdev, mdev
+orgunit, ou
+schema, sc
+user
+user-alias, ualias, ua`,
 	RunE: doShowAttrs,
 }
 

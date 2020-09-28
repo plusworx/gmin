@@ -34,12 +34,11 @@ var createGroupAliasCmd = &cobra.Command{
 	Use:     "group-alias <alias email address> <group email address or id>",
 	Aliases: []string{"galias", "ga"},
 	Args:    cobra.ExactArgs(2),
-	Short:   "Creates a group alias",
-	Long: `Creates a group alias.
-	
-	Examples:	gmin create group-alias group.alias@mycompany.com finance@mycompany.com
-			gmin crt ga group.alias@mycompany.com sales@mycompany.com`,
-	RunE: doCreateGroupAlias,
+	Example: `gmin create group-alias group.alias@mycompany.com finance@mycompany.com
+gmin crt ga group.alias@mycompany.com sales@mycompany.com`,
+	Short: "Creates a group alias",
+	Long:  `Creates a group alias.`,
+	RunE:  doCreateGroupAlias,
 }
 
 func doCreateGroupAlias(cmd *cobra.Command, args []string) error {

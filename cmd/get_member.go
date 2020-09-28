@@ -36,12 +36,11 @@ var getMemberCmd = &cobra.Command{
 	Use:     "group-member <member email address or id> <group email address or id>",
 	Aliases: []string{"grp-member", "grp-mem", "gmember", "gmem"},
 	Args:    cobra.ExactArgs(2),
-	Short:   "Outputs information about a member of a group",
-	Long: `Outputs information about a member of a group.
-	
-	Examples:	gmin get group-member 127987192327764327416 mygroup@mydomain.org -a email
-			gmin get gmem jack.black@mydomain.org mygroup@mydomain.org -a email`,
-	RunE: doGetMember,
+	Example: `gmin get group-member 127987192327764327416 mygroup@mydomain.org -a email
+gmin get gmem jack.black@mydomain.org mygroup@mydomain.org -a email`,
+	Short: "Outputs information about a member of a group",
+	Long:  `Outputs information about a member of a group.`,
+	RunE:  doGetMember,
 }
 
 func doGetMember(cmd *cobra.Command, args []string) error {

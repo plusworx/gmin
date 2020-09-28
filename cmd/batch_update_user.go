@@ -45,37 +45,36 @@ import (
 var batchUpdUserCmd = &cobra.Command{
 	Use:     "users -i <input file path>",
 	Aliases: []string{"user"},
-	Short:   "Updates a batch of users",
+	Example: `gmin batch-update users -i inputfile.json
+gmin bupd users -i inputfile.csv -f csv
+gmin bupd user -i 1odyAIp3jGspd3M4xeepxWD6aeQIUuHBgrZB2OHSu8MI -s 'Sheet1!A1:K25' -f gsheet`,
+	Short: "Updates a batch of users",
 	Long: `Updates a batch of users where user details are provided in a Google Sheet,CSV/JSON input file or piped JSON.
-	
-	Examples:	gmin batch-update users -i inputfile.json
-			gmin bupd users -i inputfile.csv -f csv
-			gmin bupd user -i 1odyAIp3jGspd3M4xeepxWD6aeQIUuHBgrZB2OHSu8MI -s 'Sheet1!A1:K25' -f gsheet
 			  
-	The contents of the JSON file or piped input should look something like this:
-	
-	{"userKey":"stan.laurel@myorg.org","name":{"givenName":"Stanislav","familyName":"Laurelius"},"primaryEmail":"stanislav.laurelius@myorg.org","password":"SuperSuperSecretPassword","changePasswordAtNextLogin":true}
-	{"userKey":"oliver.hardy@myorg.org","name":{"givenName":"Oliviatus","familyName":"Hardium"},"primaryEmail":"oliviatus.hardium@myorg.org","password":"StealthySuperSecretPassword","changePasswordAtNextLogin":true}
-	{"userKey":"harold.lloyd@myorg.org","name":{"givenName":"Haroldus","familyName":"Lloydius"},"primaryEmail":"haroldus.lloydius@myorg.org","password":"MightySuperSecretPassword","changePasswordAtNextLogin":true}
-	
-	N.B. userKey (user email address, alias or id) must be provided.
-	
-	CSV and Google sheets must have a header row with the following column names being the only ones that are valid:
-	
-	changePasswordAtNextLogin [value true or false]
-	firstName
-	includeInGlobalAddressList [value true or false]
-	ipWhitelisted [value true or false]
-	lastName
-	orgUnitPath
-	password
-	primaryEmail
-	recoveryEmail
-	recoveryPhone [must start with '+' in E.164 format]
-	suspended [value true or false]
-	userKey [required]
-	
-	The column names are case insensitive and can be in any order. firstName can be replaced by givenName and lastName can be replaced by familyName.`,
+The contents of the JSON file or piped input should look something like this:
+
+{"userKey":"stan.laurel@myorg.org","name":{"givenName":"Stanislav","familyName":"Laurelius"},"primaryEmail":"stanislav.laurelius@myorg.org","password":"SuperSuperSecretPassword","changePasswordAtNextLogin":true}
+{"userKey":"oliver.hardy@myorg.org","name":{"givenName":"Oliviatus","familyName":"Hardium"},"primaryEmail":"oliviatus.hardium@myorg.org","password":"StealthySuperSecretPassword","changePasswordAtNextLogin":true}
+{"userKey":"harold.lloyd@myorg.org","name":{"givenName":"Haroldus","familyName":"Lloydius"},"primaryEmail":"haroldus.lloydius@myorg.org","password":"MightySuperSecretPassword","changePasswordAtNextLogin":true}
+
+N.B. userKey (user email address, alias or id) must be provided.
+
+CSV and Google sheets must have a header row with the following column names being the only ones that are valid:
+
+changePasswordAtNextLogin [value true or false]
+firstName
+includeInGlobalAddressList [value true or false]
+ipWhitelisted [value true or false]
+lastName
+orgUnitPath
+password
+primaryEmail
+recoveryEmail
+recoveryPhone [must start with '+' in E.164 format]
+suspended [value true or false]
+userKey [required]
+
+The column names are case insensitive and can be in any order. firstName can be replaced by givenName and lastName can be replaced by familyName.`,
 	RunE: doBatchUpdUser,
 }
 

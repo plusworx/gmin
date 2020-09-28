@@ -37,12 +37,11 @@ var getOrgUnitCmd = &cobra.Command{
 	Use:     "orgunit <orgunit name>",
 	Aliases: []string{"ou"},
 	Args:    cobra.ExactArgs(1),
-	Short:   "Outputs information about an orgunit",
-	Long: `Outputs information about an orgunit.
-	
-	Examples:	gmin get orgunit Accounts
-			gmin get ou Marketing -a name~orgUnitId`,
-	RunE: doGetOrgUnit,
+	Example: `gmin get orgunit Accounts
+gmin get ou Marketing -a name~orgUnitId`,
+	Short: "Outputs information about an orgunit",
+	Long:  `Outputs information about an orgunit.`,
+	RunE:  doGetOrgUnit,
 }
 
 func doGetOrgUnit(cmd *cobra.Command, args []string) error {

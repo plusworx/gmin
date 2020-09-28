@@ -46,39 +46,38 @@ import (
 var batchMngCrOSDevCmd = &cobra.Command{
 	Use:     "chromeosdevices -i <input file>",
 	Aliases: []string{"chromeosdevice", "crosdevices", "crosdevice", "crosdevs", "crosdev", "cdevs", "cdev"},
-	Short:   "Manages a batch of ChromeOS devices",
+	Example: `gmin batch-manage chromeosdevices -i inputfile.json
+gmin bmng cdevs -i inputfile.csv -f csv
+gmin bmng cdev -i 1odyAIp3jGspd3M4xeepxWD6aeQIUuHBgrZB2OHSu8MI -s 'Sheet1!A1:C25' -f gsheet`,
+	Short: "Manages a batch of ChromeOS devices",
 	Long: `Manages a batch of ChromeOS devices where device details are provided in a Google Sheet, CSV/JSON input file or piped JSON.
-	
-	Examples:	gmin batch-manage chromeosdevices -i inputfile.json
-			gmin bmng cdevs -i inputfile.csv -f csv
-			gmin bmng cdev -i 1odyAIp3jGspd3M4xeepxWD6aeQIUuHBgrZB2OHSu8MI -s 'Sheet1!A1:C25' -f gsheet
 			  
-	The JSON file or piped input should contain ChromeOS device management details like this:
-	
-	{"deviceId":"5ac7be73-5996-394e-9c30-62d41a8f10e8","action":"disable"}
-	{"deviceId":"6ac9bd33-7095-453e-6c39-22d48a8f13e8","action":"reenable"}
-	{"deviceId":"6bc4be13-9916-494e-9c39-62d45c8f40e9","action":"deprovision","deprovisionReason":"retiring_device"}
-	
-	N.B. If you are deprovisioning devices then a deprovision reason must be provided.
-	
-	CSV and Google sheets must have a header row with the following column names being the only ones that are valid:
-	
-	action [required]
-	deprovisionReason
-	deviceId [required]
-	
-	The column names are case insensitive and can be in any order.
-	
-	Valid actions are:
-	deprovision
-	disable
-	reenable
-	
-	Valid deprovision reasons are:
-	different_model_replacement
-	retiring_device
-	same_model_replacement
-	upgrade_transfer`,
+The JSON file or piped input should contain ChromeOS device management details like this:
+
+{"deviceId":"5ac7be73-5996-394e-9c30-62d41a8f10e8","action":"disable"}
+{"deviceId":"6ac9bd33-7095-453e-6c39-22d48a8f13e8","action":"reenable"}
+{"deviceId":"6bc4be13-9916-494e-9c39-62d45c8f40e9","action":"deprovision","deprovisionReason":"retiring_device"}
+
+N.B. If you are deprovisioning devices then a deprovision reason must be provided.
+
+CSV and Google sheets must have a header row with the following column names being the only ones that are valid:
+
+action [required]
+deprovisionReason
+deviceId [required]
+
+The column names are case insensitive and can be in any order.
+
+Valid actions are:
+deprovision
+disable
+reenable
+
+Valid deprovision reasons are:
+different_model_replacement
+retiring_device
+same_model_replacement
+upgrade_transfer`,
 	RunE: doBatchMngCrOSDev,
 }
 

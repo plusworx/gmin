@@ -35,12 +35,11 @@ var deleteOUCmd = &cobra.Command{
 	Use:     "orgunit <name or id>",
 	Aliases: []string{"ou"},
 	Args:    cobra.ExactArgs(1),
-	Short:   "Deletes orgunit",
-	Long: `Deletes orgunit.
-	
-	Examples:	gmin delete orgunit TestOU
-			gmin del ou TestOU`,
-	RunE: doDeleteOU,
+	Example: `gmin delete orgunit TestOU
+gmin del ou TestOU`,
+	Short: "Deletes orgunit",
+	Long:  `Deletes orgunit.`,
+	RunE:  doDeleteOU,
 }
 
 func doDeleteOU(cmd *cobra.Command, args []string) error {

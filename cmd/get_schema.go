@@ -37,12 +37,11 @@ var getSchemaCmd = &cobra.Command{
 	Use:     "schema <schema name>",
 	Aliases: []string{"sc"},
 	Args:    cobra.ExactArgs(1),
-	Short:   "Outputs information about a schema",
-	Long: `Outputs information about a schema.
-	
-	Examples:	gmin get schema EmployeeInfo
-			gmin get sc EmployeeInfo -a displayName~schemaName`,
-	RunE: doGetSchema,
+	Example: `gmin get schema EmployeeInfo
+gmin get sc EmployeeInfo -a displayName~schemaName`,
+	Short: "Outputs information about a schema",
+	Long:  `Outputs information about a schema.`,
+	RunE:  doGetSchema,
 }
 
 func doGetSchema(cmd *cobra.Command, args []string) error {

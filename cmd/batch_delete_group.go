@@ -39,12 +39,11 @@ import (
 var batchDelGroupCmd = &cobra.Command{
 	Use:     "groups [-i input file path]",
 	Aliases: []string{"group", "grps", "grp"},
-	Short:   "Deletes a batch of groups",
+	Example: `gmin batch-delete groups -i inputfile.txt
+gmin bdel grps -i inputfile.txt
+gmin ls grp -q name:Test1* -a email | jq '.groups[] | .email' -r | gmin bdel grp`,
+	Short: "Deletes a batch of groups",
 	Long: `Deletes a batch of groups where group details are provided in a text input file or through a pipe.
-	
-	Examples:	gmin batch-delete groups -i inputfile.txt
-			gmin bdel grps -i inputfile.txt
-			gmin ls grp -q name:Test1* -a email | jq '.groups[] | .email' -r | gmin bdel grp
 			
 The input should have the group email addresses, aliases or ids to be deleted on separate lines like this:
 

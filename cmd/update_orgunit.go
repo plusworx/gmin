@@ -35,12 +35,11 @@ var updateOUCmd = &cobra.Command{
 	Use:     "orgunit <orgunit path or id>",
 	Aliases: []string{"ou"},
 	Args:    cobra.ExactArgs(1),
-	Short:   "Updates an orgunit",
-	Long: `Updates an orgunit .
-	
-	Examples:	gmin update orgunit Sales -n "New Name" -d "New description"
-			gmin upd ou Engineering/Aerodynamics -p Engineering/Aeronautics`,
-	RunE: doUpdateOU,
+	Example: `gmin update orgunit Sales -n "New Name" -d "New description"
+gmin upd ou Engineering/Aerodynamics -p Engineering/Aeronautics`,
+	Short: "Updates an orgunit",
+	Long:  `Updates an orgunit .`,
+	RunE:  doUpdateOU,
 }
 
 func doUpdateOU(cmd *cobra.Command, args []string) error {

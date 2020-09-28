@@ -46,27 +46,26 @@ import (
 var batchCrtOrgUnitCmd = &cobra.Command{
 	Use:     "orgunits -i <input file path or google sheet id>",
 	Aliases: []string{"orgunit", "ous", "ou"},
-	Short:   "Creates a batch of orgunits",
+	Example: `gmin batch-create orgunits -i inputfile.json
+gmin bcrt ous -i inputfile.csv -f csv
+gmin bcrt ou -i 1odyAIp3jGspd3M4xeepxWD6aeQIUuHBgrZB2OHSu8MI -s 'Sheet1!A1:K25' -f gsheet`,
+	Short: "Creates a batch of orgunits",
 	Long: `Creates a batch of orgunits where orgunit details are provided in a Google Sheet, CSV/JSON input file or piped JSON.
-	
-	Examples:	gmin batch-create orgunits -i inputfile.json
-			gmin bcrt ous -i inputfile.csv -f csv
-			gmin bcrt ou -i 1odyAIp3jGspd3M4xeepxWD6aeQIUuHBgrZB2OHSu8MI -s 'Sheet1!A1:K25' -f gsheet
-		
-	The contents of the JSON file or piped input should look something like this:
-	
-	{"description":"Fabrication department OU","name":"Fabrication","parentOrgUnitPath":"/Engineering"}
-	{"description":"Electrical department OU","name":"Electrical","parentOrgUnitPath":"/Engineering"}
-	{"description":"Paintwork department OU","name":"Paintwork","parentOrgUnitPath":"/Engineering"}
-	
-	CSV and Google sheets must have a header row with the following column names being the only ones that are valid:
-	
-	blockInheritance [value true or false]
-	description
-	name [required]
-	parentOrgUnitPath [required]
+			
+The contents of the JSON file or piped input should look something like this:
 
-	The column names are case insensitive and can be in any order.`,
+{"description":"Fabrication department OU","name":"Fabrication","parentOrgUnitPath":"/Engineering"}
+{"description":"Electrical department OU","name":"Electrical","parentOrgUnitPath":"/Engineering"}
+{"description":"Paintwork department OU","name":"Paintwork","parentOrgUnitPath":"/Engineering"}
+
+CSV and Google sheets must have a header row with the following column names being the only ones that are valid:
+
+blockInheritance [value true or false]
+description
+name [required]
+parentOrgUnitPath [required]
+
+The column names are case insensitive and can be in any order.`,
 	RunE: doBatchCrtOrgUnit,
 }
 

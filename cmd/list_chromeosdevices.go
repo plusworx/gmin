@@ -40,12 +40,11 @@ var listCrOSDevsCmd = &cobra.Command{
 	Use:     "chromeosdevices",
 	Aliases: []string{"chromeosdevice", "crosdevices", "crosdevice", "crosdevs", "crosdev", "cdevs", "cdev"},
 	Args:    cobra.NoArgs,
-	Short:   "Outputs a list of ChromeOS devices",
-	Long: `Outputs a list of ChromeOS devices.
-	
-	Examples:	gmin list chromeosdevices --pages all --count
-			gmin ls cdevs --pages all`,
-	RunE: doListCrOSDevs,
+	Example: `gmin list chromeosdevices --pages all --count
+gmin ls cdevs --pages all`,
+	Short: "Outputs a list of ChromeOS devices",
+	Long:  `Outputs a list of ChromeOS devices.`,
+	RunE:  doListCrOSDevs,
 }
 
 func doListCrOSDevs(cmd *cobra.Command, args []string) error {

@@ -40,12 +40,11 @@ var listMobDevsCmd = &cobra.Command{
 	Use:     "mobiledevices",
 	Aliases: []string{"mobiledevice", "mobdevices", "mobdevice", "mobdevs", "mobdev", "mdevs", "mdev"},
 	Args:    cobra.NoArgs,
-	Short:   "Outputs a list of mobile devices",
-	Long: `Outputs a list of mobile devices.
-	
-	Examples:	gmin list mobiledevices --pages all --count
-			gmin ls mdevs --pages all`,
-	RunE: doListMobDevs,
+	Example: `gmin list mobiledevices --pages all --count
+gmin ls mdevs --pages all`,
+	Short: "Outputs a list of mobile devices",
+	Long:  `Outputs a list of mobile devices.`,
+	RunE:  doListMobDevs,
 }
 
 func doListMobDevs(cmd *cobra.Command, args []string) error {

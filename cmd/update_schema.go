@@ -39,56 +39,55 @@ var updateSchemaCmd = &cobra.Command{
 	Use:     "schema <schema name or id> -i <input file path>",
 	Aliases: []string{"sc"},
 	Args:    cobra.ExactArgs(1),
-	Short:   "Updates a schema",
+	Example: `gmin update schema TestSchema -i inputfile.json
+gmin upd sc "TVV0m_kySIOf7bBpcfma8A==" -i inputfile.json`,
+	Short: "Updates a schema",
 	Long: `Updates a schema where schema details are provided in a JSON input file.
-	
-	Examples:	gmin update schema TestSchema -i inputfile.json
-			gmin upd sc "TVV0m_kySIOf7bBpcfma8A==" -i inputfile.json
 			
-	The contents of the JSON file should look something like this:
-	
-	{
-        "fields": [
-						{
-								"displayName": "Projects",
-								"fieldName": "projects",
-								"fieldType": "STRING",
-								"multiValued":true,
-								"readAccessType": "ADMINS_AND_SELF"
-						},
-						{
-								"displayName": "Location",
-								"fieldName": "location",
-								"fieldType": "STRING",
-								"readAccessType": "ADMINS_AND_SELF"
-						},
-                        {
-                                "displayName": "Employment Start Date",
-                                "fieldName": "empStartDate",
-                                "fieldType": "DATE",
-                                "readAccessType": "ADMINS_AND_SELF"
-                        },
-                        {
-                                "displayName": "Employment End Date",
-                                "fieldName": "empEndDate",
-                                "fieldType": "DATE",
-                                "readAccessType": "ADMINS_AND_SELF"
-						},
-						{
-							"displayName": "Job Level",
-							"fieldName": "jobLevel",
-							"fieldType": "INT64",
-							"indexed":true,
-							"numericIndexingSpec":
-									{
-									  "minValue":1,
-									  "maxValue":7
-									},  
-							"readAccessType": "ADMINS_AND_SELF"
-						}
-				],
-		"schemaName":"TestSchema"
-    }`,
+The contents of the JSON file should look something like this:
+
+{
+	"fields": [
+			{
+				"displayName": "Projects",
+				"fieldName": "projects",
+				"fieldType": "STRING",
+				"multiValued":true,
+				"readAccessType": "ADMINS_AND_SELF"
+			},
+			{
+				"displayName": "Location",
+				"fieldName": "location",
+				"fieldType": "STRING",
+				"readAccessType": "ADMINS_AND_SELF"
+			},
+			{
+				"displayName": "Employment Start Date",
+				"fieldName": "empStartDate",
+				"fieldType": "DATE",
+				"readAccessType": "ADMINS_AND_SELF"
+			},
+			{
+				"displayName": "Employment End Date",
+				"fieldName": "empEndDate",
+				"fieldType": "DATE",
+				"readAccessType": "ADMINS_AND_SELF"
+			},
+			{
+				"displayName": "Job Level",
+				"fieldName": "jobLevel",
+				"fieldType": "INT64",
+				"indexed":true,
+				"numericIndexingSpec":
+					{
+						"minValue":1,
+						"maxValue":7
+					},  
+				"readAccessType": "ADMINS_AND_SELF"
+			}
+		],
+	"schemaName":"TestSchema"
+}`,
 	RunE: doUpdateSchema,
 }
 

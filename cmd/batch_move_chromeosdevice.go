@@ -46,25 +46,24 @@ import (
 var batchMoveCrOSDevCmd = &cobra.Command{
 	Use:     "chromeosdevices -i <input file>",
 	Aliases: []string{"chromeosdevice", "crosdevices", "crosdevice", "crosdevs", "crosdev", "cdevs", "cdev"},
-	Short:   "Moves a batch of ChromeOS devices to another orgunit",
+	Example: `gmin batch-move chromeosdevices -i inputfile.txt
+gmin bmv cdevs -i inputfile.csv -f csv
+gmin bmv cdev -i 1odyAIp3jGspd3M4xeepxWD6aeQIUuHBgrZB2OHSu8MI -s 'Sheet1!A1:C25' -f gsheet`,
+	Short: "Moves a batch of ChromeOS devices to another orgunit",
 	Long: `Moves a batch of ChromeOS devices to another orgunit where device details are provided in a Google Sheet, CSV/JSON input file or piped JSON.
-	
-	Examples:	gmin batch-move chromeosdevices -i inputfile.txt
-			gmin bmv cdevs -i inputfile.csv -f csv
-			gmin bmv cdev -i 1odyAIp3jGspd3M4xeepxWD6aeQIUuHBgrZB2OHSu8MI -s 'Sheet1!A1:C25' -f gsheet
 			
-	The JSON file or piped input should contain ChromeOS device move details like this:
-	
-	{"deviceId":"5ac7be73-5996-394e-9c30-62d41a8f10e8","orgUnitPath":"/IT"}
-	{"deviceId":"6ac9bd33-7095-453e-6c39-22d48a8f13e8","orgUnitPath":"/Engineering"}
-	{"deviceId":"6bc4be13-9916-494e-9c39-62d45c8f40e9","orgUnitPath":"/Sales"}
-	
-	CSV and Google sheets must have a header row with the following column names being the only ones that are valid:
-	
-	deviceId [required]
-	orgUnitPath [required]
-	
-	The column names are case insensitive and can be in any order.`,
+The JSON file or piped input should contain ChromeOS device move details like this:
+
+{"deviceId":"5ac7be73-5996-394e-9c30-62d41a8f10e8","orgUnitPath":"/IT"}
+{"deviceId":"6ac9bd33-7095-453e-6c39-22d48a8f13e8","orgUnitPath":"/Engineering"}
+{"deviceId":"6bc4be13-9916-494e-9c39-62d45c8f40e9","orgUnitPath":"/Sales"}
+
+CSV and Google sheets must have a header row with the following column names being the only ones that are valid:
+
+deviceId [required]
+orgUnitPath [required]
+
+The column names are case insensitive and can be in any order.`,
 	RunE: doBatchMoveCrOSDev,
 }
 

@@ -35,12 +35,11 @@ var createMemberCmd = &cobra.Command{
 	Use:     "group-member <user/group email address> <group email address or id>",
 	Aliases: []string{"grp-member", "grp-mem", "gmember", "gmem"},
 	Args:    cobra.ExactArgs(2),
-	Short:   "Makes a user a group member",
-	Long: `Makes a user a group member.
-	
-	Examples:	gmin create group-member another.user@mycompany.com  office@mycompany.com -d NONE
-			gmin crt gmem finance.person@mycompany.com finance@mycompany.com -r MEMBER`,
-	RunE: doCreateMember,
+	Example: `gmin create group-member another.user@mycompany.com  office@mycompany.com -d NONE
+gmin crt gmem finance.person@mycompany.com finance@mycompany.com -r MEMBER`,
+	Short: "Makes a user a group member",
+	Long:  `Makes a user a group member.`,
+	RunE:  doCreateMember,
 }
 
 func doCreateMember(cmd *cobra.Command, args []string) error {

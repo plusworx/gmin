@@ -35,14 +35,13 @@ import (
 )
 
 var getUserCmd = &cobra.Command{
-	Use:   "user <email address or id>",
-	Args:  cobra.ExactArgs(1),
+	Use:  "user <email address or id>",
+	Args: cobra.ExactArgs(1),
+	Example: `gmin get user auser@mydomain.org
+gmin get user 114361578941906491576 -a primaryEmail~name`,
 	Short: "Outputs information about a user",
-	Long: `Outputs information about a user.
-	
-	Examples:	gmin get user auser@mydomain.org
-			gmin get user 114361578941906491576 -a primaryEmail~name`,
-	RunE: doGetUser,
+	Long:  `Outputs information about a user.`,
+	RunE:  doGetUser,
 }
 
 func doGetUser(cmd *cobra.Command, args []string) error {

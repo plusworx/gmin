@@ -45,29 +45,28 @@ import (
 var batchUpdGrpCmd = &cobra.Command{
 	Use:     "groups -i <input file path>",
 	Aliases: []string{"group", "grps", "grp"},
-	Short:   "Updates a batch of groups",
+	Example: `gmin batch-update groups -i inputfile.json
+gmin bupd grps -i inputfile.csv -f csv
+gmin bupd grp -i 1odyAIp3jGspd3M4xeepxWD6aeQIUuHBgrZB2OHSu8MI -s 'Sheet1!A1:K25' -f gsheet`,
+	Short: "Updates a batch of groups",
 	Long: `Updates a batch of groups where group details are provided in a Google Sheet, CSV/JSON input file or piped JSON.
-	
-	Examples:	gmin batch-update groups -i inputfile.json
-			gmin bupd grps -i inputfile.csv -f csv
-			gmin bupd grp -i 1odyAIp3jGspd3M4xeepxWD6aeQIUuHBgrZB2OHSu8MI -s 'Sheet1!A1:K25' -f gsheet
 			  
-	The contents of the JSON file or piped input should look something like this:
-	
-	{"groupKey":"034gixby5n7pqal","email":"testgroup@mycompany.com","name":"Testing","description":"This is a testing group for all your testing needs."}
-	{"groupKey":"032hioqz3p4ulyk","email":"info@mycompany.com","name":"Information","description":"Group for responding to general queries."}
-	{"groupKey":"045fijmz6w8nkqc","email":"webmaster@mycompany.com","name":"Webmaster","description":"Group for responding to website queries."}
+The contents of the JSON file or piped input should look something like this:
 
-	N.B. groupKey (group email address, alias or id) must be provided.
-	
-	CSV and Google sheets must have a header row with the following column names being the only ones that are valid:
-	
-	description
-	email
-	groupKey [required]
-	name
-	
-	The column names are case insensitive and can be in any order.`,
+{"groupKey":"034gixby5n7pqal","email":"testgroup@mycompany.com","name":"Testing","description":"This is a testing group for all your testing needs."}
+{"groupKey":"032hioqz3p4ulyk","email":"info@mycompany.com","name":"Information","description":"Group for responding to general queries."}
+{"groupKey":"045fijmz6w8nkqc","email":"webmaster@mycompany.com","name":"Webmaster","description":"Group for responding to website queries."}
+
+N.B. groupKey (group email address, alias or id) must be provided.
+
+CSV and Google sheets must have a header row with the following column names being the only ones that are valid:
+
+description
+email
+groupKey [required]
+name
+
+The column names are case insensitive and can be in any order.`,
 	RunE: doBatchUpdGrp,
 }
 

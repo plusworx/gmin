@@ -46,35 +46,34 @@ import (
 var batchMngMobDevCmd = &cobra.Command{
 	Use:     "mobiledevices -i <input file>",
 	Aliases: []string{"mobiledevice", "mobdevices", "mobdevice", "mobdevs", "mobdev", "mdevs", "mdev"},
-	Short:   "Manages a batch of mobile devices",
+	Example: `gmin batch-manage mobiledevices -i inputfile.json
+gmin bmng mdevs -i inputfile.csv -f csv
+gmin bmng mdev -i 1odyAIp3jGspd3M4xeepxWD6aeQIUuHBgrZB2OHSu8MI -s 'Sheet1!A1:B25' -f gsheet`,
+	Short: "Manages a batch of mobile devices",
 	Long: `Manages a batch of mobile devices where device details are provided in a Google Sheet, CSV/JSON input file or piped JSON.
-	
-	Examples:	gmin batch-manage mobiledevices -i inputfile.json
-			gmin bmng mdevs -i inputfile.csv -f csv
-			gmin bmng mdev -i 1odyAIp3jGspd3M4xeepxWD6aeQIUuHBgrZB2OHSu8MI -s 'Sheet1!A1:B25' -f gsheet
 			  
-	The JSON file or piped input should contain mobile device management details like this:
-	
-	{"resourceId":"4cx07eba348f09b3Yjklj93xjsol0kE30lkl","action":"admin_account_wipe"}
-	{"resourceId":"Hkj98764yKK4jw8yyoyq9987js07q1hs7y98","action":"approve"}
-	{"resourceId":"lkalkju9027ja98na65wqHaTBOOUgarTQKk9","action":"admin_remote_wipe"}
+The JSON file or piped input should contain mobile device management details like this:
 
-	N.B. resourceId must be used NOT deviceId.
-	
-	CSV and Google sheets must have a header row with the following column names being the only ones that are valid:
-	
-	action [required]
-	resourceId [required]
-	
-	The column names are case insensitive and can be in any order.
-	
-	Valid actions are:
-	admin_account_wipe
-	admin_remote_wipe
-	approve
-	block
-	cancel_remote_wipe_then_activate
-	cancel_remote_wipe_then_block`,
+{"resourceId":"4cx07eba348f09b3Yjklj93xjsol0kE30lkl","action":"admin_account_wipe"}
+{"resourceId":"Hkj98764yKK4jw8yyoyq9987js07q1hs7y98","action":"approve"}
+{"resourceId":"lkalkju9027ja98na65wqHaTBOOUgarTQKk9","action":"admin_remote_wipe"}
+
+N.B. resourceId must be used NOT deviceId.
+
+CSV and Google sheets must have a header row with the following column names being the only ones that are valid:
+
+action [required]
+resourceId [required]
+
+The column names are case insensitive and can be in any order.
+
+Valid actions are:
+admin_account_wipe
+admin_remote_wipe
+approve
+block
+cancel_remote_wipe_then_activate
+cancel_remote_wipe_then_block`,
 	RunE: doBatchMngMobDev,
 }
 

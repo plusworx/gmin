@@ -34,12 +34,11 @@ var deleteGroupAliasCmd = &cobra.Command{
 	Use:     "group-alias <alias email address> <group email address or id>",
 	Aliases: []string{"grp-alias", "galias", "ga"},
 	Args:    cobra.ExactArgs(2),
-	Short:   "Deletes group alias",
-	Long: `Deletes group alias.
-	
-	Examples:	gmin delete group-alias my.alias@mycompany.com mygroup@mycompany.com
-			gmin del ga my.alias@mycompany.com mygroup@mycompany.com`,
-	RunE: doDeleteGroupAlias,
+	Example: `gmin delete group-alias my.alias@mycompany.com mygroup@mycompany.com
+gmin del ga my.alias@mycompany.com mygroup@mycompany.com`,
+	Short: "Deletes group alias",
+	Long:  `Deletes group alias.`,
+	RunE:  doDeleteGroupAlias,
 }
 
 func doDeleteGroupAlias(cmd *cobra.Command, args []string) error {

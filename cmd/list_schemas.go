@@ -37,12 +37,11 @@ var listSchemasCmd = &cobra.Command{
 	Use:     "schemas",
 	Aliases: []string{"schema", "sc", "scs"},
 	Args:    cobra.NoArgs,
-	Short:   "Outputs a list of schemas",
-	Long: `Outputs a list of schemas.
-	
-	Examples:	gmin list schemas -a displayname~schemaname
-			gmin ls scs`,
-	RunE: doListSchemas,
+	Example: `gmin list schemas -a displayname~schemaname
+gmin ls scs`,
+	Short: "Outputs a list of schemas",
+	Long:  `Outputs a list of schemas.`,
+	RunE:  doListSchemas,
 }
 
 func doListSchemas(cmd *cobra.Command, args []string) error {

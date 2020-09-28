@@ -39,17 +39,16 @@ var showAttrValsCmd = &cobra.Command{
 	Use:     "attribute-values <object> [field with predefined values]",
 	Aliases: []string{"attr-vals", "avals"},
 	Args:    cobra.MinimumNArgs(1),
-	Short:   "Shows object field predefined value information",
+	Example: `gmin show attribute-values user email type
+gmin show avals user email type`,
+	Short: "Shows object field predefined value information",
 	Long: `Shows object field predefined value information.
 
-	Valid objects are:
-	chromeosdevice, crosdevice, crosdev, cdev
-	group-member, grp-member, grp-mem, gmember, gmem
-	mobiledevice, mobdevice, mobdev, mdev
-	user
-	
-	Examples:	gmin show attribute-values user email type
-			gmin show avals user email type`,
+Valid objects are:
+chromeosdevice, crosdevice, crosdev, cdev
+group-member, grp-member, grp-mem, gmember, gmem
+mobiledevice, mobdevice, mobdev, mdev
+user`,
 	RunE: doShowAttrVals,
 }
 
