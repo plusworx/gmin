@@ -31,6 +31,7 @@ import (
 	cmn "github.com/plusworx/gmin/utils/common"
 	gas "github.com/plusworx/gmin/utils/groupaliases"
 	grps "github.com/plusworx/gmin/utils/groups"
+	grpset "github.com/plusworx/gmin/utils/groupsettings"
 	mems "github.com/plusworx/gmin/utils/members"
 	mdevs "github.com/plusworx/gmin/utils/mobiledevices"
 	ous "github.com/plusworx/gmin/utils/orgunits"
@@ -54,6 +55,7 @@ chromeosdevice, crosdevice, crosdev, cdev
 group, grp
 group-alias, grp-alias, galias, ga
 group-member, grp-member, grp-mem, gmember, gmem
+group-settings,	grp-settings, grp-set, gsettings, gset
 mobiledevice, mobdevice, mobdev, mdev
 orgunit, ou
 schema, sc
@@ -227,6 +229,11 @@ func oneArg(arg string) error {
 			return fmt.Errorf(cmn.ErrNoCompositeAttrs, obj)
 		}
 		mems.ShowAttrs(filter)
+	case obj == "group-settings" || obj == "grp-settings" || obj == "grp-set" || obj == "gsettings" || obj == "gset":
+		if composite {
+			return fmt.Errorf(cmn.ErrNoCompositeAttrs, obj)
+		}
+		grpset.ShowAttrs(filter)
 	case obj == "mobiledevice" || obj == "mobdevice" || obj == "mobdev" || obj == "mdev":
 		if composite {
 			mdevs.ShowCompAttrs(filter)

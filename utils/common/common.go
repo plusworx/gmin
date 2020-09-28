@@ -46,6 +46,7 @@ import (
 	"golang.org/x/oauth2/google"
 	admin "google.golang.org/api/admin/directory/v1"
 	"google.golang.org/api/googleapi"
+	gset "google.golang.org/api/groupssettings/v1"
 	"google.golang.org/api/option"
 	sheet "google.golang.org/api/sheets/v4"
 )
@@ -123,6 +124,9 @@ const (
 	ErrBatchMissingUserData     string = "primaryEmail, givenName, familyName and password must all be provided"
 	ErrBatchOU                  string = "error - %s - orgunit: %s"
 	ErrBatchUser                string = "error - %s - user: %s"
+	ErrCreateDirectoryService   string = "error - Creating Directory Service: %v"
+	ErrCreateGrpSettingService  string = "error - Creating Group Setting Service: %v"
+	ErrCreateSheetService       string = "error - Creating Sheet Service: %v"
 	ErrEmptyEmail               string = "email cannot be empty string"
 	ErrEmptyPassword            string = "password cannot be empty string"
 	ErrEmptyRecoveryEmail       string = "recovery email cannot be empty string"
@@ -660,6 +664,11 @@ var ValidPrimaryShowArgs = []string{
 	"group",
 	"grp",
 	"group-alias",
+	"group-settings",
+	"grp-settings",
+	"grp-set",
+	"gsettings",
+	"gset",
 	"grp-alias",
 	"galias",
 	"ga",
@@ -691,7 +700,21 @@ func CreateDirectoryService(scope ...string) (*admin.Service, error) {
 
 	srv, err := admin.NewService(ctx, option.WithTokenSource(ts))
 	if err != nil {
-		return nil, fmt.Errorf("gmin: error - New Directory Service: %v", err)
+		return nil, fmt.Errorf(ErrCreateDirectoryService, err)
+	}
+	return srv, nil
+}
+
+// CreateGroupSettingService function creates and returns Group Setting Service object
+func CreateGroupSettingService(scope ...string) (*gset.Service, error) {
+	ctx, ts, err := oauthSetup(scope)
+	if err != nil {
+		return nil, err
+	}
+
+	srv, err := gset.NewService(ctx, option.WithTokenSource(ts))
+	if err != nil {
+		return nil, fmt.Errorf(ErrCreateGrpSettingService, err)
 	}
 	return srv, nil
 }
@@ -705,7 +728,7 @@ func CreateSheetService(scope ...string) (*sheet.Service, error) {
 
 	srv, err := sheet.NewService(ctx, option.WithTokenSource(ts))
 	if err != nil {
-		return nil, fmt.Errorf("gmin: error - New Sheet Service: %v", err)
+		return nil, fmt.Errorf(ErrCreateSheetService, err)
 	}
 	return srv, nil
 }
