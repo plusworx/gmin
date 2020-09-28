@@ -33,7 +33,7 @@ import (
 )
 
 var getGroupSettingsCmd = &cobra.Command{
-	Use:     "group-settings <email address>",
+	Use:     "group-settings <group email address>",
 	Aliases: []string{"grp-settings", "grp-set", "gsettings", "gset"},
 	Args:    cobra.ExactArgs(1),
 	Example: `gmin get group-settings agroup@mydomain.org
