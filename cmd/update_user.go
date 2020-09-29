@@ -142,8 +142,8 @@ func init() {
 	updateCmd.AddCommand(updateUserCmd)
 
 	updateUserCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "user's attributes as a JSON string")
-	updateUserCmd.Flags().BoolVarP(&changePassword, "changepassword", "c", false, "user must change password on next login")
-	updateUserCmd.Flags().BoolVarP(&noChangePassword, "nochangepassword", "d", false, "user doesn't have to change password on next login")
+	updateUserCmd.Flags().BoolVarP(&changePassword, "change-password", "c", false, "user must change password on next login")
+	updateUserCmd.Flags().BoolVarP(&noChangePassword, "no-password-change", "d", false, "user doesn't have to change password on next login")
 	updateUserCmd.Flags().StringVarP(&userEmail, "email", "e", "", "user's primary email address")
 	updateUserCmd.Flags().StringVarP(&firstName, "firstname", "f", "", "user's first name")
 	updateUserCmd.Flags().StringVar(&forceSend, "force", "", "field list for ForceSendFields separated by (~)")
@@ -152,8 +152,8 @@ func init() {
 	updateUserCmd.Flags().BoolVarP(&noGAL, "nogal", "n", false, "do not display user in Global Address List")
 	updateUserCmd.Flags().StringVarP(&orgUnit, "orgunit", "o", "", "user's orgunit")
 	updateUserCmd.Flags().StringVarP(&password, "password", "p", "", "user's password")
-	updateUserCmd.Flags().StringVarP(&recoveryEmail, "recoveryemail", "z", "", "user's recovery email address")
-	updateUserCmd.Flags().StringVarP(&recoveryPhone, "recoveryphone", "k", "", "user's recovery phone")
+	updateUserCmd.Flags().StringVarP(&recoveryEmail, "recovery-email", "z", "", "user's recovery email address")
+	updateUserCmd.Flags().StringVarP(&recoveryPhone, "recovery-phone", "k", "", "user's recovery phone")
 	updateUserCmd.Flags().BoolVarP(&suspended, "suspended", "s", false, "user is suspended")
 	updateUserCmd.Flags().BoolVarP(&unSuspended, "unsuspended", "u", false, "user is unsuspended")
 }
