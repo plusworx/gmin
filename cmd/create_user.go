@@ -180,13 +180,16 @@ func init() {
 }
 
 func processCrtUsrFlags(cmd *cobra.Command, user *admin.User, name *admin.UserName, flagNames []string) error {
+	logger.Debugw("starting processCrtUsrFlags()",
+		"flagNames", flagNames)
+
 	for _, flName := range flagNames {
 		switch flName {
-		case "changepassword":
+		case "change-password":
 			user.ChangePasswordAtNextLogin = true
 		case "firstname":
 			name.GivenName = firstName
-		case "forceSend":
+		case "force":
 			fields, err := cmn.ParseForceSend(forceSend, usrs.UserAttrMap)
 			if err != nil {
 				logger.Error(err)
@@ -215,14 +218,14 @@ func processCrtUsrFlags(cmd *cobra.Command, user *admin.User, name *admin.UserNa
 			}
 			user.Password = pwd
 			user.HashFunction = cmn.HashFunction
-		case "recoveryemail":
+		case "recovery-email":
 			if recoveryEmail == "" {
 				err := errors.New(cmn.ErrEmptyRecoveryEmail)
 				logger.Error(err)
 				return err
 			}
 			user.RecoveryEmail = recoveryEmail
-		case "recoveryphone":
+		case "recovery-phone":
 			if recoveryPhone == "" {
 				err := errors.New(cmn.ErrEmptyRecoveryPhone)
 				logger.Error(err)
@@ -238,5 +241,6 @@ func processCrtUsrFlags(cmd *cobra.Command, user *admin.User, name *admin.UserNa
 			user.Suspended = true
 		}
 	}
+	logger.Debug("finished processCrtUsrFlags()")
 	return nil
 }
