@@ -131,6 +131,7 @@ const (
 	ErrEmptyPassword            string = "password cannot be empty string"
 	ErrEmptyRecoveryEmail       string = "recovery email cannot be empty string"
 	ErrEmptyRecoveryPhone       string = "recovery phone cannot be empty string"
+	ErrEmptyString              string = "%v cannot be empty string"
 	ErrFileNumberRequired       string = "a file number is required - try again"
 	ErrFlagNotRecognized        string = "%v flag is not recognized"
 	ErrInvalidActionType        string = "invalid action type: %v"

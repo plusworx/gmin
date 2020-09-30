@@ -28,6 +28,7 @@ import (
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	admin "google.golang.org/api/admin/directory/v1"
 )
 
@@ -46,29 +47,23 @@ func doUpdateOU(cmd *cobra.Command, args []string) error {
 	logger.Debugw("starting doUpdateOU()",
 		"args", args)
 
-	var orgunit *admin.OrgUnit
+	var (
+		flagsPassed []string
+		orgunit     *admin.OrgUnit
+	)
 
 	orgunit = new(admin.OrgUnit)
 
-	if orgUnitName != "" {
-		orgunit.Name = orgUnitName
-	}
+	// Collect names of command flags passed in
+	cmd.Flags().Visit(func(f *pflag.Flag) {
+		flagsPassed = append(flagsPassed, f.Name)
+	})
 
-	if blockInherit {
-		orgunit.BlockInheritance = true
-	}
-
-	if unblockInherit {
-		orgunit.BlockInheritance = false
-		orgunit.ForceSendFields = append(orgunit.ForceSendFields, "BlockInheritance")
-	}
-
-	if orgUnitDesc != "" {
-		orgunit.Description = orgUnitDesc
-	}
-
-	if parentOUPath != "" {
-		orgunit.ParentOrgUnitPath = parentOUPath
+	// Process command flags
+	err := processUpdOUFlags(cmd, orgunit, flagsPassed)
+	if err != nil {
+		logger.Error(err)
+		return err
 	}
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryOrgunitScope)
@@ -100,10 +95,46 @@ func doUpdateOU(cmd *cobra.Command, args []string) error {
 func init() {
 	updateCmd.AddCommand(updateOUCmd)
 
-	updateOUCmd.Flags().BoolVarP(&blockInherit, "blockinherit", "b", false, "block orgunit policy inheritance")
+	updateOUCmd.Flags().BoolVarP(&blockInherit, "block-inherit", "b", false, "block orgunit policy inheritance")
 	updateOUCmd.Flags().StringVarP(&orgUnitDesc, "description", "d", "", "orgunit description")
 	updateOUCmd.Flags().StringVarP(&orgUnitName, "name", "n", "", "orgunit name")
-	updateOUCmd.Flags().StringVarP(&parentOUPath, "parentpath", "p", "", "orgunit parent path")
-	updateOUCmd.Flags().BoolVarP(&unblockInherit, "unblockinherit", "u", false, "unblock orgunit policy inheritance")
+	updateOUCmd.Flags().StringVarP(&parentOUPath, "parent-path", "p", "", "orgunit parent path")
+}
 
+func processUpdOUFlags(cmd *cobra.Command, orgunit *admin.OrgUnit, flagNames []string) error {
+	logger.Debugw("starting processUpdOUFlags()",
+		"flagNames", flagNames)
+	for _, flName := range flagNames {
+		switch flName {
+		case "block-inherit":
+			if blockInherit {
+				orgunit.BlockInheritance = true
+			} else {
+				orgunit.BlockInheritance = false
+				orgunit.ForceSendFields = append(orgunit.ForceSendFields, "BlockInheritance")
+			}
+		case "description":
+			if orgUnitDesc == "" {
+				orgunit.ForceSendFields = append(orgunit.ForceSendFields, "Description")
+			}
+			orgunit.Description = orgUnitDesc
+		case "name":
+			if orgUnitName == "" {
+				err := fmt.Errorf(cmn.ErrEmptyString, "--name")
+				if err != nil {
+					return err
+				}
+			}
+			orgunit.Name = orgUnitName
+		case "parent-path":
+			if parentOUPath == "" {
+				err := fmt.Errorf(cmn.ErrEmptyString, "--parent-path")
+				if err != nil {
+					return err
+				}
+			}
+			orgunit.ParentOrgUnitPath = parentOUPath
+		}
+	}
+	return nil
 }

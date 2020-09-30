@@ -116,7 +116,6 @@ var (
 	sortOrder        string
 	spamMod          string
 	suspended        bool
-	unblockInherit   bool
 	userEmail        string
 	userKey          string
 	viewGroup        string
