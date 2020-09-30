@@ -41,11 +41,17 @@ import (
 
 var (
 	adminEmail       string
+	approveMems      string
+	archiveOnly      bool
 	assetID          string
+	assistContent    string
 	attrs            string
 	archived         bool
+	banUser          string
 	blockInherit     bool
 	cfgFile          string
+	collabInbox      bool
+	contactOwner     string
 	credentialPath   string
 	changePassword   bool
 	composite        bool
@@ -54,9 +60,14 @@ var (
 	customField      string
 	deleted          bool
 	deliverySetting  string
+	denyNotification bool
+	denyText         string
+	discoverGroup    string
 	domain           string
+	extMems          bool
 	filter           string
 	firstName        string
+	footerText       string
 	forceSend        string
 	format           string
 	gal              bool
@@ -64,15 +75,21 @@ var (
 	groupDesc        string
 	groupEmail       string
 	groupName        string
+	incFooter        bool
 	inputFile        string
+	isArchived       bool
+	join             string
+	language         string
 	lastName         string
+	leave            string
 	location         string
 	logger           *zap.SugaredLogger
 	logLevel         string
 	logPath          string
 	maxResults       int64
-	noChangePassword bool
-	noGAL            bool
+	messageMod       string
+	modContent       string
+	modMems          string
 	notes            string
 	orderBy          string
 	orgUnit          string
@@ -81,6 +98,8 @@ var (
 	pages            string
 	parentOUPath     string
 	password         string
+	postAsGroup      bool
+	postMessage      string
 	projection       string
 	query            string
 	queryable        bool
@@ -88,16 +107,22 @@ var (
 	reason           string
 	recoveryEmail    string
 	recoveryPhone    string
+	repliesOnTop     bool
+	replyEmail       string
+	replyTo          string
 	role             string
 	searchType       string
 	silent           bool
 	sortOrder        string
+	spamMod          string
 	suspended        bool
 	unblockInherit   bool
-	unSuspended      bool
 	userEmail        string
 	userKey          string
+	viewGroup        string
+	viewMems         string
 	viewType         string
+	webPosting       bool
 )
 
 var rootCmd = &cobra.Command{
