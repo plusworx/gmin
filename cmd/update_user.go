@@ -169,7 +169,7 @@ func processUpdUsrFlags(cmd *cobra.Command, user *admin.User, name *admin.UserNa
 			}
 		case "email":
 			if userEmail == "" {
-				err := errors.New(cmn.ErrEmptyEmail)
+				err := fmt.Errorf(cmn.ErrEmptyString, "--email")
 				logger.Error(err)
 				return err
 			}
@@ -198,7 +198,7 @@ func processUpdUsrFlags(cmd *cobra.Command, user *admin.User, name *admin.UserNa
 			user.OrgUnitPath = orgUnit
 		case "password":
 			if password == "" {
-				err := errors.New(cmn.ErrEmptyPassword)
+				err := fmt.Errorf(cmn.ErrEmptyString, "--password")
 				logger.Error(err)
 				return err
 			}

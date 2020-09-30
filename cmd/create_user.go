@@ -208,7 +208,7 @@ func processCrtUsrFlags(cmd *cobra.Command, user *admin.User, name *admin.UserNa
 			user.OrgUnitPath = orgUnit
 		case "password":
 			if password == "" {
-				err := errors.New(cmn.ErrEmptyPassword)
+				err := fmt.Errorf(cmn.ErrEmptyString, "--password")
 				logger.Error(err)
 				return err
 			}
@@ -221,14 +221,14 @@ func processCrtUsrFlags(cmd *cobra.Command, user *admin.User, name *admin.UserNa
 			user.HashFunction = cmn.HashFunction
 		case "recovery-email":
 			if recoveryEmail == "" {
-				err := errors.New(cmn.ErrEmptyRecoveryEmail)
+				err := fmt.Errorf(cmn.ErrEmptyString, "--recovery-email")
 				logger.Error(err)
 				return err
 			}
 			user.RecoveryEmail = recoveryEmail
 		case "recovery-phone":
 			if recoveryPhone == "" {
-				err := errors.New(cmn.ErrEmptyRecoveryPhone)
+				err := fmt.Errorf(cmn.ErrEmptyString, "--recovery-phone")
 				logger.Error(err)
 				return err
 			}
