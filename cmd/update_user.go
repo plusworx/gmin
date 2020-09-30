@@ -143,19 +143,16 @@ func init() {
 
 	updateUserCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "user's attributes as a JSON string")
 	updateUserCmd.Flags().BoolVarP(&changePassword, "change-password", "c", false, "user must change password on next login")
-	updateUserCmd.Flags().BoolVarP(&noChangePassword, "no-password-change", "d", false, "user doesn't have to change password on next login")
 	updateUserCmd.Flags().StringVarP(&userEmail, "email", "e", "", "user's primary email address")
 	updateUserCmd.Flags().StringVarP(&firstName, "firstname", "f", "", "user's first name")
 	updateUserCmd.Flags().StringVar(&forceSend, "force", "", "field list for ForceSendFields separated by (~)")
 	updateUserCmd.Flags().BoolVarP(&gal, "gal", "g", false, "display user in Global Address List")
 	updateUserCmd.Flags().StringVarP(&lastName, "lastname", "l", "", "user's last name")
-	updateUserCmd.Flags().BoolVarP(&noGAL, "nogal", "n", false, "do not display user in Global Address List")
 	updateUserCmd.Flags().StringVarP(&orgUnit, "orgunit", "o", "", "user's orgunit")
 	updateUserCmd.Flags().StringVarP(&password, "password", "p", "", "user's password")
 	updateUserCmd.Flags().StringVarP(&recoveryEmail, "recovery-email", "z", "", "user's recovery email address")
 	updateUserCmd.Flags().StringVarP(&recoveryPhone, "recovery-phone", "k", "", "user's recovery phone")
 	updateUserCmd.Flags().BoolVarP(&suspended, "suspended", "s", false, "user is suspended")
-	updateUserCmd.Flags().BoolVarP(&unSuspended, "unsuspended", "u", false, "user is unsuspended")
 }
 
 func processUpdUsrFlags(cmd *cobra.Command, user *admin.User, name *admin.UserName, flagNames []string) error {
@@ -164,7 +161,12 @@ func processUpdUsrFlags(cmd *cobra.Command, user *admin.User, name *admin.UserNa
 	for _, flName := range flagNames {
 		switch flName {
 		case "change-password":
-			user.ChangePasswordAtNextLogin = true
+			if changePassword {
+				user.ChangePasswordAtNextLogin = true
+			} else {
+				user.ChangePasswordAtNextLogin = false
+				user.ForceSendFields = append(user.ForceSendFields, "ChangePasswordAtNextLogin")
+			}
 		case "email":
 			if userEmail == "" {
 				err := errors.New(cmn.ErrEmptyEmail)
@@ -184,15 +186,14 @@ func processUpdUsrFlags(cmd *cobra.Command, user *admin.User, name *admin.UserNa
 				user.ForceSendFields = append(user.ForceSendFields, fld)
 			}
 		case "gal":
-			user.IncludeInGlobalAddressList = true
+			if gal {
+				user.IncludeInGlobalAddressList = true
+			} else {
+				user.IncludeInGlobalAddressList = false
+				user.ForceSendFields = append(user.ForceSendFields, "IncludeInGlobalAddressList")
+			}
 		case "lastname":
 			name.FamilyName = lastName
-		case "no-password-change":
-			user.ChangePasswordAtNextLogin = false
-			user.ForceSendFields = append(user.ForceSendFields, "ChangePasswordAtNextLogin")
-		case "nogal":
-			user.IncludeInGlobalAddressList = false
-			user.ForceSendFields = append(user.ForceSendFields, "IncludeInGlobalAddressList")
 		case "orgunit":
 			user.OrgUnitPath = orgUnit
 		case "password":
@@ -220,10 +221,12 @@ func processUpdUsrFlags(cmd *cobra.Command, user *admin.User, name *admin.UserNa
 			user.RecoveryPhone = recoveryPhone
 			user.ForceSendFields = append(user.ForceSendFields, "RecoveryPhone")
 		case "suspended":
-			user.Suspended = true
-		case "unsuspended":
-			user.Suspended = false
-			user.ForceSendFields = append(user.ForceSendFields, "Suspended")
+			if suspended {
+				user.Suspended = true
+			} else {
+				user.Suspended = false
+				user.ForceSendFields = append(user.ForceSendFields, "Suspended")
+			}
 		}
 	}
 	logger.Debug("finished processUpdUsrFlags()")

@@ -167,7 +167,6 @@ func init() {
 	createUserCmd.Flags().StringVarP(&firstName, "firstname", "f", "", "user's first name")
 	createUserCmd.Flags().StringVar(&forceSend, "force", "", "field list for ForceSendFields separated by (~)")
 	createUserCmd.Flags().StringVarP(&lastName, "lastname", "l", "", "user's last name")
-	createUserCmd.Flags().BoolVarP(&noGAL, "nogal", "n", false, "do not display user in Global Address List")
 	createUserCmd.Flags().StringVarP(&orgUnit, "orgunit", "o", "", "user's orgunit")
 	createUserCmd.Flags().StringVarP(&password, "password", "p", "", "user's password")
 	createUserCmd.Flags().StringVarP(&recoveryEmail, "recovery-email", "z", "", "user's recovery email address")
@@ -200,9 +199,11 @@ func processCrtUsrFlags(cmd *cobra.Command, user *admin.User, name *admin.UserNa
 			}
 		case "lastname":
 			name.FamilyName = lastName
-		case "nogal":
-			user.IncludeInGlobalAddressList = false
-			user.ForceSendFields = append(user.ForceSendFields, "IncludeInGlobalAddressList")
+		case "gal":
+			if !gal {
+				user.IncludeInGlobalAddressList = false
+				user.ForceSendFields = append(user.ForceSendFields, "IncludeInGlobalAddressList")
+			}
 		case "orgunit":
 			user.OrgUnitPath = orgUnit
 		case "password":
