@@ -178,67 +178,167 @@ func init() {
 	createUserCmd.MarkFlagRequired("password")
 }
 
+func cuFirstnameFlag(name *admin.UserName, flagName string) error {
+	logger.Debugw("starting cuFirstnameFlag()",
+		"flagName", flagName)
+	if firstName == "" {
+		err := fmt.Errorf(cmn.ErrEmptyString, flagName)
+		if err != nil {
+			return err
+		}
+	}
+	name.GivenName = firstName
+	logger.Debug("finished cuFirstnameFlag()")
+	return nil
+}
+
+func cuForceFlag(forceSend string, user *admin.User) error {
+	logger.Debugw("starting cuForceFlag()",
+		"forceSend", forceSend)
+	fields, err := cmn.ParseForceSend(forceSend, usrs.UserAttrMap)
+	if err != nil {
+		return err
+	}
+	for _, fld := range fields {
+		user.ForceSendFields = append(user.ForceSendFields, fld)
+	}
+	logger.Debug("finished cuForceFlag()")
+	return nil
+}
+
+func cuGalFlag(user *admin.User) {
+	if !gal {
+		user.IncludeInGlobalAddressList = false
+		user.ForceSendFields = append(user.ForceSendFields, "IncludeInGlobalAddressList")
+	}
+}
+
+func cuLastnameFlag(name *admin.UserName, flagName string) error {
+	logger.Debugw("starting cuLastnameFlag()",
+		"flagName", flagName)
+	if lastName == "" {
+		err := fmt.Errorf(cmn.ErrEmptyString, "--lastname")
+		if err != nil {
+			return err
+		}
+	}
+	name.FamilyName = lastName
+	logger.Debug("finished cuLastnameFlag()")
+	return nil
+}
+
+func cuOrgunitFlag(user *admin.User, flagName string) error {
+	logger.Debugw("starting cuOrgunitFlag()",
+		"flagName", flagName)
+	if orgUnit == "" {
+		err := fmt.Errorf(cmn.ErrEmptyString, flagName)
+		if err != nil {
+			return err
+		}
+	}
+	user.OrgUnitPath = orgUnit
+	logger.Debug("finished cuOrgunitFlag()")
+	return nil
+}
+
+func cuPasswordFlag(user *admin.User, flagName string) error {
+	logger.Debugw("starting cuPasswordFlag()",
+		"flagName", flagName)
+	if password == "" {
+		err := fmt.Errorf(cmn.ErrEmptyString, flagName)
+		return err
+	}
+	pwd, err := cmn.HashPassword(password)
+	if err != nil {
+		return err
+	}
+	user.Password = pwd
+	user.HashFunction = cmn.HashFunction
+	logger.Debug("finished cuPasswordFlag()")
+	return nil
+}
+
+func cuRecoveryEmailFlag(user *admin.User, flagName string) error {
+	logger.Debugw("starting cuRecoveryEmailFlag()",
+		"flagName", flagName)
+	if recoveryEmail == "" {
+		err := fmt.Errorf(cmn.ErrEmptyString, flagName)
+		return err
+	}
+	user.RecoveryEmail = recoveryEmail
+	logger.Debug("finished cuRecoveryEmailFlag()")
+	return nil
+}
+
+func cuRecoveryPhoneFlag(user *admin.User, flagName string) error {
+	logger.Debugw("starting cuRecoveryPhoneFlag()",
+		"flagName", flagName)
+	if recoveryPhone == "" {
+		err := fmt.Errorf(cmn.ErrEmptyString, flagName)
+		return err
+	}
+	if string(recoveryPhone[0]) != "+" {
+		err := fmt.Errorf(cmn.ErrInvalidRecoveryPhone, recoveryPhone)
+		return err
+	}
+	user.RecoveryPhone = recoveryPhone
+	logger.Debug("finished cuRecoveryPhoneFlag()")
+	return nil
+}
+
 func processCrtUsrFlags(cmd *cobra.Command, user *admin.User, name *admin.UserName, flagNames []string) error {
 	logger.Debugw("starting processCrtUsrFlags()",
 		"flagNames", flagNames)
-
 	for _, flName := range flagNames {
-		switch flName {
-		case "change-password":
+		if flName == "change-password" {
 			user.ChangePasswordAtNextLogin = true
-		case "firstname":
-			name.GivenName = firstName
-		case "force":
-			fields, err := cmn.ParseForceSend(forceSend, usrs.UserAttrMap)
+		}
+		if flName == "firstname" {
+			err := cuFirstnameFlag(name, "--firstname")
 			if err != nil {
-				logger.Error(err)
 				return err
 			}
-			for _, fld := range fields {
-				user.ForceSendFields = append(user.ForceSendFields, fld)
-			}
-		case "lastname":
-			name.FamilyName = lastName
-		case "gal":
-			if !gal {
-				user.IncludeInGlobalAddressList = false
-				user.ForceSendFields = append(user.ForceSendFields, "IncludeInGlobalAddressList")
-			}
-		case "orgunit":
-			user.OrgUnitPath = orgUnit
-		case "password":
-			if password == "" {
-				err := fmt.Errorf(cmn.ErrEmptyString, "--password")
-				logger.Error(err)
-				return err
-			}
-			pwd, err := cmn.HashPassword(password)
+		}
+		if flName == "force" {
+			err := cuForceFlag(forceSend, user)
 			if err != nil {
-				logger.Error(err)
 				return err
 			}
-			user.Password = pwd
-			user.HashFunction = cmn.HashFunction
-		case "recovery-email":
-			if recoveryEmail == "" {
-				err := fmt.Errorf(cmn.ErrEmptyString, "--recovery-email")
-				logger.Error(err)
+		}
+		if flName == "lastname" {
+			err := cuLastnameFlag(name, "--lastname")
+			if err != nil {
 				return err
 			}
-			user.RecoveryEmail = recoveryEmail
-		case "recovery-phone":
-			if recoveryPhone == "" {
-				err := fmt.Errorf(cmn.ErrEmptyString, "--recovery-phone")
-				logger.Error(err)
+		}
+		if flName == "gal" {
+			cuGalFlag(user)
+		}
+		if flName == "orgunit" {
+			err := cuOrgunitFlag(user, "--orgunit")
+			if err != nil {
 				return err
 			}
-			if string(recoveryPhone[0]) != "+" {
-				err := fmt.Errorf(cmn.ErrInvalidRecoveryPhone, recoveryPhone)
-				logger.Error(err)
+		}
+		if flName == "password" {
+			err := cuPasswordFlag(user, "--password")
+			if err != nil {
 				return err
 			}
-			user.RecoveryPhone = recoveryPhone
-		case "suspended":
+		}
+		if flName == "recovery-email" {
+			err := cuRecoveryEmailFlag(user, "--recovery-email")
+			if err != nil {
+				return err
+			}
+		}
+		if flName == "recovery-phone" {
+			err := cuRecoveryPhoneFlag(user, "--recovery-phone")
+			if err != nil {
+				return err
+			}
+		}
+		if flName == "suspended" {
 			user.Suspended = true
 		}
 	}
