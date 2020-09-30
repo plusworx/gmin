@@ -161,10 +161,9 @@ func init() {
 func processUpdUsrFlags(cmd *cobra.Command, user *admin.User, name *admin.UserName, flagNames []string) error {
 	logger.Debugw("starting processUpdUsrFlags()",
 		"flagNames", flagNames)
-
 	for _, flName := range flagNames {
 		switch flName {
-		case "changepassword":
+		case "change-password":
 			user.ChangePasswordAtNextLogin = true
 		case "email":
 			if userEmail == "" {
@@ -175,7 +174,7 @@ func processUpdUsrFlags(cmd *cobra.Command, user *admin.User, name *admin.UserNa
 			user.PrimaryEmail = userEmail
 		case "firstname":
 			name.GivenName = firstName
-		case "forceSend":
+		case "force":
 			fields, err := cmn.ParseForceSend(forceSend, usrs.UserAttrMap)
 			if err != nil {
 				logger.Error(err)
@@ -188,7 +187,7 @@ func processUpdUsrFlags(cmd *cobra.Command, user *admin.User, name *admin.UserNa
 			user.IncludeInGlobalAddressList = true
 		case "lastname":
 			name.FamilyName = lastName
-		case "nochangepassword":
+		case "no-password-change":
 			user.ChangePasswordAtNextLogin = false
 			user.ForceSendFields = append(user.ForceSendFields, "ChangePasswordAtNextLogin")
 		case "nogal":
@@ -209,10 +208,10 @@ func processUpdUsrFlags(cmd *cobra.Command, user *admin.User, name *admin.UserNa
 			}
 			user.Password = pwd
 			user.HashFunction = cmn.HashFunction
-		case "recoveryemail":
+		case "recovery-email":
 			user.RecoveryEmail = recoveryEmail
 			user.ForceSendFields = append(user.ForceSendFields, "RecoveryEmail")
-		case "recoveryphone":
+		case "recovery-phone":
 			if recoveryPhone != "" && string(recoveryPhone[0]) != "+" {
 				err := fmt.Errorf(cmn.ErrInvalidRecoveryPhone, recoveryPhone)
 				logger.Error(err)
@@ -227,7 +226,6 @@ func processUpdUsrFlags(cmd *cobra.Command, user *admin.User, name *admin.UserNa
 			user.ForceSendFields = append(user.ForceSendFields, "Suspended")
 		}
 	}
-
 	logger.Debug("finished processUpdUsrFlags()")
 	return nil
 }
