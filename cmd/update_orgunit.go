@@ -105,36 +105,73 @@ func processUpdOUFlags(cmd *cobra.Command, orgunit *admin.OrgUnit, flagNames []s
 	logger.Debugw("starting processUpdOUFlags()",
 		"flagNames", flagNames)
 	for _, flName := range flagNames {
-		switch flName {
-		case "block-inherit":
-			if blockInherit {
-				orgunit.BlockInheritance = true
-			} else {
-				orgunit.BlockInheritance = false
-				orgunit.ForceSendFields = append(orgunit.ForceSendFields, "BlockInheritance")
+		if flName == "block-inherit" {
+			uoBlockInheritFlag(orgunit)
+		}
+		if flName == "description" {
+			uoDescriptionFlag(orgunit)
+		}
+		if flName == "name" {
+			err := uoNameFlag(orgunit, "--"+flName)
+			if err != nil {
+				return err
 			}
-		case "description":
-			if orgUnitDesc == "" {
-				orgunit.ForceSendFields = append(orgunit.ForceSendFields, "Description")
+		}
+		if flName == "parent-path" {
+			err := uoParentPathFlag(orgunit, "--"+flName)
+			if err != nil {
+				return err
 			}
-			orgunit.Description = orgUnitDesc
-		case "name":
-			if orgUnitName == "" {
-				err := fmt.Errorf(cmn.ErrEmptyString, "--name")
-				if err != nil {
-					return err
-				}
-			}
-			orgunit.Name = orgUnitName
-		case "parent-path":
-			if parentOUPath == "" {
-				err := fmt.Errorf(cmn.ErrEmptyString, "--parent-path")
-				if err != nil {
-					return err
-				}
-			}
-			orgunit.ParentOrgUnitPath = parentOUPath
 		}
 	}
+	logger.Debug("finished processUpdOUFlags()")
+	return nil
+}
+
+func uoBlockInheritFlag(orgunit *admin.OrgUnit) {
+	logger.Debug("starting uoBlockInheritFlag()")
+	if blockInherit {
+		orgunit.BlockInheritance = true
+	} else {
+		orgunit.BlockInheritance = false
+		orgunit.ForceSendFields = append(orgunit.ForceSendFields, "BlockInheritance")
+	}
+	logger.Debug("finished uoBlockInheritFlag()")
+}
+
+func uoDescriptionFlag(orgunit *admin.OrgUnit) {
+	logger.Debug("starting uoDescriptionFlag()")
+	if orgUnitDesc == "" {
+		orgunit.ForceSendFields = append(orgunit.ForceSendFields, "Description")
+	}
+	orgunit.Description = orgUnitDesc
+	logger.Debug("finished uoDescriptionFlag()")
+}
+
+func uoNameFlag(orgunit *admin.OrgUnit, flagName string) error {
+	logger.Debugw("starting uoNameFlag()",
+		"flagName", flagName)
+	if orgUnitName == "" {
+		err := fmt.Errorf(cmn.ErrEmptyString, flagName)
+		if err != nil {
+			return err
+		}
+	}
+	orgunit.Name = orgUnitName
+	logger.Debug("finished uoNameFlag()")
+	return nil
+}
+
+func uoParentPathFlag(orgunit *admin.OrgUnit, flagName string) error {
+	logger.Debugw("starting uoParentPathFlag()",
+		"flagName", flagName)
+	if parentOUPath == "" {
+		err := fmt.Errorf(cmn.ErrEmptyString, flagName)
+		if err != nil {
+			return err
+		}
+	}
+	orgunit.ParentOrgUnitPath = parentOUPath
+	logger.Debug("finished uoParentPathFlag()")
 	return nil
 }

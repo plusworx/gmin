@@ -294,7 +294,7 @@ func processCrtUsrFlags(cmd *cobra.Command, user *admin.User, name *admin.UserNa
 			user.ChangePasswordAtNextLogin = true
 		}
 		if flName == "firstname" {
-			err := cuFirstnameFlag(name, "--firstname")
+			err := cuFirstnameFlag(name, "--"+flName)
 			if err != nil {
 				return err
 			}
@@ -306,7 +306,7 @@ func processCrtUsrFlags(cmd *cobra.Command, user *admin.User, name *admin.UserNa
 			}
 		}
 		if flName == "lastname" {
-			err := cuLastnameFlag(name, "--lastname")
+			err := cuLastnameFlag(name, "--"+flName)
 			if err != nil {
 				return err
 			}
@@ -315,25 +315,25 @@ func processCrtUsrFlags(cmd *cobra.Command, user *admin.User, name *admin.UserNa
 			cuGalFlag(user)
 		}
 		if flName == "orgunit" {
-			err := cuOrgunitFlag(user, "--orgunit")
+			err := cuOrgunitFlag(user, "--"+flName)
 			if err != nil {
 				return err
 			}
 		}
 		if flName == "password" {
-			err := cuPasswordFlag(user, "--password")
+			err := cuPasswordFlag(user, "--"+flName)
 			if err != nil {
 				return err
 			}
 		}
 		if flName == "recovery-email" {
-			err := cuRecoveryEmailFlag(user, "--recovery-email")
+			err := cuRecoveryEmailFlag(user, "--"+flName)
 			if err != nil {
 				return err
 			}
 		}
 		if flName == "recovery-phone" {
-			err := cuRecoveryPhoneFlag(user, "--recovery-phone")
+			err := cuRecoveryPhoneFlag(user, "--"+flName)
 			if err != nil {
 				return err
 			}

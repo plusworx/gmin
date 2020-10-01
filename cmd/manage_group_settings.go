@@ -125,7 +125,7 @@ func processMngGrpSettingFlags(cmd *cobra.Command, grpSettings *gset.Groups, fla
 		"flagNames", flagNames)
 	for _, flName := range flagNames {
 		if flName == "approve-member" {
-			err := mgsApproveMemberFlag(grpSettings, "--approve-member")
+			err := mgsApproveMemberFlag(grpSettings, "--"+flName)
 			if err != nil {
 				return err
 			}
@@ -140,7 +140,7 @@ func processMngGrpSettingFlags(cmd *cobra.Command, grpSettings *gset.Groups, fla
 			return nil
 		}
 		if flName == "assist-content" {
-			err := mgsAssistContentFlag(grpSettings, "--assist-content")
+			err := mgsAssistContentFlag(grpSettings, "--"+flName)
 			if err != nil {
 				return err
 			}
@@ -151,7 +151,7 @@ func processMngGrpSettingFlags(cmd *cobra.Command, grpSettings *gset.Groups, fla
 			return nil
 		}
 		if flName == "contact-owner" {
-			err := mgsContactOwnerFlag(grpSettings, "--contact-owner")
+			err := mgsContactOwnerFlag(grpSettings, "--"+flName)
 			if err != nil {
 				return err
 			}
@@ -162,7 +162,7 @@ func processMngGrpSettingFlags(cmd *cobra.Command, grpSettings *gset.Groups, fla
 			return nil
 		}
 		if flName == "discover-group" {
-			err := mgsDiscoverGroupFlag(grpSettings, "--discover-group")
+			err := mgsDiscoverGroupFlag(grpSettings, "--"+flName)
 			if err != nil {
 				return err
 			}
@@ -181,42 +181,42 @@ func processMngGrpSettingFlags(cmd *cobra.Command, grpSettings *gset.Groups, fla
 			return nil
 		}
 		if flName == "join" {
-			err := mgsJoinFlag(grpSettings, "--join")
+			err := mgsJoinFlag(grpSettings, "--"+flName)
 			if err != nil {
 				return err
 			}
 			return nil
 		}
 		if flName == "language" {
-			err := mgsLanguageFlag(grpSettings, "--language")
+			err := mgsLanguageFlag(grpSettings, "--"+flName)
 			if err != nil {
 				return err
 			}
 			return nil
 		}
 		if flName == "leave" {
-			err := mgsLeaveFlag(grpSettings, "--leave")
+			err := mgsLeaveFlag(grpSettings, "--"+flName)
 			if err != nil {
 				return err
 			}
 			return nil
 		}
 		if flName == "message-mod" {
-			err := mgsMessageModFlag(grpSettings, "--message-mod")
+			err := mgsMessageModFlag(grpSettings, "--"+flName)
 			if err != nil {
 				return err
 			}
 			return nil
 		}
 		if flName == "mod-content" {
-			err := mgsModContentFlag(grpSettings, "--mod-content")
+			err := mgsModContentFlag(grpSettings, "--"+flName)
 			if err != nil {
 				return err
 			}
 			return nil
 		}
 		if flName == "mod-member" {
-			err := mgsModMemberFlag(grpSettings, "--mod-member")
+			err := mgsModMemberFlag(grpSettings, "--"+flName)
 			if err != nil {
 				return err
 			}
@@ -231,7 +231,7 @@ func processMngGrpSettingFlags(cmd *cobra.Command, grpSettings *gset.Groups, fla
 			return nil
 		}
 		if flName == "post-message" {
-			err := mgsPostMessageFlag(grpSettings, "--post-message")
+			err := mgsPostMessageFlag(grpSettings, "--"+flName)
 			if err != nil {
 				return err
 			}
@@ -249,28 +249,28 @@ func processMngGrpSettingFlags(cmd *cobra.Command, grpSettings *gset.Groups, fla
 			return nil
 		}
 		if flName == "reply-to" {
-			err := mgsReplyToFlag(grpSettings, "--reply-to")
+			err := mgsReplyToFlag(grpSettings, "--"+flName)
 			if err != nil {
 				return err
 			}
 			return nil
 		}
 		if flName == "spam-mod" {
-			err := mgsSpamModFlag(grpSettings, "--spam-mod")
+			err := mgsSpamModFlag(grpSettings, "--"+flName)
 			if err != nil {
 				return err
 			}
 			return nil
 		}
 		if flName == "view-group" {
-			err := mgsViewGroupFlag(grpSettings, "--view-group")
+			err := mgsViewGroupFlag(grpSettings, "--"+flName)
 			if err != nil {
 				return err
 			}
 			return nil
 		}
 		if flName == "view-membership" {
-			err := mgsViewMembershipFlag(grpSettings, "--view-membership")
+			err := mgsViewMembershipFlag(grpSettings, "--"+flName)
 			if err != nil {
 				return err
 			}

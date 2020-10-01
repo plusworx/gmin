@@ -428,40 +428,40 @@ func btchCrtProcessUser(hdrMap map[int]string, userData []interface{}) (*admin.U
 	name = new(admin.UserName)
 	user = new(admin.User)
 
-	for idx, attr := range userData {
+	for idx, val := range userData {
 		attrName := hdrMap[idx]
 
 		switch {
 		case attrName == "changePasswordAtNextLogin":
-			lwrAttr := strings.ToLower(fmt.Sprintf("%v", attr))
+			lwrAttr := strings.ToLower(fmt.Sprintf("%v", val))
 			if lwrAttr == "true" {
 				user.ChangePasswordAtNextLogin = true
 			}
 		case attrName == "familyName":
-			name.FamilyName = fmt.Sprintf("%v", attr)
+			name.FamilyName = fmt.Sprintf("%v", val)
 		case attrName == "givenName":
-			name.GivenName = fmt.Sprintf("%v", attr)
+			name.GivenName = fmt.Sprintf("%v", val)
 		case attrName == "includeInGlobalAddressList":
-			lwrAttr := strings.ToLower(fmt.Sprintf("%v", attr))
+			lwrAttr := strings.ToLower(fmt.Sprintf("%v", val))
 			if lwrAttr == "false" {
 				user.IncludeInGlobalAddressList = false
 				user.ForceSendFields = append(user.ForceSendFields, "IncludeInGlobalAddressList")
 			}
 		case attrName == "ipWhitelisted":
-			lwrAttr := strings.ToLower(fmt.Sprintf("%v", attr))
+			lwrAttr := strings.ToLower(fmt.Sprintf("%v", val))
 			if lwrAttr == "true" {
 				user.IpWhitelisted = true
 			}
 		case attrName == "orgUnitPath":
-			user.OrgUnitPath = fmt.Sprintf("%v", attr)
+			user.OrgUnitPath = fmt.Sprintf("%v", val)
 		case attrName == "password":
-			user.Password = fmt.Sprintf("%v", attr)
+			user.Password = fmt.Sprintf("%v", val)
 		case attrName == "primaryEmail":
-			user.PrimaryEmail = fmt.Sprintf("%v", attr)
+			user.PrimaryEmail = fmt.Sprintf("%v", val)
 		case attrName == "recoveryEmail":
-			user.RecoveryEmail = fmt.Sprintf("%v", attr)
+			user.RecoveryEmail = fmt.Sprintf("%v", val)
 		case attrName == "recoveryPhone":
-			sAttr := fmt.Sprintf("%v", attr)
+			sAttr := fmt.Sprintf("%v", val)
 			err := cmn.ValidateRecoveryPhone(sAttr)
 			if err != nil {
 				logger.Error(err)
@@ -469,7 +469,7 @@ func btchCrtProcessUser(hdrMap map[int]string, userData []interface{}) (*admin.U
 			}
 			user.RecoveryPhone = sAttr
 		case attrName == "suspended":
-			lwrAttr := strings.ToLower(fmt.Sprintf("%v", attr))
+			lwrAttr := strings.ToLower(fmt.Sprintf("%v", val))
 			if lwrAttr == "true" {
 				user.Suspended = true
 			}

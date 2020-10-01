@@ -159,76 +159,206 @@ func processUpdUsrFlags(cmd *cobra.Command, user *admin.User, name *admin.UserNa
 	logger.Debugw("starting processUpdUsrFlags()",
 		"flagNames", flagNames)
 	for _, flName := range flagNames {
-		switch flName {
-		case "change-password":
-			if changePassword {
-				user.ChangePasswordAtNextLogin = true
-			} else {
-				user.ChangePasswordAtNextLogin = false
-				user.ForceSendFields = append(user.ForceSendFields, "ChangePasswordAtNextLogin")
-			}
-		case "email":
-			if userEmail == "" {
-				err := fmt.Errorf(cmn.ErrEmptyString, "--email")
-				logger.Error(err)
-				return err
-			}
-			user.PrimaryEmail = userEmail
-		case "firstname":
-			name.GivenName = firstName
-		case "force":
-			fields, err := cmn.ParseForceSend(forceSend, usrs.UserAttrMap)
+		if flName == "change-password" {
+			uuChangePasswordFlag(user)
+		}
+		if flName == "email" {
+			err := uuEmailFlag(user, "--"+flName)
 			if err != nil {
-				logger.Error(err)
 				return err
 			}
-			for _, fld := range fields {
-				user.ForceSendFields = append(user.ForceSendFields, fld)
-			}
-		case "gal":
-			if gal {
-				user.IncludeInGlobalAddressList = true
-			} else {
-				user.IncludeInGlobalAddressList = false
-				user.ForceSendFields = append(user.ForceSendFields, "IncludeInGlobalAddressList")
-			}
-		case "lastname":
-			name.FamilyName = lastName
-		case "orgunit":
-			user.OrgUnitPath = orgUnit
-		case "password":
-			if password == "" {
-				err := fmt.Errorf(cmn.ErrEmptyString, "--password")
-				logger.Error(err)
-				return err
-			}
-			pwd, err := cmn.HashPassword(password)
+		}
+		if flName == "firstname" {
+			err := uuFirstnameFlag(name, "--"+flName)
 			if err != nil {
-				logger.Error(err)
 				return err
 			}
-			user.Password = pwd
-			user.HashFunction = cmn.HashFunction
-		case "recovery-email":
-			user.RecoveryEmail = recoveryEmail
-			user.ForceSendFields = append(user.ForceSendFields, "RecoveryEmail")
-		case "recovery-phone":
-			if recoveryPhone != "" && string(recoveryPhone[0]) != "+" {
-				err := fmt.Errorf(cmn.ErrInvalidRecoveryPhone, recoveryPhone)
-				logger.Error(err)
+		}
+		if flName == "force" {
+			err := uuForceFlag(user)
+			if err != nil {
 				return err
 			}
-			user.RecoveryPhone = recoveryPhone
-			user.ForceSendFields = append(user.ForceSendFields, "RecoveryPhone")
-		case "suspended":
-			if suspended {
-				user.Suspended = true
-			} else {
-				user.Suspended = false
-				user.ForceSendFields = append(user.ForceSendFields, "Suspended")
+		}
+		if flName == "gal" {
+			uuGalFlag(user)
+		}
+		if flName == "lastname" {
+			err := uuLastnameFlag(name, "--"+flName)
+			if err != nil {
+				return err
 			}
+		}
+		if flName == "orgunit" {
+			err := uuOrgunitFlag(user, "--"+flName)
+			if err != nil {
+				return err
+			}
+		}
+		if flName == "password" {
+			err := uuPasswordFlag(user, "--"+flName)
+			if err != nil {
+				return err
+			}
+		}
+		if flName == "recovery-email" {
+			err := uuRecoveryEmailFlag(user, "--"+flName)
+			if err != nil {
+				return err
+			}
+		}
+		if flName == "recovery-phone" {
+			err := uuRecoveryPhoneFlag(user, "--"+flName)
+			if err != nil {
+				return err
+			}
+		}
+		if flName == "suspended" {
+			uuSuspendedFlag(user)
 		}
 	}
 	logger.Debug("finished processUpdUsrFlags()")
 	return nil
+}
+
+func uuChangePasswordFlag(user *admin.User) {
+	logger.Debug("starting uuChangePasswordFlag()")
+	if changePassword {
+		user.ChangePasswordAtNextLogin = true
+	} else {
+		user.ChangePasswordAtNextLogin = false
+		user.ForceSendFields = append(user.ForceSendFields, "ChangePasswordAtNextLogin")
+	}
+	logger.Debug("finished uuChangePasswordFlag()")
+}
+
+func uuEmailFlag(user *admin.User, flagName string) error {
+	logger.Debugw("starting uuEmailFlag()",
+		"flagName", flagName)
+	if userEmail == "" {
+		err := fmt.Errorf(cmn.ErrEmptyString, flagName)
+		return err
+	}
+	user.PrimaryEmail = userEmail
+	logger.Debug("finished uuEmailFlag()")
+	return nil
+}
+
+func uuFirstnameFlag(name *admin.UserName, flagName string) error {
+	logger.Debugw("starting uuFirstnameFlag()",
+		"flagName", flagName)
+	if firstName == "" {
+		err := fmt.Errorf(cmn.ErrEmptyString, flagName)
+		return err
+	}
+	name.GivenName = firstName
+	logger.Debug("finished uuFirstnameFlag()")
+	return nil
+}
+
+func uuForceFlag(user *admin.User) error {
+	logger.Debug("starting uuForceFlag()")
+	fields, err := cmn.ParseForceSend(forceSend, usrs.UserAttrMap)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	for _, fld := range fields {
+		user.ForceSendFields = append(user.ForceSendFields, fld)
+	}
+	logger.Debug("finished uuForceFlag()")
+	return nil
+}
+
+func uuGalFlag(user *admin.User) {
+	logger.Debug("starting uuGalFlag()")
+	if gal {
+		user.IncludeInGlobalAddressList = true
+	} else {
+		user.IncludeInGlobalAddressList = false
+		user.ForceSendFields = append(user.ForceSendFields, "IncludeInGlobalAddressList")
+	}
+	logger.Debug("finished uuGalFlag()")
+}
+
+func uuLastnameFlag(name *admin.UserName, flagName string) error {
+	logger.Debugw("starting uuLastnameFlag()",
+		"flagName", flagName)
+	if lastName == "" {
+		err := fmt.Errorf(cmn.ErrEmptyString, flagName)
+		return err
+	}
+	name.FamilyName = lastName
+	logger.Debug("finished uuLastnameFlag()")
+	return nil
+}
+
+func uuOrgunitFlag(user *admin.User, flagName string) error {
+	logger.Debugw("starting uuOrgunitFlag()",
+		"flagName", flagName)
+	if orgUnit == "" {
+		err := fmt.Errorf(cmn.ErrEmptyString, flagName)
+		if err != nil {
+			return err
+		}
+	}
+	user.OrgUnitPath = orgUnit
+	logger.Debug("finished uuOrgunitFlag()")
+	return nil
+}
+
+func uuPasswordFlag(user *admin.User, flagName string) error {
+	logger.Debugw("starting uuPasswordFlag()",
+		"flagName", flagName)
+	if password == "" {
+		err := fmt.Errorf(cmn.ErrEmptyString, flagName)
+		return err
+	}
+	pwd, err := cmn.HashPassword(password)
+	if err != nil {
+		return err
+	}
+	user.Password = pwd
+	user.HashFunction = cmn.HashFunction
+	logger.Debug("finished uuPasswordFlag()")
+	return nil
+}
+
+func uuRecoveryEmailFlag(user *admin.User, flagName string) error {
+	logger.Debugw("starting uuRecoveryEmailFlag()",
+		"flagName", flagName)
+	if recoveryEmail == "" {
+		err := fmt.Errorf(cmn.ErrEmptyString, flagName)
+		return err
+	}
+	user.RecoveryEmail = recoveryEmail
+	logger.Debug("finished uuRecoveryEmailFlag()")
+	return nil
+}
+
+func uuRecoveryPhoneFlag(user *admin.User, flagName string) error {
+	logger.Debugw("starting uuRecoveryPhoneFlag()",
+		"flagName", flagName)
+	if recoveryPhone == "" {
+		err := fmt.Errorf(cmn.ErrEmptyString, flagName)
+		return err
+	}
+	if string(recoveryPhone[0]) != "+" {
+		err := fmt.Errorf(cmn.ErrInvalidRecoveryPhone, recoveryPhone)
+		return err
+	}
+	user.RecoveryPhone = recoveryPhone
+	logger.Debug("finished uuRecoveryPhoneFlag()")
+	return nil
+}
+
+func uuSuspendedFlag(user *admin.User) {
+	logger.Debug("starting uuSuspendedFlag()")
+	if suspended {
+		user.Suspended = true
+	} else {
+		user.Suspended = false
+		user.ForceSendFields = append(user.ForceSendFields, "Suspended")
+	}
+	logger.Debug("finished uuSuspendedFlag()")
 }
