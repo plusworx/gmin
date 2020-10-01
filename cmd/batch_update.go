@@ -25,6 +25,7 @@ package cmd
 import (
 	"os"
 
+	cmn "github.com/plusworx/gmin/utils/common"
 	"github.com/spf13/cobra"
 )
 
@@ -58,6 +59,11 @@ func init() {
 			os.Stdout = nil
 			os.Stderr = nil
 		}
+		// Log current user
+		logger.Infow("User Information",
+			"Username", cmn.Username(),
+			"Hostname", cmn.Hostname(),
+			"IP Address", cmn.IPAddress())
 		return nil
 	}
 }

@@ -31,7 +31,9 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"os"
+	"os/user"
 	"path/filepath"
 	"sort"
 	"strconv"
@@ -768,6 +770,17 @@ func HashPassword(password string) (string, error) {
 	return hexSha1, nil
 }
 
+// Hostname gets machine hostname if possible
+func Hostname() string {
+	var hName string
+
+	hName, err := os.Hostname()
+	if err != nil {
+		hName = "unavailable"
+	}
+	return hName
+}
+
 // InputFromStdIn checks to see if there is stdin data and sets up a scanner for it
 func InputFromStdIn(inputFile string) (*bufio.Scanner, error) {
 	file := os.Stdin
@@ -785,6 +798,21 @@ func InputFromStdIn(inputFile string) (*bufio.Scanner, error) {
 	scanner := bufio.NewScanner(os.Stdin)
 
 	return scanner, nil
+}
+
+// IPAddress gets IP address of machine if possible
+func IPAddress() string {
+	var ip string
+
+	conn, err := net.Dial("udp", "8.8.8.8:80")
+	if err != nil {
+		ip = "unavailable"
+	}
+	defer conn.Close()
+
+	ip = conn.LocalAddr().String()
+
+	return ip
 }
 
 // IsErrRetryable checks to see whether Google API error should allow retry
@@ -1116,6 +1144,21 @@ func UniqueStrSlice(inSlice []string) []string {
 		}
 	}
 	return outSlice
+}
+
+// Username gets username of current user if possible
+func Username() string {
+	var (
+		uName       string
+		currentUser *user.User
+	)
+
+	currentUser, err := user.Current()
+	if err != nil {
+		uName = "unavailable"
+	}
+	uName = currentUser.Username
+	return uName
 }
 
 // ValidateHeader validated header column names
