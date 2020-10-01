@@ -206,7 +206,7 @@ func setupLogging(loglevel string) (*zap.Logger, error) {
 	})
 	logpath, err := cfg.ReadConfigString("logpath")
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	lpaths := cmn.ParseTildeField(logpath)
