@@ -35,10 +35,10 @@ import (
 )
 
 var getCrOSDevCmd = &cobra.Command{
-	Use:     "chromeosdevice <device id>",
-	Aliases: []string{"crosdevice", "crosdev", "cdev"},
+	Use:     "chromeos-device <device id>",
+	Aliases: []string{"cros-device", "cros-dev", "cdev"},
 	Args:    cobra.ExactArgs(1),
-	Example: `gmin get chromeosdevice 5ad9ae43-5996-394e-9c39-12d45a8f10e8
+	Example: `gmin get chromeos-device 5ad9ae43-5996-394e-9c39-12d45a8f10e8
 gmin get cdev 5ad9ae43-5996-394e-9c39-12d45a8f10e8 -a serialnumber`,
 	Short: "Outputs information about a ChromeOS device",
 	Long:  `Outputs information about a ChromeOS device.`,

@@ -38,9 +38,9 @@ import (
 )
 
 var batchDelMobDevCmd = &cobra.Command{
-	Use:     "mobiledevices [-i input file path]",
-	Aliases: []string{"mobiledevice", "mobdevices", "mobdevice", "mobdevs", "mobdev", "mdevs", "mdev"},
-	Example: `gmin batch-delete mobiledevices -i inputfile.txt
+	Use:     "mobile-devices [-i input file path]",
+	Aliases: []string{"mobile-device", "mob-devices", "mob-device", "mob-devs", "mob-dev", "mdevs", "mdev"},
+	Example: `gmin batch-delete mobile-devices -i inputfile.txt
 	gmin bdel mdevs -i inputfile.txt
 	gmin ls mdevs -q user:William* -a resourceId | jq '.mobiledevices[] | .resourceId' -r | gmin bdel mdevs`,
 	Short: "Deletes a batch of mobile devices",

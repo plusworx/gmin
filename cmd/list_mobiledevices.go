@@ -37,10 +37,10 @@ import (
 )
 
 var listMobDevsCmd = &cobra.Command{
-	Use:     "mobiledevices",
-	Aliases: []string{"mobiledevice", "mobdevices", "mobdevice", "mobdevs", "mobdev", "mdevs", "mdev"},
+	Use:     "mobile-devices",
+	Aliases: []string{"mobile-device", "mob-devices", "mob-device", "mob-devs", "mob-dev", "mdevs", "mdev"},
 	Args:    cobra.NoArgs,
-	Example: `gmin list mobiledevices --pages all --count
+	Example: `gmin list mobile-devices --pages all --count
 gmin ls mdevs --pages all`,
 	Short: "Outputs a list of mobile devices",
 	Long:  `Outputs a list of mobile devices.`,

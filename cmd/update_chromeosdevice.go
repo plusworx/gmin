@@ -34,10 +34,10 @@ import (
 )
 
 var updateCrOSDevCmd = &cobra.Command{
-	Use:     "chromeosdevice <device id>",
-	Aliases: []string{"crosdevice", "cdev"},
+	Use:     "chromeos-device <device id>",
+	Aliases: []string{"cros-device", "cros-dev", "cdev"},
 	Args:    cobra.ExactArgs(1),
-	Example: `gmin update chromeosdevice 4cx07eba348f09b3 --location "Head Office"
+	Example: `gmin update chromeos-device 4cx07eba348f09b3 --location "Head Office"
 gmin upd cdev 4cx07eba348f09b3 -u "Mark Zuckerberg"`,
 	Short: "Updates a ChromeOS device",
 	Long:  `Updates a ChromeOS device.`,

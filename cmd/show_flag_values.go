@@ -47,11 +47,11 @@ gmin show fvals user orderby`,
 	Long: `Shows object flag predefined value information.
 
 Valid objects are:
-chromeosdevice, crosdevice, crosdev, cdev
+chromeos-device, cros-device, cros-dev, cdev
 global
 group, grp
 group-member, grp-member, grp-mem, gmember, gmem
-mobiledevice, mobdevice, mobdev, mdev
+mobile-device, mob-device, mob-dev, mdev
 orgunit, ou
 user`,
 	RunE: doShowFlagVals,
@@ -65,7 +65,7 @@ func doShowFlagVals(cmd *cobra.Command, args []string) error {
 	obj := strings.ToLower(args[0])
 
 	switch {
-	case obj == "chromeosdevice" || obj == "crosdevice" || obj == "crosdev" || obj == "cdev":
+	case obj == "chromeos-device" || obj == "cros-device" || obj == "cros-dev" || obj == "cdev":
 		err := cdevs.ShowFlagValues(len(args), args)
 		if err != nil {
 			return err
@@ -85,7 +85,7 @@ func doShowFlagVals(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return err
 		}
-	case obj == "mobiledevice" || obj == "mobdevice" || obj == "mobdev" || obj == "mdev":
+	case obj == "mobile-device" || obj == "mob-device" || obj == "mob-dev" || obj == "mdev":
 		err := mdevs.ShowFlagValues(len(args), args)
 		if err != nil {
 			return err

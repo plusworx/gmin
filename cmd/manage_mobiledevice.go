@@ -35,10 +35,10 @@ import (
 )
 
 var manageMobDevCmd = &cobra.Command{
-	Use:     "mobiledevice <resource id> <action>",
-	Aliases: []string{"mobdevice", "mobdev", "mdev"},
+	Use:     "mobile-device <resource id> <action>",
+	Aliases: []string{"mob-device", "mob-dev", "mdev"},
 	Args:    cobra.ExactArgs(2),
-	Example: `gmin manage mobiledevice 4cx07eba348f09b3 block
+	Example: `gmin manage mobile-device 4cx07eba348f09b3 block
 gmin mng mdev 4cx07eba348f09b3 admin_remote_wipe`,
 	Short: "Performs an action on a mobile device",
 	Long:  `Performs an action on a mobile device.`,

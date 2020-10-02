@@ -33,10 +33,10 @@ import (
 )
 
 var moveCrOSDevCmd = &cobra.Command{
-	Use:     "chromeosdevice <device id> <orgunitpath>",
-	Aliases: []string{"crosdevice", "crosdev", "cdev"},
+	Use:     "chromeos-device <device id> <orgunitpath>",
+	Aliases: []string{"cros-device", "cros-dev", "cdev"},
 	Args:    cobra.ExactArgs(2),
-	Example: `gmin move chromeosdevice 4cx07eba348f09b3 /Sales
+	Example: `gmin move chromeos-device 4cx07eba348f09b3 /Sales
 gmin mv cdev 4cx07eba348f09b3 /IT`,
 	Short: "Moves a ChromeOS device to another orgunit",
 	Long:  `Moves a ChromeOS device to another orgunit.`,

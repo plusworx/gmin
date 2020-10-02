@@ -44,9 +44,9 @@ import (
 )
 
 var batchMngMobDevCmd = &cobra.Command{
-	Use:     "mobiledevices -i <input file>",
-	Aliases: []string{"mobiledevice", "mobdevices", "mobdevice", "mobdevs", "mobdev", "mdevs", "mdev"},
-	Example: `gmin batch-manage mobiledevices -i inputfile.json
+	Use:     "mobile-devices -i <input file>",
+	Aliases: []string{"mobile-device", "mob-devices", "mob-device", "mob-devs", "mob-dev", "mdevs", "mdev"},
+	Example: `gmin batch-manage mobile-devices -i inputfile.json
 gmin bmng mdevs -i inputfile.csv -f csv
 gmin bmng mdev -i 1odyAIp3jGspd3M4xeepxWD6aeQIUuHBgrZB2OHSu8MI -s 'Sheet1!A1:B25' -f gsheet`,
 	Short: "Manages a batch of mobile devices",

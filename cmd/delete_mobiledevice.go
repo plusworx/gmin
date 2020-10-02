@@ -32,10 +32,10 @@ import (
 )
 
 var deleteMobDevCmd = &cobra.Command{
-	Use:     "mobiledevice <resource id>",
-	Aliases: []string{"mobdevice", "mobdev", "mdev"},
+	Use:     "mobile-device <resource id>",
+	Aliases: []string{"mob-device", "mob-dev", "mdev"},
 	Args:    cobra.ExactArgs(1),
-	Example: `gmin delete mobiledevice AFiQxQ83IZT4llDfTWPZt69JvwSJU0YECe1TVyVZC4x
+	Example: `gmin delete mobile-device AFiQxQ83IZT4llDfTWPZt69JvwSJU0YECe1TVyVZC4x
 gmin del mdev AFiQxQ83IZT4llDfTWPZt69JvwSJU0YECe1TVyVZC4x`,
 	Short: "Deletes a mobile device",
 	Long:  `Deletes a mobile device.`,

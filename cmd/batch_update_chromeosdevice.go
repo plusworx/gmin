@@ -44,9 +44,9 @@ import (
 )
 
 var batchUpdCrOSDevCmd = &cobra.Command{
-	Use:     "chromeosdevices -i <input file>",
-	Aliases: []string{"chromeosdevice", "crosdevices", "crosdevice", "crosdevs", "crosdev", "cdevs", "cdev"},
-	Example: `gmin batch-update chromeosdevices -i inputfile.json
+	Use:     "chromeos-devices -i <input file>",
+	Aliases: []string{"chromeos-device", "cros-devices", "cros-device", "cros-devs", "cros-dev", "cdevs", "cdev"},
+	Example: `gmin batch-update chromeos-devices -i inputfile.json
 gmin bupd cdevs -i inputfile.csv -f csv
 gmin bupd cdev -i 1odyAIp3jGspd3M4xeepxWD6aeQIUuHBgrZB2OHSu8MI -s 'Sheet1!A1:K25' -f gsheet`,
 	Short: "Updates a batch of ChromeOS devices",

@@ -35,10 +35,10 @@ import (
 )
 
 var getMobDevCmd = &cobra.Command{
-	Use:     "mobiledevice <resource id>",
-	Aliases: []string{"mobdevice", "mobdev", "mdev"},
+	Use:     "mobile-device <resource id>",
+	Aliases: []string{"mob-device", "mob-dev", "mdev"},
 	Args:    cobra.ExactArgs(1),
-	Example: `gmin get mobiledevice AFiQxQ83IZT4llDfTWPZt69JvwSJU0YECe1TVyVZC4x
+	Example: `gmin get mobile-device AFiQxQ83IZT4llDfTWPZt69JvwSJU0YECe1TVyVZC4x
 gmin get mdev AFiQxQ83IZT4llDfTWPZt69JvwSJU0YECe1TVyVZC4x -a serialnumber`,
 	Short: "Outputs information about a mobile device",
 	Long:  `Outputs information about a mobile device.`,

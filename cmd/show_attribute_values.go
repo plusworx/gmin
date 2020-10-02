@@ -45,9 +45,9 @@ gmin show avals user email type`,
 	Long: `Shows object field predefined value information.
 
 Valid objects are:
-chromeosdevice, crosdevice, crosdev, cdev
+chromeos-device, cros-device, cros-dev, cdev
 group-member, grp-member, grp-mem, gmember, gmem
-mobiledevice, mobdevice, mobdev, mdev
+mobile-device, mob-device, mob-dev, mdev
 user`,
 	RunE: doShowAttrVals,
 }
@@ -60,7 +60,7 @@ func doShowAttrVals(cmd *cobra.Command, args []string) error {
 	obj := strings.ToLower(args[0])
 
 	switch {
-	case obj == "chromeosdevice" || obj == "crosdevice" || obj == "crosdev" || obj == "cdev":
+	case obj == "chromeos-device" || obj == "cros-device" || obj == "cros-dev" || obj == "cdev":
 		err := cdevs.ShowAttrValues(len(args), args)
 		if err != nil {
 			return err
@@ -70,7 +70,7 @@ func doShowAttrVals(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return err
 		}
-	case obj == "mobiledevice" || obj == "mobdevice" || obj == "mobdev" || obj == "mdev":
+	case obj == "mobile-device" || obj == "mob-device" || obj == "mob-dev" || obj == "mdev":
 		err := mdevs.ShowAttrValues(len(args), args)
 		if err != nil {
 			return err

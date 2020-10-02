@@ -44,9 +44,9 @@ import (
 )
 
 var batchMngCrOSDevCmd = &cobra.Command{
-	Use:     "chromeosdevices -i <input file>",
-	Aliases: []string{"chromeosdevice", "crosdevices", "crosdevice", "crosdevs", "crosdev", "cdevs", "cdev"},
-	Example: `gmin batch-manage chromeosdevices -i inputfile.json
+	Use:     "chromeos-devices -i <input file>",
+	Aliases: []string{"chromeos-device", "cros-devices", "cros-device", "cros-devs", "cros-dev", "cdevs", "cdev"},
+	Example: `gmin batch-manage chromeos-devices -i inputfile.json
 gmin bmng cdevs -i inputfile.csv -f csv
 gmin bmng cdev -i 1odyAIp3jGspd3M4xeepxWD6aeQIUuHBgrZB2OHSu8MI -s 'Sheet1!A1:C25' -f gsheet`,
 	Short: "Manages a batch of ChromeOS devices",

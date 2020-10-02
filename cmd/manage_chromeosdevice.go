@@ -36,10 +36,10 @@ import (
 )
 
 var manageCrOSDevCmd = &cobra.Command{
-	Use:     "chromeosdevice <device id> <action>",
-	Aliases: []string{"crosdevice", "crosdev", "cdev"},
+	Use:     "chromeos-device <device id> <action>",
+	Aliases: []string{"cros-device", "cros-dev", "cdev"},
 	Args:    cobra.ExactArgs(2),
-	Example: `gmin manage chromeosdevice 4cx07eba348f09b3 disable
+	Example: `gmin manage chromeos-device 4cx07eba348f09b3 disable
 gmin mng cdev 4cx07eba348f09b3 reenable`,
 	Short: "Performs an action on a ChromeOS device",
 	Long:  `Performs an action on a ChromeOS device.`,

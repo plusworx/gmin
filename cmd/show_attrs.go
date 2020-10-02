@@ -51,12 +51,12 @@ gmin show attrs user name`,
 	Long: `Shows object attribute information.
 	
 Valid objects are:
-chromeosdevice, crosdevice, crosdev, cdev
+chromeos-device, cros-device, cros-dev, cdev
 group, grp
 group-alias, grp-alias, galias, ga
 group-member, grp-member, grp-mem, gmember, gmem
 group-settings,	grp-settings, grp-set, gsettings, gset
-mobiledevice, mobdevice, mobdev, mdev
+mobile-device, mob-device, mob-dev, mdev
 orgunit, ou
 schema, sc
 user
@@ -144,7 +144,7 @@ func threeArgs(arg1 string, arg2 string, arg3 string) error {
 func twoArgs(arg1 string, arg2 string) error {
 	obj := strings.ToLower(arg1)
 	switch {
-	case obj == "chromeosdevice" || obj == "crosdevice" || obj == "crosdev" || obj == "cdev":
+	case obj == "chromeos-device" || obj == "cros-device" || obj == "cros-dev" || obj == "cdev":
 		if composite {
 			return fmt.Errorf(cmn.ErrNoCompositeAttrs, arg2)
 		}
@@ -152,7 +152,7 @@ func twoArgs(arg1 string, arg2 string) error {
 		if err != nil {
 			return err
 		}
-	case obj == "mobiledevice" || obj == "mobdevice" || obj == "mobdev" || obj == "mdev":
+	case obj == "mobile-device" || obj == "mob-device" || obj == "mob-dev" || obj == "mdev":
 		if composite {
 			return fmt.Errorf(cmn.ErrNoCompositeAttrs, arg2)
 		}
@@ -193,11 +193,11 @@ func oneArg(arg string) error {
 
 	if queryable {
 		switch {
-		case obj == "chromeosdevice" || obj == "crosdevice" || obj == "crosdev" || obj == "cdev":
+		case obj == "chromeos-device" || obj == "cros-device" || obj == "cros-dev" || obj == "cdev":
 			cmn.ShowQueryableAttrs(filter, cdevs.QueryAttrMap)
 		case obj == "group" || obj == "grp":
 			cmn.ShowQueryableAttrs(filter, grps.QueryAttrMap)
-		case obj == "mobiledevice" || obj == "mobdevice" || obj == "mobdev" || obj == "mdev":
+		case obj == "mobile-device" || obj == "mob-device" || obj == "mob-dev" || obj == "mdev":
 			cmn.ShowQueryableAttrs(filter, mdevs.QueryAttrMap)
 		case obj == "user":
 			cmn.ShowQueryableAttrs(filter, usrs.QueryAttrMap)
@@ -208,7 +208,7 @@ func oneArg(arg string) error {
 	}
 
 	switch {
-	case obj == "chromeosdevice" || obj == "crosdevice" || obj == "crosdev" || obj == "cdev":
+	case obj == "chromeos-device" || obj == "cros-device" || obj == "cros-dev" || obj == "cdev":
 		if composite {
 			cdevs.ShowCompAttrs(filter)
 			break
@@ -234,7 +234,7 @@ func oneArg(arg string) error {
 			return fmt.Errorf(cmn.ErrNoCompositeAttrs, obj)
 		}
 		grpset.ShowAttrs(filter)
-	case obj == "mobiledevice" || obj == "mobdevice" || obj == "mobdev" || obj == "mdev":
+	case obj == "mobile-device" || obj == "mob-device" || obj == "mob-dev" || obj == "mdev":
 		if composite {
 			mdevs.ShowCompAttrs(filter)
 			break
