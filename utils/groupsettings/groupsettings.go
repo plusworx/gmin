@@ -85,6 +85,8 @@ var GroupSettingsAttrMap = map[string]string{
 	"email":                                   "email",
 	"enablecollaborativeinbox":                "enableCollaborativeInbox",
 	"favoriterepliesontop":                    "favoriteRepliesOnTop",
+	"forcesendfields":                         "forceSendFields",
+	"groupkey":                                "groupKey", // Used in batch management
 	"includecustomfooter":                     "includeCustomFooter",
 	"includeinglobaladdresslist":              "includeInGlobalAddressList",
 	"isarchived":                              "isArchived",
@@ -269,6 +271,11 @@ var ViewMembershipMap = map[string]string{
 	"all_managers_can_view":  "ALL_MANAGERS_CAN_VIEW",
 }
 
+// Key is struct used to extract groupKey
+type Key struct {
+	GroupKey string
+}
+
 // AddFields adds fields to be returned from admin calls
 func AddFields(gsgc *gset.GroupsGetCall, attrs string) interface{} {
 	var (
@@ -308,12 +315,12 @@ func ShowAttrs(filter string) {
 	}
 }
 
-// ValidateGroupSettingFlag checks that a valid flag value has been provided
-func ValidateGroupSettingFlag(valueMap map[string]string, flagName string, flagValue string) (string, error) {
-	lowerFlagVal := strings.ToLower(flagValue)
-	validStr := valueMap[lowerFlagVal]
+// ValidateGroupSettingValue checks that a valid value has been provided for flag or attribute
+func ValidateGroupSettingValue(valueMap map[string]string, name string, value string) (string, error) {
+	lowerVal := strings.ToLower(value)
+	validStr := valueMap[lowerVal]
 	if validStr == "" {
-		return "", fmt.Errorf(cmn.ErrInvalidString, flagName, flagValue)
+		return "", fmt.Errorf(cmn.ErrInvalidString, name, value)
 	}
 	return validStr, nil
 }

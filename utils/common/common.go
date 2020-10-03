@@ -121,6 +121,7 @@ const (
 	ErrAttrNotRecognized        string = "%v attribute is not recognized"
 	ErrBatchChromeOSDevice      string = "error - %s - ChromeOS device: %s"
 	ErrBatchGroup               string = "error - %s - group: %s"
+	ErrBatchGroupSettings       string = "error - %s - group settings for group: %s"
 	ErrBatchMember              string = "error - %s - member: %s"
 	ErrBatchMobileDevice        string = "error - %s - mobile device: %s"
 	ErrBatchMissingUserData     string = "primaryEmail, givenName, familyName and password must all be provided"

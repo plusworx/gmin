@@ -146,6 +146,13 @@ func processMngGrpSettingFlags(cmd *cobra.Command, grpSettings *gset.Groups, fla
 			}
 			return nil
 		}
+		if flName == "ban-user" {
+			err := mgsBanUserFlag(grpSettings, "--"+flName)
+			if err != nil {
+				return err
+			}
+			return nil
+		}
 		if flName == "collab-inbox" {
 			mgsCollabInboxFlag(grpSettings)
 			return nil
@@ -289,7 +296,7 @@ func processMngGrpSettingFlags(cmd *cobra.Command, grpSettings *gset.Groups, fla
 
 func mgsApproveMemberFlag(grpSettings *gset.Groups, flagName string) error {
 	logger.Debug("starting mgsApproveMemberFlag()")
-	validTxt, err := grpset.ValidateGroupSettingFlag(grpset.ApproveMemberMap, flagName, approveMems)
+	validTxt, err := grpset.ValidateGroupSettingValue(grpset.ApproveMemberMap, flagName, approveMems)
 	if err != nil {
 		return err
 	}
@@ -322,12 +329,23 @@ func mgsArchiveOnlyFlag(grpSettings *gset.Groups) {
 
 func mgsAssistContentFlag(grpSettings *gset.Groups, flagName string) error {
 	logger.Debug("starting mgsAssistContentFlag()")
-	validTxt, err := grpset.ValidateGroupSettingFlag(grpset.AssistContentMap, flagName, assistContent)
+	validTxt, err := grpset.ValidateGroupSettingValue(grpset.AssistContentMap, flagName, assistContent)
 	if err != nil {
 		return err
 	}
 	grpSettings.WhoCanAssistContent = validTxt
 	logger.Debug("finished mgsAssistContentFlag()")
+	return nil
+}
+
+func mgsBanUserFlag(grpSettings *gset.Groups, flagName string) error {
+	logger.Debug("starting mgsBanUserFlag()")
+	validTxt, err := grpset.ValidateGroupSettingValue(grpset.BanUserMap, flagName, banUser)
+	if err != nil {
+		return err
+	}
+	grpSettings.WhoCanBanUsers = validTxt
+	logger.Debug("finished mgsBanUserFlag()")
 	return nil
 }
 
@@ -344,7 +362,7 @@ func mgsCollabInboxFlag(grpSettings *gset.Groups) {
 
 func mgsContactOwnerFlag(grpSettings *gset.Groups, flagName string) error {
 	logger.Debug("starting mgsContactOwnerFlag()")
-	validTxt, err := grpset.ValidateGroupSettingFlag(grpset.ContactOwnerMap, flagName, contactOwner)
+	validTxt, err := grpset.ValidateGroupSettingValue(grpset.ContactOwnerMap, flagName, contactOwner)
 	if err != nil {
 		return err
 	}
@@ -364,7 +382,7 @@ func mgsDenyTextFlag(grpSettings *gset.Groups) {
 
 func mgsDiscoverGroupFlag(grpSettings *gset.Groups, flagName string) error {
 	logger.Debug("starting mgsDiscoverGroupFlag()")
-	validTxt, err := grpset.ValidateGroupSettingFlag(grpset.DiscoverGroupMap, flagName, discoverGroup)
+	validTxt, err := grpset.ValidateGroupSettingValue(grpset.DiscoverGroupMap, flagName, discoverGroup)
 	if err != nil {
 		return err
 	}
@@ -406,7 +424,7 @@ func mgsFooterTextFlag(grpSettings *gset.Groups) {
 
 func mgsJoinFlag(grpSettings *gset.Groups, flagName string) error {
 	logger.Debug("starting mgsJoinFlag()")
-	validTxt, err := grpset.ValidateGroupSettingFlag(grpset.JoinMap, flagName, join)
+	validTxt, err := grpset.ValidateGroupSettingValue(grpset.JoinMap, flagName, join)
 	if err != nil {
 		return err
 	}
@@ -417,7 +435,7 @@ func mgsJoinFlag(grpSettings *gset.Groups, flagName string) error {
 
 func mgsLanguageFlag(grpSettings *gset.Groups, flagName string) error {
 	logger.Debug("starting mgsLanguageFlag()")
-	validTxt, err := grpset.ValidateGroupSettingFlag(grpset.LanguageMap, flagName, language)
+	validTxt, err := grpset.ValidateGroupSettingValue(grpset.LanguageMap, flagName, language)
 	if err != nil {
 		return err
 	}
@@ -428,7 +446,7 @@ func mgsLanguageFlag(grpSettings *gset.Groups, flagName string) error {
 
 func mgsLeaveFlag(grpSettings *gset.Groups, flagName string) error {
 	logger.Debug("starting mgsLeaveFlag()")
-	validTxt, err := grpset.ValidateGroupSettingFlag(grpset.LeaveMap, flagName, leave)
+	validTxt, err := grpset.ValidateGroupSettingValue(grpset.LeaveMap, flagName, leave)
 	if err != nil {
 		return err
 	}
@@ -439,7 +457,7 @@ func mgsLeaveFlag(grpSettings *gset.Groups, flagName string) error {
 
 func mgsMessageModFlag(grpSettings *gset.Groups, flagName string) error {
 	logger.Debug("starting mgsMessageModFlag()")
-	validTxt, err := grpset.ValidateGroupSettingFlag(grpset.MessageModMap, flagName, messageMod)
+	validTxt, err := grpset.ValidateGroupSettingValue(grpset.MessageModMap, flagName, messageMod)
 	if err != nil {
 		return err
 	}
@@ -450,7 +468,7 @@ func mgsMessageModFlag(grpSettings *gset.Groups, flagName string) error {
 
 func mgsModContentFlag(grpSettings *gset.Groups, flagName string) error {
 	logger.Debug("starting mgsModContentFlag()")
-	validTxt, err := grpset.ValidateGroupSettingFlag(grpset.ModContentMap, flagName, modContent)
+	validTxt, err := grpset.ValidateGroupSettingValue(grpset.ModContentMap, flagName, modContent)
 	if err != nil {
 		return err
 	}
@@ -461,7 +479,7 @@ func mgsModContentFlag(grpSettings *gset.Groups, flagName string) error {
 
 func mgsModMemberFlag(grpSettings *gset.Groups, flagName string) error {
 	logger.Debug("starting mgsModMemberFlag()")
-	validTxt, err := grpset.ValidateGroupSettingFlag(grpset.ModMemberMap, flagName, modMems)
+	validTxt, err := grpset.ValidateGroupSettingValue(grpset.ModMemberMap, flagName, modMems)
 	if err != nil {
 		return err
 	}
@@ -494,7 +512,7 @@ func mgsPostAsGroupFlag(grpSettings *gset.Groups) {
 
 func mgsPostMessageFlag(grpSettings *gset.Groups, flagName string) error {
 	logger.Debug("starting mgsPostMessageFlag()")
-	validTxt, err := grpset.ValidateGroupSettingFlag(grpset.PostMessageMap, flagName, postMessage)
+	validTxt, err := grpset.ValidateGroupSettingValue(grpset.PostMessageMap, flagName, postMessage)
 	if err != nil {
 		return err
 	}
@@ -516,13 +534,15 @@ func mgsRepliesOnTopFlag(grpSettings *gset.Groups) {
 
 func mgsReplyEmailFlag(grpSettings *gset.Groups) error {
 	logger.Debug("starting mgsReplyEmailFlag()")
+	if replyEmail == "" {
+		grpSettings.CustomReplyTo = replyEmail
+		grpSettings.ForceSendFields = append(grpSettings.ForceSendFields, "CustomReplyTo")
+		return nil
+	}
 	ok := valid.IsEmail(replyEmail)
 	if !ok {
 		err := fmt.Errorf(cmn.ErrInvalidEmailAddress, replyEmail)
 		return err
-	}
-	if replyEmail == "" {
-		grpSettings.ForceSendFields = append(grpSettings.ForceSendFields, "CustomReplyTo")
 	}
 	grpSettings.CustomReplyTo = replyEmail
 	logger.Debug("finished mgsReplyEmailFlag()")
@@ -531,7 +551,7 @@ func mgsReplyEmailFlag(grpSettings *gset.Groups) error {
 
 func mgsReplyToFlag(grpSettings *gset.Groups, flagName string) error {
 	logger.Debug("starting mgsReplyToFlag()")
-	validTxt, err := grpset.ValidateGroupSettingFlag(grpset.ReplyToMap, flagName, replyTo)
+	validTxt, err := grpset.ValidateGroupSettingValue(grpset.ReplyToMap, flagName, replyTo)
 	if err != nil {
 		return err
 	}
@@ -542,18 +562,18 @@ func mgsReplyToFlag(grpSettings *gset.Groups, flagName string) error {
 
 func mgsSpamModFlag(grpSettings *gset.Groups, flagName string) error {
 	logger.Debug("starting mgsSpamModFlag()")
-	validTxt, err := grpset.ValidateGroupSettingFlag(grpset.SpamModMap, flagName, spamMod)
+	validTxt, err := grpset.ValidateGroupSettingValue(grpset.SpamModMap, flagName, spamMod)
 	if err != nil {
 		return err
 	}
-	grpSettings.ReplyTo = validTxt
+	grpSettings.SpamModerationLevel = validTxt
 	logger.Debug("finished mgsSpamModFlag()")
 	return nil
 }
 
 func mgsViewGroupFlag(grpSettings *gset.Groups, flagName string) error {
 	logger.Debug("starting mgsViewGroupFlag()")
-	validTxt, err := grpset.ValidateGroupSettingFlag(grpset.ViewGroupMap, flagName, viewGroup)
+	validTxt, err := grpset.ValidateGroupSettingValue(grpset.ViewGroupMap, flagName, viewGroup)
 	if err != nil {
 		return err
 	}
@@ -564,7 +584,7 @@ func mgsViewGroupFlag(grpSettings *gset.Groups, flagName string) error {
 
 func mgsViewMembershipFlag(grpSettings *gset.Groups, flagName string) error {
 	logger.Debug("starting mgsViewMembershipFlag()")
-	validTxt, err := grpset.ValidateGroupSettingFlag(grpset.ViewMembershipMap, flagName, viewMems)
+	validTxt, err := grpset.ValidateGroupSettingValue(grpset.ViewMembershipMap, flagName, viewMems)
 	if err != nil {
 		return err
 	}
