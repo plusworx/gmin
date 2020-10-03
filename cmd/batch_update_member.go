@@ -433,24 +433,29 @@ func btchUpdProcessMember(hdrMap map[int]string, memData []interface{}) (*admin.
 
 	for idx, attr := range memData {
 		attrName := hdrMap[idx]
+		attrVal := fmt.Sprintf("%v", attr)
 
 		switch {
 		case attrName == "delivery_settings":
-			validDS, err := mems.ValidateDeliverySetting(fmt.Sprintf("%v", attr))
+			validDS, err := mems.ValidateDeliverySetting(attrVal)
 			if err != nil {
 				logger.Error(err)
 				return nil, "", err
 			}
 			member.DeliverySettings = validDS
 		case attrName == "role":
-			validRole, err := mems.ValidateRole(fmt.Sprintf("%v", attr))
+			validRole, err := mems.ValidateRole(attrVal)
 			if err != nil {
 				logger.Error(err)
 				return nil, "", err
 			}
 			member.Role = validRole
 		case attrName == "memberKey":
-			memKey = fmt.Sprintf("%v", attr)
+			if attrVal == "" {
+				err := fmt.Errorf(cmn.ErrEmptyString, attrName)
+				return nil, "", err
+			}
+			memKey = attrVal
 		}
 	}
 	logger.Debug("finished btchUpdProcessMember()")

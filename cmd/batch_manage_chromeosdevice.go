@@ -416,30 +416,30 @@ func btchMngProcessCrOSDev(hdrMap map[int]string, cdevData []interface{}) (cdevs
 
 	for idx, attr := range cdevData {
 		attrName := hdrMap[idx]
+		attrVal := fmt.Sprintf("%v", attr)
+		lowerAttrVal := strings.ToLower(fmt.Sprintf("%v", attr))
 
 		switch {
 		case attrName == "action":
-			lwrAction := strings.ToLower(fmt.Sprintf("%v", attr))
-			ok := cmn.SliceContainsStr(cdevs.ValidActions, lwrAction)
+			ok := cmn.SliceContainsStr(cdevs.ValidActions, lowerAttrVal)
 			if !ok {
-				err := fmt.Errorf(cmn.ErrInvalidActionType, fmt.Sprintf("%v", attr))
+				err := fmt.Errorf(cmn.ErrInvalidActionType, attrVal)
 				logger.Error(err)
 				return managedDev, err
 			}
-			managedDev.Action = lwrAction
+			managedDev.Action = lowerAttrVal
 		case attrName == "deviceId":
-			managedDev.DeviceId = fmt.Sprintf("%v", attr)
+			managedDev.DeviceId = attrVal
 		case attrName == "deprovisionReason":
-			lwrReason := strings.ToLower(fmt.Sprintf("%v", attr))
-			if lwrReason != "" {
-				ok := cmn.SliceContainsStr(cdevs.ValidDeprovisionReasons, lwrReason)
+			if lowerAttrVal != "" {
+				ok := cmn.SliceContainsStr(cdevs.ValidDeprovisionReasons, lowerAttrVal)
 				if !ok {
-					err := fmt.Errorf(cmn.ErrInvalidDeprovisionReason, fmt.Sprintf("%v", attr))
+					err := fmt.Errorf(cmn.ErrInvalidDeprovisionReason, attrVal)
 					logger.Error(err)
 					return managedDev, err
 				}
+				managedDev.DeprovisionReason = lowerAttrVal
 			}
-			managedDev.DeprovisionReason = fmt.Sprintf("%v", attr)
 		}
 	}
 

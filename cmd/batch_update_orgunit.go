@@ -447,29 +447,40 @@ func btchUpdProcessOrgUnit(hdrMap map[int]string, ouData []interface{}) (*admin.
 
 	for idx, attr := range ouData {
 		attrName := hdrMap[idx]
+		attrVal := fmt.Sprintf("%v", attr)
+		lowerAttrVal := strings.ToLower(fmt.Sprintf("%v", attr))
 
 		switch {
 		case attrName == "blockInheritance":
-			lwrAttr := strings.ToLower(fmt.Sprintf("%v", attr))
-			if lwrAttr == "true" {
+			if lowerAttrVal == "true" {
 				orgunit.BlockInheritance = true
+				break
 			}
-			if lwrAttr == "false" {
-				orgunit.BlockInheritance = false
-				orgunit.ForceSendFields = append(orgunit.ForceSendFields, "BlockInheritance")
-			}
+			orgunit.BlockInheritance = false
+			orgunit.ForceSendFields = append(orgunit.ForceSendFields, "BlockInheritance")
 		case attrName == "description":
-			desc := fmt.Sprintf("%v", attr)
-			orgunit.Description = desc
-			if desc == "" {
+			orgunit.Description = attrVal
+			if attrVal == "" {
 				orgunit.ForceSendFields = append(orgunit.ForceSendFields, "Description")
 			}
 		case attrName == "name":
-			orgunit.Name = fmt.Sprintf("%v", attr)
+			if attrVal == "" {
+				err := fmt.Errorf(cmn.ErrEmptyString, attrName)
+				return nil, "", err
+			}
+			orgunit.Name = attrVal
 		case attrName == "parentOrgUnitPath":
-			orgunit.ParentOrgUnitPath = fmt.Sprintf("%v", attr)
+			if attrVal == "" {
+				err := fmt.Errorf(cmn.ErrEmptyString, attrName)
+				return nil, "", err
+			}
+			orgunit.ParentOrgUnitPath = attrVal
 		case attrName == "ouKey":
-			ouKey = fmt.Sprintf("%v", attr)
+			if attrVal == "" {
+				err := fmt.Errorf(cmn.ErrEmptyString, attrName)
+				return nil, "", err
+			}
+			ouKey = attrVal
 		}
 	}
 	logger.Debug("finished btchUpdProcessOrgUnit()")

@@ -422,19 +422,28 @@ func btchCrtProcessOrgUnit(hdrMap map[int]string, ouData []interface{}) (*admin.
 
 	for idx, attr := range ouData {
 		attrName := hdrMap[idx]
+		attrVal := fmt.Sprintf("%v", attr)
+		lowerAttrVal := strings.ToLower(fmt.Sprintf("%v", attr))
 
 		switch {
 		case attrName == "blockInheritance":
-			lwrAttr := strings.ToLower(fmt.Sprintf("%v", attr))
-			if lwrAttr == "true" {
+			if lowerAttrVal == "true" {
 				orgunit.BlockInheritance = true
 			}
 		case attrName == "description":
-			orgunit.Description = fmt.Sprintf("%v", attr)
+			orgunit.Description = attrVal
 		case attrName == "name":
-			orgunit.Name = fmt.Sprintf("%v", attr)
+			if attrVal == "" {
+				err := fmt.Errorf(cmn.ErrEmptyString, attrName)
+				return nil, err
+			}
+			orgunit.Name = attrVal
 		case attrName == "parentOrgUnitPath":
-			orgunit.ParentOrgUnitPath = fmt.Sprintf("%v", attr)
+			if attrVal == "" {
+				err := fmt.Errorf(cmn.ErrEmptyString, attrName)
+				return nil, err
+			}
+			orgunit.ParentOrgUnitPath = attrVal
 		}
 	}
 	logger.Debug("finished btchCrtProcessOrgUnit()")

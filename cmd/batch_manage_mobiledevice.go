@@ -410,19 +410,20 @@ func btchMngProcessMobDev(hdrMap map[int]string, mdevData []interface{}) (mdevs.
 
 	for idx, attr := range mdevData {
 		attrName := hdrMap[idx]
+		attrVal := fmt.Sprintf("%v", attr)
+		lowerAttrVal := strings.ToLower(fmt.Sprintf("%v", attr))
 
 		switch {
 		case attrName == "action":
-			lwrAction := strings.ToLower(fmt.Sprintf("%v", attr))
-			ok := cmn.SliceContainsStr(mdevs.ValidActions, lwrAction)
+			ok := cmn.SliceContainsStr(mdevs.ValidActions, lowerAttrVal)
 			if !ok {
-				err := fmt.Errorf(cmn.ErrInvalidActionType, fmt.Sprintf("%v", attr))
+				err := fmt.Errorf(cmn.ErrInvalidActionType, attrVal)
 				logger.Error(err)
 				return managedDev, err
 			}
-			managedDev.Action = lwrAction
+			managedDev.Action = lowerAttrVal
 		case attrName == "resourceId":
-			managedDev.ResourceId = fmt.Sprintf("%v", attr)
+			managedDev.ResourceId = attrVal
 		}
 	}
 	logger.Debug("finished btchMngProcessMobDev()")

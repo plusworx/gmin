@@ -418,21 +418,24 @@ func btchCrtProcessMember(hdrMap map[int]string, grpData []interface{}) (*admin.
 
 	for idx, attr := range grpData {
 		attrName := hdrMap[idx]
+		attrVal := fmt.Sprintf("%v", attr)
 
 		switch {
 		case attrName == "delivery_settings":
-			sAttr := fmt.Sprintf("%v", attr)
-			validDS, err := mems.ValidateDeliverySetting(sAttr)
+			validDS, err := mems.ValidateDeliverySetting(attrVal)
 			if err != nil {
 				logger.Error(err)
 				return nil, err
 			}
 			member.DeliverySettings = validDS
 		case attrName == "email":
-			member.Email = fmt.Sprintf("%v", attr)
+			if attrVal == "" {
+				err := fmt.Errorf(cmn.ErrEmptyString, attrName)
+				return nil, err
+			}
+			member.Email = attrVal
 		case attrName == "role":
-			sAttr := fmt.Sprintf("%v", attr)
-			validRole, err := mems.ValidateRole(sAttr)
+			validRole, err := mems.ValidateRole(attrVal)
 			if err != nil {
 				logger.Error(err)
 				return nil, err

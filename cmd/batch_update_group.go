@@ -435,20 +435,32 @@ func btchUpdProcessGroup(hdrMap map[int]string, grpData []interface{}) (*admin.G
 
 	for idx, attr := range grpData {
 		attrName := hdrMap[idx]
+		attrVal := fmt.Sprintf("%v", attr)
 
 		switch {
 		case attrName == "description":
-			desc := fmt.Sprintf("%v", attr)
-			group.Description = desc
-			if desc == "" {
+			group.Description = attrVal
+			if attrVal == "" {
 				group.ForceSendFields = append(group.ForceSendFields, "Description")
 			}
 		case attrName == "email":
-			group.Email = fmt.Sprintf("%v", attr)
+			if attrVal == "" {
+				err := fmt.Errorf(cmn.ErrEmptyString, attrName)
+				return nil, "", err
+			}
+			group.Email = attrVal
 		case attrName == "name":
-			group.Name = fmt.Sprintf("%v", attr)
+			if attrVal == "" {
+				err := fmt.Errorf(cmn.ErrEmptyString, attrName)
+				return nil, "", err
+			}
+			group.Name = attrVal
 		case attrName == "groupKey":
-			groupKey = fmt.Sprintf("%v", attr)
+			if attrVal == "" {
+				err := fmt.Errorf(cmn.ErrEmptyString, attrName)
+				return nil, "", err
+			}
+			groupKey = attrVal
 		}
 	}
 	logger.Debug("finished btchUpdProcessGroup()")

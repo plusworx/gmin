@@ -457,25 +457,26 @@ func btchMngProcessGrpSettings(hdrMap map[int]string, gsData []interface{}) (*gs
 		if lowerAttrName == "allowexternalmembers" {
 			if lowerAttrVal == "true" {
 				grpSetting.AllowExternalMembers = "true"
-				break
+			} else {
+				grpSetting.AllowExternalMembers = "false"
+				grpSetting.ForceSendFields = append(grpSetting.ForceSendFields, "AllowExternalMembers")
 			}
-			grpSetting.AllowExternalMembers = "false"
-			grpSetting.ForceSendFields = append(grpSetting.ForceSendFields, "AllowExternalMembers")
 		}
 		if lowerAttrName == "allowwebposting" {
 			if lowerAttrVal == "true" {
 				grpSetting.AllowWebPosting = "true"
+			} else {
+				grpSetting.AllowWebPosting = "false"
+				grpSetting.ForceSendFields = append(grpSetting.ForceSendFields, "AllowWebPosting")
 			}
-			grpSetting.AllowWebPosting = "false"
-			grpSetting.ForceSendFields = append(grpSetting.ForceSendFields, "AllowWebPosting")
 		}
 		if lowerAttrName == "archiveonly" {
 			if lowerAttrVal == "true" {
 				grpSetting.ArchiveOnly = "true"
-				break
+			} else {
+				grpSetting.ArchiveOnly = "false"
+				grpSetting.ForceSendFields = append(grpSetting.ForceSendFields, "ArchiveOnly")
 			}
-			grpSetting.ArchiveOnly = "false"
-			grpSetting.ForceSendFields = append(grpSetting.ForceSendFields, "ArchiveOnly")
 		}
 		if lowerAttrName == "customfootertext" {
 			if attrVal == "" {
@@ -498,45 +499,49 @@ func btchMngProcessGrpSettings(hdrMap map[int]string, gsData []interface{}) (*gs
 		if lowerAttrName == "enablecollaborativeinbox" {
 			if lowerAttrVal == "true" {
 				grpSetting.EnableCollaborativeInbox = "true"
-				break
+			} else {
+				grpSetting.EnableCollaborativeInbox = "false"
+				grpSetting.ForceSendFields = append(grpSetting.ForceSendFields, "EnableCollaborativeInbox")
 			}
-			grpSetting.EnableCollaborativeInbox = "false"
-			grpSetting.ForceSendFields = append(grpSetting.ForceSendFields, "EnableCollaborativeInbox")
 		}
 		if lowerAttrName == "favoriterepliesontop" {
 			if lowerAttrVal == "true" {
 				grpSetting.FavoriteRepliesOnTop = "true"
-				break
+			} else {
+				grpSetting.FavoriteRepliesOnTop = "false"
+				grpSetting.ForceSendFields = append(grpSetting.ForceSendFields, "FavoriteRepliesOnTop")
 			}
-			grpSetting.FavoriteRepliesOnTop = "false"
-			grpSetting.ForceSendFields = append(grpSetting.ForceSendFields, "FavoriteRepliesOnTop")
 		}
 		if lowerAttrName == "groupkey" {
+			if attrVal == "" {
+				err := fmt.Errorf(cmn.ErrEmptyString, attrName)
+				return nil, "", err
+			}
 			groupKey = attrVal
 		}
 		if lowerAttrName == "includecustomfooter" {
 			if lowerAttrVal == "true" {
 				grpSetting.IncludeCustomFooter = "true"
-				break
+			} else {
+				grpSetting.IncludeCustomFooter = "false"
+				grpSetting.ForceSendFields = append(grpSetting.ForceSendFields, "IncludeCustomFooter")
 			}
-			grpSetting.IncludeCustomFooter = "false"
-			grpSetting.ForceSendFields = append(grpSetting.ForceSendFields, "IncludeCustomFooter")
 		}
 		if lowerAttrName == "isarchived" {
 			if lowerAttrVal == "true" {
 				grpSetting.IsArchived = "true"
-				break
+			} else {
+				grpSetting.IsArchived = "false"
+				grpSetting.ForceSendFields = append(grpSetting.ForceSendFields, "IsArchived")
 			}
-			grpSetting.IsArchived = "false"
-			grpSetting.ForceSendFields = append(grpSetting.ForceSendFields, "IsArchived")
 		}
 		if lowerAttrName == "memberscanpostasthegroup" {
 			if attrVal == "" {
 				grpSetting.MembersCanPostAsTheGroup = "true"
-				break
+			} else {
+				grpSetting.MembersCanPostAsTheGroup = "false"
+				grpSetting.ForceSendFields = append(grpSetting.ForceSendFields, "MembersCanPostAsTheGroup")
 			}
-			grpSetting.MembersCanPostAsTheGroup = "false"
-			grpSetting.ForceSendFields = append(grpSetting.ForceSendFields, "MembersCanPostAsTheGroup")
 		}
 		if lowerAttrName == "messagemoderationlevel" {
 			err := bmgsMessageModVal(grpSetting, attrName, attrVal)
@@ -559,10 +564,10 @@ func btchMngProcessGrpSettings(hdrMap map[int]string, gsData []interface{}) (*gs
 		if lowerAttrName == "sendmessagedenynotification" {
 			if attrVal == "" {
 				grpSetting.SendMessageDenyNotification = "true"
-				break
+			} else {
+				grpSetting.SendMessageDenyNotification = "false"
+				grpSetting.ForceSendFields = append(grpSetting.ForceSendFields, "SendMessageDenyNotification")
 			}
-			grpSetting.SendMessageDenyNotification = "false"
-			grpSetting.ForceSendFields = append(grpSetting.ForceSendFields, "SendMessageDenyNotification")
 		}
 		if lowerAttrName == "spammoderationlevel" {
 			err := bmgsSpamModVal(grpSetting, attrName, attrVal)

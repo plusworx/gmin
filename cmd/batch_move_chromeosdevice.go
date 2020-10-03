@@ -403,12 +403,21 @@ func btchMoveProcessCrOSDev(hdrMap map[int]string, cdevData []interface{}) (cdev
 
 	for idx, attr := range cdevData {
 		attrName := hdrMap[idx]
+		attrVal := fmt.Sprintf("%v", attr)
 
 		switch {
 		case attrName == "deviceId":
-			movedDev.DeviceId = fmt.Sprintf("%v", attr)
+			if attrVal == "" {
+				err := fmt.Errorf(cmn.ErrEmptyString, attrName)
+				return movedDev, err
+			}
+			movedDev.DeviceId = attrVal
 		case attrName == "orgUnitPath":
-			movedDev.OrgUnitPath = fmt.Sprintf("%v", attr)
+			if attrVal == "" {
+				err := fmt.Errorf(cmn.ErrEmptyString, attrName)
+				return movedDev, err
+			}
+			movedDev.OrgUnitPath = attrVal
 		}
 	}
 	logger.Debug("finished btchMoveProcessCrOSDev()")

@@ -430,54 +430,73 @@ func btchCrtProcessUser(hdrMap map[int]string, userData []interface{}) (*admin.U
 
 	for idx, val := range userData {
 		attrName := hdrMap[idx]
+		attrVal := fmt.Sprintf("%v", val)
+		lowerAttrVal := strings.ToLower(fmt.Sprintf("%v", val))
 
-		switch {
-		case attrName == "changePasswordAtNextLogin":
-			lwrAttr := strings.ToLower(fmt.Sprintf("%v", val))
-			if lwrAttr == "true" {
+		if attrName == "changePasswordAtNextLogin" {
+			if lowerAttrVal == "true" {
 				user.ChangePasswordAtNextLogin = true
 			}
-		case attrName == "familyName":
-			name.FamilyName = fmt.Sprintf("%v", val)
-		case attrName == "givenName":
-			name.GivenName = fmt.Sprintf("%v", val)
-		case attrName == "includeInGlobalAddressList":
-			lwrAttr := strings.ToLower(fmt.Sprintf("%v", val))
-			if lwrAttr == "false" {
+		}
+		if attrName == "familyName" {
+			name.FamilyName = attrVal
+		}
+		if attrName == "givenName" {
+			name.GivenName = attrVal
+		}
+		if attrName == "includeInGlobalAddressList" {
+			if lowerAttrVal == "false" {
 				user.IncludeInGlobalAddressList = false
 				user.ForceSendFields = append(user.ForceSendFields, "IncludeInGlobalAddressList")
 			}
-		case attrName == "ipWhitelisted":
-			lwrAttr := strings.ToLower(fmt.Sprintf("%v", val))
-			if lwrAttr == "true" {
+		}
+		if attrName == "ipWhitelisted" {
+			if lowerAttrVal == "true" {
 				user.IpWhitelisted = true
 			}
-		case attrName == "orgUnitPath":
-			user.OrgUnitPath = fmt.Sprintf("%v", val)
-		case attrName == "password":
-			user.Password = fmt.Sprintf("%v", val)
-		case attrName == "primaryEmail":
-			user.PrimaryEmail = fmt.Sprintf("%v", val)
-		case attrName == "recoveryEmail":
-			user.RecoveryEmail = fmt.Sprintf("%v", val)
-		case attrName == "recoveryPhone":
-			sAttr := fmt.Sprintf("%v", val)
-			err := cmn.ValidateRecoveryPhone(sAttr)
-			if err != nil {
-				logger.Error(err)
+		}
+		if attrName == "orgUnitPath" {
+			user.OrgUnitPath = attrVal
+		}
+		if attrName == "password" {
+			if attrVal == "" {
+				err := fmt.Errorf(cmn.ErrEmptyString, attrName)
 				return nil, err
 			}
-			user.RecoveryPhone = sAttr
-		case attrName == "suspended":
-			lwrAttr := strings.ToLower(fmt.Sprintf("%v", val))
-			if lwrAttr == "true" {
+			pwd, err := cmn.HashPassword(attrVal)
+			if err != nil {
+				return nil, err
+			}
+			user.Password = pwd
+			user.HashFunction = cmn.HashFunction
+		}
+		if attrName == "primaryEmail" {
+			if attrVal == "" {
+				err := fmt.Errorf(cmn.ErrEmptyString, attrName)
+				return nil, err
+			}
+			user.PrimaryEmail = attrVal
+		}
+		if attrName == "recoveryEmail" {
+			user.RecoveryEmail = attrVal
+		}
+		if attrName == "recoveryPhone" {
+			if attrVal != "" {
+				err := cmn.ValidateRecoveryPhone(attrVal)
+				if err != nil {
+					logger.Error(err)
+					return nil, err
+				}
+				user.RecoveryPhone = attrVal
+			}
+		}
+		if attrName == "suspended" {
+			if lowerAttrVal == "true" {
 				user.Suspended = true
 			}
 		}
 	}
-
 	user.Name = name
-
 	logger.Debug("finished btchCrtProcessUser()")
 	return user, nil
 }

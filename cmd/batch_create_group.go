@@ -409,14 +409,23 @@ func btchCrtProcessGroup(hdrMap map[int]string, grpData []interface{}) (*admin.G
 
 	for idx, attr := range grpData {
 		attrName := hdrMap[idx]
+		attrVal := fmt.Sprintf("%v", attr)
 
 		switch {
 		case attrName == "description":
-			group.Description = fmt.Sprintf("%v", attr)
+			group.Description = attrVal
 		case attrName == "email":
-			group.Email = fmt.Sprintf("%v", attr)
+			if attrVal == "" {
+				err := fmt.Errorf(cmn.ErrEmptyString, attrName)
+				return nil, err
+			}
+			group.Email = attrVal
 		case attrName == "name":
-			group.Name = fmt.Sprintf("%v", attr)
+			if attrVal == "" {
+				err := fmt.Errorf(cmn.ErrEmptyString, attrName)
+				return nil, err
+			}
+			group.Name = attrVal
 		}
 	}
 	logger.Debug("finished btchCrtProcessGroup()")

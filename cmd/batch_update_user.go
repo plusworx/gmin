@@ -455,75 +455,96 @@ func btchUpdProcessUser(hdrMap map[int]string, userData []interface{}) (*admin.U
 
 	for idx, attr := range userData {
 		attrName := hdrMap[idx]
+		attrVal := fmt.Sprintf("%v", attr)
+		lowerAttrVal := strings.ToLower(fmt.Sprintf("%v", attr))
 
-		switch {
-		case attrName == "changePasswordAtNextLogin":
-			lwrAttr := strings.ToLower(fmt.Sprintf("%v", attr))
-			if lwrAttr == "true" {
+		if attrName == "changePasswordAtNextLogin" {
+			if lowerAttrVal == "true" {
 				user.ChangePasswordAtNextLogin = true
-			}
-			if lwrAttr == "false" {
+			} else {
 				user.ChangePasswordAtNextLogin = false
 				user.ForceSendFields = append(user.ForceSendFields, "ChangePasswordAtNextLogin")
 			}
-		case attrName == "familyName":
-			name.FamilyName = fmt.Sprintf("%v", attr)
-		case attrName == "givenName":
-			name.GivenName = fmt.Sprintf("%v", attr)
-		case attrName == "includeInGlobalAddressList":
-			lwrAttr := strings.ToLower(fmt.Sprintf("%v", attr))
-			if lwrAttr == "true" {
+		}
+		if attrName == "familyName" {
+			name.FamilyName = attrVal
+		}
+		if attrName == "givenName" {
+			name.GivenName = attrVal
+		}
+		if attrName == "includeInGlobalAddressList" {
+			if lowerAttrVal == "true" {
 				user.IncludeInGlobalAddressList = true
-			}
-			if lwrAttr == "false" {
+			} else {
 				user.IncludeInGlobalAddressList = false
 				user.ForceSendFields = append(user.ForceSendFields, "IncludeInGlobalAddressList")
 			}
-		case attrName == "ipWhitelisted":
-			lwrAttr := strings.ToLower(fmt.Sprintf("%v", attr))
-			if lwrAttr == "true" {
+		}
+		if attrName == "ipWhitelisted" {
+			if lowerAttrVal == "true" {
 				user.IpWhitelisted = true
-			}
-			if lwrAttr == "false" {
+			} else {
 				user.IpWhitelisted = false
 				user.ForceSendFields = append(user.ForceSendFields, "IpWhitelisted")
 			}
-		case attrName == "orgUnitPath":
-			user.OrgUnitPath = fmt.Sprintf("%v", attr)
-		case attrName == "password":
-			user.Password = fmt.Sprintf("%v", attr)
-		case attrName == "primaryEmail":
-			user.PrimaryEmail = fmt.Sprintf("%v", attr)
-		case attrName == "recoveryEmail":
-			recEmail := fmt.Sprintf("%v", attr)
-			user.RecoveryEmail = recEmail
-			if recEmail == "" {
+		}
+		if attrName == "orgUnitPath" {
+			if attrVal == "" {
+				err := fmt.Errorf(cmn.ErrEmptyString, attrName)
+				return nil, "", err
+			}
+			user.OrgUnitPath = attrVal
+		}
+		if attrName == "password" {
+			if attrVal != "" {
+				pwd, err := cmn.HashPassword(attrVal)
+				if err != nil {
+					return nil, "", err
+				}
+				user.Password = pwd
+				user.HashFunction = cmn.HashFunction
+			}
+		}
+		if attrName == "primaryEmail" {
+			if attrVal == "" {
+				err := fmt.Errorf(cmn.ErrEmptyString, attrName)
+				return nil, "", err
+			}
+			user.PrimaryEmail = attrVal
+		}
+		if attrName == "recoveryEmail" {
+			user.RecoveryEmail = attrVal
+			if attrVal == "" {
 				user.ForceSendFields = append(user.ForceSendFields, "RecoveryEmail")
 			}
-		case attrName == "recoveryPhone":
-			recPhone := fmt.Sprintf("%v", attr)
-			if recPhone != "" {
-				err := cmn.ValidateRecoveryPhone(recPhone)
+		}
+		if attrName == "recoveryPhone" {
+			if attrVal != "" {
+				err := cmn.ValidateRecoveryPhone(attrVal)
 				if err != nil {
 					logger.Error(err)
 					return nil, "", err
 				}
 			}
-			user.RecoveryPhone = recPhone
-			if recPhone == "" {
+			if attrVal == "" {
 				user.ForceSendFields = append(user.ForceSendFields, "RecoveryPhone")
 			}
-		case attrName == "suspended":
-			lwrAttr := strings.ToLower(fmt.Sprintf("%v", attr))
-			if lwrAttr == "true" {
+			user.RecoveryPhone = attrVal
+		}
+		if attrName == "suspended" {
+			if lowerAttrVal == "true" {
 				user.Suspended = true
-			}
-			if lwrAttr == "false" {
+			} else {
 				user.Suspended = false
 				user.ForceSendFields = append(user.ForceSendFields, "Suspended")
 			}
-		case attrName == "userKey":
-			userKey = fmt.Sprintf("%v", attr)
+		}
+		if attrName == "userKey" {
+			if attrVal == "" {
+				err := fmt.Errorf(cmn.ErrEmptyString, attrName)
+				return nil, "", err
+			}
+			userKey = attrVal
 		}
 	}
 

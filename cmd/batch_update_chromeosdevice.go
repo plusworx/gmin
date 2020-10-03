@@ -420,34 +420,31 @@ func btchUpdProcessCDev(hdrMap map[int]string, cdevData []interface{}) (*admin.C
 
 	for idx, attr := range cdevData {
 		attrName := hdrMap[idx]
+		attrVal := fmt.Sprintf("%v", attr)
 
 		switch {
 		case attrName == "annotatedAssetId":
-			assetID := fmt.Sprintf("%v", attr)
-			crosdev.AnnotatedAssetId = assetID
+			crosdev.AnnotatedAssetId = attrVal
 			if assetID == "" {
 				crosdev.ForceSendFields = append(crosdev.ForceSendFields, "AnnotatedAssetId")
 			}
 		case attrName == "annotatedLocation":
-			location := fmt.Sprintf("%v", attr)
-			crosdev.AnnotatedLocation = location
+			crosdev.AnnotatedLocation = attrVal
 			if location == "" {
 				crosdev.ForceSendFields = append(crosdev.ForceSendFields, "AnnotatedLocation")
 			}
 		case attrName == "annotatedUser":
-			user := fmt.Sprintf("%v", attr)
-			crosdev.AnnotatedUser = user
-			if user == "" {
+			crosdev.AnnotatedUser = attrVal
+			if attrVal == "" {
 				crosdev.ForceSendFields = append(crosdev.ForceSendFields, "AnnotatedUser")
 			}
 		case attrName == "notes":
-			notes := fmt.Sprintf("%v", attr)
-			crosdev.Notes = notes
+			crosdev.Notes = attrVal
 			if notes == "" {
 				crosdev.ForceSendFields = append(crosdev.ForceSendFields, "Notes")
 			}
 		case attrName == "orgUnitPath":
-			crosdev.OrgUnitPath = fmt.Sprintf("%v", attr)
+			crosdev.OrgUnitPath = attrVal
 		}
 	}
 	logger.Debug("finished btchUpdProcessCDev()")
