@@ -70,7 +70,7 @@ var schemaAttrs = []string{
 }
 
 var schemaCompAttrs = map[string]string{
-	"fields": "fieldSpec",
+	"fields": "fields",
 }
 
 var fieldSpecAttrs = []string{
@@ -185,7 +185,7 @@ func ShowCompAttrs(filter string) {
 
 // ShowSubCompAttrs displays schema field spec composite attributes
 func ShowSubCompAttrs(subAttr string, filter string) error {
-	if subAttr != "fieldspec" {
+	if subAttr != "fields" {
 		return fmt.Errorf(cmn.ErrInvalidSchemaCompAttr, subAttr)
 	}
 
@@ -210,7 +210,8 @@ func ShowSubCompAttrs(subAttr string, filter string) error {
 
 // ShowSubAttrs displays attributes of composite attributes
 func ShowSubAttrs(subAttr string, filter string) error {
-	if strings.ToLower(subAttr) != "fieldspec" {
+	subAttrVal := strings.ToLower(subAttr)
+	if subAttrVal != "fields" {
 		return fmt.Errorf(cmn.ErrNotCompositeAttr, subAttr)
 	}
 
