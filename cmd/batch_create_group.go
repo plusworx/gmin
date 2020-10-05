@@ -99,19 +99,19 @@ func doBatchCrtGroup(cmd *cobra.Command, args []string) error {
 
 	switch {
 	case lwrFmt == "csv":
-		err := btchGrpProcessCSV(ds, inputFile)
+		err := bcgProcessCSVFile(ds, inputFile)
 		if err != nil {
 			logger.Error(err)
 			return err
 		}
 	case lwrFmt == "json":
-		err := btchGrpProcessJSON(ds, inputFile, scanner)
+		err := bcgProcessJSON(ds, inputFile, scanner)
 		if err != nil {
 			logger.Error(err)
 			return err
 		}
 	case lwrFmt == "gsheet":
-		err := btchGrpProcessSheet(ds, inputFile)
+		err := bcgProcessGSheet(ds, inputFile)
 		if err != nil {
 			logger.Error(err)
 			return err
@@ -121,8 +121,74 @@ func doBatchCrtGroup(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func btchCreateJSONGroup(ds *admin.Service, jsonData string) (*admin.Group, error) {
-	logger.Debugw("starting btchCreateJSONGroup()",
+func bcgCreate(group *admin.Group, wg *sync.WaitGroup, gic *admin.GroupsInsertCall) {
+	logger.Debug("starting bcgCreate()")
+
+	defer wg.Done()
+
+	b := backoff.NewExponentialBackOff()
+	b.MaxElapsedTime = 32 * time.Second
+
+	err := backoff.Retry(func() error {
+		var err error
+		newGroup, err := gic.Do()
+		if err == nil {
+			logger.Infof(cmn.InfoGroupCreated, newGroup.Email)
+			fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoGroupCreated, newGroup.Email)))
+			return err
+		}
+		if !cmn.IsErrRetryable(err) {
+			return backoff.Permanent(fmt.Errorf(cmn.ErrBatchGroup, err.Error(), group.Email))
+		}
+		// Log the retries
+		logger.Warnw(err.Error(),
+			"retrying", b.GetElapsedTime().String(),
+			"group", group.Email)
+		return fmt.Errorf(cmn.ErrBatchGroup, err.Error(), group.Email)
+	}, b)
+	if err != nil {
+		// Log final error
+		logger.Error(err)
+		fmt.Println(cmn.GminMessage(err.Error()))
+	}
+	logger.Debug("finished bcgCreate()")
+}
+
+func bcgFromFileFactory(hdrMap map[int]string, grpData []interface{}) (*admin.Group, error) {
+	logger.Debugw("starting bcgFromFileFactory()",
+		"hdrMap", hdrMap)
+
+	var group *admin.Group
+
+	group = new(admin.Group)
+
+	for idx, attr := range grpData {
+		attrName := hdrMap[idx]
+		attrVal := fmt.Sprintf("%v", attr)
+
+		switch {
+		case attrName == "description":
+			group.Description = attrVal
+		case attrName == "email":
+			if attrVal == "" {
+				err := fmt.Errorf(cmn.ErrEmptyString, attrName)
+				return nil, err
+			}
+			group.Email = attrVal
+		case attrName == "name":
+			if attrVal == "" {
+				err := fmt.Errorf(cmn.ErrEmptyString, attrName)
+				return nil, err
+			}
+			group.Name = attrVal
+		}
+	}
+	logger.Debug("finished bcgFromFileFactory()")
+	return group, nil
+}
+
+func bcgFromJSONFactory(ds *admin.Service, jsonData string) (*admin.Group, error) {
+	logger.Debugw("starting bcgFromJSONFactory()",
 		"jsonData", jsonData)
 
 	var (
@@ -164,70 +230,12 @@ func btchCreateJSONGroup(ds *admin.Service, jsonData string) (*admin.Group, erro
 	if len(emptyVals.ForceSendFields) > 0 {
 		group.ForceSendFields = emptyVals.ForceSendFields
 	}
-	logger.Debug("finished btchCreateJSONGroup()")
+	logger.Debug("finished bcgFromJSONFactory()")
 	return group, nil
 }
 
-func btchInsertNewGroups(ds *admin.Service, groups []*admin.Group) error {
-	logger.Debug("starting btchInsertNewGroups()")
-
-	wg := new(sync.WaitGroup)
-
-	for _, g := range groups {
-		if g.Email == "" {
-			err := errors.New(cmn.ErrNoGroupEmailAddress)
-			logger.Error(err)
-			return err
-		}
-
-		gic := ds.Groups.Insert(g)
-
-		wg.Add(1)
-
-		go btchGrpInsertProcess(g, wg, gic)
-	}
-
-	wg.Wait()
-
-	logger.Debug("finished btchInsertNewGroups()")
-	return nil
-}
-
-func btchGrpInsertProcess(group *admin.Group, wg *sync.WaitGroup, gic *admin.GroupsInsertCall) {
-	logger.Debug("starting btchGrpInsertProcess()")
-
-	defer wg.Done()
-
-	b := backoff.NewExponentialBackOff()
-	b.MaxElapsedTime = 32 * time.Second
-
-	err := backoff.Retry(func() error {
-		var err error
-		newGroup, err := gic.Do()
-		if err == nil {
-			logger.Infof(cmn.InfoGroupCreated, newGroup.Email)
-			fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoGroupCreated, newGroup.Email)))
-			return err
-		}
-		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(fmt.Errorf(cmn.ErrBatchGroup, err.Error(), group.Email))
-		}
-		// Log the retries
-		logger.Warnw(err.Error(),
-			"retrying", b.GetElapsedTime().String(),
-			"group", group.Email)
-		return fmt.Errorf(cmn.ErrBatchGroup, err.Error(), group.Email)
-	}, b)
-	if err != nil {
-		// Log final error
-		logger.Error(err)
-		fmt.Println(cmn.GminMessage(err.Error()))
-	}
-	logger.Debug("finished btchGrpInsertProcess()")
-}
-
-func btchGrpProcessCSV(ds *admin.Service, filePath string) error {
-	logger.Debugw("starting btchGrpProcessCSV()",
+func bcgProcessCSVFile(ds *admin.Service, filePath string) error {
+	logger.Debugw("starting bcgProcessCSVFile()",
 		"filePath", filePath)
 
 	var (
@@ -275,7 +283,7 @@ func btchGrpProcessCSV(ds *admin.Service, filePath string) error {
 			iSlice[idx] = value
 		}
 
-		grpVar, err := btchCrtProcessGroup(hdrMap, iSlice)
+		grpVar, err := bcgFromFileFactory(hdrMap, iSlice)
 		if err != nil {
 			logger.Error(err)
 			return err
@@ -286,60 +294,17 @@ func btchGrpProcessCSV(ds *admin.Service, filePath string) error {
 		count = count + 1
 	}
 
-	err = btchInsertNewGroups(ds, groups)
+	err = bcgProcessObjects(ds, groups)
 	if err != nil {
 		logger.Error(err)
 		return err
 	}
-	logger.Debug("finished btchGrpProcessCSV()")
+	logger.Debug("finished bcgProcessCSVFile()")
 	return nil
 }
 
-func btchGrpProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner) error {
-	logger.Debugw("starting btchGrpProcessJSON",
-		"filePath", filePath)
-
-	var groups []*admin.Group
-
-	if filePath != "" {
-		file, err := os.Open(filePath)
-		if err != nil {
-			logger.Error(err)
-			return err
-		}
-		defer file.Close()
-
-		scanner = bufio.NewScanner(file)
-	}
-
-	for scanner.Scan() {
-		jsonData := scanner.Text()
-
-		grpVar, err := btchCreateJSONGroup(ds, jsonData)
-		if err != nil {
-			logger.Error(err)
-			return err
-		}
-
-		groups = append(groups, grpVar)
-	}
-	err := scanner.Err()
-	if err != nil {
-		logger.Error(err)
-		return err
-	}
-
-	err = btchInsertNewGroups(ds, groups)
-	if err != nil {
-		logger.Error(err)
-		return err
-	}
-	logger.Debug("finished btchGrpProcessJSON()")
-	return nil
-}
-
-func btchGrpProcessSheet(ds *admin.Service, sheetID string) error {
-	logger.Debugw("starting btchGrpProcessSheet()",
+func bcgProcessGSheet(ds *admin.Service, sheetID string) error {
+	logger.Debugw("starting bcgProcessGSheet()",
 		"sheetID", sheetID)
 
 	var groups []*admin.Group
@@ -381,7 +346,7 @@ func btchGrpProcessSheet(ds *admin.Service, sheetID string) error {
 			continue
 		}
 
-		grpVar, err := btchCrtProcessGroup(hdrMap, row)
+		grpVar, err := bcgFromFileFactory(hdrMap, row)
 		if err != nil {
 			logger.Error(err)
 			return err
@@ -390,46 +355,81 @@ func btchGrpProcessSheet(ds *admin.Service, sheetID string) error {
 		groups = append(groups, grpVar)
 	}
 
-	err = btchInsertNewGroups(ds, groups)
+	err = bcgProcessObjects(ds, groups)
 	if err != nil {
 		logger.Error(err)
 		return err
 	}
-	logger.Debug("finished btchGrpProcessSheet()")
+	logger.Debug("finished bcgProcessGSheet()")
 	return nil
 }
 
-func btchCrtProcessGroup(hdrMap map[int]string, grpData []interface{}) (*admin.Group, error) {
-	logger.Debugw("starting btchCrtProcessGroup()",
-		"hdrMap", hdrMap)
+func bcgProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner) error {
+	logger.Debugw("starting bcgProcessJSON()",
+		"filePath", filePath)
 
-	var group *admin.Group
+	var groups []*admin.Group
 
-	group = new(admin.Group)
-
-	for idx, attr := range grpData {
-		attrName := hdrMap[idx]
-		attrVal := fmt.Sprintf("%v", attr)
-
-		switch {
-		case attrName == "description":
-			group.Description = attrVal
-		case attrName == "email":
-			if attrVal == "" {
-				err := fmt.Errorf(cmn.ErrEmptyString, attrName)
-				return nil, err
-			}
-			group.Email = attrVal
-		case attrName == "name":
-			if attrVal == "" {
-				err := fmt.Errorf(cmn.ErrEmptyString, attrName)
-				return nil, err
-			}
-			group.Name = attrVal
+	if filePath != "" {
+		file, err := os.Open(filePath)
+		if err != nil {
+			logger.Error(err)
+			return err
 		}
+		defer file.Close()
+
+		scanner = bufio.NewScanner(file)
 	}
-	logger.Debug("finished btchCrtProcessGroup()")
-	return group, nil
+
+	for scanner.Scan() {
+		jsonData := scanner.Text()
+
+		grpVar, err := bcgFromJSONFactory(ds, jsonData)
+		if err != nil {
+			logger.Error(err)
+			return err
+		}
+
+		groups = append(groups, grpVar)
+	}
+	err := scanner.Err()
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+
+	err = bcgProcessObjects(ds, groups)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	logger.Debug("finished bcgProcessJSON()")
+	return nil
+}
+
+func bcgProcessObjects(ds *admin.Service, groups []*admin.Group) error {
+	logger.Debug("starting bcgProcessObjects()")
+
+	wg := new(sync.WaitGroup)
+
+	for _, g := range groups {
+		if g.Email == "" {
+			err := errors.New(cmn.ErrNoGroupEmailAddress)
+			logger.Error(err)
+			return err
+		}
+
+		gic := ds.Groups.Insert(g)
+
+		wg.Add(1)
+
+		go bcgCreate(g, wg, gic)
+	}
+
+	wg.Wait()
+
+	logger.Debug("finished bcgProcessObjects()")
+	return nil
 }
 
 func init() {

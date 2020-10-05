@@ -110,7 +110,7 @@ func doBatchDelOrgUnit(cmd *cobra.Command, args []string) error {
 
 		wg.Add(1)
 
-		go deleteOU(wg, oudc, text)
+		go bdoDeleteObject(wg, oudc, text)
 	}
 
 	wg.Wait()
@@ -119,8 +119,8 @@ func doBatchDelOrgUnit(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func deleteOU(wg *sync.WaitGroup, oudc *admin.OrgunitsDeleteCall, ouPath string) {
-	logger.Debugw("starting deleteOU()",
+func bdoDeleteObject(wg *sync.WaitGroup, oudc *admin.OrgunitsDeleteCall, ouPath string) {
+	logger.Debugw("starting bdoDeleteObject()",
 		"ouPath", ouPath)
 
 	defer wg.Done()
@@ -151,7 +151,7 @@ func deleteOU(wg *sync.WaitGroup, oudc *admin.OrgunitsDeleteCall, ouPath string)
 		logger.Error(err)
 		fmt.Println(cmn.GminMessage(err.Error()))
 	}
-	logger.Debug("finished deleteOU()")
+	logger.Debug("finished bdoDeleteObject()")
 }
 
 func init() {

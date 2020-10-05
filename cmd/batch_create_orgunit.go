@@ -102,19 +102,19 @@ func doBatchCrtOrgUnit(cmd *cobra.Command, args []string) error {
 
 	switch {
 	case lwrFmt == "csv":
-		err := btchOUProcessCSV(ds, inputFile)
+		err := bcoProcessCSVFile(ds, inputFile)
 		if err != nil {
 			logger.Error(err)
 			return err
 		}
 	case lwrFmt == "json":
-		err := btchOUProcessJSON(ds, inputFile, scanner)
+		err := bcoProcessJSON(ds, inputFile, scanner)
 		if err != nil {
 			logger.Error(err)
 			return err
 		}
 	case lwrFmt == "gsheet":
-		err := btchOUProcessSheet(ds, inputFile)
+		err := bcoProcessGSheet(ds, inputFile)
 		if err != nil {
 			logger.Error(err)
 			return err
@@ -124,8 +124,79 @@ func doBatchCrtOrgUnit(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func btchCreateJSONOrgUnit(ds *admin.Service, jsonData string) (*admin.OrgUnit, error) {
-	logger.Debugw("starting btchCreateJSONOrgUnit()",
+func bcoCreate(orgunit *admin.OrgUnit, wg *sync.WaitGroup, ouic *admin.OrgunitsInsertCall) {
+	logger.Debug("starting bcoCreate()")
+
+	defer wg.Done()
+
+	b := backoff.NewExponentialBackOff()
+	b.MaxElapsedTime = 32 * time.Second
+
+	err := backoff.Retry(func() error {
+		var err error
+		newOrgUnit, err := ouic.Do()
+		if err == nil {
+			logger.Infof(cmn.InfoOUCreated, newOrgUnit.OrgUnitPath)
+			fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoOUCreated, newOrgUnit.OrgUnitPath)))
+			return err
+		}
+		if !cmn.IsErrRetryable(err) {
+			return backoff.Permanent(fmt.Errorf(cmn.ErrBatchOU, err.Error(), orgunit.Name))
+		}
+		// Log the retries
+		logger.Warnw(err.Error(),
+			"retrying", b.GetElapsedTime().String(),
+			"orgunit", orgunit.Name)
+		return fmt.Errorf(cmn.ErrBatchOU, err.Error(), orgunit.Name)
+	}, b)
+	if err != nil {
+		// Log final error
+		logger.Error(err)
+		fmt.Println(cmn.GminMessage(err.Error()))
+	}
+	logger.Debug("finished bcoCreate()")
+}
+
+func bcoFromFileFactory(hdrMap map[int]string, ouData []interface{}) (*admin.OrgUnit, error) {
+	logger.Debugw("starting bcoFromFileFactory()",
+		"hdrMap", hdrMap)
+
+	var orgunit *admin.OrgUnit
+
+	orgunit = new(admin.OrgUnit)
+
+	for idx, attr := range ouData {
+		attrName := hdrMap[idx]
+		attrVal := fmt.Sprintf("%v", attr)
+		lowerAttrVal := strings.ToLower(fmt.Sprintf("%v", attr))
+
+		switch {
+		case attrName == "blockInheritance":
+			if lowerAttrVal == "true" {
+				orgunit.BlockInheritance = true
+			}
+		case attrName == "description":
+			orgunit.Description = attrVal
+		case attrName == "name":
+			if attrVal == "" {
+				err := fmt.Errorf(cmn.ErrEmptyString, attrName)
+				return nil, err
+			}
+			orgunit.Name = attrVal
+		case attrName == "parentOrgUnitPath":
+			if attrVal == "" {
+				err := fmt.Errorf(cmn.ErrEmptyString, attrName)
+				return nil, err
+			}
+			orgunit.ParentOrgUnitPath = attrVal
+		}
+	}
+	logger.Debug("finished bcoFromFileFactory()")
+	return orgunit, nil
+}
+
+func bcoFromJSONFactory(ds *admin.Service, jsonData string) (*admin.OrgUnit, error) {
+	logger.Debugw("starting bcoFromJSONFactory()",
 		"jsonData", jsonData)
 
 	var (
@@ -167,80 +238,12 @@ func btchCreateJSONOrgUnit(ds *admin.Service, jsonData string) (*admin.OrgUnit, 
 	if len(emptyVals.ForceSendFields) > 0 {
 		orgunit.ForceSendFields = emptyVals.ForceSendFields
 	}
-	logger.Debug("finished btchCreateJSONOrgUnit()")
+	logger.Debug("finished bcoFromJSONFactory()")
 	return orgunit, nil
 }
 
-func btchInsertNewOrgUnits(ds *admin.Service, orgunits []*admin.OrgUnit) error {
-	logger.Debug("starting btchInsertNewOrgUnits()")
-
-	customerID, err := cfg.ReadConfigString("customerid")
-	if err != nil {
-		logger.Error(err)
-		return err
-	}
-
-	wg := new(sync.WaitGroup)
-
-	for _, ou := range orgunits {
-		if ou.Name == "" || ou.ParentOrgUnitPath == "" {
-			err = errors.New(cmn.ErrNoNameOrOuPath)
-			logger.Error(err)
-			return err
-		}
-
-		ouic := ds.Orgunits.Insert(customerID, ou)
-
-		// Sleep for 2 seconds because only 1 orgunit can be created per second but 1 second interval
-		// still can result in rate limit errors
-		time.Sleep(2 * time.Second)
-
-		wg.Add(1)
-
-		go btchOUInsertProcess(ou, wg, ouic)
-	}
-
-	wg.Wait()
-
-	logger.Debug("finished btchInsertNewOrgUnits()")
-	return nil
-}
-
-func btchOUInsertProcess(orgunit *admin.OrgUnit, wg *sync.WaitGroup, ouic *admin.OrgunitsInsertCall) {
-	logger.Debug("starting btchOUInsertProcess()")
-
-	defer wg.Done()
-
-	b := backoff.NewExponentialBackOff()
-	b.MaxElapsedTime = 32 * time.Second
-
-	err := backoff.Retry(func() error {
-		var err error
-		newOrgUnit, err := ouic.Do()
-		if err == nil {
-			logger.Infof(cmn.InfoOUCreated, newOrgUnit.OrgUnitPath)
-			fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoOUCreated, newOrgUnit.OrgUnitPath)))
-			return err
-		}
-		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(fmt.Errorf(cmn.ErrBatchOU, err.Error(), orgunit.Name))
-		}
-		// Log the retries
-		logger.Warnw(err.Error(),
-			"retrying", b.GetElapsedTime().String(),
-			"orgunit", orgunit.Name)
-		return fmt.Errorf(cmn.ErrBatchOU, err.Error(), orgunit.Name)
-	}, b)
-	if err != nil {
-		// Log final error
-		logger.Error(err)
-		fmt.Println(cmn.GminMessage(err.Error()))
-	}
-	logger.Debug("finished btchOUInsertProcess()")
-}
-
-func btchOUProcessCSV(ds *admin.Service, filePath string) error {
-	logger.Debugw("starting btchOUProcessCSV()",
+func bcoProcessCSVFile(ds *admin.Service, filePath string) error {
+	logger.Debugw("starting bcoProcessCSVFile()",
 		"filePath", filePath)
 
 	var (
@@ -288,7 +291,7 @@ func btchOUProcessCSV(ds *admin.Service, filePath string) error {
 			iSlice[idx] = value
 		}
 
-		ouVar, err := btchCrtProcessOrgUnit(hdrMap, iSlice)
+		ouVar, err := bcoFromFileFactory(hdrMap, iSlice)
 		if err != nil {
 			logger.Error(err)
 			return err
@@ -299,60 +302,17 @@ func btchOUProcessCSV(ds *admin.Service, filePath string) error {
 		count = count + 1
 	}
 
-	err = btchInsertNewOrgUnits(ds, orgunits)
+	err = bcoProcessObjects(ds, orgunits)
 	if err != nil {
 		logger.Error(err)
 		return err
 	}
-	logger.Debug("finished btchOUProcessCSV()")
+	logger.Debug("finished bcoProcessCSVFile()")
 	return nil
 }
 
-func btchOUProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner) error {
-	logger.Debugw("starting btchOUProcessJSON()",
-		"filePath", filePath)
-
-	var orgunits []*admin.OrgUnit
-
-	if filePath != "" {
-		file, err := os.Open(filePath)
-		if err != nil {
-			logger.Error(err)
-			return err
-		}
-		defer file.Close()
-
-		scanner = bufio.NewScanner(file)
-	}
-
-	for scanner.Scan() {
-		jsonData := scanner.Text()
-
-		ouVar, err := btchCreateJSONOrgUnit(ds, jsonData)
-		if err != nil {
-			logger.Error(err)
-			return err
-		}
-
-		orgunits = append(orgunits, ouVar)
-	}
-	err := scanner.Err()
-	if err != nil {
-		logger.Error(err)
-		return err
-	}
-
-	err = btchInsertNewOrgUnits(ds, orgunits)
-	if err != nil {
-		logger.Error(err)
-		return err
-	}
-	logger.Debug("finished btchOUProcessJSON()")
-	return nil
-}
-
-func btchOUProcessSheet(ds *admin.Service, sheetID string) error {
-	logger.Debugw("starting btchOUProcessSheet()",
+func bcoProcessGSheet(ds *admin.Service, sheetID string) error {
+	logger.Debugw("starting bcoProcessGSheet()",
 		"sheetID", sheetID)
 
 	var orgunits []*admin.OrgUnit
@@ -394,7 +354,7 @@ func btchOUProcessSheet(ds *admin.Service, sheetID string) error {
 			continue
 		}
 
-		ouVar, err := btchCrtProcessOrgUnit(hdrMap, row)
+		ouVar, err := bcoFromFileFactory(hdrMap, row)
 		if err != nil {
 			logger.Error(err)
 			return err
@@ -403,51 +363,91 @@ func btchOUProcessSheet(ds *admin.Service, sheetID string) error {
 		orgunits = append(orgunits, ouVar)
 	}
 
-	err = btchInsertNewOrgUnits(ds, orgunits)
+	err = bcoProcessObjects(ds, orgunits)
 	if err != nil {
 		logger.Error(err)
 		return err
 	}
-	logger.Debug("finished btchOUProcessSheet()")
+	logger.Debug("finished bcoProcessGSheet()")
 	return nil
 }
 
-func btchCrtProcessOrgUnit(hdrMap map[int]string, ouData []interface{}) (*admin.OrgUnit, error) {
-	logger.Debugw("starting btchCrtProcessOrgUnit()",
-		"hdrMap", hdrMap)
+func bcoProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner) error {
+	logger.Debugw("starting bcoProcessJSON()",
+		"filePath", filePath)
 
-	var orgunit *admin.OrgUnit
+	var orgunits []*admin.OrgUnit
 
-	orgunit = new(admin.OrgUnit)
-
-	for idx, attr := range ouData {
-		attrName := hdrMap[idx]
-		attrVal := fmt.Sprintf("%v", attr)
-		lowerAttrVal := strings.ToLower(fmt.Sprintf("%v", attr))
-
-		switch {
-		case attrName == "blockInheritance":
-			if lowerAttrVal == "true" {
-				orgunit.BlockInheritance = true
-			}
-		case attrName == "description":
-			orgunit.Description = attrVal
-		case attrName == "name":
-			if attrVal == "" {
-				err := fmt.Errorf(cmn.ErrEmptyString, attrName)
-				return nil, err
-			}
-			orgunit.Name = attrVal
-		case attrName == "parentOrgUnitPath":
-			if attrVal == "" {
-				err := fmt.Errorf(cmn.ErrEmptyString, attrName)
-				return nil, err
-			}
-			orgunit.ParentOrgUnitPath = attrVal
+	if filePath != "" {
+		file, err := os.Open(filePath)
+		if err != nil {
+			logger.Error(err)
+			return err
 		}
+		defer file.Close()
+
+		scanner = bufio.NewScanner(file)
 	}
-	logger.Debug("finished btchCrtProcessOrgUnit()")
-	return orgunit, nil
+
+	for scanner.Scan() {
+		jsonData := scanner.Text()
+
+		ouVar, err := bcoFromJSONFactory(ds, jsonData)
+		if err != nil {
+			logger.Error(err)
+			return err
+		}
+
+		orgunits = append(orgunits, ouVar)
+	}
+	err := scanner.Err()
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+
+	err = bcoProcessObjects(ds, orgunits)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	logger.Debug("finished bcoProcessJSON()")
+	return nil
+}
+
+func bcoProcessObjects(ds *admin.Service, orgunits []*admin.OrgUnit) error {
+	logger.Debug("starting bcoProcessObjects()")
+
+	customerID, err := cfg.ReadConfigString("customerid")
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+
+	wg := new(sync.WaitGroup)
+
+	for _, ou := range orgunits {
+		if ou.Name == "" || ou.ParentOrgUnitPath == "" {
+			err = errors.New(cmn.ErrNoNameOrOuPath)
+			logger.Error(err)
+			return err
+		}
+
+		ouic := ds.Orgunits.Insert(customerID, ou)
+
+		// Sleep for 2 seconds because only 1 orgunit can be created per second but 1 second interval
+		// still can result in rate limit errors
+		time.Sleep(2 * time.Second)
+
+		wg.Add(1)
+
+		go bcoCreate(ou, wg, ouic)
+	}
+
+	wg.Wait()
+
+	logger.Debug("finished bcoProcessObjects()")
+	return nil
 }
 
 func init() {

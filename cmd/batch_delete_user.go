@@ -95,7 +95,7 @@ func doBatchDelUser(cmd *cobra.Command, args []string) error {
 
 		wg.Add(1)
 
-		go deleteUser(wg, udc, user)
+		go bduDeleteObject(wg, udc, user)
 	}
 
 	wg.Wait()
@@ -104,8 +104,8 @@ func doBatchDelUser(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func deleteUser(wg *sync.WaitGroup, udc *admin.UsersDeleteCall, user string) {
-	logger.Debugw("starting deleteUser()",
+func bduDeleteObject(wg *sync.WaitGroup, udc *admin.UsersDeleteCall, user string) {
+	logger.Debugw("starting bduDeleteObject()",
 		"user", user)
 
 	defer wg.Done()
@@ -136,7 +136,7 @@ func deleteUser(wg *sync.WaitGroup, udc *admin.UsersDeleteCall, user string) {
 		logger.Error(err)
 		fmt.Println(cmn.GminMessage(err.Error()))
 	}
-	logger.Debug("finished deleteUser()")
+	logger.Debug("finished bduDeleteObject()")
 }
 
 func init() {

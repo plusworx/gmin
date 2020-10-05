@@ -105,19 +105,19 @@ func doBatchUpdMember(cmd *cobra.Command, args []string) error {
 
 	switch {
 	case lwrFmt == "csv":
-		err := btchUpdMemProcessCSV(ds, groupKey, inputFile)
+		err := bumProcessCSVFile(ds, groupKey, inputFile)
 		if err != nil {
 			logger.Error(err)
 			return err
 		}
 	case lwrFmt == "json":
-		err := btchUpdMemProcessJSON(ds, groupKey, inputFile, scanner)
+		err := bumProcessJSON(ds, groupKey, inputFile, scanner)
 		if err != nil {
 			logger.Error(err)
 			return err
 		}
 	case lwrFmt == "gsheet":
-		err := btchUpdMemProcessSheet(ds, groupKey, inputFile)
+		err := bumProcessGSheet(ds, groupKey, inputFile)
 		if err != nil {
 			logger.Error(err)
 			return err
@@ -127,8 +127,50 @@ func doBatchUpdMember(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func btchUpdJSONMember(ds *admin.Service, jsonData string) (*admin.Member, string, error) {
-	logger.Debugw("starting btchUpdJSONMember()",
+func bumFromFileFactory(hdrMap map[int]string, memData []interface{}) (*admin.Member, string, error) {
+	logger.Debugw("starting bumFromFileFactory()",
+		"hdrMap", hdrMap)
+
+	var (
+		member *admin.Member
+		memKey string
+	)
+
+	member = new(admin.Member)
+
+	for idx, attr := range memData {
+		attrName := hdrMap[idx]
+		attrVal := fmt.Sprintf("%v", attr)
+
+		switch {
+		case attrName == "delivery_settings":
+			validDS, err := mems.ValidateDeliverySetting(attrVal)
+			if err != nil {
+				logger.Error(err)
+				return nil, "", err
+			}
+			member.DeliverySettings = validDS
+		case attrName == "role":
+			validRole, err := mems.ValidateRole(attrVal)
+			if err != nil {
+				logger.Error(err)
+				return nil, "", err
+			}
+			member.Role = validRole
+		case attrName == "memberKey":
+			if attrVal == "" {
+				err := fmt.Errorf(cmn.ErrEmptyString, attrName)
+				return nil, "", err
+			}
+			memKey = attrVal
+		}
+	}
+	logger.Debug("finished bumFromFileFactory()")
+	return member, memKey, nil
+}
+
+func bumFromJSONFactory(ds *admin.Service, jsonData string) (*admin.Member, string, error) {
+	logger.Debugw("starting bumFromJSONFactory()",
 		"jsonData", jsonData)
 
 	var (
@@ -173,69 +215,12 @@ func btchUpdJSONMember(ds *admin.Service, jsonData string) (*admin.Member, strin
 		logger.Error(err)
 		return nil, "", err
 	}
-	logger.Debug("finished btchUpdJSONMember()")
+	logger.Debug("finished bumFromJSONFactory()")
 	return member, memKey.MemberKey, nil
 }
 
-func btchUpdateMembers(ds *admin.Service, groupKey string, members []*admin.Member, memKeys []string) error {
-	logger.Debugw("starting btchUpdateMembers()",
-		"groupKey", groupKey,
-		"memKeys", memKeys)
-
-	wg := new(sync.WaitGroup)
-
-	for idx, m := range members {
-		muc := ds.Members.Update(groupKey, memKeys[idx], m)
-
-		wg.Add(1)
-
-		go btchMemUpdateProcess(m, groupKey, wg, muc, memKeys[idx])
-	}
-
-	wg.Wait()
-
-	logger.Debug("finished btchUpdateMembers()")
-	return nil
-}
-
-func btchMemUpdateProcess(member *admin.Member, groupKey string, wg *sync.WaitGroup, muc *admin.MembersUpdateCall, memKey string) {
-	logger.Debugw("starting btchMemUpdateProcess()",
-		"groupKey", groupKey,
-		"memKey", memKey)
-
-	defer wg.Done()
-
-	b := backoff.NewExponentialBackOff()
-	b.MaxElapsedTime = 32 * time.Second
-
-	err := backoff.Retry(func() error {
-		var err error
-		_, err = muc.Do()
-		if err == nil {
-			logger.Infof(cmn.InfoMemberUpdated, memKey, groupKey)
-			fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoMemberUpdated, memKey, groupKey)))
-			return err
-		}
-		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(fmt.Errorf(cmn.ErrBatchMember, err.Error(), memKey))
-		}
-		// Log the retries
-		logger.Warnw(err.Error(),
-			"retrying", b.GetElapsedTime().String(),
-			"group", groupKey,
-			"member", memKey)
-		return fmt.Errorf(cmn.ErrBatchMember, err.Error(), memKey)
-	}, b)
-	if err != nil {
-		// Log final error
-		logger.Error(err)
-		fmt.Println(cmn.GminMessage(err.Error()))
-	}
-	logger.Debug("finished btchMemUpdateProcess()")
-}
-
-func btchUpdMemProcessCSV(ds *admin.Service, groupKey string, filePath string) error {
-	logger.Debugw("starting btchUpdMemProcessCSV()",
+func bumProcessCSVFile(ds *admin.Service, groupKey string, filePath string) error {
+	logger.Debugw("starting bumProcessCSVFile()",
 		"filePath", filePath,
 		"groupKey", groupKey)
 
@@ -285,7 +270,7 @@ func btchUpdMemProcessCSV(ds *admin.Service, groupKey string, filePath string) e
 			iSlice[idx] = value
 		}
 
-		memVar, memKey, err := btchUpdProcessMember(hdrMap, iSlice)
+		memVar, memKey, err := bumFromFileFactory(hdrMap, iSlice)
 		if err != nil {
 			logger.Error(err)
 			return err
@@ -297,65 +282,17 @@ func btchUpdMemProcessCSV(ds *admin.Service, groupKey string, filePath string) e
 		count = count + 1
 	}
 
-	err = btchUpdateMembers(ds, groupKey, members, memKeys)
+	err = bumProcessObjects(ds, groupKey, members, memKeys)
 	if err != nil {
 		logger.Error(err)
 		return err
 	}
-	logger.Debug("finished btchUpdMemProcessCSV()")
+	logger.Debug("finished bumProcessCSVFile()")
 	return nil
 }
 
-func btchUpdMemProcessJSON(ds *admin.Service, groupKey string, filePath string, scanner *bufio.Scanner) error {
-	logger.Debugw("starting btchUpdMemProcessJSON()",
-		"groupKey", groupKey,
-		"filePath", filePath)
-
-	var (
-		memKeys []string
-		members []*admin.Member
-	)
-
-	if filePath != "" {
-		file, err := os.Open(filePath)
-		if err != nil {
-			logger.Error(err)
-			return err
-		}
-		defer file.Close()
-
-		scanner = bufio.NewScanner(file)
-	}
-
-	for scanner.Scan() {
-		jsonData := scanner.Text()
-
-		memVar, memKey, err := btchUpdJSONMember(ds, jsonData)
-		if err != nil {
-			logger.Error(err)
-			return err
-		}
-
-		memKeys = append(memKeys, memKey)
-		members = append(members, memVar)
-	}
-	err := scanner.Err()
-	if err != nil {
-		logger.Error(err)
-		return err
-	}
-
-	err = btchUpdateMembers(ds, groupKey, members, memKeys)
-	if err != nil {
-		logger.Error(err)
-		return err
-	}
-	logger.Debug("finished btchUpdMemProcessJSON()")
-	return nil
-}
-
-func btchUpdMemProcessSheet(ds *admin.Service, groupKey string, sheetID string) error {
-	logger.Debugw("starting btchUpdMemProcessSheet()",
+func bumProcessGSheet(ds *admin.Service, groupKey string, sheetID string) error {
+	logger.Debugw("starting bumProcessGSheet()",
 		"groupKey", groupKey,
 		"sheetID", sheetID)
 
@@ -401,7 +338,7 @@ func btchUpdMemProcessSheet(ds *admin.Service, groupKey string, sheetID string) 
 			continue
 		}
 
-		memVar, memKey, err := btchUpdProcessMember(hdrMap, row)
+		memVar, memKey, err := bumFromFileFactory(hdrMap, row)
 		if err != nil {
 			logger.Error(err)
 			return err
@@ -411,55 +348,118 @@ func btchUpdMemProcessSheet(ds *admin.Service, groupKey string, sheetID string) 
 		members = append(members, memVar)
 	}
 
-	err = btchUpdateMembers(ds, groupKey, members, memKeys)
+	err = bumProcessObjects(ds, groupKey, members, memKeys)
 	if err != nil {
 		logger.Error(err)
 		return err
 	}
-	logger.Debug("finished btchUpdMemProcessSheet()")
+	logger.Debug("finished bumProcessGSheet()")
 	return nil
 }
 
-func btchUpdProcessMember(hdrMap map[int]string, memData []interface{}) (*admin.Member, string, error) {
-	logger.Debugw("starting btchUpdProcessMember()",
-		"hdrMap", hdrMap)
+func bumProcessJSON(ds *admin.Service, groupKey string, filePath string, scanner *bufio.Scanner) error {
+	logger.Debugw("starting bumProcessJSON()",
+		"groupKey", groupKey,
+		"filePath", filePath)
 
 	var (
-		member *admin.Member
-		memKey string
+		memKeys []string
+		members []*admin.Member
 	)
 
-	member = new(admin.Member)
-
-	for idx, attr := range memData {
-		attrName := hdrMap[idx]
-		attrVal := fmt.Sprintf("%v", attr)
-
-		switch {
-		case attrName == "delivery_settings":
-			validDS, err := mems.ValidateDeliverySetting(attrVal)
-			if err != nil {
-				logger.Error(err)
-				return nil, "", err
-			}
-			member.DeliverySettings = validDS
-		case attrName == "role":
-			validRole, err := mems.ValidateRole(attrVal)
-			if err != nil {
-				logger.Error(err)
-				return nil, "", err
-			}
-			member.Role = validRole
-		case attrName == "memberKey":
-			if attrVal == "" {
-				err := fmt.Errorf(cmn.ErrEmptyString, attrName)
-				return nil, "", err
-			}
-			memKey = attrVal
+	if filePath != "" {
+		file, err := os.Open(filePath)
+		if err != nil {
+			logger.Error(err)
+			return err
 		}
+		defer file.Close()
+
+		scanner = bufio.NewScanner(file)
 	}
-	logger.Debug("finished btchUpdProcessMember()")
-	return member, memKey, nil
+
+	for scanner.Scan() {
+		jsonData := scanner.Text()
+
+		memVar, memKey, err := bumFromJSONFactory(ds, jsonData)
+		if err != nil {
+			logger.Error(err)
+			return err
+		}
+
+		memKeys = append(memKeys, memKey)
+		members = append(members, memVar)
+	}
+	err := scanner.Err()
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+
+	err = bumProcessObjects(ds, groupKey, members, memKeys)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	logger.Debug("finished bumProcessJSON()")
+	return nil
+}
+
+func bumProcessObjects(ds *admin.Service, groupKey string, members []*admin.Member, memKeys []string) error {
+	logger.Debugw("starting bumProcessObjects()",
+		"groupKey", groupKey,
+		"memKeys", memKeys)
+
+	wg := new(sync.WaitGroup)
+
+	for idx, m := range members {
+		muc := ds.Members.Update(groupKey, memKeys[idx], m)
+
+		wg.Add(1)
+
+		go bumUpdate(m, groupKey, wg, muc, memKeys[idx])
+	}
+
+	wg.Wait()
+
+	logger.Debug("finished bumProcessObjects()")
+	return nil
+}
+
+func bumUpdate(member *admin.Member, groupKey string, wg *sync.WaitGroup, muc *admin.MembersUpdateCall, memKey string) {
+	logger.Debugw("starting bumUpdate()",
+		"groupKey", groupKey,
+		"memKey", memKey)
+
+	defer wg.Done()
+
+	b := backoff.NewExponentialBackOff()
+	b.MaxElapsedTime = 32 * time.Second
+
+	err := backoff.Retry(func() error {
+		var err error
+		_, err = muc.Do()
+		if err == nil {
+			logger.Infof(cmn.InfoMemberUpdated, memKey, groupKey)
+			fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoMemberUpdated, memKey, groupKey)))
+			return err
+		}
+		if !cmn.IsErrRetryable(err) {
+			return backoff.Permanent(fmt.Errorf(cmn.ErrBatchMember, err.Error(), memKey))
+		}
+		// Log the retries
+		logger.Warnw(err.Error(),
+			"retrying", b.GetElapsedTime().String(),
+			"group", groupKey,
+			"member", memKey)
+		return fmt.Errorf(cmn.ErrBatchMember, err.Error(), memKey)
+	}, b)
+	if err != nil {
+		// Log final error
+		logger.Error(err)
+		fmt.Println(cmn.GminMessage(err.Error()))
+	}
+	logger.Debug("finished bumUpdate()")
 }
 
 func init() {

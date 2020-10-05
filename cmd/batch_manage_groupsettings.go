@@ -127,19 +127,19 @@ func doBatchMngGrpSettings(cmd *cobra.Command, args []string) error {
 
 	switch {
 	case lwrFmt == "csv":
-		err := btchMngGrpSettingsProcessCSV(ds, inputFile)
+		err := bmnggProcessCSVFile(ds, inputFile)
 		if err != nil {
 			logger.Error(err)
 			return err
 		}
 	case lwrFmt == "json":
-		err := btchMngGrpSettingsProcessJSON(ds, inputFile, scanner)
+		err := bmnggProcessJSON(ds, inputFile, scanner)
 		if err != nil {
 			logger.Error(err)
 			return err
 		}
 	case lwrFmt == "gsheet":
-		err := btchMngGrpSettingsProcessSheet(ds, inputFile)
+		err := bmnggProcessGSheet(ds, inputFile)
 		if err != nil {
 			logger.Error(err)
 			return err
@@ -149,296 +149,63 @@ func doBatchMngGrpSettings(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func btchMngJSONGrpSettings(ds *gset.Service, jsonData string) (*gset.Groups, string, error) {
-	logger.Debugw("starting btchMngJSONGrpSettings()",
-		"jsonData", jsonData)
-
-	var (
-		grpSettings *gset.Groups
-		grpKey      = grpset.Key{}
-	)
-
-	grpSettings = new(gset.Groups)
-	jsonBytes := []byte(jsonData)
-
-	if !json.Valid(jsonBytes) {
-		logger.Error(cmn.ErrInvalidJSONAttr)
-		return nil, "", errors.New(cmn.ErrInvalidJSONAttr)
-	}
-
-	outStr, err := cmn.ParseInputAttrs(jsonBytes)
+func bmnggApproveMemberVal(grpSetting *gset.Groups, attrName string, attrValue string) error {
+	logger.Debug("starting bmnggApproveMemberVal()")
+	validTxt, err := grpset.ValidateGroupSettingValue(grpset.ApproveMemberMap, attrName, attrValue)
 	if err != nil {
-		logger.Error(err)
-		return nil, "", err
+		return err
 	}
-
-	err = cmn.ValidateInputAttrs(outStr, grpset.GroupSettingsAttrMap)
-	if err != nil {
-		logger.Error(err)
-		return nil, "", err
-	}
-
-	err = json.Unmarshal(jsonBytes, &grpKey)
-	if err != nil {
-		logger.Error(err)
-		return nil, "", err
-	}
-
-	if grpKey.GroupKey == "" {
-		err = errors.New(cmn.ErrNoJSONGroupKey)
-		logger.Error(err)
-		return nil, "", err
-	}
-
-	err = json.Unmarshal(jsonBytes, &grpSettings)
-	if err != nil {
-		logger.Error(err)
-		return nil, "", err
-	}
-	logger.Debug("finished btchMngJSONGrpSettings()")
-	return grpSettings, grpKey.GroupKey, nil
-}
-
-func btchManageGrpSettings(ds *gset.Service, groupKeys []string, grpSettings []*gset.Groups) error {
-	logger.Debugw("starting btchManageGrpSettings()",
-		"groupKeys", groupKeys)
-
-	wg := new(sync.WaitGroup)
-
-	for idx, gs := range grpSettings {
-		gsuc := ds.Groups.Update(groupKeys[idx], gs)
-
-		wg.Add(1)
-
-		go btchGrpSettingsMngProcess(gs, groupKeys[idx], wg, gsuc)
-	}
-
-	wg.Wait()
-
-	logger.Debug("finished btchManageGrpSettings()")
+	grpSetting.WhoCanApproveMembers = validTxt
+	logger.Debug("finished bmnggApproveMemberVal()")
 	return nil
 }
 
-func btchGrpSettingsMngProcess(grpSetting *gset.Groups, groupKey string, wg *sync.WaitGroup, gsuc *gset.GroupsUpdateCall) {
-	logger.Debugw("starting btchGrpSettingsMngProcess()",
-		"groupKey", groupKey)
-
-	defer wg.Done()
-
-	b := backoff.NewExponentialBackOff()
-	b.MaxElapsedTime = 32 * time.Second
-
-	err := backoff.Retry(func() error {
-		var err error
-		_, err = gsuc.Do()
-		if err == nil {
-			logger.Infof(cmn.InfoGroupSettingsChanged, groupKey)
-			fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoGroupSettingsChanged, groupKey)))
-			return err
-		}
-		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(fmt.Errorf(cmn.ErrBatchGroupSettings, err.Error(), groupKey))
-		}
-		// Log the retries
-		logger.Warnw(err.Error(),
-			"retrying", b.GetElapsedTime().String(),
-			"group", groupKey)
-		return fmt.Errorf(cmn.ErrBatchGroupSettings, err.Error(), groupKey)
-	}, b)
+func bmnggAssistContentVal(grpSetting *gset.Groups, attrName string, attrValue string) error {
+	logger.Debug("starting bmnggAssistContentVal()")
+	validTxt, err := grpset.ValidateGroupSettingValue(grpset.AssistContentMap, attrName, attrValue)
 	if err != nil {
-		// Log final error
-		logger.Error(err)
-		fmt.Println(cmn.GminMessage(err.Error()))
-	}
-	logger.Debug("finished btchGrpSettingsMngProcess()")
-}
-
-func btchMngGrpSettingsProcessCSV(ds *gset.Service, filePath string) error {
-	logger.Debugw("starting btchMngGrpSettingsProcessCSV()",
-		"filePath", filePath)
-
-	var (
-		iSlice      []interface{}
-		hdrMap      = map[int]string{}
-		groupKeys   []string
-		grpSettings []*gset.Groups
-	)
-
-	csvfile, err := os.Open(filePath)
-	if err != nil {
-		logger.Error(err)
 		return err
 	}
-	defer csvfile.Close()
-
-	r := csv.NewReader(csvfile)
-
-	count := 0
-	for {
-		record, err := r.Read()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			logger.Error(err)
-			return err
-		}
-
-		if count == 0 {
-			iSlice = make([]interface{}, len(record))
-			for idx, value := range record {
-				iSlice[idx] = value
-			}
-			hdrMap = cmn.ProcessHeader(iSlice)
-			err = cmn.ValidateHeader(hdrMap, grpset.GroupSettingsAttrMap)
-			if err != nil {
-				logger.Error(err)
-				return err
-			}
-			count = count + 1
-			continue
-		}
-
-		for idx, value := range record {
-			iSlice[idx] = value
-		}
-
-		gsVar, groupKey, err := btchMngProcessGrpSettings(hdrMap, iSlice)
-		if err != nil {
-			logger.Error(err)
-			return err
-		}
-
-		groupKeys = append(groupKeys, groupKey)
-		grpSettings = append(grpSettings, gsVar)
-		count = count + 1
-	}
-
-	err = btchManageGrpSettings(ds, groupKeys, grpSettings)
-	if err != nil {
-		logger.Error(err)
-		return err
-	}
-	logger.Debug("finished btchMngGrpSettingsProcessCSV()")
+	grpSetting.WhoCanAssistContent = validTxt
+	logger.Debug("finished bmnggAssistContentVal()")
 	return nil
 }
 
-func btchMngGrpSettingsProcessJSON(ds *gset.Service, filePath string, scanner *bufio.Scanner) error {
-	logger.Debugw("starting btchUpdMemProcessJSON()",
-		"filePath", filePath)
-
-	var (
-		err         error
-		groupKeys   []string
-		grpSettings []*gset.Groups
-	)
-
-	if filePath != "" {
-		file, err := os.Open(filePath)
-		if err != nil {
-			logger.Error(err)
-			return err
-		}
-		defer file.Close()
-
-		scanner = bufio.NewScanner(file)
-	}
-
-	for scanner.Scan() {
-		jsonData := scanner.Text()
-
-		gsVar, groupKey, err := btchMngJSONGrpSettings(ds, jsonData)
-		if err != nil {
-			logger.Error(err)
-			return err
-		}
-
-		groupKeys = append(groupKeys, groupKey)
-		grpSettings = append(grpSettings, gsVar)
-	}
-	err = scanner.Err()
+func bmnggBanUserVal(grpSetting *gset.Groups, attrName string, attrValue string) error {
+	logger.Debug("starting bmnggBanUserVal()")
+	validTxt, err := grpset.ValidateGroupSettingValue(grpset.BanUserMap, attrName, attrValue)
 	if err != nil {
-		logger.Error(err)
 		return err
 	}
-
-	err = btchManageGrpSettings(ds, groupKeys, grpSettings)
-	if err != nil {
-		logger.Error(err)
-		return err
-	}
-	logger.Debug("finished btchUpdMemProcessJSON()")
+	grpSetting.WhoCanBanUsers = validTxt
+	logger.Debug("finished bmnggBanUserVal()")
 	return nil
 }
 
-func btchMngGrpSettingsProcessSheet(ds *gset.Service, sheetID string) error {
-	logger.Debugw("starting btchMngGrpSettingsProcessSheet()",
-		"sheetID", sheetID)
-
-	var (
-		err         error
-		groupKeys   []string
-		grpSettings []*gset.Groups
-	)
-
-	if sheetRange == "" {
-		err := errors.New(cmn.ErrNoSheetRange)
-		logger.Error(err)
-		return err
-	}
-
-	ss, err := cmn.CreateSheetService(sheet.DriveReadonlyScope)
+func bmnggContactOwnerVal(grpSetting *gset.Groups, attrName string, attrValue string) error {
+	logger.Debug("starting bmnggContactOwnerVal()")
+	validTxt, err := grpset.ValidateGroupSettingValue(grpset.ContactOwnerMap, attrName, attrValue)
 	if err != nil {
-		logger.Error(err)
 		return err
 	}
-
-	ssvgc := ss.Spreadsheets.Values.Get(sheetID, sheetRange)
-	sValRange, err := ssvgc.Do()
-	if err != nil {
-		logger.Error(err)
-		return err
-	}
-
-	if len(sValRange.Values) == 0 {
-		err = fmt.Errorf(cmn.ErrNoSheetDataFound, sheetID, sheetRange)
-		logger.Error(err)
-		return err
-	}
-
-	hdrMap := cmn.ProcessHeader(sValRange.Values[0])
-	err = cmn.ValidateHeader(hdrMap, grpset.GroupSettingsAttrMap)
-	if err != nil {
-		logger.Error(err)
-		return err
-	}
-
-	for idx, row := range sValRange.Values {
-		if idx == 0 {
-			continue
-		}
-
-		gsVar, groupKey, err := btchMngProcessGrpSettings(hdrMap, row)
-		if err != nil {
-			logger.Error(err)
-			return err
-		}
-
-		groupKeys = append(groupKeys, groupKey)
-		grpSettings = append(grpSettings, gsVar)
-	}
-
-	err = btchManageGrpSettings(ds, groupKeys, grpSettings)
-	if err != nil {
-		logger.Error(err)
-		return err
-	}
-	logger.Debug("finished btchMngGrpSettingsProcessSheet()")
+	grpSetting.WhoCanContactOwner = validTxt
+	logger.Debug("finished bmnggContactOwnerVal()")
 	return nil
 }
 
-func btchMngProcessGrpSettings(hdrMap map[int]string, gsData []interface{}) (*gset.Groups, string, error) {
-	logger.Debugw("starting btchMngProcessGrpSettings()",
+func bmnggDiscoverGroupVal(grpSettings *gset.Groups, attrName string, attrValue string) error {
+	logger.Debug("starting bmnggDiscoverGroupVal()")
+	validTxt, err := grpset.ValidateGroupSettingValue(grpset.DiscoverGroupMap, attrName, discoverGroup)
+	if err != nil {
+		return err
+	}
+	grpSettings.WhoCanDiscoverGroup = validTxt
+	logger.Debug("finished bmnggDiscoverGroupVal()")
+	return nil
+}
+
+func bmnggFromFileFactory(hdrMap map[int]string, gsData []interface{}) (*gset.Groups, string, error) {
+	logger.Debugw("starting bmnggFromFileFactory()",
 		"hdrMap", hdrMap)
 
 	var (
@@ -485,7 +252,7 @@ func btchMngProcessGrpSettings(hdrMap map[int]string, gsData []interface{}) (*gs
 			grpSetting.CustomFooterText = footerText
 		}
 		if lowerAttrName == "customreplyto" {
-			err := bmgsReplyEmailVal(grpSetting, attrVal)
+			err := bmnggReplyEmailVal(grpSetting, attrVal)
 			if err != nil {
 				return nil, "", err
 			}
@@ -544,19 +311,19 @@ func btchMngProcessGrpSettings(hdrMap map[int]string, gsData []interface{}) (*gs
 			}
 		}
 		if lowerAttrName == "messagemoderationlevel" {
-			err := bmgsMessageModVal(grpSetting, attrName, attrVal)
+			err := bmnggMessageModVal(grpSetting, attrName, attrVal)
 			if err != nil {
 				return nil, "", err
 			}
 		}
 		if lowerAttrName == "primarylanguage" {
-			err := bmgsLanguageVal(grpSetting, attrName, attrVal)
+			err := bmnggLanguageVal(grpSetting, attrName, attrVal)
 			if err != nil {
 				return nil, "", err
 			}
 		}
 		if lowerAttrName == "replyto" {
-			err := bmgsReplyToVal(grpSetting, attrName, attrVal)
+			err := bmnggReplyToVal(grpSetting, attrName, attrVal)
 			if err != nil {
 				return nil, "", err
 			}
@@ -570,222 +337,455 @@ func btchMngProcessGrpSettings(hdrMap map[int]string, gsData []interface{}) (*gs
 			}
 		}
 		if lowerAttrName == "spammoderationlevel" {
-			err := bmgsSpamModVal(grpSetting, attrName, attrVal)
+			err := bmnggSpamModVal(grpSetting, attrName, attrVal)
 			if err != nil {
 				return nil, "", err
 			}
 		}
 		if lowerAttrName == "whocanapprovemembers" {
-			err := bmgsApproveMemberVal(grpSetting, attrName, attrVal)
+			err := bmnggApproveMemberVal(grpSetting, attrName, attrVal)
 			if err != nil {
 				return nil, "", err
 			}
 		}
 		if lowerAttrName == "whocanassistcontent" {
-			err := bmgsAssistContentVal(grpSetting, attrName, attrVal)
+			err := bmnggAssistContentVal(grpSetting, attrName, attrVal)
 			if err != nil {
 				return nil, "", err
 			}
 		}
 		if lowerAttrName == "whocanbanusers" {
-			err := bmgsBanUserVal(grpSetting, attrName, attrVal)
+			err := bmnggBanUserVal(grpSetting, attrName, attrVal)
 			if err != nil {
 				return nil, "", err
 			}
 		}
 		if lowerAttrName == "whocancontactowner" {
-			err := bmgsContactOwnerVal(grpSetting, attrName, attrVal)
+			err := bmnggContactOwnerVal(grpSetting, attrName, attrVal)
 			if err != nil {
 				return nil, "", err
 			}
 		}
 		if lowerAttrName == "whocandiscovergroup" {
-			err := bmgsDiscoverGroupVal(grpSetting, attrName, attrVal)
+			err := bmnggDiscoverGroupVal(grpSetting, attrName, attrVal)
 			if err != nil {
 				return nil, "", err
 			}
 		}
 		if lowerAttrName == "whocanjoin" {
-			err := bmgsJoinVal(grpSetting, attrName, attrVal)
+			err := bmnggJoinVal(grpSetting, attrName, attrVal)
 			if err != nil {
 				return nil, "", err
 			}
 		}
 		if lowerAttrName == "whocanleavegroup" {
-			err := bmgsLeaveVal(grpSetting, attrName, attrVal)
+			err := bmnggLeaveVal(grpSetting, attrName, attrVal)
 			if err != nil {
 				return nil, "", err
 			}
 		}
 		if lowerAttrName == "whocanmoderatecontent" {
-			err := bmgsModContentVal(grpSetting, attrName, attrVal)
+			err := bmnggModContentVal(grpSetting, attrName, attrVal)
 			if err != nil {
 				return nil, "", err
 			}
 		}
 		if lowerAttrName == "whocanmoderatemembers" {
-			err := bmgsModMemberVal(grpSetting, attrName, attrVal)
+			err := bmnggModMemberVal(grpSetting, attrName, attrVal)
 			if err != nil {
 				return nil, "", err
 			}
 		}
 		if lowerAttrName == "whocanpostmessage" {
-			err := bmgsPostMessageVal(grpSetting, attrName, attrVal)
+			err := bmnggPostMessageVal(grpSetting, attrName, attrVal)
 			if err != nil {
 				return nil, "", err
 			}
 		}
 		if lowerAttrName == "whocanviewgroup" {
-			err := bmgsViewGroupVal(grpSetting, attrName, attrVal)
+			err := bmnggViewGroupVal(grpSetting, attrName, attrVal)
 			if err != nil {
 				return nil, "", err
 			}
 		}
 		if lowerAttrName == "whocanviewmembership" {
-			err := bmgsViewMembershipVal(grpSetting, attrName, attrVal)
+			err := bmnggViewMembershipVal(grpSetting, attrName, attrVal)
 			if err != nil {
 				return nil, "", err
 			}
 		}
 	}
-	logger.Debug("finished btchMngProcessGrpSettings()")
+	logger.Debug("finished bmnggFromFileFactory()")
 	return grpSetting, groupKey, nil
 }
 
-func bmgsApproveMemberVal(grpSetting *gset.Groups, attrName string, attrValue string) error {
-	logger.Debug("starting bmgsApproveMemberVal()")
-	validTxt, err := grpset.ValidateGroupSettingValue(grpset.ApproveMemberMap, attrName, attrValue)
-	if err != nil {
-		return err
+func bmnggFromJSONFactory(ds *gset.Service, jsonData string) (*gset.Groups, string, error) {
+	logger.Debugw("starting bmnggFromJSONFactory()",
+		"jsonData", jsonData)
+
+	var (
+		grpSettings *gset.Groups
+		grpKey      = grpset.Key{}
+	)
+
+	grpSettings = new(gset.Groups)
+	jsonBytes := []byte(jsonData)
+
+	if !json.Valid(jsonBytes) {
+		logger.Error(cmn.ErrInvalidJSONAttr)
+		return nil, "", errors.New(cmn.ErrInvalidJSONAttr)
 	}
-	grpSetting.WhoCanApproveMembers = validTxt
-	logger.Debug("finished bmgsApproveMemberVal()")
-	return nil
+
+	outStr, err := cmn.ParseInputAttrs(jsonBytes)
+	if err != nil {
+		logger.Error(err)
+		return nil, "", err
+	}
+
+	err = cmn.ValidateInputAttrs(outStr, grpset.GroupSettingsAttrMap)
+	if err != nil {
+		logger.Error(err)
+		return nil, "", err
+	}
+
+	err = json.Unmarshal(jsonBytes, &grpKey)
+	if err != nil {
+		logger.Error(err)
+		return nil, "", err
+	}
+
+	if grpKey.GroupKey == "" {
+		err = errors.New(cmn.ErrNoJSONGroupKey)
+		logger.Error(err)
+		return nil, "", err
+	}
+
+	err = json.Unmarshal(jsonBytes, &grpSettings)
+	if err != nil {
+		logger.Error(err)
+		return nil, "", err
+	}
+	logger.Debug("finished bmnggFromJSONFactory()")
+	return grpSettings, grpKey.GroupKey, nil
 }
 
-func bmgsAssistContentVal(grpSetting *gset.Groups, attrName string, attrValue string) error {
-	logger.Debug("starting bmgsAssistContentVal()")
-	validTxt, err := grpset.ValidateGroupSettingValue(grpset.AssistContentMap, attrName, attrValue)
-	if err != nil {
-		return err
-	}
-	grpSetting.WhoCanAssistContent = validTxt
-	logger.Debug("finished bmgsAssistContentVal()")
-	return nil
-}
-
-func bmgsBanUserVal(grpSetting *gset.Groups, attrName string, attrValue string) error {
-	logger.Debug("starting bmgsBanUserVal()")
-	validTxt, err := grpset.ValidateGroupSettingValue(grpset.BanUserMap, attrName, attrValue)
-	if err != nil {
-		return err
-	}
-	grpSetting.WhoCanBanUsers = validTxt
-	logger.Debug("finished bmgsBanUserVal()")
-	return nil
-}
-
-func bmgsContactOwnerVal(grpSetting *gset.Groups, attrName string, attrValue string) error {
-	logger.Debug("starting bmgsContactOwnerVal()")
-	validTxt, err := grpset.ValidateGroupSettingValue(grpset.ContactOwnerMap, attrName, attrValue)
-	if err != nil {
-		return err
-	}
-	grpSetting.WhoCanContactOwner = validTxt
-	logger.Debug("finished bmgsContactOwnerVal()")
-	return nil
-}
-
-func bmgsDiscoverGroupVal(grpSettings *gset.Groups, attrName string, attrValue string) error {
-	logger.Debug("starting bmgsDiscoverGroupVal()")
-	validTxt, err := grpset.ValidateGroupSettingValue(grpset.DiscoverGroupMap, attrName, discoverGroup)
-	if err != nil {
-		return err
-	}
-	grpSettings.WhoCanDiscoverGroup = validTxt
-	logger.Debug("finished bmgsDiscoverGroupVal()")
-	return nil
-}
-
-func bmgsJoinVal(grpSetting *gset.Groups, attrName string, attrValue string) error {
-	logger.Debug("starting bmgsJoinVal()")
+func bmnggJoinVal(grpSetting *gset.Groups, attrName string, attrValue string) error {
+	logger.Debug("starting bmnggJoinVal()")
 	validTxt, err := grpset.ValidateGroupSettingValue(grpset.JoinMap, attrName, attrValue)
 	if err != nil {
 		return err
 	}
 	grpSetting.WhoCanJoin = validTxt
-	logger.Debug("finished bmgsJoinVal()")
+	logger.Debug("finished bmnggJoinVal()")
 	return nil
 }
 
-func bmgsLanguageVal(grpSetting *gset.Groups, attrName string, attrValue string) error {
-	logger.Debug("starting bmgsLanguageVal()")
+func bmnggLanguageVal(grpSetting *gset.Groups, attrName string, attrValue string) error {
+	logger.Debug("starting bmnggLanguageVal()")
 	validTxt, err := grpset.ValidateGroupSettingValue(grpset.LanguageMap, attrName, attrValue)
 	if err != nil {
 		return err
 	}
 	grpSetting.PrimaryLanguage = validTxt
-	logger.Debug("finished bmgsLanguageVal()")
+	logger.Debug("finished bmnggLanguageVal()")
 	return nil
 }
 
-func bmgsLeaveVal(grpSetting *gset.Groups, attrName string, attrValue string) error {
-	logger.Debug("starting bmgsLeaveVal()")
+func bmnggLeaveVal(grpSetting *gset.Groups, attrName string, attrValue string) error {
+	logger.Debug("starting bmnggLeaveVal()")
 	validTxt, err := grpset.ValidateGroupSettingValue(grpset.LeaveMap, attrName, attrValue)
 	if err != nil {
 		return err
 	}
 	grpSetting.WhoCanLeaveGroup = validTxt
-	logger.Debug("finished bmgsLeaveVal()")
+	logger.Debug("finished bmnggLeaveVal()")
 	return nil
 }
 
-func bmgsMessageModVal(grpSetting *gset.Groups, attrName string, attrValue string) error {
-	logger.Debug("starting bmgsMessageModVal()")
+func bmnggMessageModVal(grpSetting *gset.Groups, attrName string, attrValue string) error {
+	logger.Debug("starting bmnggMessageModVal()")
 	validTxt, err := grpset.ValidateGroupSettingValue(grpset.MessageModMap, attrName, attrValue)
 	if err != nil {
 		return err
 	}
 	grpSetting.MessageModerationLevel = validTxt
-	logger.Debug("finished bmgsMessageModVal()")
+	logger.Debug("finished bmnggMessageModVal()")
 	return nil
 }
 
-func bmgsModContentVal(grpSetting *gset.Groups, attrName string, attrValue string) error {
-	logger.Debug("starting bmgsModContentVal()")
+func bmnggModContentVal(grpSetting *gset.Groups, attrName string, attrValue string) error {
+	logger.Debug("starting bmnggModContentVal()")
 	validTxt, err := grpset.ValidateGroupSettingValue(grpset.ModContentMap, attrName, attrValue)
 	if err != nil {
 		return err
 	}
 	grpSetting.WhoCanModerateContent = validTxt
-	logger.Debug("finished bmgsModContentVal()")
+	logger.Debug("finished bmnggModContentVal()")
 	return nil
 }
 
-func bmgsModMemberVal(grpSetting *gset.Groups, attrName string, attrValue string) error {
-	logger.Debug("starting bmgsModMemberVal()")
+func bmnggModMemberVal(grpSetting *gset.Groups, attrName string, attrValue string) error {
+	logger.Debug("starting bmnggModMemberVal()")
 	validTxt, err := grpset.ValidateGroupSettingValue(grpset.ModMemberMap, attrName, attrValue)
 	if err != nil {
 		return err
 	}
 	grpSetting.WhoCanModerateMembers = validTxt
-	logger.Debug("finished bmgsModMemberVal()")
+	logger.Debug("finished bmnggModMemberVal()")
 	return nil
 }
 
-func bmgsPostMessageVal(grpSettings *gset.Groups, attrName string, attrValue string) error {
-	logger.Debug("starting bmgsPostMessageVal()")
+func bmnggPerformUpdate(grpSetting *gset.Groups, groupKey string, wg *sync.WaitGroup, gsuc *gset.GroupsUpdateCall) {
+	logger.Debugw("starting bmnggPerformUpdate()",
+		"groupKey", groupKey)
+
+	defer wg.Done()
+
+	b := backoff.NewExponentialBackOff()
+	b.MaxElapsedTime = 32 * time.Second
+
+	err := backoff.Retry(func() error {
+		var err error
+		_, err = gsuc.Do()
+		if err == nil {
+			logger.Infof(cmn.InfoGroupSettingsChanged, groupKey)
+			fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoGroupSettingsChanged, groupKey)))
+			return err
+		}
+		if !cmn.IsErrRetryable(err) {
+			return backoff.Permanent(fmt.Errorf(cmn.ErrBatchGroupSettings, err.Error(), groupKey))
+		}
+		// Log the retries
+		logger.Warnw(err.Error(),
+			"retrying", b.GetElapsedTime().String(),
+			"group", groupKey)
+		return fmt.Errorf(cmn.ErrBatchGroupSettings, err.Error(), groupKey)
+	}, b)
+	if err != nil {
+		// Log final error
+		logger.Error(err)
+		fmt.Println(cmn.GminMessage(err.Error()))
+	}
+	logger.Debug("finished bmnggPerformUpdate()")
+}
+
+func bmnggPostMessageVal(grpSettings *gset.Groups, attrName string, attrValue string) error {
+	logger.Debug("starting bmnggPostMessageVal()")
 	validTxt, err := grpset.ValidateGroupSettingValue(grpset.PostMessageMap, attrName, attrValue)
 	if err != nil {
 		return err
 	}
 	grpSettings.WhoCanPostMessage = validTxt
-	logger.Debug("finished bmgsPostMessageVal()")
+	logger.Debug("finished bmnggPostMessageVal()")
 	return nil
 }
 
-func bmgsReplyEmailVal(grpSettings *gset.Groups, attrValue string) error {
-	logger.Debug("starting bmgsReplyEmailVal()")
+func bmnggProcessCSVFile(ds *gset.Service, filePath string) error {
+	logger.Debugw("starting bmnggProcessCSVFile()",
+		"filePath", filePath)
+
+	var (
+		iSlice      []interface{}
+		hdrMap      = map[int]string{}
+		groupKeys   []string
+		grpSettings []*gset.Groups
+	)
+
+	csvfile, err := os.Open(filePath)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	defer csvfile.Close()
+
+	r := csv.NewReader(csvfile)
+
+	count := 0
+	for {
+		record, err := r.Read()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			logger.Error(err)
+			return err
+		}
+
+		if count == 0 {
+			iSlice = make([]interface{}, len(record))
+			for idx, value := range record {
+				iSlice[idx] = value
+			}
+			hdrMap = cmn.ProcessHeader(iSlice)
+			err = cmn.ValidateHeader(hdrMap, grpset.GroupSettingsAttrMap)
+			if err != nil {
+				logger.Error(err)
+				return err
+			}
+			count = count + 1
+			continue
+		}
+
+		for idx, value := range record {
+			iSlice[idx] = value
+		}
+
+		gsVar, groupKey, err := bmnggFromFileFactory(hdrMap, iSlice)
+		if err != nil {
+			logger.Error(err)
+			return err
+		}
+
+		groupKeys = append(groupKeys, groupKey)
+		grpSettings = append(grpSettings, gsVar)
+		count = count + 1
+	}
+
+	err = bmnggProcessObjects(ds, groupKeys, grpSettings)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	logger.Debug("finished bmnggProcessCSVFile()")
+	return nil
+}
+
+func bmnggProcessGSheet(ds *gset.Service, sheetID string) error {
+	logger.Debugw("starting bmnggProcessGSheet()",
+		"sheetID", sheetID)
+
+	var (
+		err         error
+		groupKeys   []string
+		grpSettings []*gset.Groups
+	)
+
+	if sheetRange == "" {
+		err := errors.New(cmn.ErrNoSheetRange)
+		logger.Error(err)
+		return err
+	}
+
+	ss, err := cmn.CreateSheetService(sheet.DriveReadonlyScope)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+
+	ssvgc := ss.Spreadsheets.Values.Get(sheetID, sheetRange)
+	sValRange, err := ssvgc.Do()
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+
+	if len(sValRange.Values) == 0 {
+		err = fmt.Errorf(cmn.ErrNoSheetDataFound, sheetID, sheetRange)
+		logger.Error(err)
+		return err
+	}
+
+	hdrMap := cmn.ProcessHeader(sValRange.Values[0])
+	err = cmn.ValidateHeader(hdrMap, grpset.GroupSettingsAttrMap)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+
+	for idx, row := range sValRange.Values {
+		if idx == 0 {
+			continue
+		}
+
+		gsVar, groupKey, err := bmnggFromFileFactory(hdrMap, row)
+		if err != nil {
+			logger.Error(err)
+			return err
+		}
+
+		groupKeys = append(groupKeys, groupKey)
+		grpSettings = append(grpSettings, gsVar)
+	}
+
+	err = bmnggProcessObjects(ds, groupKeys, grpSettings)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	logger.Debug("finished bmnggProcessGSheet()")
+	return nil
+}
+
+func bmnggProcessJSON(ds *gset.Service, filePath string, scanner *bufio.Scanner) error {
+	logger.Debugw("starting bmnggProcessJSON()",
+		"filePath", filePath)
+
+	var (
+		err         error
+		groupKeys   []string
+		grpSettings []*gset.Groups
+	)
+
+	if filePath != "" {
+		file, err := os.Open(filePath)
+		if err != nil {
+			logger.Error(err)
+			return err
+		}
+		defer file.Close()
+
+		scanner = bufio.NewScanner(file)
+	}
+
+	for scanner.Scan() {
+		jsonData := scanner.Text()
+
+		gsVar, groupKey, err := bmnggFromJSONFactory(ds, jsonData)
+		if err != nil {
+			logger.Error(err)
+			return err
+		}
+
+		groupKeys = append(groupKeys, groupKey)
+		grpSettings = append(grpSettings, gsVar)
+	}
+	err = scanner.Err()
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+
+	err = bmnggProcessObjects(ds, groupKeys, grpSettings)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	logger.Debug("finished bmnggProcessJSON()")
+	return nil
+}
+
+func bmnggProcessObjects(ds *gset.Service, groupKeys []string, grpSettings []*gset.Groups) error {
+	logger.Debugw("starting bmnggProcessObjects()",
+		"groupKeys", groupKeys)
+
+	wg := new(sync.WaitGroup)
+
+	for idx, gs := range grpSettings {
+		gsuc := ds.Groups.Update(groupKeys[idx], gs)
+
+		wg.Add(1)
+
+		go bmnggPerformUpdate(gs, groupKeys[idx], wg, gsuc)
+	}
+
+	wg.Wait()
+
+	logger.Debug("finished bmnggProcessObjects()")
+	return nil
+}
+
+func bmnggReplyEmailVal(grpSettings *gset.Groups, attrValue string) error {
+	logger.Debug("starting bmnggReplyEmailVal()")
 	if attrValue == "" {
 		grpSettings.CustomReplyTo = attrValue
 		grpSettings.ForceSendFields = append(grpSettings.ForceSendFields, "CustomReplyTo")
@@ -797,51 +797,51 @@ func bmgsReplyEmailVal(grpSettings *gset.Groups, attrValue string) error {
 		return err
 	}
 	grpSettings.CustomReplyTo = attrValue
-	logger.Debug("finished bmgsReplyEmailVal()")
+	logger.Debug("finished bmnggReplyEmailVal()")
 	return nil
 }
 
-func bmgsReplyToVal(grpSetting *gset.Groups, attrName string, attrValue string) error {
-	logger.Debug("starting bmgsReplyToVal()")
+func bmnggReplyToVal(grpSetting *gset.Groups, attrName string, attrValue string) error {
+	logger.Debug("starting bmnggReplyToVal()")
 	validTxt, err := grpset.ValidateGroupSettingValue(grpset.ReplyToMap, attrName, attrValue)
 	if err != nil {
 		return err
 	}
 	grpSetting.ReplyTo = validTxt
-	logger.Debug("finished bmgsReplyToVal()")
+	logger.Debug("finished bmnggReplyToVal()")
 	return nil
 }
 
-func bmgsSpamModVal(grpSetting *gset.Groups, attrName string, attrValue string) error {
-	logger.Debug("starting bmgsSpamModVal()")
+func bmnggSpamModVal(grpSetting *gset.Groups, attrName string, attrValue string) error {
+	logger.Debug("starting bmnggSpamModVal()")
 	validTxt, err := grpset.ValidateGroupSettingValue(grpset.SpamModMap, attrName, attrValue)
 	if err != nil {
 		return err
 	}
 	grpSetting.SpamModerationLevel = validTxt
-	logger.Debug("finished bmgsSpamModVal()")
+	logger.Debug("finished bmnggSpamModVal()")
 	return nil
 }
 
-func bmgsViewGroupVal(grpSetting *gset.Groups, attrName string, attrValue string) error {
-	logger.Debug("starting bmgsViewGroupVal()")
+func bmnggViewGroupVal(grpSetting *gset.Groups, attrName string, attrValue string) error {
+	logger.Debug("starting bmnggViewGroupVal()")
 	validTxt, err := grpset.ValidateGroupSettingValue(grpset.ViewGroupMap, attrName, attrValue)
 	if err != nil {
 		return err
 	}
 	grpSetting.WhoCanViewGroup = validTxt
-	logger.Debug("finished bmgsViewGroupVal()")
+	logger.Debug("finished bmnggViewGroupVal()")
 	return nil
 }
 
-func bmgsViewMembershipVal(grpSetting *gset.Groups, attrName string, attrValue string) error {
-	logger.Debug("starting bmgsViewMembershipVal()")
+func bmnggViewMembershipVal(grpSetting *gset.Groups, attrName string, attrValue string) error {
+	logger.Debug("starting bmnggViewMembershipVal()")
 	validTxt, err := grpset.ValidateGroupSettingValue(grpset.ViewMembershipMap, attrName, attrValue)
 	if err != nil {
 		return err
 	}
 	grpSetting.WhoCanViewMembership = validTxt
-	logger.Debug("finished bmgsViewMembershipVal()")
+	logger.Debug("finished bmnggViewMembershipVal()")
 	return nil
 }
 

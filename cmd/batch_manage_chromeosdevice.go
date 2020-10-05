@@ -114,19 +114,19 @@ func doBatchMngCrOSDev(cmd *cobra.Command, args []string) error {
 
 	switch {
 	case lwrFmt == "csv":
-		err := btchMngCrOSDevProcessCSV(ds, inputFile)
+		err := bmngcProcessCSVFile(ds, inputFile)
 		if err != nil {
 			logger.Error(err)
 			return err
 		}
 	case lwrFmt == "json":
-		err := btchMngCrOSDevProcessJSON(ds, inputFile, scanner)
+		err := bmngcProcessJSON(ds, inputFile, scanner)
 		if err != nil {
 			logger.Error(err)
 			return err
 		}
 	case lwrFmt == "gsheet":
-		err := btchMngCrOSDevProcessSheet(ds, inputFile)
+		err := bmngcProcessGSheet(ds, inputFile)
 		if err != nil {
 			logger.Error(err)
 			return err
@@ -136,8 +136,52 @@ func doBatchMngCrOSDev(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func btchMngJSONCrOSDev(ds *admin.Service, jsonData string) (cdevs.ManagedDevice, error) {
-	logger.Debugw("starting btchMngJSONCrOSDev()",
+func bmngcFromFileFactory(hdrMap map[int]string, cdevData []interface{}) (cdevs.ManagedDevice, error) {
+	logger.Debugw("starting bmngcFromFileFactory()",
+		"hdrMap", hdrMap)
+
+	managedDev := cdevs.ManagedDevice{}
+
+	for idx, attr := range cdevData {
+		attrName := hdrMap[idx]
+		attrVal := fmt.Sprintf("%v", attr)
+		lowerAttrVal := strings.ToLower(fmt.Sprintf("%v", attr))
+
+		switch {
+		case attrName == "action":
+			ok := cmn.SliceContainsStr(cdevs.ValidActions, lowerAttrVal)
+			if !ok {
+				err := fmt.Errorf(cmn.ErrInvalidActionType, attrVal)
+				logger.Error(err)
+				return managedDev, err
+			}
+			managedDev.Action = lowerAttrVal
+		case attrName == "deviceId":
+			managedDev.DeviceId = attrVal
+		case attrName == "deprovisionReason":
+			if lowerAttrVal != "" {
+				ok := cmn.SliceContainsStr(cdevs.ValidDeprovisionReasons, lowerAttrVal)
+				if !ok {
+					err := fmt.Errorf(cmn.ErrInvalidDeprovisionReason, attrVal)
+					logger.Error(err)
+					return managedDev, err
+				}
+				managedDev.DeprovisionReason = lowerAttrVal
+			}
+		}
+	}
+
+	if managedDev.Action == "deprovision" && managedDev.DeprovisionReason == "" {
+		err := errors.New(cmn.ErrNoDeprovisionReason)
+		logger.Error(err)
+		return managedDev, err
+	}
+	logger.Debug("finished bmngcFromFileFactory()")
+	return managedDev, nil
+}
+
+func bmngcFromJSONFactory(ds *admin.Service, jsonData string) (cdevs.ManagedDevice, error) {
+	logger.Debugw("starting bmngcFromJSONFactory()",
 		"jsonData", jsonData)
 
 	managedDev := cdevs.ManagedDevice{}
@@ -166,42 +210,12 @@ func btchMngJSONCrOSDev(ds *admin.Service, jsonData string) (cdevs.ManagedDevice
 		return managedDev, err
 	}
 
-	logger.Debug("finished btchMngJSONCrOSDev()")
+	logger.Debug("finished bmngcFromJSONFactory()")
 	return managedDev, nil
 }
 
-func btchMngCrOSDevs(ds *admin.Service, managedDevs []cdevs.ManagedDevice) error {
-	logger.Debug("starting btchMngCrOSDevs()")
-
-	customerID, err := cfg.ReadConfigString("customerid")
-	if err != nil {
-		logger.Error(err)
-		return err
-	}
-
-	wg := new(sync.WaitGroup)
-
-	for _, md := range managedDevs {
-		devAction := admin.ChromeOsDeviceAction{}
-
-		devAction.Action = md.Action
-		devAction.DeprovisionReason = md.DeprovisionReason
-
-		cdac := ds.Chromeosdevices.Action(customerID, md.DeviceId, &devAction)
-
-		wg.Add(1)
-
-		go btchMngCrOSDevProcess(md.DeviceId, md.Action, wg, cdac)
-	}
-
-	wg.Wait()
-
-	logger.Debug("finished btchMngCrOSDevs()")
-	return nil
-}
-
-func btchMngCrOSDevProcess(deviceID string, action string, wg *sync.WaitGroup, cdac *admin.ChromeosdevicesActionCall) {
-	logger.Debugw("starting btchMngCrOSDevProcess()",
+func bmngcPerformAction(deviceID string, action string, wg *sync.WaitGroup, cdac *admin.ChromeosdevicesActionCall) {
+	logger.Debugw("starting bmngcPerformAction()",
 		"action", action,
 		"deviceID", deviceID)
 
@@ -232,11 +246,11 @@ func btchMngCrOSDevProcess(deviceID string, action string, wg *sync.WaitGroup, c
 		logger.Error(err)
 		fmt.Println(cmn.GminMessage(err.Error()))
 	}
-	logger.Debug("finished btchMngCrOSDevProcess()")
+	logger.Debug("finished bmngcPerformAction()")
 }
 
-func btchMngCrOSDevProcessCSV(ds *admin.Service, filePath string) error {
-	logger.Debugw("starting btchMngCrOSDevProcessCSV()",
+func bmngcProcessCSVFile(ds *admin.Service, filePath string) error {
+	logger.Debugw("starting bmngcProcessCSVFile()",
 		"filePath", filePath)
 
 	var (
@@ -284,7 +298,7 @@ func btchMngCrOSDevProcessCSV(ds *admin.Service, filePath string) error {
 			iSlice[idx] = value
 		}
 
-		mngCdevVar, err := btchMngProcessCrOSDev(hdrMap, iSlice)
+		mngCdevVar, err := bmngcFromFileFactory(hdrMap, iSlice)
 		if err != nil {
 			logger.Error(err)
 			return err
@@ -295,60 +309,17 @@ func btchMngCrOSDevProcessCSV(ds *admin.Service, filePath string) error {
 		count = count + 1
 	}
 
-	err = btchMngCrOSDevs(ds, managedDevs)
+	err = bmngcProcessObjects(ds, managedDevs)
 	if err != nil {
 		logger.Error(err)
 		return err
 	}
-	logger.Debug("finished btchMngCrOSDevProcessCSV()")
+	logger.Debug("finished bmngcProcessCSVFile()")
 	return nil
 }
 
-func btchMngCrOSDevProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner) error {
-	logger.Debugw("starting btchMngCrOSDevProcessJSON()",
-		"filePath", filePath)
-
-	var managedDevs []cdevs.ManagedDevice
-
-	if filePath != "" {
-		file, err := os.Open(filePath)
-		if err != nil {
-			logger.Error(err)
-			return err
-		}
-		defer file.Close()
-
-		scanner = bufio.NewScanner(file)
-	}
-
-	for scanner.Scan() {
-		jsonData := scanner.Text()
-
-		mngCdevVar, err := btchMngJSONCrOSDev(ds, jsonData)
-		if err != nil {
-			logger.Error(err)
-			return err
-		}
-
-		managedDevs = append(managedDevs, mngCdevVar)
-	}
-	err := scanner.Err()
-	if err != nil {
-		logger.Error(err)
-		return err
-	}
-
-	err = btchMngCrOSDevs(ds, managedDevs)
-	if err != nil {
-		logger.Error(err)
-		return err
-	}
-	logger.Debug("finished btchMngCrOSDevProcessJSON()")
-	return nil
-}
-
-func btchMngCrOSDevProcessSheet(ds *admin.Service, sheetID string) error {
-	logger.Debugw("starting btchMngCrOSDevProcessSheet()",
+func bmngcProcessGSheet(ds *admin.Service, sheetID string) error {
+	logger.Debugw("starting bmngcProcessGSheet()",
 		"sheetID", sheetID)
 
 	var managedDevs []cdevs.ManagedDevice
@@ -390,7 +361,7 @@ func btchMngCrOSDevProcessSheet(ds *admin.Service, sheetID string) error {
 			continue
 		}
 
-		mngCdevVar, err := btchMngProcessCrOSDev(hdrMap, row)
+		mngCdevVar, err := bmngcFromFileFactory(hdrMap, row)
 		if err != nil {
 			logger.Error(err)
 			return err
@@ -399,57 +370,86 @@ func btchMngCrOSDevProcessSheet(ds *admin.Service, sheetID string) error {
 		managedDevs = append(managedDevs, mngCdevVar)
 	}
 
-	err = btchMngCrOSDevs(ds, managedDevs)
+	err = bmngcProcessObjects(ds, managedDevs)
 	if err != nil {
 		logger.Error(err)
 		return err
 	}
-	logger.Debug("finished btchMngCrOSDevProcessSheet()")
+	logger.Debug("finished bmngcProcessGSheet()")
 	return nil
 }
 
-func btchMngProcessCrOSDev(hdrMap map[int]string, cdevData []interface{}) (cdevs.ManagedDevice, error) {
-	logger.Debugw("starting btchMngProcessCrOSDev()",
-		"hdrMap", hdrMap)
+func bmngcProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner) error {
+	logger.Debugw("starting bmngcProcessJSON()",
+		"filePath", filePath)
 
-	managedDev := cdevs.ManagedDevice{}
+	var managedDevs []cdevs.ManagedDevice
 
-	for idx, attr := range cdevData {
-		attrName := hdrMap[idx]
-		attrVal := fmt.Sprintf("%v", attr)
-		lowerAttrVal := strings.ToLower(fmt.Sprintf("%v", attr))
-
-		switch {
-		case attrName == "action":
-			ok := cmn.SliceContainsStr(cdevs.ValidActions, lowerAttrVal)
-			if !ok {
-				err := fmt.Errorf(cmn.ErrInvalidActionType, attrVal)
-				logger.Error(err)
-				return managedDev, err
-			}
-			managedDev.Action = lowerAttrVal
-		case attrName == "deviceId":
-			managedDev.DeviceId = attrVal
-		case attrName == "deprovisionReason":
-			if lowerAttrVal != "" {
-				ok := cmn.SliceContainsStr(cdevs.ValidDeprovisionReasons, lowerAttrVal)
-				if !ok {
-					err := fmt.Errorf(cmn.ErrInvalidDeprovisionReason, attrVal)
-					logger.Error(err)
-					return managedDev, err
-				}
-				managedDev.DeprovisionReason = lowerAttrVal
-			}
+	if filePath != "" {
+		file, err := os.Open(filePath)
+		if err != nil {
+			logger.Error(err)
+			return err
 		}
+		defer file.Close()
+
+		scanner = bufio.NewScanner(file)
 	}
 
-	if managedDev.Action == "deprovision" && managedDev.DeprovisionReason == "" {
-		err := errors.New(cmn.ErrNoDeprovisionReason)
-		logger.Error(err)
-		return managedDev, err
+	for scanner.Scan() {
+		jsonData := scanner.Text()
+
+		mngCdevVar, err := bmngcFromJSONFactory(ds, jsonData)
+		if err != nil {
+			logger.Error(err)
+			return err
+		}
+
+		managedDevs = append(managedDevs, mngCdevVar)
 	}
-	logger.Debug("finished btchMngProcessCrOSDev()")
-	return managedDev, nil
+	err := scanner.Err()
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+
+	err = bmngcProcessObjects(ds, managedDevs)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	logger.Debug("finished bmngcProcessJSON()")
+	return nil
+}
+
+func bmngcProcessObjects(ds *admin.Service, managedDevs []cdevs.ManagedDevice) error {
+	logger.Debug("starting bmngcProcessObjects()")
+
+	customerID, err := cfg.ReadConfigString("customerid")
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+
+	wg := new(sync.WaitGroup)
+
+	for _, md := range managedDevs {
+		devAction := admin.ChromeOsDeviceAction{}
+
+		devAction.Action = md.Action
+		devAction.DeprovisionReason = md.DeprovisionReason
+
+		cdac := ds.Chromeosdevices.Action(customerID, md.DeviceId, &devAction)
+
+		wg.Add(1)
+
+		go bmngcPerformAction(md.DeviceId, md.Action, wg, cdac)
+	}
+
+	wg.Wait()
+
+	logger.Debug("finished bmngcProcessObjects()")
+	return nil
 }
 
 func init() {

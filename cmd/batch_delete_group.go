@@ -94,7 +94,7 @@ func doBatchDelGroup(cmd *cobra.Command, args []string) error {
 
 		wg.Add(1)
 
-		go deleteGroup(wg, gdc, group)
+		go bdgDeleteObject(wg, gdc, group)
 	}
 
 	wg.Wait()
@@ -103,8 +103,8 @@ func doBatchDelGroup(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func deleteGroup(wg *sync.WaitGroup, gdc *admin.GroupsDeleteCall, group string) {
-	logger.Debugw("starting deleteGroup()",
+func bdgDeleteObject(wg *sync.WaitGroup, gdc *admin.GroupsDeleteCall, group string) {
+	logger.Debugw("starting bdgDeleteObject()",
 		"group", group)
 
 	defer wg.Done()
@@ -135,7 +135,7 @@ func deleteGroup(wg *sync.WaitGroup, gdc *admin.GroupsDeleteCall, group string) 
 		logger.Error(err)
 		fmt.Println(cmn.GminMessage(err.Error()))
 	}
-	logger.Debug("finished deleteGroup()")
+	logger.Debug("finished bdgDeleteObject()")
 }
 
 func init() {

@@ -103,19 +103,19 @@ func doBatchCrtMember(cmd *cobra.Command, args []string) error {
 
 	switch {
 	case lwrFmt == "csv":
-		err := btchCrtMemProcessCSV(ds, groupKey, inputFile)
+		err := bcmProcessCSVFile(ds, groupKey, inputFile)
 		if err != nil {
 			logger.Error(err)
 			return err
 		}
 	case lwrFmt == "json":
-		err := btchCrtMemProcessJSON(ds, groupKey, inputFile, scanner)
+		err := bcmProcessJSON(ds, groupKey, inputFile, scanner)
 		if err != nil {
 			logger.Error(err)
 			return err
 		}
 	case lwrFmt == "gsheet":
-		err := btchCrtMemProcessSheet(ds, groupKey, inputFile)
+		err := bcmProcessGSheet(ds, groupKey, inputFile)
 		if err != nil {
 			logger.Error(err)
 			return err
@@ -125,8 +125,82 @@ func doBatchCrtMember(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func btchCreateJSONMember(ds *admin.Service, jsonData string) (*admin.Member, error) {
-	logger.Debugw("starting btchCreateJSONMember()",
+func bcmCreate(member *admin.Member, groupKey string, wg *sync.WaitGroup, mic *admin.MembersInsertCall) {
+	logger.Debugw("starting bcmCreate()",
+		"groupKey", groupKey)
+
+	defer wg.Done()
+
+	b := backoff.NewExponentialBackOff()
+	b.MaxElapsedTime = 32 * time.Second
+
+	err := backoff.Retry(func() error {
+		var err error
+		newMember, err := mic.Do()
+		if err == nil {
+			logger.Infof(cmn.InfoMemberCreated, newMember.Email, groupKey)
+			fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoMemberCreated, newMember.Email, groupKey)))
+			return err
+		}
+		if !cmn.IsErrRetryable(err) {
+			return backoff.Permanent(fmt.Errorf(cmn.ErrBatchMember, err.Error(), member.Email))
+		}
+		// Log the retries
+		logger.Warnw(err.Error(),
+			"retrying", b.GetElapsedTime().String(),
+			"group", groupKey,
+			"member", member.Email)
+		return fmt.Errorf(cmn.ErrBatchMember, err.Error(), member.Email)
+	}, b)
+	if err != nil {
+		// Log final error
+		logger.Error(err)
+		fmt.Println(cmn.GminMessage(err.Error()))
+	}
+	logger.Debug("finished bcmCreate()")
+}
+
+func bcmFromFileFactory(hdrMap map[int]string, grpData []interface{}) (*admin.Member, error) {
+	logger.Debugw("starting bcmFromFileFactory()",
+		"hdrMap", hdrMap)
+
+	var member *admin.Member
+
+	member = new(admin.Member)
+
+	for idx, attr := range grpData {
+		attrName := hdrMap[idx]
+		attrVal := fmt.Sprintf("%v", attr)
+
+		switch {
+		case attrName == "delivery_settings":
+			validDS, err := mems.ValidateDeliverySetting(attrVal)
+			if err != nil {
+				logger.Error(err)
+				return nil, err
+			}
+			member.DeliverySettings = validDS
+		case attrName == "email":
+			if attrVal == "" {
+				err := fmt.Errorf(cmn.ErrEmptyString, attrName)
+				return nil, err
+			}
+			member.Email = attrVal
+		case attrName == "role":
+			validRole, err := mems.ValidateRole(attrVal)
+			if err != nil {
+				logger.Error(err)
+				return nil, err
+			}
+			member.Role = validRole
+		}
+	}
+	logger.Debug("finished bcmFromFileFactory()")
+	return member, nil
+}
+
+func bcmFromJSONFactory(ds *admin.Service, jsonData string) (*admin.Member, error) {
+	logger.Debugw("starting bcmFromJSONFactory()",
 		"jsonData", jsonData)
 
 	var (
@@ -168,73 +242,12 @@ func btchCreateJSONMember(ds *admin.Service, jsonData string) (*admin.Member, er
 	if len(emptyVals.ForceSendFields) > 0 {
 		member.ForceSendFields = emptyVals.ForceSendFields
 	}
-	logger.Debug("finished btchCreateJSONMember()")
+	logger.Debug("finished bcmFromJSONFactory()")
 	return member, nil
 }
 
-func btchInsertNewMembers(ds *admin.Service, groupKey string, members []*admin.Member) error {
-	logger.Debugw("starting btchInsertNewMembers()",
-		"groupKey", groupKey)
-
-	wg := new(sync.WaitGroup)
-
-	for _, m := range members {
-		if m.Email == "" {
-			err := errors.New(cmn.ErrNoMemberEmailAddress)
-			logger.Error(err)
-			return err
-		}
-
-		mic := ds.Members.Insert(groupKey, m)
-
-		wg.Add(1)
-
-		go btchMemInsertProcess(m, groupKey, wg, mic)
-	}
-
-	wg.Wait()
-
-	logger.Debug("finished btchInsertNewMembers()")
-	return nil
-}
-
-func btchMemInsertProcess(member *admin.Member, groupKey string, wg *sync.WaitGroup, mic *admin.MembersInsertCall) {
-	logger.Debugw("starting btchMemInsertProcess()",
-		"groupKey", groupKey)
-
-	defer wg.Done()
-
-	b := backoff.NewExponentialBackOff()
-	b.MaxElapsedTime = 32 * time.Second
-
-	err := backoff.Retry(func() error {
-		var err error
-		newMember, err := mic.Do()
-		if err == nil {
-			logger.Infof(cmn.InfoMemberCreated, newMember.Email, groupKey)
-			fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoMemberCreated, newMember.Email, groupKey)))
-			return err
-		}
-		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(fmt.Errorf(cmn.ErrBatchMember, err.Error(), member.Email))
-		}
-		// Log the retries
-		logger.Warnw(err.Error(),
-			"retrying", b.GetElapsedTime().String(),
-			"group", groupKey,
-			"member", member.Email)
-		return fmt.Errorf(cmn.ErrBatchMember, err.Error(), member.Email)
-	}, b)
-	if err != nil {
-		// Log final error
-		logger.Error(err)
-		fmt.Println(cmn.GminMessage(err.Error()))
-	}
-	logger.Debug("finished btchMemInsertProcess()")
-}
-
-func btchCrtMemProcessCSV(ds *admin.Service, groupKey string, filePath string) error {
-	logger.Debugw("starting btchCrtMemProcessCSV()",
+func bcmProcessCSVFile(ds *admin.Service, groupKey string, filePath string) error {
+	logger.Debugw("starting bcmProcessCSVFile()",
 		"filePath", filePath,
 		"groupKey", groupKey)
 
@@ -282,7 +295,7 @@ func btchCrtMemProcessCSV(ds *admin.Service, groupKey string, filePath string) e
 			iSlice[idx] = value
 		}
 
-		memVar, err := btchCrtProcessMember(hdrMap, iSlice)
+		memVar, err := bcmFromFileFactory(hdrMap, iSlice)
 		if err != nil {
 			logger.Error(err)
 			return err
@@ -293,61 +306,17 @@ func btchCrtMemProcessCSV(ds *admin.Service, groupKey string, filePath string) e
 		count = count + 1
 	}
 
-	err = btchInsertNewMembers(ds, groupKey, members)
+	err = bcmProcessObjects(ds, groupKey, members)
 	if err != nil {
 		logger.Error(err)
 		return err
 	}
-	logger.Debug("finished btchCrtMemProcessCSV")
+	logger.Debug("finished bcmProcessCSVFile")
 	return nil
 }
 
-func btchCrtMemProcessJSON(ds *admin.Service, groupKey, filePath string, scanner *bufio.Scanner) error {
-	logger.Debugw("starting btchCrtMemProcessJSON()",
-		"filePath", filePath,
-		"groupKey", groupKey)
-
-	var members []*admin.Member
-
-	if filePath != "" {
-		file, err := os.Open(filePath)
-		if err != nil {
-			logger.Error(err)
-			return err
-		}
-		defer file.Close()
-
-		scanner = bufio.NewScanner(file)
-	}
-
-	for scanner.Scan() {
-		jsonData := scanner.Text()
-
-		memVar, err := btchCreateJSONMember(ds, jsonData)
-		if err != nil {
-			logger.Error(err)
-			return err
-		}
-
-		members = append(members, memVar)
-	}
-	err := scanner.Err()
-	if err != nil {
-		logger.Error(err)
-		return err
-	}
-
-	err = btchInsertNewMembers(ds, groupKey, members)
-	if err != nil {
-		logger.Error(err)
-		return err
-	}
-	logger.Debug("finished btchCrtMemProcessJSON()")
-	return nil
-}
-
-func btchCrtMemProcessSheet(ds *admin.Service, groupKey string, sheetID string) error {
-	logger.Debugw("starting btchCrtMemProcessSheet()",
+func bcmProcessGSheet(ds *admin.Service, groupKey string, sheetID string) error {
+	logger.Debugw("starting bcmProcessGSheet()",
 		"groupKey", groupKey,
 		"sheetID", sheetID)
 
@@ -390,7 +359,7 @@ func btchCrtMemProcessSheet(ds *admin.Service, groupKey string, sheetID string) 
 			continue
 		}
 
-		memVar, err := btchCrtProcessMember(hdrMap, row)
+		memVar, err := bcmFromFileFactory(hdrMap, row)
 		if err != nil {
 			logger.Error(err)
 			return err
@@ -399,52 +368,83 @@ func btchCrtMemProcessSheet(ds *admin.Service, groupKey string, sheetID string) 
 		members = append(members, memVar)
 	}
 
-	err = btchInsertNewMembers(ds, groupKey, members)
+	err = bcmProcessObjects(ds, groupKey, members)
 	if err != nil {
 		logger.Error(err)
 		return err
 	}
-	logger.Debug("finished btchCrtMemProcessSheet()")
+	logger.Debug("finished bcmProcessGSheet()")
 	return nil
 }
 
-func btchCrtProcessMember(hdrMap map[int]string, grpData []interface{}) (*admin.Member, error) {
-	logger.Debugw("starting btchCrtProcessMember()",
-		"hdrMap", hdrMap)
+func bcmProcessJSON(ds *admin.Service, groupKey, filePath string, scanner *bufio.Scanner) error {
+	logger.Debugw("starting bcmProcessJSON()",
+		"filePath", filePath,
+		"groupKey", groupKey)
 
-	var member *admin.Member
+	var members []*admin.Member
 
-	member = new(admin.Member)
-
-	for idx, attr := range grpData {
-		attrName := hdrMap[idx]
-		attrVal := fmt.Sprintf("%v", attr)
-
-		switch {
-		case attrName == "delivery_settings":
-			validDS, err := mems.ValidateDeliverySetting(attrVal)
-			if err != nil {
-				logger.Error(err)
-				return nil, err
-			}
-			member.DeliverySettings = validDS
-		case attrName == "email":
-			if attrVal == "" {
-				err := fmt.Errorf(cmn.ErrEmptyString, attrName)
-				return nil, err
-			}
-			member.Email = attrVal
-		case attrName == "role":
-			validRole, err := mems.ValidateRole(attrVal)
-			if err != nil {
-				logger.Error(err)
-				return nil, err
-			}
-			member.Role = validRole
+	if filePath != "" {
+		file, err := os.Open(filePath)
+		if err != nil {
+			logger.Error(err)
+			return err
 		}
+		defer file.Close()
+
+		scanner = bufio.NewScanner(file)
 	}
-	logger.Debug("finished btchCrtProcessMember()")
-	return member, nil
+
+	for scanner.Scan() {
+		jsonData := scanner.Text()
+
+		memVar, err := bcmFromJSONFactory(ds, jsonData)
+		if err != nil {
+			logger.Error(err)
+			return err
+		}
+
+		members = append(members, memVar)
+	}
+	err := scanner.Err()
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+
+	err = bcmProcessObjects(ds, groupKey, members)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	logger.Debug("finished bcmProcessJSON()")
+	return nil
+}
+
+func bcmProcessObjects(ds *admin.Service, groupKey string, members []*admin.Member) error {
+	logger.Debugw("starting bcmProcessObjects()",
+		"groupKey", groupKey)
+
+	wg := new(sync.WaitGroup)
+
+	for _, m := range members {
+		if m.Email == "" {
+			err := errors.New(cmn.ErrNoMemberEmailAddress)
+			logger.Error(err)
+			return err
+		}
+
+		mic := ds.Members.Insert(groupKey, m)
+
+		wg.Add(1)
+
+		go bcmCreate(m, groupKey, wg, mic)
+	}
+
+	wg.Wait()
+
+	logger.Debug("finished bcmProcessObjects()")
+	return nil
 }
 
 func init() {

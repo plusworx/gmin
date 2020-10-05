@@ -103,19 +103,19 @@ func doBatchUpdGrp(cmd *cobra.Command, args []string) error {
 
 	switch {
 	case lwrFmt == "csv":
-		err := btchUpdGrpProcessCSV(ds, inputFile)
+		err := bugProcessCSVFile(ds, inputFile)
 		if err != nil {
 			logger.Error(err)
 			return err
 		}
 	case lwrFmt == "json":
-		err := btchUpdGrpProcessJSON(ds, inputFile, scanner)
+		err := bugProcessJSON(ds, inputFile, scanner)
 		if err != nil {
 			logger.Error(err)
 			return err
 		}
 	case lwrFmt == "gsheet":
-		err := btchUpdGrpProcessSheet(ds, inputFile)
+		err := bugProcessGSheet(ds, inputFile)
 		if err != nil {
 			logger.Error(err)
 			return err
@@ -125,8 +125,53 @@ func doBatchUpdGrp(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func btchUpdJSONGroup(ds *admin.Service, jsonData string) (*admin.Group, string, error) {
-	logger.Debugw("starting btchUpdJSONGroup()",
+func bugFromFileFactory(hdrMap map[int]string, grpData []interface{}) (*admin.Group, string, error) {
+	logger.Debugw("starting bugFromFileFactory()",
+		"hdrMap", hdrMap)
+
+	var (
+		group    *admin.Group
+		groupKey string
+	)
+
+	group = new(admin.Group)
+
+	for idx, attr := range grpData {
+		attrName := hdrMap[idx]
+		attrVal := fmt.Sprintf("%v", attr)
+
+		switch {
+		case attrName == "description":
+			group.Description = attrVal
+			if attrVal == "" {
+				group.ForceSendFields = append(group.ForceSendFields, "Description")
+			}
+		case attrName == "email":
+			if attrVal == "" {
+				err := fmt.Errorf(cmn.ErrEmptyString, attrName)
+				return nil, "", err
+			}
+			group.Email = attrVal
+		case attrName == "name":
+			if attrVal == "" {
+				err := fmt.Errorf(cmn.ErrEmptyString, attrName)
+				return nil, "", err
+			}
+			group.Name = attrVal
+		case attrName == "groupKey":
+			if attrVal == "" {
+				err := fmt.Errorf(cmn.ErrEmptyString, attrName)
+				return nil, "", err
+			}
+			groupKey = attrVal
+		}
+	}
+	logger.Debug("finished bugFromFileFactory()")
+	return group, groupKey, nil
+}
+
+func bugFromJSONFactory(ds *admin.Service, jsonData string) (*admin.Group, string, error) {
+	logger.Debugw("starting bugFromJSONFactory()",
 		"jsonData", jsonData)
 
 	var (
@@ -181,66 +226,12 @@ func btchUpdJSONGroup(ds *admin.Service, jsonData string) (*admin.Group, string,
 	if len(emptyVals.ForceSendFields) > 0 {
 		group.ForceSendFields = emptyVals.ForceSendFields
 	}
-	logger.Debug("finished btchUpdJSONGroup()")
+	logger.Debug("finished bugFromJSONFactory()")
 	return group, grpKey.GroupKey, nil
 }
 
-func btchUpdateGroups(ds *admin.Service, groups []*admin.Group, groupKeys []string) error {
-	logger.Debugw("starting btchUpdateGroups()",
-		"groupKeys", groupKeys)
-
-	wg := new(sync.WaitGroup)
-
-	for idx, g := range groups {
-		guc := ds.Groups.Update(groupKeys[idx], g)
-
-		wg.Add(1)
-
-		go btchGrpUpdateProcess(g, wg, guc, groupKeys[idx])
-	}
-
-	wg.Wait()
-
-	logger.Debug("finished btchUpdateGroups()")
-	return nil
-}
-
-func btchGrpUpdateProcess(group *admin.Group, wg *sync.WaitGroup, guc *admin.GroupsUpdateCall, groupKey string) {
-	logger.Debugw("starting btchGrpUpdateProcess()",
-		"groupKey", groupKey)
-
-	defer wg.Done()
-
-	b := backoff.NewExponentialBackOff()
-	b.MaxElapsedTime = 32 * time.Second
-
-	err := backoff.Retry(func() error {
-		var err error
-		_, err = guc.Do()
-		if err == nil {
-			logger.Infof(cmn.InfoGroupUpdated, groupKey)
-			fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoGroupUpdated, groupKey)))
-			return err
-		}
-		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(fmt.Errorf(cmn.ErrBatchGroup, err.Error(), groupKey))
-		}
-		// Log the retries
-		logger.Warnw(err.Error(),
-			"retrying", b.GetElapsedTime().String(),
-			"group", groupKey)
-		return fmt.Errorf(cmn.ErrBatchGroup, err.Error(), groupKey)
-	}, b)
-	if err != nil {
-		// Log final error
-		logger.Error(err)
-		fmt.Println(cmn.GminMessage(err.Error()))
-	}
-	logger.Debug("finished btchGrpUpdateProcess()")
-}
-
-func btchUpdGrpProcessCSV(ds *admin.Service, filePath string) error {
-	logger.Debugw("starting btchUpdGrpProcessCSV()",
+func bugProcessCSVFile(ds *admin.Service, filePath string) error {
+	logger.Debugw("starting bugProcessCSVFile()",
 		"filePath", filePath)
 
 	var (
@@ -289,7 +280,7 @@ func btchUpdGrpProcessCSV(ds *admin.Service, filePath string) error {
 			iSlice[idx] = value
 		}
 
-		grpVar, groupKey, err := btchUpdProcessGroup(hdrMap, iSlice)
+		grpVar, groupKey, err := bugFromFileFactory(hdrMap, iSlice)
 		if err != nil {
 			logger.Error(err)
 			return err
@@ -301,64 +292,17 @@ func btchUpdGrpProcessCSV(ds *admin.Service, filePath string) error {
 		count = count + 1
 	}
 
-	err = btchUpdateGroups(ds, groups, groupKeys)
+	err = bugProcessObjects(ds, groups, groupKeys)
 	if err != nil {
 		logger.Error(err)
 		return err
 	}
-	logger.Debug("finished btchUpdGrpProcessCSV()")
+	logger.Debug("finished bugProcessCSVFile()")
 	return nil
 }
 
-func btchUpdGrpProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner) error {
-	logger.Debugw("starting btchUpdGrpProcessJSON()",
-		"filePath", filePath)
-
-	var (
-		groupKeys []string
-		groups    []*admin.Group
-	)
-
-	if filePath != "" {
-		file, err := os.Open(filePath)
-		if err != nil {
-			logger.Error(err)
-			return err
-		}
-		defer file.Close()
-
-		scanner = bufio.NewScanner(file)
-	}
-
-	for scanner.Scan() {
-		jsonData := scanner.Text()
-
-		grpVar, groupKey, err := btchUpdJSONGroup(ds, jsonData)
-		if err != nil {
-			logger.Error(err)
-			return err
-		}
-
-		groupKeys = append(groupKeys, groupKey)
-		groups = append(groups, grpVar)
-	}
-	err := scanner.Err()
-	if err != nil {
-		logger.Error(err)
-		return err
-	}
-
-	err = btchUpdateGroups(ds, groups, groupKeys)
-	if err != nil {
-		logger.Error(err)
-		return err
-	}
-	logger.Debug("finished btchUpdGrpProcessJSON()")
-	return nil
-}
-
-func btchUpdGrpProcessSheet(ds *admin.Service, sheetID string) error {
-	logger.Debugw("starting btchUpdGrpProcessSheet()",
+func bugProcessGSheet(ds *admin.Service, sheetID string) error {
+	logger.Debugw("starting bugProcessGSheet()",
 		"sheetID", sheetID)
 
 	var (
@@ -403,7 +347,7 @@ func btchUpdGrpProcessSheet(ds *admin.Service, sheetID string) error {
 			continue
 		}
 
-		grpVar, groupKey, err := btchUpdProcessGroup(hdrMap, row)
+		grpVar, groupKey, err := bugFromFileFactory(hdrMap, row)
 		if err != nil {
 			logger.Error(err)
 			return err
@@ -413,58 +357,114 @@ func btchUpdGrpProcessSheet(ds *admin.Service, sheetID string) error {
 		groups = append(groups, grpVar)
 	}
 
-	err = btchUpdateGroups(ds, groups, groupKeys)
+	err = bugProcessObjects(ds, groups, groupKeys)
 	if err != nil {
 		logger.Error(err)
 		return err
 	}
-	logger.Debug("finished btchUpdGrpProcessSheet()")
+	logger.Debug("finished bugProcessGSheet()")
 	return nil
 }
 
-func btchUpdProcessGroup(hdrMap map[int]string, grpData []interface{}) (*admin.Group, string, error) {
-	logger.Debugw("starting btchUpdProcessGroup()",
-		"hdrMap", hdrMap)
+func bugProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner) error {
+	logger.Debugw("starting bugProcessJSON()",
+		"filePath", filePath)
 
 	var (
-		group    *admin.Group
-		groupKey string
+		groupKeys []string
+		groups    []*admin.Group
 	)
 
-	group = new(admin.Group)
-
-	for idx, attr := range grpData {
-		attrName := hdrMap[idx]
-		attrVal := fmt.Sprintf("%v", attr)
-
-		switch {
-		case attrName == "description":
-			group.Description = attrVal
-			if attrVal == "" {
-				group.ForceSendFields = append(group.ForceSendFields, "Description")
-			}
-		case attrName == "email":
-			if attrVal == "" {
-				err := fmt.Errorf(cmn.ErrEmptyString, attrName)
-				return nil, "", err
-			}
-			group.Email = attrVal
-		case attrName == "name":
-			if attrVal == "" {
-				err := fmt.Errorf(cmn.ErrEmptyString, attrName)
-				return nil, "", err
-			}
-			group.Name = attrVal
-		case attrName == "groupKey":
-			if attrVal == "" {
-				err := fmt.Errorf(cmn.ErrEmptyString, attrName)
-				return nil, "", err
-			}
-			groupKey = attrVal
+	if filePath != "" {
+		file, err := os.Open(filePath)
+		if err != nil {
+			logger.Error(err)
+			return err
 		}
+		defer file.Close()
+
+		scanner = bufio.NewScanner(file)
 	}
-	logger.Debug("finished btchUpdProcessGroup()")
-	return group, groupKey, nil
+
+	for scanner.Scan() {
+		jsonData := scanner.Text()
+
+		grpVar, groupKey, err := bugFromJSONFactory(ds, jsonData)
+		if err != nil {
+			logger.Error(err)
+			return err
+		}
+
+		groupKeys = append(groupKeys, groupKey)
+		groups = append(groups, grpVar)
+	}
+	err := scanner.Err()
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+
+	err = bugProcessObjects(ds, groups, groupKeys)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	logger.Debug("finished bugProcessJSON()")
+	return nil
+}
+
+func bugProcessObjects(ds *admin.Service, groups []*admin.Group, groupKeys []string) error {
+	logger.Debugw("starting bugProcessObjects()",
+		"groupKeys", groupKeys)
+
+	wg := new(sync.WaitGroup)
+
+	for idx, g := range groups {
+		guc := ds.Groups.Update(groupKeys[idx], g)
+
+		wg.Add(1)
+
+		go bugUpdate(g, wg, guc, groupKeys[idx])
+	}
+
+	wg.Wait()
+
+	logger.Debug("finished bugProcessObjects()")
+	return nil
+}
+
+func bugUpdate(group *admin.Group, wg *sync.WaitGroup, guc *admin.GroupsUpdateCall, groupKey string) {
+	logger.Debugw("starting bugUpdate()",
+		"groupKey", groupKey)
+
+	defer wg.Done()
+
+	b := backoff.NewExponentialBackOff()
+	b.MaxElapsedTime = 32 * time.Second
+
+	err := backoff.Retry(func() error {
+		var err error
+		_, err = guc.Do()
+		if err == nil {
+			logger.Infof(cmn.InfoGroupUpdated, groupKey)
+			fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoGroupUpdated, groupKey)))
+			return err
+		}
+		if !cmn.IsErrRetryable(err) {
+			return backoff.Permanent(fmt.Errorf(cmn.ErrBatchGroup, err.Error(), groupKey))
+		}
+		// Log the retries
+		logger.Warnw(err.Error(),
+			"retrying", b.GetElapsedTime().String(),
+			"group", groupKey)
+		return fmt.Errorf(cmn.ErrBatchGroup, err.Error(), groupKey)
+	}, b)
+	if err != nil {
+		// Log final error
+		logger.Error(err)
+		fmt.Println(cmn.GminMessage(err.Error()))
+	}
+	logger.Debug("finished bugUpdate()")
 }
 
 func init() {

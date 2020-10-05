@@ -111,19 +111,19 @@ func doBatchUpdUser(cmd *cobra.Command, args []string) error {
 
 	switch {
 	case lwrFmt == "csv":
-		err := btchUpdUsrProcessCSV(ds, inputFile)
+		err := bupduProcessCSVFile(ds, inputFile)
 		if err != nil {
 			logger.Error(err)
 			return err
 		}
 	case lwrFmt == "json":
-		err := btchUpdUsrProcessJSON(ds, inputFile, scanner)
+		err := bupduProcessJSON(ds, inputFile, scanner)
 		if err != nil {
 			logger.Error(err)
 			return err
 		}
 	case lwrFmt == "gsheet":
-		err := btchUpdUsrProcessSheet(ds, inputFile)
+		err := bupduProcessGSheet(ds, inputFile)
 		if err != nil {
 			logger.Error(err)
 			return err
@@ -133,315 +133,8 @@ func doBatchUpdUser(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func btchUpdJSONUser(ds *admin.Service, jsonData string) (*admin.User, string, error) {
-	logger.Debugw("starting btchUpdJSONUser()",
-		"jsonData", jsonData)
-
-	var (
-		emptyVals = cmn.EmptyValues{}
-		user      *admin.User
-		usrKey    = usrs.Key{}
-	)
-
-	user = new(admin.User)
-	jsonBytes := []byte(jsonData)
-
-	if !json.Valid(jsonBytes) {
-		logger.Error(cmn.ErrInvalidJSONAttr)
-		return nil, "", errors.New(cmn.ErrInvalidJSONAttr)
-	}
-
-	outStr, err := cmn.ParseInputAttrs(jsonBytes)
-	if err != nil {
-		logger.Error(err)
-		return nil, "", err
-	}
-
-	err = cmn.ValidateInputAttrs(outStr, usrs.UserAttrMap)
-	if err != nil {
-		logger.Error(err)
-		return nil, "", err
-	}
-
-	err = json.Unmarshal(jsonBytes, &usrKey)
-	if err != nil {
-		logger.Error(err)
-		return nil, "", err
-	}
-
-	if usrKey.UserKey == "" {
-		err = errors.New(cmn.ErrNoJSONUserKey)
-		logger.Error(err)
-		return nil, "", err
-	}
-
-	err = json.Unmarshal(jsonBytes, &user)
-	if err != nil {
-		logger.Error(err)
-		return nil, "", err
-	}
-
-	err = json.Unmarshal(jsonBytes, &emptyVals)
-	if err != nil {
-		logger.Error(err)
-		return nil, "", err
-	}
-	if len(emptyVals.ForceSendFields) > 0 {
-		user.ForceSendFields = emptyVals.ForceSendFields
-	}
-	logger.Debug("finished btchUpdJSONUser()")
-	return user, usrKey.UserKey, nil
-}
-
-func btchUpdateUsers(ds *admin.Service, users []*admin.User, userKeys []string) error {
-	logger.Debugw("starting btchUpdateUsers()",
-		"userKeys", userKeys)
-
-	wg := new(sync.WaitGroup)
-
-	for idx, u := range users {
-		if u.Password != "" {
-			u.HashFunction = cmn.HashFunction
-			pwd, err := cmn.HashPassword(u.Password)
-			if err != nil {
-				logger.Error(err)
-				return err
-			}
-			u.Password = pwd
-		}
-
-		uuc := ds.Users.Update(userKeys[idx], u)
-
-		wg.Add(1)
-
-		go btchUsrUpdateProcess(u, wg, uuc, userKeys[idx])
-	}
-
-	wg.Wait()
-
-	logger.Debug("finished btchUpdateUsers()")
-	return nil
-}
-
-func btchUsrUpdateProcess(user *admin.User, wg *sync.WaitGroup, uuc *admin.UsersUpdateCall, userKey string) {
-	logger.Debugw("starting btchUsrUpdateProcess()",
-		"userKey", userKey)
-
-	defer wg.Done()
-
-	b := backoff.NewExponentialBackOff()
-	b.MaxElapsedTime = 32 * time.Second
-
-	err := backoff.Retry(func() error {
-		var err error
-		_, err = uuc.Do()
-		if err == nil {
-			logger.Infof(cmn.InfoUserUpdated, userKey)
-			fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoUserUpdated, userKey)))
-			return err
-		}
-		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(fmt.Errorf(cmn.ErrBatchUser, err.Error(), userKey))
-		}
-		// Log the retries
-		logger.Warnw(err.Error(),
-			"retrying", b.GetElapsedTime().String(),
-			"user", userKey)
-		return fmt.Errorf(cmn.ErrBatchUser, err.Error(), userKey)
-	}, b)
-	if err != nil {
-		// Log final error
-		logger.Error(err)
-		fmt.Println(cmn.GminMessage(err.Error()))
-	}
-	logger.Debug("finished btchUsrUpdateProcess()")
-}
-
-func btchUpdUsrProcessCSV(ds *admin.Service, filePath string) error {
-	logger.Debugw("starting btchUpdUsrProcessCSV()",
-		"filePath", filePath)
-
-	var (
-		iSlice   []interface{}
-		hdrMap   = map[int]string{}
-		userKeys []string
-		users    []*admin.User
-	)
-
-	csvfile, err := os.Open(filePath)
-	if err != nil {
-		logger.Error(err)
-		return err
-	}
-	defer csvfile.Close()
-
-	r := csv.NewReader(csvfile)
-
-	count := 0
-	for {
-		record, err := r.Read()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			logger.Error(err)
-			return err
-		}
-
-		if count == 0 {
-			iSlice = make([]interface{}, len(record))
-			for idx, value := range record {
-				iSlice[idx] = value
-			}
-			hdrMap = cmn.ProcessHeader(iSlice)
-			err = cmn.ValidateHeader(hdrMap, usrs.UserAttrMap)
-			if err != nil {
-				logger.Error(err)
-				return err
-			}
-			count = count + 1
-			continue
-		}
-
-		for idx, value := range record {
-			iSlice[idx] = value
-		}
-
-		userVar, userKey, err := btchUpdProcessUser(hdrMap, iSlice)
-		if err != nil {
-			logger.Error(err)
-			return err
-		}
-
-		users = append(users, userVar)
-		userKeys = append(userKeys, userKey)
-
-		count = count + 1
-	}
-
-	err = btchUpdateUsers(ds, users, userKeys)
-	if err != nil {
-		logger.Error(err)
-		return err
-	}
-	logger.Debug("finished btchUpdUsrProcessCSV()")
-	return nil
-}
-
-func btchUpdUsrProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner) error {
-	logger.Debugw("starting btchUpdUsrProcessJSON()",
-		"filePath", filePath)
-
-	var (
-		userKeys []string
-		users    []*admin.User
-	)
-
-	if filePath != "" {
-		file, err := os.Open(filePath)
-		if err != nil {
-			logger.Error(err)
-			return err
-		}
-		defer file.Close()
-
-		scanner = bufio.NewScanner(file)
-	}
-
-	for scanner.Scan() {
-		jsonData := scanner.Text()
-
-		userVar, userKey, err := btchUpdJSONUser(ds, jsonData)
-		if err != nil {
-			logger.Error(err)
-			return err
-		}
-
-		userKeys = append(userKeys, userKey)
-		users = append(users, userVar)
-	}
-	err := scanner.Err()
-	if err != nil {
-		logger.Error(err)
-		return err
-	}
-
-	err = btchUpdateUsers(ds, users, userKeys)
-	if err != nil {
-		logger.Error(err)
-		return err
-	}
-	logger.Debug("finished btchUpdUsrProcessJSON()")
-	return nil
-}
-
-func btchUpdUsrProcessSheet(ds *admin.Service, sheetID string) error {
-	logger.Debugw("starting btchUpdUsrProcessSheet()",
-		"sheetID", sheetID)
-
-	var (
-		userKeys []string
-		users    []*admin.User
-	)
-
-	if sheetRange == "" {
-		err := errors.New(cmn.ErrNoSheetRange)
-		logger.Error(err)
-		return err
-	}
-
-	ss, err := cmn.CreateSheetService(sheet.DriveReadonlyScope)
-	if err != nil {
-		logger.Error(err)
-		return err
-	}
-
-	ssvgc := ss.Spreadsheets.Values.Get(sheetID, sheetRange)
-	sValRange, err := ssvgc.Do()
-	if err != nil {
-		logger.Error(err)
-		return err
-	}
-
-	if len(sValRange.Values) == 0 {
-		err = fmt.Errorf(cmn.ErrNoSheetDataFound, sheetID, sheetRange)
-		logger.Error(err)
-		return err
-	}
-
-	hdrMap := cmn.ProcessHeader(sValRange.Values[0])
-	err = cmn.ValidateHeader(hdrMap, usrs.UserAttrMap)
-	if err != nil {
-		logger.Error(err)
-		return err
-	}
-
-	for idx, row := range sValRange.Values {
-		if idx == 0 {
-			continue
-		}
-
-		userVar, userKey, err := btchUpdProcessUser(hdrMap, row)
-		if err != nil {
-			logger.Error(err)
-			return err
-		}
-
-		userKeys = append(userKeys, userKey)
-		users = append(users, userVar)
-	}
-
-	err = btchUpdateUsers(ds, users, userKeys)
-	if err != nil {
-		logger.Error(err)
-		return err
-	}
-	logger.Debug("finished btchUpdUsrProcessSheet()")
-	return nil
-}
-
-func btchUpdProcessUser(hdrMap map[int]string, userData []interface{}) (*admin.User, string, error) {
-	logger.Debugw("starting btchUpdProcessUser()",
+func bupduFromFileFactory(hdrMap map[int]string, userData []interface{}) (*admin.User, string, error) {
+	logger.Debugw("starting bupduFromFileFactory()",
 		"hdrMap", hdrMap)
 
 	var (
@@ -551,8 +244,315 @@ func btchUpdProcessUser(hdrMap map[int]string, userData []interface{}) (*admin.U
 	if name.FamilyName != "" || name.GivenName != "" || name.FullName != "" {
 		user.Name = name
 	}
-	logger.Debug("finished btchUpdProcessUser()")
+	logger.Debug("finished bupduFromFileFactory()")
 	return user, userKey, nil
+}
+
+func bupduFromJSONFactory(ds *admin.Service, jsonData string) (*admin.User, string, error) {
+	logger.Debugw("starting bupduFromJSONFactory()",
+		"jsonData", jsonData)
+
+	var (
+		emptyVals = cmn.EmptyValues{}
+		user      *admin.User
+		usrKey    = usrs.Key{}
+	)
+
+	user = new(admin.User)
+	jsonBytes := []byte(jsonData)
+
+	if !json.Valid(jsonBytes) {
+		logger.Error(cmn.ErrInvalidJSONAttr)
+		return nil, "", errors.New(cmn.ErrInvalidJSONAttr)
+	}
+
+	outStr, err := cmn.ParseInputAttrs(jsonBytes)
+	if err != nil {
+		logger.Error(err)
+		return nil, "", err
+	}
+
+	err = cmn.ValidateInputAttrs(outStr, usrs.UserAttrMap)
+	if err != nil {
+		logger.Error(err)
+		return nil, "", err
+	}
+
+	err = json.Unmarshal(jsonBytes, &usrKey)
+	if err != nil {
+		logger.Error(err)
+		return nil, "", err
+	}
+
+	if usrKey.UserKey == "" {
+		err = errors.New(cmn.ErrNoJSONUserKey)
+		logger.Error(err)
+		return nil, "", err
+	}
+
+	err = json.Unmarshal(jsonBytes, &user)
+	if err != nil {
+		logger.Error(err)
+		return nil, "", err
+	}
+
+	err = json.Unmarshal(jsonBytes, &emptyVals)
+	if err != nil {
+		logger.Error(err)
+		return nil, "", err
+	}
+	if len(emptyVals.ForceSendFields) > 0 {
+		user.ForceSendFields = emptyVals.ForceSendFields
+	}
+	logger.Debug("finished bupduFromJSONFactory()")
+	return user, usrKey.UserKey, nil
+}
+
+func bupduProcessCSVFile(ds *admin.Service, filePath string) error {
+	logger.Debugw("starting bupduProcessCSVFile()",
+		"filePath", filePath)
+
+	var (
+		iSlice   []interface{}
+		hdrMap   = map[int]string{}
+		userKeys []string
+		users    []*admin.User
+	)
+
+	csvfile, err := os.Open(filePath)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	defer csvfile.Close()
+
+	r := csv.NewReader(csvfile)
+
+	count := 0
+	for {
+		record, err := r.Read()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			logger.Error(err)
+			return err
+		}
+
+		if count == 0 {
+			iSlice = make([]interface{}, len(record))
+			for idx, value := range record {
+				iSlice[idx] = value
+			}
+			hdrMap = cmn.ProcessHeader(iSlice)
+			err = cmn.ValidateHeader(hdrMap, usrs.UserAttrMap)
+			if err != nil {
+				logger.Error(err)
+				return err
+			}
+			count = count + 1
+			continue
+		}
+
+		for idx, value := range record {
+			iSlice[idx] = value
+		}
+
+		userVar, userKey, err := bupduFromFileFactory(hdrMap, iSlice)
+		if err != nil {
+			logger.Error(err)
+			return err
+		}
+
+		users = append(users, userVar)
+		userKeys = append(userKeys, userKey)
+
+		count = count + 1
+	}
+
+	err = bupduProcessObjects(ds, users, userKeys)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	logger.Debug("finished bupduProcessCSVFile()")
+	return nil
+}
+
+func bupduProcessGSheet(ds *admin.Service, sheetID string) error {
+	logger.Debugw("starting bupduProcessGSheet()",
+		"sheetID", sheetID)
+
+	var (
+		userKeys []string
+		users    []*admin.User
+	)
+
+	if sheetRange == "" {
+		err := errors.New(cmn.ErrNoSheetRange)
+		logger.Error(err)
+		return err
+	}
+
+	ss, err := cmn.CreateSheetService(sheet.DriveReadonlyScope)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+
+	ssvgc := ss.Spreadsheets.Values.Get(sheetID, sheetRange)
+	sValRange, err := ssvgc.Do()
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+
+	if len(sValRange.Values) == 0 {
+		err = fmt.Errorf(cmn.ErrNoSheetDataFound, sheetID, sheetRange)
+		logger.Error(err)
+		return err
+	}
+
+	hdrMap := cmn.ProcessHeader(sValRange.Values[0])
+	err = cmn.ValidateHeader(hdrMap, usrs.UserAttrMap)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+
+	for idx, row := range sValRange.Values {
+		if idx == 0 {
+			continue
+		}
+
+		userVar, userKey, err := bupduFromFileFactory(hdrMap, row)
+		if err != nil {
+			logger.Error(err)
+			return err
+		}
+
+		userKeys = append(userKeys, userKey)
+		users = append(users, userVar)
+	}
+
+	err = bupduProcessObjects(ds, users, userKeys)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	logger.Debug("finished bupduProcessGSheet()")
+	return nil
+}
+
+func bupduProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner) error {
+	logger.Debugw("starting bupduProcessJSON()",
+		"filePath", filePath)
+
+	var (
+		userKeys []string
+		users    []*admin.User
+	)
+
+	if filePath != "" {
+		file, err := os.Open(filePath)
+		if err != nil {
+			logger.Error(err)
+			return err
+		}
+		defer file.Close()
+
+		scanner = bufio.NewScanner(file)
+	}
+
+	for scanner.Scan() {
+		jsonData := scanner.Text()
+
+		userVar, userKey, err := bupduFromJSONFactory(ds, jsonData)
+		if err != nil {
+			logger.Error(err)
+			return err
+		}
+
+		userKeys = append(userKeys, userKey)
+		users = append(users, userVar)
+	}
+	err := scanner.Err()
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+
+	err = bupduProcessObjects(ds, users, userKeys)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	logger.Debug("finished bupduProcessJSON()")
+	return nil
+}
+
+func bupduProcessObjects(ds *admin.Service, users []*admin.User, userKeys []string) error {
+	logger.Debugw("starting bupduProcessObjects()",
+		"userKeys", userKeys)
+
+	wg := new(sync.WaitGroup)
+
+	for idx, u := range users {
+		if u.Password != "" {
+			u.HashFunction = cmn.HashFunction
+			pwd, err := cmn.HashPassword(u.Password)
+			if err != nil {
+				logger.Error(err)
+				return err
+			}
+			u.Password = pwd
+		}
+
+		uuc := ds.Users.Update(userKeys[idx], u)
+
+		wg.Add(1)
+
+		go bupduUpdate(u, wg, uuc, userKeys[idx])
+	}
+
+	wg.Wait()
+
+	logger.Debug("finished bupduProcessObjects()")
+	return nil
+}
+
+func bupduUpdate(user *admin.User, wg *sync.WaitGroup, uuc *admin.UsersUpdateCall, userKey string) {
+	logger.Debugw("starting bupduUpdate()",
+		"userKey", userKey)
+
+	defer wg.Done()
+
+	b := backoff.NewExponentialBackOff()
+	b.MaxElapsedTime = 32 * time.Second
+
+	err := backoff.Retry(func() error {
+		var err error
+		_, err = uuc.Do()
+		if err == nil {
+			logger.Infof(cmn.InfoUserUpdated, userKey)
+			fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoUserUpdated, userKey)))
+			return err
+		}
+		if !cmn.IsErrRetryable(err) {
+			return backoff.Permanent(fmt.Errorf(cmn.ErrBatchUser, err.Error(), userKey))
+		}
+		// Log the retries
+		logger.Warnw(err.Error(),
+			"retrying", b.GetElapsedTime().String(),
+			"user", userKey)
+		return fmt.Errorf(cmn.ErrBatchUser, err.Error(), userKey)
+	}, b)
+	if err != nil {
+		// Log final error
+		logger.Error(err)
+		fmt.Println(cmn.GminMessage(err.Error()))
+	}
+	logger.Debug("finished bupduUpdate()")
 }
 
 func init() {

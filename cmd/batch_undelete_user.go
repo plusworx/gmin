@@ -101,19 +101,19 @@ func doBatchUndelUser(cmd *cobra.Command, args []string) error {
 
 	switch {
 	case lwrFmt == "csv":
-		err := btchUndelUsrProcessCSV(ds, inputFile)
+		err := bunduProcessCSVFile(ds, inputFile)
 		if err != nil {
 			logger.Error(err)
 			return err
 		}
 	case lwrFmt == "json":
-		err := btchUndelUsrProcessJSON(ds, inputFile, scanner)
+		err := bunduProcessJSON(ds, inputFile, scanner)
 		if err != nil {
 			logger.Error(err)
 			return err
 		}
 	case lwrFmt == "gsheet":
-		err := btchUndelUsrProcessSheet(ds, inputFile)
+		err := bunduProcessGSheet(ds, inputFile)
 		if err != nil {
 			logger.Error(err)
 			return err
@@ -123,8 +123,28 @@ func doBatchUndelUser(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func btchUndelJSONUser(ds *admin.Service, jsonData string) (usrs.UndeleteUser, error) {
-	logger.Debugw("starting btchUndelJSONUser()",
+func bunduFromFileFactory(hdrMap map[int]string, userData []interface{}) (usrs.UndeleteUser, error) {
+	logger.Debugw("starting bunduFromFileFactory()",
+		"hdrMap", hdrMap)
+
+	undelUser := usrs.UndeleteUser{}
+
+	for idx, attr := range userData {
+		attrName := hdrMap[idx]
+
+		switch {
+		case attrName == "userKey":
+			undelUser.UserKey = fmt.Sprintf("%v", attr)
+		case attrName == "orgUnitPath":
+			undelUser.OrgUnitPath = fmt.Sprintf("%v", attr)
+		}
+	}
+	logger.Debug("finished bunduFromFileFactory()")
+	return undelUser, nil
+}
+
+func bunduFromJSONFactory(ds *admin.Service, jsonData string) (usrs.UndeleteUser, error) {
+	logger.Debugw("starting bunduFromJSONFactory()",
 		"jsonData", jsonData)
 
 	undelUser := usrs.UndeleteUser{}
@@ -152,72 +172,12 @@ func btchUndelJSONUser(ds *admin.Service, jsonData string) (usrs.UndeleteUser, e
 		logger.Error(err)
 		return undelUser, err
 	}
-	logger.Debug("finished btchUndelJSONUser()")
+	logger.Debug("finished bunduFromJSONFactory()")
 	return undelUser, nil
 }
 
-func btchUndelUsers(ds *admin.Service, undelUsers []usrs.UndeleteUser) error {
-	logger.Debug("starting btchUndelUsers()")
-	wg := new(sync.WaitGroup)
-
-	for _, u := range undelUsers {
-		userUndelete := admin.UserUndelete{}
-
-		if u.OrgUnitPath == "" {
-			userUndelete.OrgUnitPath = "/"
-		} else {
-			userUndelete.OrgUnitPath = u.OrgUnitPath
-		}
-
-		uuc := ds.Users.Undelete(u.UserKey, &userUndelete)
-
-		wg.Add(1)
-
-		go btchUsrUndelProcess(u.UserKey, wg, uuc)
-	}
-
-	wg.Wait()
-
-	logger.Debug("finished btchUndelUsers()")
-	return nil
-}
-
-func btchUsrUndelProcess(userKey string, wg *sync.WaitGroup, uuc *admin.UsersUndeleteCall) {
-	logger.Debugw("starting btchUsrUndelProcess()",
-		"userKey", userKey)
-
-	defer wg.Done()
-
-	b := backoff.NewExponentialBackOff()
-	b.MaxElapsedTime = 32 * time.Second
-
-	err := backoff.Retry(func() error {
-		var err error
-		err = uuc.Do()
-		if err == nil {
-			logger.Infof(cmn.InfoUserUndeleted, userKey)
-			fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoUserUndeleted, userKey)))
-			return err
-		}
-		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(fmt.Errorf(cmn.ErrBatchUser, err.Error(), userKey))
-		}
-		// Log the retries
-		logger.Warnw(err.Error(),
-			"retrying", b.GetElapsedTime().String(),
-			"user", userKey)
-		return fmt.Errorf(cmn.ErrBatchUser, err.Error(), userKey)
-	}, b)
-	if err != nil {
-		// Log final error
-		logger.Error(err)
-		fmt.Println(cmn.GminMessage(err.Error()))
-	}
-	logger.Debug("finished btchUsrUndelProcess()")
-}
-
-func btchUndelUsrProcessCSV(ds *admin.Service, filePath string) error {
-	logger.Debugw("starting btchUndelUsrProcessCSV()",
+func bunduProcessCSVFile(ds *admin.Service, filePath string) error {
+	logger.Debugw("starting bunduProcessCSVFile()",
 		"filePath", filePath)
 
 	var (
@@ -265,7 +225,7 @@ func btchUndelUsrProcessCSV(ds *admin.Service, filePath string) error {
 			iSlice[idx] = value
 		}
 
-		undelUserVar, err := btchUndelProcessUser(hdrMap, iSlice)
+		undelUserVar, err := bunduFromFileFactory(hdrMap, iSlice)
 		if err != nil {
 			logger.Error(err)
 			return err
@@ -276,60 +236,17 @@ func btchUndelUsrProcessCSV(ds *admin.Service, filePath string) error {
 		count = count + 1
 	}
 
-	err = btchUndelUsers(ds, undelUsers)
+	err = bunduProcessObjects(ds, undelUsers)
 	if err != nil {
 		logger.Error(err)
 		return err
 	}
-	logger.Debug("finished btchUndelUsrProcessCSV()")
+	logger.Debug("finished bunduProcessCSVFile()")
 	return nil
 }
 
-func btchUndelUsrProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner) error {
-	logger.Debugw("starting btchUndelUsrProcessJSON()",
-		"filePath", filePath)
-
-	var undelUsers []usrs.UndeleteUser
-
-	if filePath != "" {
-		file, err := os.Open(filePath)
-		if err != nil {
-			logger.Error(err)
-			return err
-		}
-		defer file.Close()
-
-		scanner = bufio.NewScanner(file)
-	}
-
-	for scanner.Scan() {
-		jsonData := scanner.Text()
-
-		undelUserVar, err := btchUndelJSONUser(ds, jsonData)
-		if err != nil {
-			logger.Error(err)
-			return err
-		}
-
-		undelUsers = append(undelUsers, undelUserVar)
-	}
-	err := scanner.Err()
-	if err != nil {
-		logger.Error(err)
-		return err
-	}
-
-	err = btchUndelUsers(ds, undelUsers)
-	if err != nil {
-		logger.Error(err)
-		return err
-	}
-	logger.Debug("finished btchUndelUsrProcessJSON()")
-	return nil
-}
-
-func btchUndelUsrProcessSheet(ds *admin.Service, sheetID string) error {
-	logger.Debugw("starting btchUndelUsrProcessSheet()",
+func bunduProcessGSheet(ds *admin.Service, sheetID string) error {
+	logger.Debugw("starting bunduProcessGSheet()",
 		"sheetID", sheetID)
 
 	var undelUsers []usrs.UndeleteUser
@@ -371,7 +288,7 @@ func btchUndelUsrProcessSheet(ds *admin.Service, sheetID string) error {
 			continue
 		}
 
-		undelUserVar, err := btchUndelProcessUser(hdrMap, row)
+		undelUserVar, err := bunduFromFileFactory(hdrMap, row)
 		if err != nil {
 			logger.Error(err)
 			return err
@@ -380,33 +297,116 @@ func btchUndelUsrProcessSheet(ds *admin.Service, sheetID string) error {
 		undelUsers = append(undelUsers, undelUserVar)
 	}
 
-	err = btchUndelUsers(ds, undelUsers)
+	err = bunduProcessObjects(ds, undelUsers)
 	if err != nil {
 		logger.Error(err)
 		return err
 	}
-	logger.Debug("finished btchUndelUsrProcessSheet()")
+	logger.Debug("finished bunduProcessGSheet()")
 	return nil
 }
 
-func btchUndelProcessUser(hdrMap map[int]string, userData []interface{}) (usrs.UndeleteUser, error) {
-	logger.Debugw("starting btchUndelProcessUser()",
-		"hdrMap", hdrMap)
+func bunduProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner) error {
+	logger.Debugw("starting bunduProcessJSON()",
+		"filePath", filePath)
 
-	undelUser := usrs.UndeleteUser{}
+	var undelUsers []usrs.UndeleteUser
 
-	for idx, attr := range userData {
-		attrName := hdrMap[idx]
-
-		switch {
-		case attrName == "userKey":
-			undelUser.UserKey = fmt.Sprintf("%v", attr)
-		case attrName == "orgUnitPath":
-			undelUser.OrgUnitPath = fmt.Sprintf("%v", attr)
+	if filePath != "" {
+		file, err := os.Open(filePath)
+		if err != nil {
+			logger.Error(err)
+			return err
 		}
+		defer file.Close()
+
+		scanner = bufio.NewScanner(file)
 	}
-	logger.Debug("finished btchUndelProcessUser()")
-	return undelUser, nil
+
+	for scanner.Scan() {
+		jsonData := scanner.Text()
+
+		undelUserVar, err := bunduFromJSONFactory(ds, jsonData)
+		if err != nil {
+			logger.Error(err)
+			return err
+		}
+
+		undelUsers = append(undelUsers, undelUserVar)
+	}
+	err := scanner.Err()
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+
+	err = bunduProcessObjects(ds, undelUsers)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	logger.Debug("finished bunduProcessJSON()")
+	return nil
+}
+
+func bunduProcessObjects(ds *admin.Service, undelUsers []usrs.UndeleteUser) error {
+	logger.Debug("starting bunduProcessObjects()")
+	wg := new(sync.WaitGroup)
+
+	for _, u := range undelUsers {
+		userUndelete := admin.UserUndelete{}
+
+		if u.OrgUnitPath == "" {
+			userUndelete.OrgUnitPath = "/"
+		} else {
+			userUndelete.OrgUnitPath = u.OrgUnitPath
+		}
+
+		uuc := ds.Users.Undelete(u.UserKey, &userUndelete)
+
+		wg.Add(1)
+
+		go bunduUndelete(u.UserKey, wg, uuc)
+	}
+
+	wg.Wait()
+
+	logger.Debug("finished bunduProcessObjects()")
+	return nil
+}
+
+func bunduUndelete(userKey string, wg *sync.WaitGroup, uuc *admin.UsersUndeleteCall) {
+	logger.Debugw("starting bunduUndelete()",
+		"userKey", userKey)
+
+	defer wg.Done()
+
+	b := backoff.NewExponentialBackOff()
+	b.MaxElapsedTime = 32 * time.Second
+
+	err := backoff.Retry(func() error {
+		var err error
+		err = uuc.Do()
+		if err == nil {
+			logger.Infof(cmn.InfoUserUndeleted, userKey)
+			fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoUserUndeleted, userKey)))
+			return err
+		}
+		if !cmn.IsErrRetryable(err) {
+			return backoff.Permanent(fmt.Errorf(cmn.ErrBatchUser, err.Error(), userKey))
+		}
+		// Log the retries
+		logger.Warnw(err.Error(),
+			"retrying", b.GetElapsedTime().String(),
+			"user", userKey)
+		return fmt.Errorf(cmn.ErrBatchUser, err.Error(), userKey)
+	}, b)
+	if err != nil {
+		// Log final error
+		logger.Error(err)
+		fmt.Println(cmn.GminMessage(err.Error()))
+	}
+	logger.Debug("finished bunduUndelete()")
 }
 
 func init() {

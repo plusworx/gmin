@@ -96,7 +96,7 @@ func doBatchDelMember(cmd *cobra.Command, args []string) error {
 
 		wg.Add(1)
 
-		go deleteMember(wg, mdc, member, group)
+		go bdmDeleteObject(wg, mdc, member, group)
 	}
 
 	wg.Wait()
@@ -105,8 +105,8 @@ func doBatchDelMember(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func deleteMember(wg *sync.WaitGroup, mdc *admin.MembersDeleteCall, member string, group string) {
-	logger.Debugw("starting deleteMember()",
+func bdmDeleteObject(wg *sync.WaitGroup, mdc *admin.MembersDeleteCall, member string, group string) {
+	logger.Debugw("starting bdmDeleteObject()",
 		"group", group,
 		"member", member)
 
@@ -137,7 +137,7 @@ func deleteMember(wg *sync.WaitGroup, mdc *admin.MembersDeleteCall, member strin
 		logger.Error(err)
 		fmt.Println(cmn.GminMessage(err.Error()))
 	}
-	logger.Debug("finished deleteMember()")
+	logger.Debug("finished bdmDeleteObject()")
 }
 
 func init() {

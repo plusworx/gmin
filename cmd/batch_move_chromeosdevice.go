@@ -100,19 +100,19 @@ func doBatchMoveCrOSDev(cmd *cobra.Command, args []string) error {
 
 	switch {
 	case lwrFmt == "csv":
-		err := btchMoveCrOSDevProcessCSV(ds, inputFile)
+		err := bmvcProcessCSVFile(ds, inputFile)
 		if err != nil {
 			logger.Error(err)
 			return err
 		}
 	case lwrFmt == "json":
-		err := btchMoveCrOSDevProcessJSON(ds, inputFile, scanner)
+		err := bmvcProcessJSON(ds, inputFile, scanner)
 		if err != nil {
 			logger.Error(err)
 			return err
 		}
 	case lwrFmt == "gsheet":
-		err := btchMoveCrOSDevProcessSheet(ds, inputFile)
+		err := bmvcProcessGSheet(ds, inputFile)
 		if err != nil {
 			logger.Error(err)
 			return err
@@ -122,8 +122,37 @@ func doBatchMoveCrOSDev(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func btchMoveJSONCrOSDev(ds *admin.Service, jsonData string) (cdevs.MovedDevice, error) {
-	logger.Debugw("starting btchMoveJSONCrOSDev()",
+func bmvcFromFileFactory(hdrMap map[int]string, cdevData []interface{}) (cdevs.MovedDevice, error) {
+	logger.Debugw("starting bmvcFromFileFactory()",
+		"hdrMap", hdrMap)
+
+	movedDev := cdevs.MovedDevice{}
+
+	for idx, attr := range cdevData {
+		attrName := hdrMap[idx]
+		attrVal := fmt.Sprintf("%v", attr)
+
+		switch {
+		case attrName == "deviceId":
+			if attrVal == "" {
+				err := fmt.Errorf(cmn.ErrEmptyString, attrName)
+				return movedDev, err
+			}
+			movedDev.DeviceId = attrVal
+		case attrName == "orgUnitPath":
+			if attrVal == "" {
+				err := fmt.Errorf(cmn.ErrEmptyString, attrName)
+				return movedDev, err
+			}
+			movedDev.OrgUnitPath = attrVal
+		}
+	}
+	logger.Debug("finished bmvcFromFileFactory()")
+	return movedDev, nil
+}
+
+func bmvcFromJSONFactory(ds *admin.Service, jsonData string) (cdevs.MovedDevice, error) {
+	logger.Debugw("starting bmvcFromJSONFactory()",
 		"jsonData", jsonData)
 
 	movedDev := cdevs.MovedDevice{}
@@ -151,43 +180,12 @@ func btchMoveJSONCrOSDev(ds *admin.Service, jsonData string) (cdevs.MovedDevice,
 		logger.Error(err)
 		return movedDev, err
 	}
-	logger.Debug("finished btchMoveJSONCrOSDev()")
+	logger.Debug("finished bmvcFromJSONFactory()")
 	return movedDev, nil
 }
 
-func btchMoveCrOSDevs(ds *admin.Service, movedDevs []cdevs.MovedDevice) error {
-	logger.Debug("starting btchMoveCrOSDevs()")
-
-	customerID, err := cfg.ReadConfigString("customerid")
-	if err != nil {
-		logger.Error(err)
-		return err
-	}
-
-	wg := new(sync.WaitGroup)
-
-	for _, md := range movedDevs {
-		move := admin.ChromeOsMoveDevicesToOu{}
-		deviceIDs := []string{}
-
-		deviceIDs = append(deviceIDs, md.DeviceId)
-		move.DeviceIds = deviceIDs
-
-		cdmc := ds.Chromeosdevices.MoveDevicesToOu(customerID, md.OrgUnitPath, &move)
-
-		wg.Add(1)
-
-		go btchMoveCrOSDevProcess(md.DeviceId, md.OrgUnitPath, wg, cdmc)
-	}
-
-	wg.Wait()
-
-	logger.Debug("finished btchMoveCrOSDevs()")
-	return nil
-}
-
-func btchMoveCrOSDevProcess(deviceID string, ouPath string, wg *sync.WaitGroup, cdmc *admin.ChromeosdevicesMoveDevicesToOuCall) {
-	logger.Debugw("starting btchMoveCrOSDevProcess()",
+func bmvcPerformMove(deviceID string, ouPath string, wg *sync.WaitGroup, cdmc *admin.ChromeosdevicesMoveDevicesToOuCall) {
+	logger.Debugw("starting bmvcPerformMove()",
 		"deviceID", deviceID,
 		"ouPath", ouPath)
 
@@ -219,11 +217,11 @@ func btchMoveCrOSDevProcess(deviceID string, ouPath string, wg *sync.WaitGroup, 
 		logger.Error(err)
 		fmt.Println(cmn.GminMessage(err.Error()))
 	}
-	logger.Debug("finished btchMoveCrOSDevProcess()")
+	logger.Debug("finished bmvcPerformMove()")
 }
 
-func btchMoveCrOSDevProcessCSV(ds *admin.Service, filePath string) error {
-	logger.Debugw("starting btchMoveCrOSDevProcessCSV()",
+func bmvcProcessCSVFile(ds *admin.Service, filePath string) error {
+	logger.Debugw("starting bmvcProcessCSVFile()",
 		"filePath", filePath)
 
 	var (
@@ -271,7 +269,7 @@ func btchMoveCrOSDevProcessCSV(ds *admin.Service, filePath string) error {
 			iSlice[idx] = value
 		}
 
-		moveCdevVar, err := btchMoveProcessCrOSDev(hdrMap, iSlice)
+		moveCdevVar, err := bmvcFromFileFactory(hdrMap, iSlice)
 		if err != nil {
 			logger.Error(err)
 			return err
@@ -282,60 +280,17 @@ func btchMoveCrOSDevProcessCSV(ds *admin.Service, filePath string) error {
 		count = count + 1
 	}
 
-	err = btchMoveCrOSDevs(ds, movedDevs)
+	err = bmvcProcessObjects(ds, movedDevs)
 	if err != nil {
 		logger.Error(err)
 		return err
 	}
-	logger.Debug("finished btchMoveCrOSDevProcessCSV()")
+	logger.Debug("finished bmvcProcessCSVFile()")
 	return nil
 }
 
-func btchMoveCrOSDevProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner) error {
-	logger.Debugw("starting btchMoveCrOSDevProcessJSON()",
-		"filePath", filePath)
-
-	var movedDevs []cdevs.MovedDevice
-
-	if filePath != "" {
-		file, err := os.Open(filePath)
-		if err != nil {
-			logger.Error(err)
-			return err
-		}
-		defer file.Close()
-
-		scanner = bufio.NewScanner(file)
-	}
-
-	for scanner.Scan() {
-		jsonData := scanner.Text()
-
-		moveCdevVar, err := btchMoveJSONCrOSDev(ds, jsonData)
-		if err != nil {
-			logger.Error(err)
-			return err
-		}
-
-		movedDevs = append(movedDevs, moveCdevVar)
-	}
-	err := scanner.Err()
-	if err != nil {
-		logger.Error(err)
-		return err
-	}
-
-	err = btchMoveCrOSDevs(ds, movedDevs)
-	if err != nil {
-		logger.Error(err)
-		return err
-	}
-	logger.Debug("finished btchMoveCrOSDevProcessJSON()")
-	return nil
-}
-
-func btchMoveCrOSDevProcessSheet(ds *admin.Service, sheetID string) error {
-	logger.Debugw("starting btchMoveCrOSDevProcessSheet()",
+func bmvcProcessGSheet(ds *admin.Service, sheetID string) error {
+	logger.Debugw("starting bmvcProcessGSheet()",
 		"sheetID", sheetID)
 
 	var movedDevs []cdevs.MovedDevice
@@ -377,7 +332,7 @@ func btchMoveCrOSDevProcessSheet(ds *admin.Service, sheetID string) error {
 			continue
 		}
 
-		moveCdevVar, err := btchMoveProcessCrOSDev(hdrMap, row)
+		moveCdevVar, err := bmvcFromFileFactory(hdrMap, row)
 		if err != nil {
 			logger.Error(err)
 			return err
@@ -386,42 +341,87 @@ func btchMoveCrOSDevProcessSheet(ds *admin.Service, sheetID string) error {
 		movedDevs = append(movedDevs, moveCdevVar)
 	}
 
-	err = btchMoveCrOSDevs(ds, movedDevs)
+	err = bmvcProcessObjects(ds, movedDevs)
 	if err != nil {
 		logger.Error(err)
 		return err
 	}
-	logger.Debug("finished btchMoveCrOSDevProcessSheet()")
+	logger.Debug("finished bmvcProcessGSheet()")
 	return nil
 }
 
-func btchMoveProcessCrOSDev(hdrMap map[int]string, cdevData []interface{}) (cdevs.MovedDevice, error) {
-	logger.Debugw("starting btchMoveProcessCrOSDev()",
-		"hdrMap", hdrMap)
+func bmvcProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner) error {
+	logger.Debugw("starting bmvcProcessJSON()",
+		"filePath", filePath)
 
-	movedDev := cdevs.MovedDevice{}
+	var movedDevs []cdevs.MovedDevice
 
-	for idx, attr := range cdevData {
-		attrName := hdrMap[idx]
-		attrVal := fmt.Sprintf("%v", attr)
-
-		switch {
-		case attrName == "deviceId":
-			if attrVal == "" {
-				err := fmt.Errorf(cmn.ErrEmptyString, attrName)
-				return movedDev, err
-			}
-			movedDev.DeviceId = attrVal
-		case attrName == "orgUnitPath":
-			if attrVal == "" {
-				err := fmt.Errorf(cmn.ErrEmptyString, attrName)
-				return movedDev, err
-			}
-			movedDev.OrgUnitPath = attrVal
+	if filePath != "" {
+		file, err := os.Open(filePath)
+		if err != nil {
+			logger.Error(err)
+			return err
 		}
+		defer file.Close()
+
+		scanner = bufio.NewScanner(file)
 	}
-	logger.Debug("finished btchMoveProcessCrOSDev()")
-	return movedDev, nil
+
+	for scanner.Scan() {
+		jsonData := scanner.Text()
+
+		moveCdevVar, err := bmvcFromJSONFactory(ds, jsonData)
+		if err != nil {
+			logger.Error(err)
+			return err
+		}
+
+		movedDevs = append(movedDevs, moveCdevVar)
+	}
+	err := scanner.Err()
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+
+	err = bmvcProcessObjects(ds, movedDevs)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	logger.Debug("finished bmvcProcessJSON()")
+	return nil
+}
+
+func bmvcProcessObjects(ds *admin.Service, movedDevs []cdevs.MovedDevice) error {
+	logger.Debug("starting bmvcProcessObjects()")
+
+	customerID, err := cfg.ReadConfigString("customerid")
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+
+	wg := new(sync.WaitGroup)
+
+	for _, md := range movedDevs {
+		move := admin.ChromeOsMoveDevicesToOu{}
+		deviceIDs := []string{}
+
+		deviceIDs = append(deviceIDs, md.DeviceId)
+		move.DeviceIds = deviceIDs
+
+		cdmc := ds.Chromeosdevices.MoveDevicesToOu(customerID, md.OrgUnitPath, &move)
+
+		wg.Add(1)
+
+		go bmvcPerformMove(md.DeviceId, md.OrgUnitPath, wg, cdmc)
+	}
+
+	wg.Wait()
+
+	logger.Debug("finished bmvcProcessObjects()")
+	return nil
 }
 
 func init() {

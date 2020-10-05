@@ -106,19 +106,19 @@ func doBatchUpdCrOSDev(cmd *cobra.Command, args []string) error {
 
 	switch {
 	case lwrFmt == "csv":
-		err := btchUpdCDevProcessCSV(ds, inputFile)
+		err := bucProcessCSVFile(ds, inputFile)
 		if err != nil {
 			logger.Error(err)
 			return err
 		}
 	case lwrFmt == "json":
-		err := btchUpdCDevProcessJSON(ds, inputFile, scanner)
+		err := bucProcessJSON(ds, inputFile, scanner)
 		if err != nil {
 			logger.Error(err)
 			return err
 		}
 	case lwrFmt == "gsheet":
-		err := btchUpdCDevProcessSheet(ds, inputFile)
+		err := bucProcessGSheet(ds, inputFile)
 		if err != nil {
 			logger.Error(err)
 			return err
@@ -128,8 +128,49 @@ func doBatchUpdCrOSDev(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func btchUpdJSONCDev(ds *admin.Service, jsonData string) (*admin.ChromeOsDevice, error) {
-	logger.Debugw("starting btchUpdJSONCDev()",
+func bucFromFileFactory(hdrMap map[int]string, cdevData []interface{}) (*admin.ChromeOsDevice, error) {
+	logger.Debugw("starting bucFromFileFactory()",
+		"hdrMap", hdrMap)
+
+	var crosdev *admin.ChromeOsDevice
+
+	crosdev = new(admin.ChromeOsDevice)
+
+	for idx, attr := range cdevData {
+		attrName := hdrMap[idx]
+		attrVal := fmt.Sprintf("%v", attr)
+
+		switch {
+		case attrName == "annotatedAssetId":
+			crosdev.AnnotatedAssetId = attrVal
+			if assetID == "" {
+				crosdev.ForceSendFields = append(crosdev.ForceSendFields, "AnnotatedAssetId")
+			}
+		case attrName == "annotatedLocation":
+			crosdev.AnnotatedLocation = attrVal
+			if location == "" {
+				crosdev.ForceSendFields = append(crosdev.ForceSendFields, "AnnotatedLocation")
+			}
+		case attrName == "annotatedUser":
+			crosdev.AnnotatedUser = attrVal
+			if attrVal == "" {
+				crosdev.ForceSendFields = append(crosdev.ForceSendFields, "AnnotatedUser")
+			}
+		case attrName == "notes":
+			crosdev.Notes = attrVal
+			if notes == "" {
+				crosdev.ForceSendFields = append(crosdev.ForceSendFields, "Notes")
+			}
+		case attrName == "orgUnitPath":
+			crosdev.OrgUnitPath = attrVal
+		}
+	}
+	logger.Debug("finished bucFromFileFactory()")
+	return crosdev, nil
+}
+
+func bucFromJSONFactory(ds *admin.Service, jsonData string) (*admin.ChromeOsDevice, error) {
+	logger.Debugw("starting bucFromJSONFactory()",
 		"jsonData", jsonData)
 
 	var (
@@ -177,68 +218,12 @@ func btchUpdJSONCDev(ds *admin.Service, jsonData string) (*admin.ChromeOsDevice,
 	if len(emptyVals.ForceSendFields) > 0 {
 		crosdev.ForceSendFields = emptyVals.ForceSendFields
 	}
-	logger.Debug("finished btchUpdJSONCDev()")
+	logger.Debug("finished bucFromJSONFactory()")
 	return crosdev, nil
 }
 
-func btchUpdateCDevs(ds *admin.Service, crosdevs []*admin.ChromeOsDevice) error {
-	logger.Debug("starting btchUpdateCDevs()")
-	wg := new(sync.WaitGroup)
-
-	customerID, err := cfg.ReadConfigString("customerid")
-	if err != nil {
-		logger.Error(err)
-		return err
-	}
-
-	for _, c := range crosdevs {
-		cduc := ds.Chromeosdevices.Update(customerID, c.DeviceId, c)
-
-		wg.Add(1)
-
-		go btchCDevUpdateProcess(c, wg, cduc)
-	}
-
-	wg.Wait()
-
-	logger.Debug("finished btchUpdateCDevs()")
-	return nil
-}
-
-func btchCDevUpdateProcess(crosdev *admin.ChromeOsDevice, wg *sync.WaitGroup, cduc *admin.ChromeosdevicesUpdateCall) {
-	logger.Debug("starting btchCDevUpdateProcess()")
-	defer wg.Done()
-
-	b := backoff.NewExponentialBackOff()
-	b.MaxElapsedTime = 32 * time.Second
-
-	err := backoff.Retry(func() error {
-		var err error
-		_, err = cduc.Do()
-		if err == nil {
-			logger.Infof(cmn.InfoCDevUpdated, crosdev.DeviceId)
-			fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoCDevUpdated, crosdev.DeviceId)))
-			return err
-		}
-		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(fmt.Errorf(cmn.ErrBatchChromeOSDevice, err.Error(), crosdev.DeviceId))
-		}
-		// Log the retries
-		logger.Warnw(err.Error(),
-			"retrying", b.GetElapsedTime().String(),
-			"ChromeOS device", crosdev.DeviceId)
-		return fmt.Errorf(cmn.ErrBatchChromeOSDevice, err.Error(), crosdev.DeviceId)
-	}, b)
-	if err != nil {
-		// Log final error
-		logger.Error(err)
-		fmt.Println(cmn.GminMessage(err.Error()))
-	}
-	logger.Debug("finished btchCDevUpdateProcess()")
-}
-
-func btchUpdCDevProcessCSV(ds *admin.Service, filePath string) error {
-	logger.Debugw("starting btchUpdCDevProcessCSV()",
+func bucProcessCSVFile(ds *admin.Service, filePath string) error {
+	logger.Debugw("starting bucProcessCSVFile()",
 		"filePath", filePath)
 
 	var (
@@ -286,7 +271,7 @@ func btchUpdCDevProcessCSV(ds *admin.Service, filePath string) error {
 			iSlice[idx] = value
 		}
 
-		cdevVar, err := btchUpdProcessCDev(hdrMap, iSlice)
+		cdevVar, err := bucFromFileFactory(hdrMap, iSlice)
 		if err != nil {
 			logger.Error(err)
 			return err
@@ -297,60 +282,16 @@ func btchUpdCDevProcessCSV(ds *admin.Service, filePath string) error {
 		count = count + 1
 	}
 
-	err = btchUpdateCDevs(ds, crosdevs)
+	err = bucProcessObjects(ds, crosdevs)
 	if err != nil {
 		logger.Error(err)
 		return err
 	}
-	logger.Debug("finished btchUpdCDevProcessCSV()")
+	logger.Debug("finished bucProcessCSVFile()")
 	return nil
 }
-
-func btchUpdCDevProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner) error {
-	logger.Debugw("starting btchUpdCDevProcessJSON()",
-		"filePath", filePath)
-
-	var crosdevs []*admin.ChromeOsDevice
-
-	if filePath != "" {
-		file, err := os.Open(filePath)
-		if err != nil {
-			logger.Error(err)
-			return err
-		}
-		defer file.Close()
-
-		scanner = bufio.NewScanner(file)
-	}
-
-	for scanner.Scan() {
-		jsonData := scanner.Text()
-
-		cdevVar, err := btchUpdJSONCDev(ds, jsonData)
-		if err != nil {
-			logger.Error(err)
-			return err
-		}
-
-		crosdevs = append(crosdevs, cdevVar)
-	}
-	err := scanner.Err()
-	if err != nil {
-		logger.Error(err)
-		return err
-	}
-
-	err = btchUpdateCDevs(ds, crosdevs)
-	if err != nil {
-		logger.Error(err)
-		return err
-	}
-	logger.Debug("finished btchUpdCDevProcessJSON()")
-	return nil
-}
-
-func btchUpdCDevProcessSheet(ds *admin.Service, sheetID string) error {
-	logger.Debugw("starting btchUpdCDevProcessSheet()",
+func bucProcessGSheet(ds *admin.Service, sheetID string) error {
+	logger.Debugw("starting bucProcessGSheet()",
 		"sheetID", sheetID)
 
 	var crosdevs []*admin.ChromeOsDevice
@@ -392,7 +333,7 @@ func btchUpdCDevProcessSheet(ds *admin.Service, sheetID string) error {
 			continue
 		}
 
-		cdevVar, err := btchUpdProcessCDev(hdrMap, row)
+		cdevVar, err := bucFromFileFactory(hdrMap, row)
 		if err != nil {
 			logger.Error(err)
 			return err
@@ -401,54 +342,112 @@ func btchUpdCDevProcessSheet(ds *admin.Service, sheetID string) error {
 		crosdevs = append(crosdevs, cdevVar)
 	}
 
-	err = btchUpdateCDevs(ds, crosdevs)
+	err = bucProcessObjects(ds, crosdevs)
 	if err != nil {
 		logger.Error(err)
 		return err
 	}
-	logger.Debug("finished btchUpdCDevProcessSheet()")
+	logger.Debug("finished bucProcessGSheet()")
 	return nil
 }
 
-func btchUpdProcessCDev(hdrMap map[int]string, cdevData []interface{}) (*admin.ChromeOsDevice, error) {
-	logger.Debugw("starting btchUpdProcessCDev()",
-		"hdrMap", hdrMap)
+func bucProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner) error {
+	logger.Debugw("starting bucProcessJSON()",
+		"filePath", filePath)
 
-	var crosdev *admin.ChromeOsDevice
+	var crosdevs []*admin.ChromeOsDevice
 
-	crosdev = new(admin.ChromeOsDevice)
-
-	for idx, attr := range cdevData {
-		attrName := hdrMap[idx]
-		attrVal := fmt.Sprintf("%v", attr)
-
-		switch {
-		case attrName == "annotatedAssetId":
-			crosdev.AnnotatedAssetId = attrVal
-			if assetID == "" {
-				crosdev.ForceSendFields = append(crosdev.ForceSendFields, "AnnotatedAssetId")
-			}
-		case attrName == "annotatedLocation":
-			crosdev.AnnotatedLocation = attrVal
-			if location == "" {
-				crosdev.ForceSendFields = append(crosdev.ForceSendFields, "AnnotatedLocation")
-			}
-		case attrName == "annotatedUser":
-			crosdev.AnnotatedUser = attrVal
-			if attrVal == "" {
-				crosdev.ForceSendFields = append(crosdev.ForceSendFields, "AnnotatedUser")
-			}
-		case attrName == "notes":
-			crosdev.Notes = attrVal
-			if notes == "" {
-				crosdev.ForceSendFields = append(crosdev.ForceSendFields, "Notes")
-			}
-		case attrName == "orgUnitPath":
-			crosdev.OrgUnitPath = attrVal
+	if filePath != "" {
+		file, err := os.Open(filePath)
+		if err != nil {
+			logger.Error(err)
+			return err
 		}
+		defer file.Close()
+
+		scanner = bufio.NewScanner(file)
 	}
-	logger.Debug("finished btchUpdProcessCDev()")
-	return crosdev, nil
+
+	for scanner.Scan() {
+		jsonData := scanner.Text()
+
+		cdevVar, err := bucFromJSONFactory(ds, jsonData)
+		if err != nil {
+			logger.Error(err)
+			return err
+		}
+
+		crosdevs = append(crosdevs, cdevVar)
+	}
+	err := scanner.Err()
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+
+	err = bucProcessObjects(ds, crosdevs)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	logger.Debug("finished bucProcessJSON()")
+	return nil
+}
+
+func bucProcessObjects(ds *admin.Service, crosdevs []*admin.ChromeOsDevice) error {
+	logger.Debug("starting bucProcessObjects()")
+	wg := new(sync.WaitGroup)
+
+	customerID, err := cfg.ReadConfigString("customerid")
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+
+	for _, c := range crosdevs {
+		cduc := ds.Chromeosdevices.Update(customerID, c.DeviceId, c)
+
+		wg.Add(1)
+
+		go bucUpdate(c, wg, cduc)
+	}
+
+	wg.Wait()
+
+	logger.Debug("finished bucProcessObjects()")
+	return nil
+}
+
+func bucUpdate(crosdev *admin.ChromeOsDevice, wg *sync.WaitGroup, cduc *admin.ChromeosdevicesUpdateCall) {
+	logger.Debug("starting bucUpdate()")
+	defer wg.Done()
+
+	b := backoff.NewExponentialBackOff()
+	b.MaxElapsedTime = 32 * time.Second
+
+	err := backoff.Retry(func() error {
+		var err error
+		_, err = cduc.Do()
+		if err == nil {
+			logger.Infof(cmn.InfoCDevUpdated, crosdev.DeviceId)
+			fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoCDevUpdated, crosdev.DeviceId)))
+			return err
+		}
+		if !cmn.IsErrRetryable(err) {
+			return backoff.Permanent(fmt.Errorf(cmn.ErrBatchChromeOSDevice, err.Error(), crosdev.DeviceId))
+		}
+		// Log the retries
+		logger.Warnw(err.Error(),
+			"retrying", b.GetElapsedTime().String(),
+			"ChromeOS device", crosdev.DeviceId)
+		return fmt.Errorf(cmn.ErrBatchChromeOSDevice, err.Error(), crosdev.DeviceId)
+	}, b)
+	if err != nil {
+		// Log final error
+		logger.Error(err)
+		fmt.Println(cmn.GminMessage(err.Error()))
+	}
+	logger.Debug("finished bucUpdate()")
 }
 
 func init() {

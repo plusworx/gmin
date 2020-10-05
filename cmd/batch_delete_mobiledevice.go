@@ -101,7 +101,7 @@ func doBatchDelMobDev(cmd *cobra.Command, args []string) error {
 
 		wg.Add(1)
 
-		go deleteMobDev(wg, mdc, mobResID)
+		go bdmdDeleteObject(wg, mdc, mobResID)
 	}
 
 	wg.Wait()
@@ -110,8 +110,8 @@ func doBatchDelMobDev(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func deleteMobDev(wg *sync.WaitGroup, mdc *admin.MobiledevicesDeleteCall, resourceID string) {
-	logger.Debugw("starting deleteMobDev()",
+func bdmdDeleteObject(wg *sync.WaitGroup, mdc *admin.MobiledevicesDeleteCall, resourceID string) {
+	logger.Debugw("starting bdmdDeleteObject()",
 		"resourceID", resourceID)
 
 	defer wg.Done()
@@ -141,7 +141,7 @@ func deleteMobDev(wg *sync.WaitGroup, mdc *admin.MobiledevicesDeleteCall, resour
 		logger.Error(err)
 		fmt.Println(cmn.GminMessage(err.Error()))
 	}
-	logger.Debug("finished deleteMobDev()")
+	logger.Debug("finished bdmdDeleteObject()")
 }
 
 func init() {
