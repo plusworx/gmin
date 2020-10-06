@@ -28,6 +28,7 @@ import (
 	"strings"
 
 	cdevs "github.com/plusworx/gmin/utils/chromeosdevices"
+	ca "github.com/plusworx/gmin/utils/commandaliases"
 	cmn "github.com/plusworx/gmin/utils/common"
 	gas "github.com/plusworx/gmin/utils/groupaliases"
 	grps "github.com/plusworx/gmin/utils/groups"
@@ -84,56 +85,56 @@ func doShowAttrs(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf(cmn.ErrObjectNotFound, args[0])
 	}
 
-	if object == "chromeos-device" || object == "cros-device" || object == "cros-dev" || object == "cdev" {
+	if cmn.SliceContainsStr(ca.CDevAliases, object) {
 		err := saChromeOSDev(args, lArgs, args[0])
 		if err != nil {
 			return err
 		}
 	}
 
-	if object == "group" || object == "grp" {
+	if cmn.SliceContainsStr(ca.GroupAliases, object) {
 		err := saGroup(args, lArgs, args[0])
 		if err != nil {
 			return err
 		}
 	}
 
-	if object == "group-alias" || object == "grp-alias" || object == "galias" || object == "ga" {
+	if cmn.SliceContainsStr(ca.GAAliases, object) {
 		err := saGroupAlias(args, lArgs, args[0])
 		if err != nil {
 			return err
 		}
 	}
 
-	if object == "group-member" || object == "grp-member" || object == "grp-mem" || object == "gmember" || object == "gmem" {
+	if cmn.SliceContainsStr(ca.GMAliases, object) {
 		err := saGroupMember(args, lArgs, args[0])
 		if err != nil {
 			return err
 		}
 	}
 
-	if object == "group-settings" || object == "grp-settings" || object == "grp-set" || object == "gsettings" || object == "gset" {
+	if cmn.SliceContainsStr(ca.GSAliases, object) {
 		err := saGroupSettings(args, lArgs, args[0])
 		if err != nil {
 			return err
 		}
 	}
 
-	if object == "mobile-device" || object == "mob-device" || object == "mob-dev" || object == "mdev" {
+	if cmn.SliceContainsStr(ca.MDevAliases, object) {
 		err := saMobileDev(args, lArgs, args[0])
 		if err != nil {
 			return err
 		}
 	}
 
-	if object == "orgunit" || object == "ou" {
+	if cmn.SliceContainsStr(ca.OUAliases, object) {
 		err := saOrgUnit(args, lArgs, args[0])
 		if err != nil {
 			return err
 		}
 	}
 
-	if object == "schema" || object == "sc" {
+	if cmn.SliceContainsStr(ca.SCAliases, object) {
 		err := saSchema(args, lArgs, args[0])
 		if err != nil {
 			return err
@@ -147,7 +148,7 @@ func doShowAttrs(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	if object == "user-alias" || object == "ualias" || object == "ua" {
+	if cmn.SliceContainsStr(ca.UAAliases, object) {
 		err := saUserAlias(args, lArgs, args[0])
 		if err != nil {
 			return err

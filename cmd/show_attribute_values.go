@@ -28,6 +28,7 @@ import (
 	"strings"
 
 	cdevs "github.com/plusworx/gmin/utils/chromeosdevices"
+	ca "github.com/plusworx/gmin/utils/commandaliases"
 	cmn "github.com/plusworx/gmin/utils/common"
 	gmems "github.com/plusworx/gmin/utils/members"
 	mdevs "github.com/plusworx/gmin/utils/mobiledevices"
@@ -53,30 +54,32 @@ user`,
 }
 
 func doShowAttrVals(cmd *cobra.Command, args []string) error {
-	if len(args) > 3 {
+	lArgs := len(args)
+
+	if lArgs > 3 {
 		return errors.New(cmn.ErrMax3ArgsExceeded)
 	}
 
 	obj := strings.ToLower(args[0])
 
 	switch {
-	case obj == "chromeos-device" || obj == "cros-device" || obj == "cros-dev" || obj == "cdev":
-		err := cdevs.ShowAttrValues(len(args), args)
+	case cmn.SliceContainsStr(ca.CDevAliases, obj):
+		err := cdevs.ShowAttrValues(lArgs, args)
 		if err != nil {
 			return err
 		}
-	case obj == "group-member" || obj == "grp-member" || obj == "grp-mem" || obj == "gmember" || obj == "gmem":
-		err := gmems.ShowAttrValues(len(args), args)
+	case cmn.SliceContainsStr(ca.GMAliases, obj):
+		err := gmems.ShowAttrValues(lArgs, args)
 		if err != nil {
 			return err
 		}
-	case obj == "mobile-device" || obj == "mob-device" || obj == "mob-dev" || obj == "mdev":
-		err := mdevs.ShowAttrValues(len(args), args)
+	case cmn.SliceContainsStr(ca.MDevAliases, obj):
+		err := mdevs.ShowAttrValues(lArgs, args)
 		if err != nil {
 			return err
 		}
 	case obj == "user":
-		err := usrs.ShowAttrValues(len(args), args)
+		err := usrs.ShowAttrValues(lArgs, args)
 		if err != nil {
 			return err
 		}
