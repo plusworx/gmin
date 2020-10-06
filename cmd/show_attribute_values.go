@@ -30,6 +30,7 @@ import (
 	cdevs "github.com/plusworx/gmin/utils/chromeosdevices"
 	ca "github.com/plusworx/gmin/utils/commandaliases"
 	cmn "github.com/plusworx/gmin/utils/common"
+	grpset "github.com/plusworx/gmin/utils/groupsettings"
 	gmems "github.com/plusworx/gmin/utils/members"
 	mdevs "github.com/plusworx/gmin/utils/mobiledevices"
 	usrs "github.com/plusworx/gmin/utils/users"
@@ -48,6 +49,7 @@ gmin show avals user email type`,
 Valid objects are:
 chromeos-device, cros-device, cros-dev, cdev
 group-member, grp-member, grp-mem, gmember, gmem
+group-settings, grp-settings, grp-set, gsettings, gset
 mobile-device, mob-device, mob-dev, mdev
 user`,
 	RunE: doShowAttrVals,
@@ -70,6 +72,11 @@ func doShowAttrVals(cmd *cobra.Command, args []string) error {
 		}
 	case cmn.SliceContainsStr(ca.GMAliases, obj):
 		err := gmems.ShowAttrValues(lArgs, args)
+		if err != nil {
+			return err
+		}
+	case cmn.SliceContainsStr(ca.GSAliases, obj):
+		err := grpset.ShowAttrValues(lArgs, args)
 		if err != nil {
 			return err
 		}

@@ -22,12 +22,6 @@ THE SOFTWARE.
 
 package commandaliases
 
-// AttrAliases are attributes command aliases
-var AttrAliases = []string{
-	"attr",
-	"attrs",
-}
-
 // CDevAliases are ChromeOS device command aliases
 var CDevAliases = []string{
 	"chromeos-device",

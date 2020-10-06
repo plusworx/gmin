@@ -175,7 +175,7 @@ func ShowAttrs(filter string) {
 // ShowAttrValues displays enumerated attribute values
 func ShowAttrValues(lenArgs int, args []string) error {
 	if lenArgs > 2 {
-		return fmt.Errorf(cmn.ErrTooManyArgsMax2, "group-member")
+		return fmt.Errorf(cmn.ErrTooManyArgsMax1, args[0])
 	}
 
 	if lenArgs == 1 {

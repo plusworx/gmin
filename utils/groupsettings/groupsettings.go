@@ -49,6 +49,25 @@ var AssistContentMap = map[string]string{
 	"none":                "NONE",
 }
 
+var attrValues = []string{
+	"messageModerationLevel",
+	"primaryLanguage",
+	"replyTo",
+	"spamModerationLevel",
+	"whoCanApproveMembers",
+	"whoCanAssistContent",
+	"whoCanBanUsers",
+	"whoCanContactOwner",
+	"whoCanDiscoverGroup",
+	"whoCanJoin",
+	"whoCanLeaveGroup",
+	"whoCanModerateContent",
+	"whoCanModerateMembers",
+	"whoCanPostMessage",
+	"whoCanViewGroup",
+	"whoCanViewMembership",
+}
+
 // BanUserMap holds valid ban-user flag values
 var BanUserMap = map[string]string{
 	"all_members":         "ALL_MEMBERS",
@@ -313,6 +332,113 @@ func ShowAttrs(filter string) {
 			fmt.Println(GroupSettingsAttrMap[k])
 		}
 	}
+}
+
+// ShowAttrValues displays enumerated attribute values
+func ShowAttrValues(lenArgs int, args []string) error {
+	values := []string{}
+
+	if lenArgs > 2 {
+		return fmt.Errorf(cmn.ErrTooManyArgsMax1, args[0])
+	}
+
+	if lenArgs == 1 {
+		for _, v := range attrValues {
+			fmt.Println(v)
+		}
+	}
+
+	if lenArgs == 2 {
+		attr := strings.ToLower(args[1])
+		if attr == "messagemoderationlevel" {
+			for _, val := range MessageModMap {
+				values = append(values, val)
+			}
+		}
+		if attr == "primarylanguage" {
+			for _, val := range LanguageMap {
+				values = append(values, val)
+			}
+		}
+		if attr == "replyto" {
+			for _, val := range ReplyToMap {
+				values = append(values, val)
+			}
+		}
+		if attr == "spammoderationlevel" {
+			for _, val := range SpamModMap {
+				values = append(values, val)
+			}
+		}
+		if attr == "whocanapprovemembers" {
+			for _, val := range ApproveMemberMap {
+				values = append(values, val)
+			}
+		}
+		if attr == "whocanassistcontent" {
+			for _, val := range AssistContentMap {
+				values = append(values, val)
+			}
+		}
+		if attr == "whocanbanusers" {
+			for _, val := range BanUserMap {
+				values = append(values, val)
+			}
+		}
+		if attr == "whocancontactowner" {
+			for _, val := range ContactOwnerMap {
+				values = append(values, val)
+			}
+		}
+		if attr == "whocandiscovergroup" {
+			for _, val := range DiscoverGroupMap {
+				values = append(values, val)
+			}
+		}
+		if attr == "whocanjoin" {
+			for _, val := range JoinMap {
+				values = append(values, val)
+			}
+		}
+		if attr == "whocanleavegroup" {
+			for _, val := range LeaveMap {
+				values = append(values, val)
+			}
+		}
+		if attr == "whocanmoderatecontent" {
+			for _, val := range ModContentMap {
+				values = append(values, val)
+			}
+		}
+		if attr == "whocanmoderatemembers" {
+			for _, val := range ModMemberMap {
+				values = append(values, val)
+			}
+		}
+		if attr == "whocanpostmessage" {
+			for _, val := range PostMessageMap {
+				values = append(values, val)
+			}
+		}
+		if attr == "whocanviewgroup" {
+			for _, val := range ViewGroupMap {
+				values = append(values, val)
+			}
+		}
+		if attr == "whocanviewmembership" {
+			for _, val := range ViewMembershipMap {
+				values = append(values, val)
+			}
+		}
+		if len(values) < 1 {
+			return fmt.Errorf(cmn.ErrAttrNotRecognized, args[1])
+		}
+	}
+	sort.Strings(values)
+	for _, s := range values {
+		fmt.Println(s)
+	}
+	return nil
 }
 
 // ValidateGroupSettingValue checks that a valid value has been provided for flag or attribute
