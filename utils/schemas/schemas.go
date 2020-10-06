@@ -185,7 +185,8 @@ func ShowCompAttrs(filter string) {
 
 // ShowSubCompAttrs displays schema field spec composite attributes
 func ShowSubCompAttrs(subAttr string, filter string) error {
-	if subAttr != "fields" {
+	lwrSubAttr := strings.ToLower(subAttr)
+	if lwrSubAttr != "fields" {
 		return fmt.Errorf(cmn.ErrInvalidSchemaCompAttr, subAttr)
 	}
 

@@ -65,30 +65,96 @@ user-alias, ualias, ua`,
 }
 
 func doShowAttrs(cmd *cobra.Command, args []string) error {
-	lArgs := len(args)
+	logger.Debugw("starting doShowAttrs()",
+		"args", args)
 
-	if lArgs > 3 {
-		return errors.New(cmn.ErrMax3ArgsExceeded)
+	lArgs := len(args)
+	object := strings.ToLower(args[0])
+
+	if queryable && lArgs > 1 {
+		return errors.New(cmn.ErrQueryableFlag1Arg)
 	}
 
 	if composite && queryable {
 		return errors.New(cmn.ErrQueryAndCompositeFlags)
 	}
 
-	if queryable && lArgs > 1 {
-		return errors.New(cmn.ErrQueryableFlag1Arg)
-	}
-
-	ok := validateShowSlice(strings.ToLower(args[0]), cmn.ValidPrimaryShowArgs)
+	ok := cmn.SliceContainsStr(cmn.ValidPrimaryShowArgs, object)
 	if !ok {
 		return fmt.Errorf(cmn.ErrObjectNotFound, args[0])
 	}
 
-	err := processShowArgs(args, lArgs)
-	if err != nil {
-		return err
+	if object == "chromeos-device" || object == "cros-device" || object == "cros-dev" || object == "cdev" {
+		err := saChromeOSDev(args, lArgs, args[0])
+		if err != nil {
+			return err
+		}
 	}
 
+	if object == "group" || object == "grp" {
+		err := saGroup(args, lArgs, args[0])
+		if err != nil {
+			return err
+		}
+	}
+
+	if object == "group-alias" || object == "grp-alias" || object == "galias" || object == "ga" {
+		err := saGroupAlias(args, lArgs, args[0])
+		if err != nil {
+			return err
+		}
+	}
+
+	if object == "group-member" || object == "grp-member" || object == "grp-mem" || object == "gmember" || object == "gmem" {
+		err := saGroupMember(args, lArgs, args[0])
+		if err != nil {
+			return err
+		}
+	}
+
+	if object == "group-settings" || object == "grp-settings" || object == "grp-set" || object == "gsettings" || object == "gset" {
+		err := saGroupSettings(args, lArgs, args[0])
+		if err != nil {
+			return err
+		}
+	}
+
+	if object == "mobile-device" || object == "mob-device" || object == "mob-dev" || object == "mdev" {
+		err := saMobileDev(args, lArgs, args[0])
+		if err != nil {
+			return err
+		}
+	}
+
+	if object == "orgunit" || object == "ou" {
+		err := saOrgUnit(args, lArgs, args[0])
+		if err != nil {
+			return err
+		}
+	}
+
+	if object == "schema" || object == "sc" {
+		err := saSchema(args, lArgs, args[0])
+		if err != nil {
+			return err
+		}
+	}
+
+	if object == "user" {
+		err := saUser(args, lArgs, args[0])
+		if err != nil {
+			return err
+		}
+	}
+
+	if object == "user-alias" || object == "ualias" || object == "ua" {
+		err := saUserAlias(args, lArgs, args[0])
+		if err != nil {
+			return err
+		}
+	}
+
+	logger.Debug("finished doShowAttrs()")
 	return nil
 }
 
@@ -100,174 +166,313 @@ func init() {
 	showAttrsCmd.Flags().BoolVarP(&queryable, "queryable", "q", false, "show attributes that can be used in a query")
 }
 
-func processShowArgs(args []string, lArgs int) error {
-	switch {
-	case lArgs == 3:
-		err := threeArgs(args[0], args[1], args[2])
-		if err != nil {
-			return err
+func saChromeOSDev(args []string, lArgs int, objectName string) error {
+	logger.Debugw("starting saChromeOSDev()",
+		"args", args,
+		"lArgs", lArgs,
+		"objectName", objectName)
+
+	if queryable {
+		cmn.ShowQueryableAttrs(filter, cdevs.QueryAttrMap)
+		return nil
+	}
+
+	if lArgs == 1 {
+		if composite {
+			cdevs.ShowCompAttrs(filter)
+			return nil
 		}
-	case lArgs == 2:
-		err := twoArgs(args[0], args[1])
-		if err != nil {
-			return err
+		cdevs.ShowAttrs(filter)
+		return nil
+	}
+
+	if lArgs == 2 {
+		if composite {
+			return fmt.Errorf(cmn.ErrNoCompositeAttrs, args[lArgs-1])
 		}
-	default:
-		err := oneArg(args[0])
+		err := cdevs.ShowSubAttrs(args[lArgs-1], filter)
 		if err != nil {
 			return err
 		}
 	}
-	return nil
-}
 
-func threeArgs(arg1 string, arg2 string, arg3 string) error {
-	obj := strings.ToLower(arg1)
-	subAttr := strings.ToLower(arg3)
-
-	switch {
-	case obj == "schema" || obj == "sc":
-		if composite {
-			return fmt.Errorf(cmn.ErrNoCompositeAttrs, arg3)
-		}
-		err := scs.ShowSubSubAttrs(subAttr)
-		if err != nil {
-			return err
-		}
-	default:
-		return fmt.Errorf(cmn.ErrNoCompositeAttrs, arg2)
+	if lArgs > 2 {
+		return fmt.Errorf(cmn.ErrNoCompositeAttrs, args[2])
 	}
 
+	logger.Debug("finished saChromeOSDev()")
 	return nil
 }
 
-func twoArgs(arg1 string, arg2 string) error {
-	obj := strings.ToLower(arg1)
-	switch {
-	case obj == "chromeos-device" || obj == "cros-device" || obj == "cros-dev" || obj == "cdev":
+func saGroup(args []string, lArgs int, objectName string) error {
+	logger.Debugw("starting saGroup()",
+		"args", args,
+		"lArgs", lArgs,
+		"objectName", objectName)
+
+	if queryable {
+		cmn.ShowQueryableAttrs(filter, grps.QueryAttrMap)
+		return nil
+	}
+
+	if lArgs == 1 {
 		if composite {
-			return fmt.Errorf(cmn.ErrNoCompositeAttrs, arg2)
+			return fmt.Errorf(cmn.ErrNoCompositeAttrs, objectName)
 		}
-		err := cdevs.ShowSubAttrs(arg2, filter)
+		grps.ShowAttrs(filter)
+	}
+
+	if lArgs > 1 {
+		return fmt.Errorf(cmn.ErrNoCompositeAttrs, objectName)
+	}
+
+	logger.Debug("finished saGroup()")
+	return nil
+}
+
+func saGroupAlias(args []string, lArgs int, objectName string) error {
+	logger.Debugw("starting saGroupAlias()",
+		"args", args,
+		"lArgs", lArgs,
+		"objectName", objectName)
+
+	if queryable {
+		return fmt.Errorf(cmn.ErrNoQueryableAttrs, objectName)
+	}
+
+	if lArgs == 1 {
+		if composite {
+			return fmt.Errorf(cmn.ErrNoCompositeAttrs, objectName)
+		}
+		gas.ShowAttrs(filter)
+	}
+
+	if lArgs > 1 {
+		return fmt.Errorf(cmn.ErrNoCompositeAttrs, objectName)
+	}
+
+	logger.Debug("finished saGroupAlias()")
+	return nil
+}
+
+func saGroupMember(args []string, lArgs int, objectName string) error {
+	logger.Debugw("starting saGroupMember()",
+		"args", args,
+		"lArgs", lArgs,
+		"objectName", objectName)
+
+	if queryable {
+		return fmt.Errorf(cmn.ErrNoQueryableAttrs, objectName)
+	}
+
+	if lArgs == 1 {
+		if composite {
+			return fmt.Errorf(cmn.ErrNoCompositeAttrs, objectName)
+		}
+		mems.ShowAttrs(filter)
+	}
+
+	if lArgs > 1 {
+		return fmt.Errorf(cmn.ErrNoCompositeAttrs, objectName)
+	}
+
+	logger.Debug("finished saGroupMember()")
+	return nil
+}
+
+func saGroupSettings(args []string, lArgs int, objectName string) error {
+	logger.Debugw("starting saGroupSettings()",
+		"args", args,
+		"lArgs", lArgs,
+		"objectName", objectName)
+
+	if queryable {
+		return fmt.Errorf(cmn.ErrNoQueryableAttrs, objectName)
+	}
+
+	if lArgs == 1 {
+		if composite {
+			return fmt.Errorf(cmn.ErrNoCompositeAttrs, objectName)
+		}
+		grpset.ShowAttrs(filter)
+	}
+
+	if lArgs > 1 {
+		return fmt.Errorf(cmn.ErrNoCompositeAttrs, objectName)
+	}
+
+	logger.Debug("finished saGroupSettings()")
+	return nil
+}
+
+func saMobileDev(args []string, lArgs int, objectName string) error {
+	logger.Debugw("starting saMobileDev()",
+		"args", args,
+		"lArgs", lArgs,
+		"objectName", objectName)
+
+	if queryable {
+		cmn.ShowQueryableAttrs(filter, mdevs.QueryAttrMap)
+		return nil
+	}
+
+	if lArgs == 1 {
+		if composite {
+			mdevs.ShowCompAttrs(filter)
+			return nil
+		}
+		mdevs.ShowAttrs(filter)
+		return nil
+	}
+
+	if lArgs == 2 {
+		if composite {
+			return fmt.Errorf(cmn.ErrNoCompositeAttrs, args[lArgs-1])
+		}
+		err := mdevs.ShowSubAttrs(args[lArgs-1], filter)
 		if err != nil {
 			return err
 		}
-	case obj == "mobile-device" || obj == "mob-device" || obj == "mob-dev" || obj == "mdev":
+	}
+
+	if lArgs > 2 {
+		return fmt.Errorf(cmn.ErrNoCompositeAttrs, args[2])
+	}
+
+	logger.Debug("finished saMobileDev()")
+	return nil
+}
+
+func saOrgUnit(args []string, lArgs int, objectName string) error {
+	logger.Debugw("starting saOrgUnit()",
+		"args", args,
+		"lArgs", lArgs,
+		"objectName", objectName)
+
+	if queryable {
+		return fmt.Errorf(cmn.ErrNoQueryableAttrs, objectName)
+	}
+
+	if lArgs == 1 {
 		if composite {
-			return fmt.Errorf(cmn.ErrNoCompositeAttrs, arg2)
+			return fmt.Errorf(cmn.ErrNoCompositeAttrs, objectName)
 		}
-		err := mdevs.ShowSubAttrs(arg2, filter)
-		if err != nil {
-			return err
-		}
-	case obj == "schema" || obj == "sc":
-		subAttr := strings.ToLower(arg2)
+		ous.ShowAttrs(filter)
+	}
+
+	if lArgs > 1 {
+		return fmt.Errorf(cmn.ErrNoCompositeAttrs, objectName)
+	}
+
+	logger.Debug("finished saOrgUnit()")
+	return nil
+}
+
+func saSchema(args []string, lArgs int, objectName string) error {
+	logger.Debugw("starting saSchema()",
+		"args", args,
+		"lArgs", lArgs,
+		"objectName", objectName)
+
+	if queryable {
+		return fmt.Errorf(cmn.ErrNoQueryableAttrs, objectName)
+	}
+
+	if lArgs == 1 {
 		if composite {
-			err := scs.ShowSubCompAttrs(subAttr, filter)
+			scs.ShowCompAttrs(filter)
+			return nil
+		}
+		scs.ShowAttrs(filter)
+	}
+
+	if lArgs == 2 {
+		if composite {
+			err := scs.ShowSubCompAttrs(args[lArgs-1], filter)
 			if err != nil {
 				return err
 			}
-			break
+			return nil
 		}
-		err := scs.ShowSubAttrs(arg2, filter)
+		err := scs.ShowSubAttrs(args[lArgs-1], filter)
 		if err != nil {
 			return err
-		}
-	case obj == "user":
-		if composite {
-			return fmt.Errorf(cmn.ErrNoCompositeAttrs, arg2)
-		}
-		err := usrs.ShowSubAttrs(arg2, filter)
-		if err != nil {
-			return err
-		}
-	default:
-		return fmt.Errorf(cmn.ErrNoCompositeAttrs, arg1)
-	}
-
-	return nil
-}
-
-func oneArg(arg string) error {
-	obj := strings.ToLower(arg)
-
-	if queryable {
-		switch {
-		case obj == "chromeos-device" || obj == "cros-device" || obj == "cros-dev" || obj == "cdev":
-			cmn.ShowQueryableAttrs(filter, cdevs.QueryAttrMap)
-		case obj == "group" || obj == "grp":
-			cmn.ShowQueryableAttrs(filter, grps.QueryAttrMap)
-		case obj == "mobile-device" || obj == "mob-device" || obj == "mob-dev" || obj == "mdev":
-			cmn.ShowQueryableAttrs(filter, mdevs.QueryAttrMap)
-		case obj == "user":
-			cmn.ShowQueryableAttrs(filter, usrs.QueryAttrMap)
-		default:
-			return fmt.Errorf(cmn.ErrNoQueryableAttrs, arg)
 		}
 		return nil
 	}
 
-	switch {
-	case obj == "chromeos-device" || obj == "cros-device" || obj == "cros-dev" || obj == "cdev":
+	if lArgs == 3 {
 		if composite {
-			cdevs.ShowCompAttrs(filter)
-			break
+			return fmt.Errorf(cmn.ErrNoCompositeAttrs, args[lArgs-1])
 		}
-		cdevs.ShowAttrs(filter)
-	case obj == "group" || obj == "grp":
-		if composite {
-			return fmt.Errorf(cmn.ErrNoCompositeAttrs, obj)
+		err := scs.ShowSubSubAttrs(args[lArgs-1])
+		if err != nil {
+			return err
 		}
-		grps.ShowAttrs(filter)
-	case obj == "group-alias" || obj == "grp-alias" || obj == "galias" || obj == "ga":
-		if composite {
-			return fmt.Errorf(cmn.ErrNoCompositeAttrs, obj)
-		}
-		gas.ShowAttrs(filter)
-	case obj == "group-member" || obj == "grp-member" || obj == "grp-mem" || obj == "gmember" || obj == "gmem":
-		if composite {
-			return fmt.Errorf(cmn.ErrNoCompositeAttrs, obj)
-		}
-		mems.ShowAttrs(filter)
-	case obj == "group-settings" || obj == "grp-settings" || obj == "grp-set" || obj == "gsettings" || obj == "gset":
-		if composite {
-			return fmt.Errorf(cmn.ErrNoCompositeAttrs, obj)
-		}
-		grpset.ShowAttrs(filter)
-	case obj == "mobile-device" || obj == "mob-device" || obj == "mob-dev" || obj == "mdev":
-		if composite {
-			mdevs.ShowCompAttrs(filter)
-			break
-		}
-		mdevs.ShowAttrs(filter)
-	case obj == "orgunit" || obj == "ou":
-		if composite {
-			return fmt.Errorf(cmn.ErrNoCompositeAttrs, obj)
-		}
-		ous.ShowAttrs(filter)
-	case obj == "schema" || obj == "sc":
-		if composite {
-			scs.ShowCompAttrs(filter)
-			break
-		}
-		scs.ShowAttrs(filter)
-	case obj == "user":
+	}
+
+	logger.Debug("finished saSchema()")
+	return nil
+}
+
+func saUser(args []string, lArgs int, objectName string) error {
+	logger.Debugw("starting saUser()",
+		"args", args,
+		"lArgs", lArgs,
+		"objectName", objectName)
+
+	if queryable {
+		cmn.ShowQueryableAttrs(filter, usrs.QueryAttrMap)
+		return nil
+	}
+
+	if lArgs == 1 {
 		if composite {
 			usrs.ShowCompAttrs(filter)
-			break
+			return nil
 		}
 		usrs.ShowAttrs(filter)
-	case obj == "user-alias" || obj == "ualias" || obj == "ua":
+	}
+
+	if lArgs == 2 {
 		if composite {
-			return fmt.Errorf(cmn.ErrNoCompositeAttrs, obj)
+			return fmt.Errorf(cmn.ErrNoCompositeAttrs, args[lArgs-1])
+		}
+		err := usrs.ShowSubAttrs(args[lArgs-1], filter)
+		if err != nil {
+			return err
+		}
+	}
+
+	if lArgs > 2 {
+		return fmt.Errorf(cmn.ErrNoCompositeAttrs, args[2])
+	}
+
+	logger.Debug("finished saUser()")
+	return nil
+}
+
+func saUserAlias(args []string, lArgs int, objectName string) error {
+	logger.Debugw("starting saUserAlias()",
+		"args", args,
+		"lArgs", lArgs,
+		"objectName", objectName)
+
+	if queryable {
+		return fmt.Errorf(cmn.ErrNoQueryableAttrs, objectName)
+	}
+
+	if lArgs == 1 {
+		if composite {
+			return fmt.Errorf(cmn.ErrNoCompositeAttrs, objectName)
 		}
 		uas.ShowAttrs(filter)
 	}
 
-	return nil
-}
+	if lArgs > 1 {
+		return fmt.Errorf(cmn.ErrNoCompositeAttrs, objectName)
+	}
 
-func validateShowSlice(arg string, attrSlice []string) bool {
-	ok := cmn.SliceContainsStr(attrSlice, arg)
-	return ok
+	logger.Debug("finished saUserAlias()")
+	return nil
 }
