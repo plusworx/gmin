@@ -44,7 +44,7 @@ import (
 
 var showAttrsCmd = &cobra.Command{
 	Use:     "attributes <object> [composite attributes]",
-	Aliases: []string{"attrs"},
+	Aliases: []string{"attrs", "attr"},
 	Args:    cobra.RangeArgs(1, 3),
 	Example: `gmin show attributes user -f pass
 gmin show attrs user name`,
