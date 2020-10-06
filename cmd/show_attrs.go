@@ -141,7 +141,7 @@ func doShowAttrs(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	if object == "user" {
+	if cmn.SliceContainsStr(ca.UserAliases, object) {
 		err := saUser(args, lArgs, args[0])
 		if err != nil {
 			return err

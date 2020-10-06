@@ -78,7 +78,7 @@ func doShowAttrVals(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return err
 		}
-	case obj == "user":
+	case cmn.SliceContainsStr(ca.UserAliases, obj):
 		err := usrs.ShowAttrValues(lArgs, args)
 		if err != nil {
 			return err
