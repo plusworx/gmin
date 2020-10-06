@@ -1070,6 +1070,19 @@ func ShowAttrs(attrSlice []string, attrMap map[string]string, filter string) {
 	}
 }
 
+// ShowAttrVals displays object attribute enumerated values or names of attributes that have them
+func ShowAttrVals(attrSlice []string, filter string) {
+	for _, a := range attrSlice {
+		if filter == "" {
+			fmt.Println(a)
+			continue
+		}
+		if strings.Contains(strings.ToLower(a), strings.ToLower(filter)) {
+			fmt.Println(a)
+		}
+	}
+}
+
 // ShowGlobalFlagValues displays enumerated global flag values
 func ShowGlobalFlagValues(lenArgs int, args []string) error {
 	if lenArgs == 1 {

@@ -346,26 +346,21 @@ func ShowAttrs(filter string) {
 }
 
 // ShowAttrValues displays enumerated attribute values
-func ShowAttrValues(lenArgs int, args []string) error {
+func ShowAttrValues(lenArgs int, args []string, filter string) error {
 	if lenArgs > 2 {
 		return fmt.Errorf(cmn.ErrTooManyArgsMax2, "mobiledevice")
 	}
 
 	if lenArgs == 1 {
-		for _, v := range attrValues {
-			fmt.Println(v)
-		}
+		cmn.ShowAttrVals(attrValues, filter)
 	}
 
 	if lenArgs == 2 {
 		attr := strings.ToLower(args[1])
 
 		if attr == "action" {
-			for _, val := range ValidActions {
-				fmt.Println(val)
-			}
+			cmn.ShowAttrVals(ValidActions, filter)
 		} else {
-
 			return fmt.Errorf(cmn.ErrAttrNotRecognized, args[1])
 		}
 	}

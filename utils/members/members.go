@@ -173,15 +173,13 @@ func ShowAttrs(filter string) {
 }
 
 // ShowAttrValues displays enumerated attribute values
-func ShowAttrValues(lenArgs int, args []string) error {
+func ShowAttrValues(lenArgs int, args []string, filter string) error {
 	if lenArgs > 2 {
 		return fmt.Errorf(cmn.ErrTooManyArgsMax1, args[0])
 	}
 
 	if lenArgs == 1 {
-		for _, v := range attrValues {
-			fmt.Println(v)
-		}
+		cmn.ShowAttrVals(attrValues, filter)
 	}
 
 	if lenArgs == 2 {
@@ -193,21 +191,16 @@ func ShowAttrValues(lenArgs int, args []string) error {
 			for _, val := range deliverySettingMap {
 				values = append(values, val)
 			}
-			sort.Strings(values)
-			for _, s := range values {
-				fmt.Println(s)
-			}
 		case attr == "role":
 			for _, val := range RoleMap {
 				values = append(values, val)
 			}
-			sort.Strings(values)
-			for _, s := range values {
-				fmt.Println(s)
-			}
 		default:
 			return fmt.Errorf(cmn.ErrAttrNotRecognized, args[1])
 		}
+
+		sort.Strings(values)
+		cmn.ShowAttrVals(values, filter)
 	}
 
 	return nil

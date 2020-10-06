@@ -335,7 +335,7 @@ func ShowAttrs(filter string) {
 }
 
 // ShowAttrValues displays enumerated attribute values
-func ShowAttrValues(lenArgs int, args []string) error {
+func ShowAttrValues(lenArgs int, args []string, filter string) error {
 	values := []string{}
 
 	if lenArgs > 2 {
@@ -343,9 +343,7 @@ func ShowAttrValues(lenArgs int, args []string) error {
 	}
 
 	if lenArgs == 1 {
-		for _, v := range attrValues {
-			fmt.Println(v)
-		}
+		cmn.ShowAttrVals(attrValues, filter)
 	}
 
 	if lenArgs == 2 {
@@ -435,9 +433,7 @@ func ShowAttrValues(lenArgs int, args []string) error {
 		}
 	}
 	sort.Strings(values)
-	for _, s := range values {
-		fmt.Println(s)
-	}
+	cmn.ShowAttrVals(values, filter)
 	return nil
 }
 

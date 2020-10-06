@@ -797,11 +797,9 @@ func ShowAttrs(filter string) {
 }
 
 // ShowAttrValues displays enumerated attribute values
-func ShowAttrValues(lenArgs int, args []string) error {
+func ShowAttrValues(lenArgs int, args []string, filter string) error {
 	if lenArgs == 1 {
-		for _, v := range attrValues {
-			fmt.Println(v)
-		}
+		cmn.ShowAttrVals(attrValues, filter)
 	}
 
 	if lenArgs == 2 {
@@ -826,118 +824,103 @@ func ShowAttrValues(lenArgs int, args []string) error {
 		attr2 := strings.ToLower(args[1])
 		attr3 := strings.ToLower(args[2])
 
-		switch {
-		case attr2 == "address":
+		if attr2 == "address" {
 			if attr3 == "type" {
-				for _, val := range validAddressTypes {
-					fmt.Println(val)
-				}
-			} else {
-				return fmt.Errorf(cmn.ErrAttrNotRecognized, args[2])
+				cmn.ShowAttrVals(validAddressTypes, filter)
+				return nil
 			}
-		case attr2 == "email":
-			if attr3 == "type" {
-				for _, val := range validEmailTypes {
-					fmt.Println(val)
-				}
-			} else {
-				return fmt.Errorf(cmn.ErrAttrNotRecognized, args[2])
-			}
-		case attr2 == "externalid":
-			if attr3 == "type" {
-				for _, val := range validExtIDTypes {
-					fmt.Println(val)
-				}
-			} else {
-				return fmt.Errorf(cmn.ErrAttrNotRecognized, args[2])
-			}
-		case attr2 == "gender":
-			if attr3 == "type" {
-				for _, val := range validGenders {
-					fmt.Println(val)
-				}
-			} else {
-				return fmt.Errorf(cmn.ErrAttrNotRecognized, args[2])
-			}
-		case attr2 == "keyword":
-			if attr3 == "type" {
-				for _, val := range validKeywordTypes {
-					fmt.Println(val)
-				}
-			} else {
-				return fmt.Errorf(cmn.ErrAttrNotRecognized, args[2])
-			}
-		case attr2 == "location":
-			if attr3 == "type" {
-				for _, val := range validLocationTypes {
-					fmt.Println(val)
-				}
-			} else {
-				return fmt.Errorf(cmn.ErrAttrNotRecognized, args[2])
-			}
-		case attr2 == "notes":
-			if attr3 == "type" {
-				for _, val := range validNotesContentTypes {
-					fmt.Println(val)
-				}
-			} else {
-				return fmt.Errorf(cmn.ErrAttrNotRecognized, args[2])
-			}
-		case attr2 == "organization":
-			if attr3 == "type" {
-				for _, val := range validOrgTypes {
-					fmt.Println(val)
-				}
-			} else {
-				return fmt.Errorf(cmn.ErrAttrNotRecognized, args[2])
-			}
-		case attr2 == "phone":
-			if attr3 == "type" {
-				for _, val := range validPhoneTypes {
-					fmt.Println(val)
-				}
-			} else {
-				return fmt.Errorf(cmn.ErrAttrNotRecognized, args[2])
-			}
-		case attr2 == "posixaccount":
-			if attr3 == "operatingsystemtype" {
-				for _, val := range validOSTypes {
-					fmt.Println(val)
-				}
-			} else {
-				return fmt.Errorf(cmn.ErrAttrNotRecognized, args[2])
-			}
-		case attr2 == "relation":
-			if attr3 == "type" {
-				for _, val := range validRelationTypes {
-					fmt.Println(val)
-				}
-			} else {
-				return fmt.Errorf(cmn.ErrAttrNotRecognized, args[2])
-			}
-		case attr2 == "website":
-			if attr3 == "type" {
-				for _, val := range validWebsiteTypes {
-					fmt.Println(val)
-				}
-			} else {
-				return fmt.Errorf(cmn.ErrAttrNotRecognized, args[2])
-			}
-		case attr2 == "im":
-			if attr3 == "protocol" {
-				for _, val := range validImProtocols {
-					fmt.Println(val)
-				}
-			} else if attr3 == "type" {
-				for _, val := range validImTypes {
-					fmt.Println(val)
-				}
-			} else {
-				return fmt.Errorf(cmn.ErrAttrNotRecognized, args[2])
-			}
-		default:
-			return fmt.Errorf(cmn.ErrAttrNotRecognized, args[1])
+			return fmt.Errorf(cmn.ErrAttrNotRecognized, args[2])
 		}
+		if attr2 == "email" {
+			if attr3 == "type" {
+				cmn.ShowAttrVals(validEmailTypes, filter)
+				return nil
+			}
+			return fmt.Errorf(cmn.ErrAttrNotRecognized, args[2])
+		}
+		if attr2 == "externalid" {
+			if attr3 == "type" {
+				cmn.ShowAttrVals(validExtIDTypes, filter)
+				return nil
+			}
+			return fmt.Errorf(cmn.ErrAttrNotRecognized, args[2])
+		}
+		if attr2 == "gender" {
+			if attr3 == "type" {
+				cmn.ShowAttrVals(validGenders, filter)
+				return nil
+			}
+			return fmt.Errorf(cmn.ErrAttrNotRecognized, args[2])
+		}
+		if attr2 == "keyword" {
+			if attr3 == "type" {
+				cmn.ShowAttrVals(validKeywordTypes, filter)
+				return nil
+			}
+			return fmt.Errorf(cmn.ErrAttrNotRecognized, args[2])
+		}
+		if attr2 == "location" {
+			if attr3 == "type" {
+				cmn.ShowAttrVals(validLocationTypes, filter)
+				return nil
+			}
+			return fmt.Errorf(cmn.ErrAttrNotRecognized, args[2])
+		}
+		if attr2 == "notes" {
+			if attr3 == "type" {
+				cmn.ShowAttrVals(validNotesContentTypes, filter)
+				return nil
+			}
+			return fmt.Errorf(cmn.ErrAttrNotRecognized, args[2])
+		}
+		if attr2 == "organization" {
+			if attr3 == "type" {
+				cmn.ShowAttrVals(validOrgTypes, filter)
+				return nil
+			}
+			return fmt.Errorf(cmn.ErrAttrNotRecognized, args[2])
+		}
+		if attr2 == "phone" {
+			if attr3 == "type" {
+				cmn.ShowAttrVals(validPhoneTypes, filter)
+				return nil
+			}
+			return fmt.Errorf(cmn.ErrAttrNotRecognized, args[2])
+		}
+		if attr2 == "posixaccount" {
+			if attr3 == "operatingsystemtype" {
+				cmn.ShowAttrVals(validOSTypes, filter)
+				return nil
+			}
+			return fmt.Errorf(cmn.ErrAttrNotRecognized, args[2])
+		}
+		if attr2 == "relation" {
+			if attr3 == "type" {
+				cmn.ShowAttrVals(validRelationTypes, filter)
+				return nil
+			}
+			return fmt.Errorf(cmn.ErrAttrNotRecognized, args[2])
+		}
+		if attr2 == "website" {
+			if attr3 == "type" {
+				cmn.ShowAttrVals(validWebsiteTypes, filter)
+				return nil
+			}
+			return fmt.Errorf(cmn.ErrAttrNotRecognized, args[2])
+		}
+		if attr2 == "im" {
+			if attr3 == "protocol" {
+				cmn.ShowAttrVals(validImProtocols, filter)
+				return nil
+			}
+			if attr3 == "type" {
+				cmn.ShowAttrVals(validImTypes, filter)
+				return nil
+			}
+			return fmt.Errorf(cmn.ErrAttrNotRecognized, args[2])
+		}
+		// Attribute not recognized
+		return fmt.Errorf(cmn.ErrAttrNotRecognized, args[1])
 	}
 
 	return nil

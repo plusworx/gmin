@@ -40,7 +40,7 @@ import (
 var showAttrValsCmd = &cobra.Command{
 	Use:     "attribute-values <object> [field with predefined values]",
 	Aliases: []string{"attr-vals", "avals"},
-	Args:    cobra.MinimumNArgs(1),
+	Args:    cobra.RangeArgs(1, 3),
 	Example: `gmin show attribute-values user email type
 gmin show avals user email type`,
 	Short: "Shows object field predefined value information",
@@ -62,31 +62,31 @@ func doShowAttrVals(cmd *cobra.Command, args []string) error {
 		return errors.New(cmn.ErrMax3ArgsExceeded)
 	}
 
-	obj := strings.ToLower(args[0])
+	object := strings.ToLower(args[0])
 
 	switch {
-	case cmn.SliceContainsStr(ca.CDevAliases, obj):
-		err := cdevs.ShowAttrValues(lArgs, args)
+	case cmn.SliceContainsStr(ca.CDevAliases, object):
+		err := cdevs.ShowAttrValues(lArgs, args, filter)
 		if err != nil {
 			return err
 		}
-	case cmn.SliceContainsStr(ca.GMAliases, obj):
-		err := gmems.ShowAttrValues(lArgs, args)
+	case cmn.SliceContainsStr(ca.GMAliases, object):
+		err := gmems.ShowAttrValues(lArgs, args, filter)
 		if err != nil {
 			return err
 		}
-	case cmn.SliceContainsStr(ca.GSAliases, obj):
-		err := grpset.ShowAttrValues(lArgs, args)
+	case cmn.SliceContainsStr(ca.GSAliases, object):
+		err := grpset.ShowAttrValues(lArgs, args, filter)
 		if err != nil {
 			return err
 		}
-	case cmn.SliceContainsStr(ca.MDevAliases, obj):
-		err := mdevs.ShowAttrValues(lArgs, args)
+	case cmn.SliceContainsStr(ca.MDevAliases, object):
+		err := mdevs.ShowAttrValues(lArgs, args, filter)
 		if err != nil {
 			return err
 		}
-	case cmn.SliceContainsStr(ca.UserAliases, obj):
-		err := usrs.ShowAttrValues(lArgs, args)
+	case cmn.SliceContainsStr(ca.UserAliases, object):
+		err := usrs.ShowAttrValues(lArgs, args, filter)
 		if err != nil {
 			return err
 		}
@@ -98,4 +98,5 @@ func doShowAttrVals(cmd *cobra.Command, args []string) error {
 
 func init() {
 	showCmd.AddCommand(showAttrValsCmd)
+	showAttrValsCmd.Flags().StringVarP(&filter, "filter", "f", "", "string used to filter results")
 }
