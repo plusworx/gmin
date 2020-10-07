@@ -26,42 +26,31 @@ package commandaliases
 var CDevAliases = []string{
 	"chromeos-device",
 	"cros-device",
-	"cros-devices",
 	"cros-dev",
-	"cros-devs",
 	"cdev",
-	"cdevs",
 }
 
 // GAAliases are group alias command aliases
 var GAAliases = []string{
 	"group-alias",
 	"grp-alias",
-	"grp-aliases",
 	"galias",
-	"galiases",
 	"ga",
-	"gas",
 }
 
 // GMAliases are group member command aliases
 var GMAliases = []string{
 	"group-member",
 	"grp-member",
-	"grp-members",
 	"grp-mem",
-	"grp-mems",
 	"gmember",
-	"gmembers",
 	"gmem",
-	"gmems",
 }
 
 // GroupAliases are group command aliases
 var GroupAliases = []string{
 	"group",
 	"grp",
-	"grps",
 }
 
 // GSAliases are group settings command aliases
@@ -77,39 +66,31 @@ var GSAliases = []string{
 var MDevAliases = []string{
 	"mobile-device",
 	"mob-device",
-	"mob-devices",
 	"mob-dev",
-	"mob-devs",
 	"mdev",
-	"mdevs",
 }
 
 // OUAliases are orgunit command aliases
 var OUAliases = []string{
 	"orgunit",
 	"ou",
-	"ous",
 }
 
 // SCAliases are schema command aliases
 var SCAliases = []string{
 	"schema",
 	"sc",
-	"scs",
 }
 
 // UAAliases are user alias command aliases
 var UAAliases = []string{
 	"user-alias",
 	"ualias",
-	"ualiases",
 	"ua",
-	"uas",
 }
 
 // UserAliases are user command aliases
 var UserAliases = []string{
 	"user",
 	"usr",
-	"usrs",
 }

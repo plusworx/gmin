@@ -60,7 +60,7 @@ group-settings,	grp-settings, grp-set, gsettings, gset
 mobile-device, mob-device, mob-dev, mdev
 orgunit, ou
 schema, sc
-user
+user, usr
 user-alias, ualias, ua`,
 	RunE: doShowAttrs,
 }

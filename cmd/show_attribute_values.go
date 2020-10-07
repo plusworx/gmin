@@ -51,7 +51,7 @@ chromeos-device, cros-device, cros-dev, cdev
 group-member, grp-member, grp-mem, gmember, gmem
 group-settings, grp-settings, grp-set, gsettings, gset
 mobile-device, mob-device, mob-dev, mdev
-user`,
+user, usr`,
 	RunE: doShowAttrVals,
 }
 
