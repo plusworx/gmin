@@ -38,8 +38,9 @@ import (
 )
 
 var createUserCmd = &cobra.Command{
-	Use:  "user <user email address>",
-	Args: cobra.ExactArgs(1),
+	Use:     "user <user email address>",
+	Aliases: []string{"usr"},
+	Args:    cobra.ExactArgs(1),
 	Example: `gmin create user another.user@mycompany.com  -f Another -l User -p strongpassword
 gmin crt user finance.person@mycompany.com -f Finance -l Person -p greatpassword -c`,
 	Short: "Creates a user",

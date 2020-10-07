@@ -35,8 +35,9 @@ import (
 )
 
 var getUserCmd = &cobra.Command{
-	Use:  "user <email address or id>",
-	Args: cobra.ExactArgs(1),
+	Use:     "user <email address or id>",
+	Aliases: []string{"usr"},
+	Args:    cobra.ExactArgs(1),
 	Example: `gmin get user auser@mydomain.org
 gmin get user 114361578941906491576 -a primaryEmail~name`,
 	Short: "Outputs information about a user",

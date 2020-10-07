@@ -38,7 +38,7 @@ import (
 
 var listUsersCmd = &cobra.Command{
 	Use:     "users",
-	Aliases: []string{"user"},
+	Aliases: []string{"user", "usr"},
 	Args:    cobra.NoArgs,
 	Example: `gmin list users -a primaryemail~addresses
 gmin ls user -q name:Fred`,

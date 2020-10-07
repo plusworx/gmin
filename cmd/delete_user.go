@@ -31,8 +31,9 @@ import (
 )
 
 var deleteUserCmd = &cobra.Command{
-	Use:  "user <email address or id>",
-	Args: cobra.ExactArgs(1),
+	Use:     "user <email address or id>",
+	Aliases: []string{"usr"},
+	Args:    cobra.ExactArgs(1),
 	Example: `gmin delete user myuser@mycompany.com
 gmin del user myuser@mycompany.com`,
 	Short: "Deletes user",
