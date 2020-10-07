@@ -57,6 +57,7 @@ user, usr`,
 
 func doShowAttrVals(cmd *cobra.Command, args []string) error {
 	lArgs := len(args)
+	lowerFilter := strings.ToLower(filter)
 
 	if lArgs > 3 {
 		return errors.New(cmn.ErrMax3ArgsExceeded)
@@ -66,27 +67,27 @@ func doShowAttrVals(cmd *cobra.Command, args []string) error {
 
 	switch {
 	case cmn.SliceContainsStr(ca.CDevAliases, object):
-		err := cdevs.ShowAttrValues(lArgs, args, filter)
+		err := cdevs.ShowAttrValues(lArgs, args, lowerFilter)
 		if err != nil {
 			return err
 		}
 	case cmn.SliceContainsStr(ca.GMAliases, object):
-		err := gmems.ShowAttrValues(lArgs, args, filter)
+		err := gmems.ShowAttrValues(lArgs, args, lowerFilter)
 		if err != nil {
 			return err
 		}
 	case cmn.SliceContainsStr(ca.GSAliases, object):
-		err := grpset.ShowAttrValues(lArgs, args, filter)
+		err := grpset.ShowAttrValues(lArgs, args, lowerFilter)
 		if err != nil {
 			return err
 		}
 	case cmn.SliceContainsStr(ca.MDevAliases, object):
-		err := mdevs.ShowAttrValues(lArgs, args, filter)
+		err := mdevs.ShowAttrValues(lArgs, args, lowerFilter)
 		if err != nil {
 			return err
 		}
 	case cmn.SliceContainsStr(ca.UserAliases, object):
-		err := usrs.ShowAttrValues(lArgs, args, filter)
+		err := usrs.ShowAttrValues(lArgs, args, lowerFilter)
 		if err != nil {
 			return err
 		}
