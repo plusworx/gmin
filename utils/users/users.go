@@ -91,7 +91,7 @@ var flagValues = []string{
 	"order-by",
 	"projection",
 	"sort-order",
-	"viewt-ype",
+	"view-type",
 }
 
 // genderAttrs contains names of all the addressable admin.UserGender attributes
