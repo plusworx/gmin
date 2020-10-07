@@ -179,6 +179,7 @@ const (
 	ErrNotCompositeAttr         string = "%v is not a composite attribute"
 	ErrObjectNotFound           string = "%v not found"
 	ErrObjectNotRecognized      string = " %v is not recognized"
+	ErrPipeInputFileConflict    string = "cannot provide input file when piping in input"
 	ErrProjectionFlagNotCustom  string = "--projection must be set to 'custom' in order to use custom field mask"
 	ErrTooManyArgsMax1          string = "too many arguments, %v has maximum of 1"
 	ErrTooManyArgsMax2          string = "too many arguments, %v has maximum of 2"
@@ -795,7 +796,7 @@ func InputFromStdIn(inputFile string) (*bufio.Scanner, error) {
 		return nil, nil
 	}
 	if inputFile != "" {
-		err = errors.New("gmin: error - cannot provide input file when piping in input")
+		err = errors.New(ErrPipeInputFileConflict)
 		return nil, err
 	}
 	scanner := bufio.NewScanner(os.Stdin)
