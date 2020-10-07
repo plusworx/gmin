@@ -558,7 +558,7 @@ func bupduUpdate(user *admin.User, wg *sync.WaitGroup, uuc *admin.UsersUpdateCal
 func init() {
 	batchUpdateCmd.AddCommand(batchUpdUserCmd)
 
-	batchUpdUserCmd.Flags().StringVarP(&inputFile, "inputfile", "i", "", "filepath to user data file or sheet id")
+	batchUpdUserCmd.Flags().StringVarP(&inputFile, "input-file", "i", "", "filepath to user data file or sheet id")
 	batchUpdUserCmd.Flags().StringVarP(&format, "format", "f", "json", "user data file format")
-	batchUpdUserCmd.Flags().StringVarP(&sheetRange, "sheetrange", "s", "", "user data gsheet range")
+	batchUpdUserCmd.Flags().StringVarP(&sheetRange, "sheet-range", "s", "", "user data gsheet range")
 }

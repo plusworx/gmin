@@ -450,7 +450,7 @@ func bcmProcessObjects(ds *admin.Service, groupKey string, members []*admin.Memb
 func init() {
 	batchCreateCmd.AddCommand(batchCrtMemberCmd)
 
-	batchCrtMemberCmd.Flags().StringVarP(&inputFile, "inputfile", "i", "", "filepath to group member data file or sheet id")
+	batchCrtMemberCmd.Flags().StringVarP(&inputFile, "input-file", "i", "", "filepath to group member data file or sheet id")
 	batchCrtMemberCmd.Flags().StringVarP(&format, "format", "f", "json", "user data file format")
-	batchCrtMemberCmd.Flags().StringVarP(&sheetRange, "sheetrange", "s", "", "user data gsheet range")
+	batchCrtMemberCmd.Flags().StringVarP(&sheetRange, "sheet-range", "s", "", "user data gsheet range")
 }

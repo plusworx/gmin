@@ -147,5 +147,5 @@ func bdmdDeleteObject(wg *sync.WaitGroup, mdc *admin.MobiledevicesDeleteCall, re
 func init() {
 	batchDelCmd.AddCommand(batchDelMobDevCmd)
 
-	batchDelMobDevCmd.Flags().StringVarP(&inputFile, "inputfile", "i", "", "filepath to mobile device data text file")
+	batchDelMobDevCmd.Flags().StringVarP(&inputFile, "input-file", "i", "", "filepath to mobile device data text file")
 }

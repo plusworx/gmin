@@ -46,7 +46,7 @@ func doCreate(cmd *cobra.Command, args []string) {
 func init() {
 	rootCmd.AddCommand(createCmd)
 	createCmd.PersistentFlags().BoolVar(&silent, "silent", false, "suppress console output")
-	createCmd.PersistentFlags().StringVar(&logLevel, "loglevel", "info", "log level (debug, info, error, warn)")
+	createCmd.PersistentFlags().StringVar(&logLevel, "log-level", "info", "log level (debug, info, error, warn)")
 
 	createCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
 		// Set loglevel

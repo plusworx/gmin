@@ -93,6 +93,6 @@ func doCreateMember(cmd *cobra.Command, args []string) error {
 func init() {
 	createCmd.AddCommand(createMemberCmd)
 
-	createMemberCmd.Flags().StringVarP(&deliverySetting, "deliverysetting", "d", "", "member delivery setting")
+	createMemberCmd.Flags().StringVarP(&deliverySetting, "delivery-setting", "d", "", "member delivery setting")
 	createMemberCmd.Flags().StringVarP(&role, "role", "r", "", "member role")
 }

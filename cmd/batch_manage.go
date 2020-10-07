@@ -46,7 +46,7 @@ func doBatchManage(cmd *cobra.Command, args []string) {
 func init() {
 	rootCmd.AddCommand(batchManageCmd)
 	batchManageCmd.PersistentFlags().BoolVar(&silent, "silent", false, "suppress console output")
-	batchManageCmd.PersistentFlags().StringVar(&logLevel, "loglevel", "info", "log level (debug, info, error, warn)")
+	batchManageCmd.PersistentFlags().StringVar(&logLevel, "log-level", "info", "log level (debug, info, error, warn)")
 
 	batchManageCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
 		zlog, err := setupLogging(logLevel)

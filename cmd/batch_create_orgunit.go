@@ -453,7 +453,7 @@ func bcoProcessObjects(ds *admin.Service, orgunits []*admin.OrgUnit) error {
 func init() {
 	batchCreateCmd.AddCommand(batchCrtOrgUnitCmd)
 
-	batchCrtOrgUnitCmd.Flags().StringVarP(&inputFile, "inputfile", "i", "", "filepath to orgunit data file or sheet id")
+	batchCrtOrgUnitCmd.Flags().StringVarP(&inputFile, "input-file", "i", "", "filepath to orgunit data file or sheet id")
 	batchCrtOrgUnitCmd.Flags().StringVarP(&format, "format", "f", "json", "user data file format")
-	batchCrtOrgUnitCmd.Flags().StringVarP(&sheetRange, "sheetrange", "s", "", "user data gsheet range")
+	batchCrtOrgUnitCmd.Flags().StringVarP(&sheetRange, "sheet-range", "s", "", "user data gsheet range")
 }

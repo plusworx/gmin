@@ -164,6 +164,6 @@ func doCreateSchema(cmd *cobra.Command, args []string) error {
 func init() {
 	createCmd.AddCommand(createSchemaCmd)
 
-	createSchemaCmd.Flags().StringVarP(&inputFile, "inputfile", "i", "", "filepath to schema data file")
-	createSchemaCmd.MarkFlagRequired("inputfile")
+	createSchemaCmd.Flags().StringVarP(&inputFile, "input-file", "i", "", "filepath to schema data file")
+	createSchemaCmd.MarkFlagRequired("input-file")
 }

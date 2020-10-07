@@ -164,6 +164,6 @@ func doUpdateSchema(cmd *cobra.Command, args []string) error {
 func init() {
 	updateCmd.AddCommand(updateSchemaCmd)
 
-	updateSchemaCmd.Flags().StringVarP(&inputFile, "inputfile", "i", "", "filepath to schema data file")
-	updateSchemaCmd.MarkFlagRequired("inputfile")
+	updateSchemaCmd.Flags().StringVarP(&inputFile, "input-file", "i", "", "filepath to schema data file")
+	updateSchemaCmd.MarkFlagRequired("input-file")
 }

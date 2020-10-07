@@ -251,11 +251,11 @@ func init() {
 
 	listCrOSDevsCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required device attributes (separated by ~)")
 	listCrOSDevsCmd.Flags().BoolVarP(&count, "count", "", false, "count number of entities returned")
-	listCrOSDevsCmd.Flags().Int64VarP(&maxResults, "maxresults", "m", 200, "maximum number of results to return per page")
-	listCrOSDevsCmd.Flags().StringVarP(&orderBy, "orderby", "o", "", "field by which results will be ordered")
+	listCrOSDevsCmd.Flags().Int64VarP(&maxResults, "max-results", "m", 200, "maximum number of results to return per page")
+	listCrOSDevsCmd.Flags().StringVarP(&orderBy, "order-by", "o", "", "field by which results will be ordered")
 	listCrOSDevsCmd.Flags().StringVarP(&pages, "pages", "p", "", "number of pages of results to be returned ('all' or a number)")
 	listCrOSDevsCmd.Flags().StringVarP(&projection, "projection", "j", "", "type of projection")
 	listCrOSDevsCmd.Flags().StringVarP(&query, "query", "q", "", "selection criteria to get devices (separated by ~)")
-	listCrOSDevsCmd.Flags().StringVarP(&sortOrder, "sortorder", "s", "", "sort order of returned results")
-	listCrOSDevsCmd.Flags().StringVarP(&orgUnit, "orgunitpath", "t", "", "sets orgunit path that returned devices belong to")
+	listCrOSDevsCmd.Flags().StringVarP(&sortOrder, "sort-order", "s", "", "sort order of returned results")
+	listCrOSDevsCmd.Flags().StringVarP(&orgUnit, "orgunit-path", "t", "", "sets orgunit path that returned devices belong to")
 }

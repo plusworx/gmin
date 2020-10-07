@@ -157,5 +157,5 @@ func bdoDeleteObject(wg *sync.WaitGroup, oudc *admin.OrgunitsDeleteCall, ouPath 
 func init() {
 	batchDelCmd.AddCommand(batchDelOrgUnitCmd)
 
-	batchDelOrgUnitCmd.Flags().StringVarP(&inputFile, "inputfile", "i", "", "filepath to orgunit data text file")
+	batchDelOrgUnitCmd.Flags().StringVarP(&inputFile, "input-file", "i", "", "filepath to orgunit data text file")
 }

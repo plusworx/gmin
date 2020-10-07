@@ -307,15 +307,15 @@ func init() {
 
 	listUsersCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required user attributes (separated by ~)")
 	listUsersCmd.Flags().BoolVarP(&count, "count", "", false, "count number of entities returned")
-	listUsersCmd.Flags().StringVarP(&customField, "customfieldmask", "c", "", "custom field mask schemas (separated by ~)")
+	listUsersCmd.Flags().StringVarP(&customField, "custom-field-mask", "c", "", "custom field mask schemas (separated by ~)")
 	listUsersCmd.Flags().StringVarP(&domain, "domain", "d", "", "domain from which to get users")
-	listUsersCmd.Flags().Int64VarP(&maxResults, "maxresults", "m", 500, "maximum number of results to return per page")
-	listUsersCmd.Flags().StringVarP(&orderBy, "orderby", "o", "", "field by which results will be ordered")
+	listUsersCmd.Flags().Int64VarP(&maxResults, "max-results", "m", 500, "maximum number of results to return per page")
+	listUsersCmd.Flags().StringVarP(&orderBy, "order-by", "o", "", "field by which results will be ordered")
 	listUsersCmd.Flags().StringVarP(&pages, "pages", "p", "", "number of pages of results to be returned ('all' or a number)")
 	listUsersCmd.Flags().StringVarP(&projection, "projection", "j", "", "type of projection")
 	listUsersCmd.Flags().StringVarP(&query, "query", "q", "", "selection criteria to get users (separated by ~)")
-	listUsersCmd.Flags().StringVarP(&sortOrder, "sortorder", "s", "", "sort order of returned results")
-	listUsersCmd.Flags().StringVarP(&viewType, "viewtype", "v", "", "data view type")
+	listUsersCmd.Flags().StringVarP(&sortOrder, "sort-order", "s", "", "sort order of returned results")
+	listUsersCmd.Flags().StringVarP(&viewType, "view-type", "v", "", "data view type")
 	listUsersCmd.Flags().BoolVarP(&deleted, "deleted", "x", false, "show deleted users")
 
 }

@@ -50,9 +50,9 @@ var attrValues = []string{
 }
 
 var flagValues = []string{
-	"orderby",
+	"order-by",
 	"projection",
-	"sortorder",
+	"sort-order",
 }
 
 var mobDevApplicationsAttrs = []string{
@@ -390,11 +390,9 @@ func ShowCompAttrs(filter string) {
 }
 
 // ShowFlagValues displays enumerated flag values
-func ShowFlagValues(lenArgs int, args []string) error {
+func ShowFlagValues(lenArgs int, args []string, filter string) error {
 	if lenArgs == 1 {
-		for _, v := range flagValues {
-			fmt.Println(v)
-		}
+		cmn.ShowFlagValues(flagValues, filter)
 	}
 
 	if lenArgs == 2 {
@@ -402,7 +400,7 @@ func ShowFlagValues(lenArgs int, args []string) error {
 		valSlice := []string{}
 
 		switch {
-		case flag == "orderby":
+		case flag == "order-by":
 			for _, val := range ValidOrderByStrs {
 				s, _ := cmn.IsValidAttr(val, MobDevAttrMap)
 				if s == "" {
@@ -411,21 +409,15 @@ func ShowFlagValues(lenArgs int, args []string) error {
 				valSlice = append(valSlice, s)
 			}
 			uniqueSlice := cmn.UniqueStrSlice(valSlice)
-			for _, ob := range uniqueSlice {
-				fmt.Println(ob)
-			}
+			cmn.ShowFlagValues(uniqueSlice, filter)
 		case flag == "projection":
-			for _, vp := range ValidProjections {
-				fmt.Println(vp)
-			}
-		case flag == "sortorder":
+			cmn.ShowFlagValues(ValidProjections, filter)
+		case flag == "sort-order":
 			for _, v := range cmn.ValidSortOrders {
 				valSlice = append(valSlice, v)
 			}
 			uniqueSlice := cmn.UniqueStrSlice(valSlice)
-			for _, so := range uniqueSlice {
-				fmt.Println(so)
-			}
+			cmn.ShowFlagValues(uniqueSlice, filter)
 		default:
 			return fmt.Errorf(cmn.ErrFlagNotRecognized, args[1])
 		}

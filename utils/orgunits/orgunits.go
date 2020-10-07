@@ -151,11 +151,9 @@ func ShowAttrs(filter string) {
 }
 
 // ShowFlagValues displays enumerated flag values
-func ShowFlagValues(lenArgs int, args []string) error {
+func ShowFlagValues(lenArgs int, args []string, filter string) error {
 	if lenArgs == 1 {
-		for _, v := range flagValues {
-			fmt.Println(v)
-		}
+		cmn.ShowFlagValues(flagValues, filter)
 	}
 
 	if lenArgs == 2 {
@@ -163,9 +161,7 @@ func ShowFlagValues(lenArgs int, args []string) error {
 
 		switch {
 		case flag == "type":
-			for _, t := range ValidSearchTypes {
-				fmt.Println(t)
-			}
+			cmn.ShowFlagValues(ValidSearchTypes, filter)
 		default:
 			return fmt.Errorf(cmn.ErrFlagNotRecognized, args[1])
 		}

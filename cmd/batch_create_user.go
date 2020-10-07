@@ -504,7 +504,7 @@ func bcuProcessObjects(ds *admin.Service, users []*admin.User) error {
 func init() {
 	batchCreateCmd.AddCommand(batchCrtUserCmd)
 
-	batchCrtUserCmd.Flags().StringVarP(&inputFile, "inputfile", "i", "", "filepath to user data file or sheet id")
+	batchCrtUserCmd.Flags().StringVarP(&inputFile, "input-file", "i", "", "filepath to user data file or sheet id")
 	batchCrtUserCmd.Flags().StringVarP(&format, "format", "f", "json", "user data file format")
-	batchCrtUserCmd.Flags().StringVarP(&sheetRange, "sheetrange", "s", "", "user data gsheet range")
+	batchCrtUserCmd.Flags().StringVarP(&sheetRange, "sheet-range", "s", "", "user data gsheet range")
 }

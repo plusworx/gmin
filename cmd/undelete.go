@@ -46,7 +46,7 @@ func doUndelete(cmd *cobra.Command, args []string) {
 func init() {
 	rootCmd.AddCommand(undeleteCmd)
 	undeleteCmd.PersistentFlags().BoolVar(&silent, "silent", false, "suppress console output")
-	undeleteCmd.PersistentFlags().StringVar(&logLevel, "loglevel", "info", "log level (debug, info, error, warn)")
+	undeleteCmd.PersistentFlags().StringVar(&logLevel, "log-level", "info", "log level (debug, info, error, warn)")
 
 	undeleteCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
 		// Set loglevel

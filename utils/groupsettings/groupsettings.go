@@ -34,8 +34,8 @@ import (
 
 // ApproveMemberMap holds valid approve-mem flag values
 var ApproveMemberMap = map[string]string{
-	"all_members_can_approve":  "ALL_MEMBERS_CAN_APPROVE",
 	"all_managers_can_approve": "ALL_MANAGERS_CAN_APPROVE",
+	"all_members_can_approve":  "ALL_MEMBERS_CAN_APPROVE",
 	"all_owners_can_approve":   "ALL_OWNERS_CAN_APPROVE",
 	"none_can_approve":         "NONE_CAN_APPROVE",
 }
@@ -43,10 +43,10 @@ var ApproveMemberMap = map[string]string{
 // AssistContentMap holds valid assist-content flag values
 var AssistContentMap = map[string]string{
 	"all_members":         "ALL_MEMBERS",
-	"owners_and_managers": "OWNERS_AND_MANAGERS",
 	"managers_only":       "MANAGERS_ONLY",
-	"owners_only":         "OWNERS_ONLY",
 	"none":                "NONE",
+	"owners_and_managers": "OWNERS_AND_MANAGERS",
+	"owners_only":         "OWNERS_ONLY",
 }
 
 var attrValues = []string{
@@ -71,9 +71,9 @@ var attrValues = []string{
 // BanUserMap holds valid ban-user flag values
 var BanUserMap = map[string]string{
 	"all_members":         "ALL_MEMBERS",
+	"none":                "NONE",
 	"owners_and_managers": "OWNERS_AND_MANAGERS",
 	"owners_only":         "OWNERS_ONLY",
-	"none":                "NONE",
 }
 
 // ContactOwnerMap holds valid contact-owner flag values
@@ -89,6 +89,25 @@ var DiscoverGroupMap = map[string]string{
 	"anyone_can_discover":        "ANYONE_CAN_DISCOVER",
 	"all_in_domain_can_discover": "ALL_IN_DOMAIN_CAN_DISCOVER",
 	"all_members_can_discover":   "ALL_MEMBERS_CAN_DISCOVER",
+}
+
+var flagValues = []string{
+	"approve-member",
+	"assist-content",
+	"ban-user",
+	"contact-owner",
+	"discover-group",
+	"join",
+	"language",
+	"leave",
+	"message-mod",
+	"mod-content",
+	"mod-member",
+	"post-message",
+	"reply-to",
+	"spam-mod",
+	"view-group",
+	"view-membership",
 }
 
 // GroupSettingsAttrMap provides lowercase mappings to valid gset.Groups attributes
@@ -133,10 +152,10 @@ var GroupSettingsAttrMap = map[string]string{
 
 // JoinMap holds valid join flag values
 var JoinMap = map[string]string{
-	"anyone_can_join":        "ANYONE_CAN_JOIN",
 	"all_in_domain_can_join": "ALL_IN_DOMAIN_CAN_JOIN",
-	"invited_can_join":       "INVITED_CAN_JOIN",
+	"anyone_can_join":        "ANYONE_CAN_JOIN",
 	"can_request_to_join":    "CAN_REQUEST_TO_JOIN",
+	"invited_can_join":       "INVITED_CAN_JOIN",
 }
 
 // LanguageMap holds valid language flag values
@@ -234,60 +253,60 @@ var MessageModMap = map[string]string{
 // ModContentMap holds valid mod-content flag values
 var ModContentMap = map[string]string{
 	"all_members":         "ALL_MEMBERS",
+	"none":                "NONE",
 	"owners_and_managers": "OWNERS_AND_MANAGERS",
 	"owners_only":         "OWNERS_ONLY",
-	"none":                "NONE",
 }
 
 // ModMemberMap holds valid mod-member flag values
 var ModMemberMap = map[string]string{
 	"all_members":         "ALL_MEMBERS",
+	"none":                "NONE",
 	"owners_and_managers": "OWNERS_AND_MANAGERS",
 	"owners_only":         "OWNERS_ONLY",
-	"none":                "NONE",
 }
 
 // PostMessageMap holds valid post-message flag values
 var PostMessageMap = map[string]string{
-	"none_can_post":          "NONE_CAN_POST",
+	"all_in_domain_can_post": "ALL_IN_DOMAIN_CAN_POST",
 	"all_managers_can_post":  "ALL_MANAGERS_CAN_POST",
 	"all_members_can_post":   "ALL_MEMBERS_CAN_POST",
 	"all_owners_can_post":    "ALL_OWNERS_CAN_POST",
-	"all_in_domain_can_post": "ALL_IN_DOMAIN_CAN_POST",
 	"anyone_can_post":        "ANYONE_CAN_POST",
+	"none_can_post":          "NONE_CAN_POST",
 }
 
 // ReplyToMap holds valid reply-to flag values
 var ReplyToMap = map[string]string{
 	"reply_to_custom":   "REPLY_TO_CUSTOM",
-	"reply_to_sender":   "REPLY_TO_SENDER",
-	"reply_to_list":     "REPLY_TO_LIST",
-	"reply_to_owner":    "REPLY_TO_OWNER",
 	"reply_to_ignore":   "REPLY_TO_IGNORE",
+	"reply_to_list":     "REPLY_TO_LIST",
 	"reply_to_managers": "REPLY_TO_MANAGERS",
+	"reply_to_owner":    "REPLY_TO_OWNER",
+	"reply_to_sender":   "REPLY_TO_SENDER",
 }
 
 // SpamModMap holds valid spam-mod flag values
 var SpamModMap = map[string]string{
 	"allow":             "ALLOW",
 	"moderate":          "MODERATE",
-	"silently_moderate": "SILENTLY_MODERATE",
 	"reject":            "REJECT",
+	"silently_moderate": "SILENTLY_MODERATE",
 }
 
 // ViewGroupMap holds valid view-group flag values
 var ViewGroupMap = map[string]string{
-	"anyone_can_view":        "ANYONE_CAN_VIEW",
 	"all_in_domain_can_view": "ALL_IN_DOMAIN_CAN_VIEW",
-	"all_members_can_view":   "ALL_MEMBERS_CAN_VIEW",
 	"all_managers_can_view":  "ALL_MANAGERS_CAN_VIEW",
+	"all_members_can_view":   "ALL_MEMBERS_CAN_VIEW",
+	"anyone_can_view":        "ANYONE_CAN_VIEW",
 }
 
 // ViewMembershipMap holds valid view-membership flag values
 var ViewMembershipMap = map[string]string{
 	"all_in_domain_can_view": "ALL_IN_DOMAIN_CAN_VIEW",
-	"all_members_can_view":   "ALL_MEMBERS_CAN_VIEW",
 	"all_managers_can_view":  "ALL_MANAGERS_CAN_VIEW",
+	"all_members_can_view":   "ALL_MEMBERS_CAN_VIEW",
 }
 
 // Key is struct used to extract groupKey
@@ -313,6 +332,24 @@ func DoGet(gsgc *gset.GroupsGetCall) (*gset.Groups, error) {
 		return nil, err
 	}
 	return groups, nil
+}
+
+func printFlagValues(flagMap map[string]string, filter string) {
+	values := []string{}
+	for _, value := range flagMap {
+		values = append(values, value)
+	}
+	sort.Strings(values)
+	for _, v := range values {
+		if filter == "" {
+			fmt.Println(v)
+			continue
+		}
+		ok := strings.Contains(strings.ToLower(v), strings.ToLower(filter))
+		if ok {
+			fmt.Println(v)
+		}
+	}
 }
 
 // ShowAttrs displays requested group attributes
@@ -434,6 +471,95 @@ func ShowAttrValues(lenArgs int, args []string, filter string) error {
 	}
 	sort.Strings(values)
 	cmn.ShowAttrVals(values, filter)
+	return nil
+}
+
+// ShowFlagValues displays enumerated flag values
+func ShowFlagValues(lenArgs int, args []string, filter string) error {
+	if lenArgs == 1 {
+		for _, v := range flagValues {
+			if filter == "" {
+				fmt.Println(v)
+				continue
+			}
+			ok := strings.Contains(v, filter)
+			if ok {
+				fmt.Println(v)
+			}
+		}
+	}
+
+	if lenArgs == 2 {
+		flag := strings.ToLower(args[1])
+
+		if flag == "approve-member" {
+			printFlagValues(ApproveMemberMap, filter)
+			return nil
+		}
+		if flag == "assist-content" {
+			printFlagValues(AssistContentMap, filter)
+			return nil
+		}
+		if flag == "ban-user" {
+			printFlagValues(BanUserMap, filter)
+			return nil
+		}
+		if flag == "contact-owner" {
+			printFlagValues(ContactOwnerMap, filter)
+			return nil
+		}
+		if flag == "discover-group" {
+			printFlagValues(DiscoverGroupMap, filter)
+			return nil
+		}
+		if flag == "join" {
+			printFlagValues(JoinMap, filter)
+			return nil
+		}
+		if flag == "language" {
+			printFlagValues(LanguageMap, filter)
+			return nil
+		}
+		if flag == "leave" {
+			printFlagValues(LeaveMap, filter)
+			return nil
+		}
+		if flag == "message-mod" {
+			printFlagValues(MessageModMap, filter)
+			return nil
+		}
+		if flag == "mod-content" {
+			printFlagValues(ModContentMap, filter)
+			return nil
+		}
+		if flag == "mod-member" {
+			printFlagValues(ModMemberMap, filter)
+			return nil
+		}
+		if flag == "post-message" {
+			printFlagValues(PostMessageMap, filter)
+			return nil
+		}
+		if flag == "reply-to" {
+			printFlagValues(ReplyToMap, filter)
+			return nil
+		}
+		if flag == "spam-mod" {
+			printFlagValues(SpamModMap, filter)
+			return nil
+		}
+		if flag == "view-group" {
+			printFlagValues(ViewGroupMap, filter)
+			return nil
+		}
+		if flag == "view-membership" {
+			printFlagValues(ViewMembershipMap, filter)
+			return nil
+		}
+		// Flag not recognized
+		return fmt.Errorf(cmn.ErrFlagNotRecognized, args[1])
+	}
+
 	return nil
 }
 

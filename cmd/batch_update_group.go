@@ -470,7 +470,7 @@ func bugUpdate(group *admin.Group, wg *sync.WaitGroup, guc *admin.GroupsUpdateCa
 func init() {
 	batchUpdateCmd.AddCommand(batchUpdGrpCmd)
 
-	batchUpdGrpCmd.Flags().StringVarP(&inputFile, "inputfile", "i", "", "filepath to group data file or sheet id")
+	batchUpdGrpCmd.Flags().StringVarP(&inputFile, "input-file", "i", "", "filepath to group data file or sheet id")
 	batchUpdGrpCmd.Flags().StringVarP(&format, "format", "f", "json", "user data file format")
-	batchUpdGrpCmd.Flags().StringVarP(&sheetRange, "sheetrange", "s", "", "user data gsheet range")
+	batchUpdGrpCmd.Flags().StringVarP(&sheetRange, "sheet-range", "s", "", "user data gsheet range")
 }

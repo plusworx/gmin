@@ -490,7 +490,7 @@ func buoUpdate(orgunit *admin.OrgUnit, wg *sync.WaitGroup, ouuc *admin.OrgunitsU
 func init() {
 	batchUpdateCmd.AddCommand(batchUpdOUCmd)
 
-	batchUpdOUCmd.Flags().StringVarP(&inputFile, "inputfile", "i", "", "filepath to orgunit data file or sheet id")
+	batchUpdOUCmd.Flags().StringVarP(&inputFile, "input-file", "i", "", "filepath to orgunit data file or sheet id")
 	batchUpdOUCmd.Flags().StringVarP(&format, "format", "f", "json", "user data file format")
-	batchUpdOUCmd.Flags().StringVarP(&sheetRange, "sheetrange", "s", "", "user data gsheet range")
+	batchUpdOUCmd.Flags().StringVarP(&sheetRange, "sheet-range", "s", "", "user data gsheet range")
 }

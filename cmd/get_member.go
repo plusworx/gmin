@@ -63,7 +63,6 @@ func doGetMember(cmd *cobra.Command, args []string) error {
 
 func init() {
 	getCmd.AddCommand(getMemberCmd)
-
 	getMemberCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required group attributes (separated by ~)")
 }
 

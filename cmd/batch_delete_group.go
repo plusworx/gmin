@@ -141,5 +141,5 @@ func bdgDeleteObject(wg *sync.WaitGroup, gdc *admin.GroupsDeleteCall, group stri
 func init() {
 	batchDelCmd.AddCommand(batchDelGroupCmd)
 
-	batchDelGroupCmd.Flags().StringVarP(&inputFile, "inputfile", "i", "", "filepath to group data text file")
+	batchDelGroupCmd.Flags().StringVarP(&inputFile, "input-file", "i", "", "filepath to group data text file")
 }

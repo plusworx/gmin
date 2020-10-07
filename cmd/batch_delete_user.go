@@ -142,5 +142,5 @@ func bduDeleteObject(wg *sync.WaitGroup, udc *admin.UsersDeleteCall, user string
 func init() {
 	batchDelCmd.AddCommand(batchDelUserCmd)
 
-	batchDelUserCmd.Flags().StringVarP(&inputFile, "inputfile", "i", "", "filepath to user data text file")
+	batchDelUserCmd.Flags().StringVarP(&inputFile, "input-file", "i", "", "filepath to user data text file")
 }

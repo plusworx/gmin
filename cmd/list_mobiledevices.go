@@ -251,10 +251,10 @@ func init() {
 
 	listMobDevsCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required device attributes (separated by ~)")
 	listMobDevsCmd.Flags().BoolVarP(&count, "count", "", false, "count number of entities returned")
-	listMobDevsCmd.Flags().Int64VarP(&maxResults, "maxresults", "m", 100, "maximum number of results to return per page")
-	listMobDevsCmd.Flags().StringVarP(&orderBy, "orderby", "o", "", "field by which results will be ordered")
+	listMobDevsCmd.Flags().Int64VarP(&maxResults, "max-results", "m", 100, "maximum number of results to return per page")
+	listMobDevsCmd.Flags().StringVarP(&orderBy, "order-by", "o", "", "field by which results will be ordered")
 	listMobDevsCmd.Flags().StringVarP(&pages, "pages", "p", "", "number of pages of results to be returned ('all' or a number)")
 	listMobDevsCmd.Flags().StringVarP(&projection, "projection", "j", "", "type of projection")
 	listMobDevsCmd.Flags().StringVarP(&query, "query", "q", "", "selection criteria to get devices (separated by ~)")
-	listMobDevsCmd.Flags().StringVarP(&sortOrder, "sortorder", "s", "", "sort order of returned results")
+	listMobDevsCmd.Flags().StringVarP(&sortOrder, "sort-order", "s", "", "sort order of returned results")
 }

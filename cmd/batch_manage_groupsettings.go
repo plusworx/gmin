@@ -848,7 +848,7 @@ func bmnggViewMembershipVal(grpSetting *gset.Groups, attrName string, attrValue 
 func init() {
 	batchManageCmd.AddCommand(batchMngGrpSettingsCmd)
 
-	batchMngGrpSettingsCmd.Flags().StringVarP(&inputFile, "inputfile", "i", "", "filepath to device data file")
+	batchMngGrpSettingsCmd.Flags().StringVarP(&inputFile, "input-file", "i", "", "filepath to device data file")
 	batchMngGrpSettingsCmd.Flags().StringVarP(&format, "format", "f", "json", "user data file format")
-	batchMngGrpSettingsCmd.Flags().StringVarP(&sheetRange, "sheetrange", "s", "", "user data gsheet range")
+	batchMngGrpSettingsCmd.Flags().StringVarP(&sheetRange, "sheet-range", "s", "", "user data gsheet range")
 }

@@ -46,7 +46,7 @@ func doMove(cmd *cobra.Command, args []string) {
 func init() {
 	rootCmd.AddCommand(moveCmd)
 	moveCmd.PersistentFlags().BoolVar(&silent, "silent", false, "suppress console output")
-	moveCmd.PersistentFlags().StringVar(&logLevel, "loglevel", "info", "log level (debug, info, error, warn)")
+	moveCmd.PersistentFlags().StringVar(&logLevel, "log-level", "info", "log level (debug, info, error, warn)")
 
 	moveCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
 		// Set loglevel

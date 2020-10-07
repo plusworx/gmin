@@ -113,10 +113,10 @@ func doUpdateCrOSDev(cmd *cobra.Command, args []string) error {
 func init() {
 	updateCmd.AddCommand(updateCrOSDevCmd)
 
-	updateCrOSDevCmd.Flags().StringVarP(&assetID, "assetid", "d", "", "device asset id")
+	updateCrOSDevCmd.Flags().StringVarP(&assetID, "asset-id", "d", "", "device asset id")
 	updateCrOSDevCmd.Flags().StringVarP(&projection, "projection", "j", "", "type of projection")
 	updateCrOSDevCmd.Flags().StringVarP(&location, "location", "l", "", "device location")
 	updateCrOSDevCmd.Flags().StringVarP(&notes, "notes", "n", "", "notes about device")
-	updateCrOSDevCmd.Flags().StringVarP(&orgUnit, "orgunitpath", "t", "", "orgunit device belongs to")
+	updateCrOSDevCmd.Flags().StringVarP(&orgUnit, "orgunit-path", "t", "", "orgunit device belongs to")
 	updateCrOSDevCmd.Flags().StringVarP(&userKey, "user", "u", "", "device user")
 }

@@ -121,6 +121,6 @@ func init() {
 
 	listOUsCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required orgunit attributes separated by (~)")
 	listOUsCmd.Flags().BoolVarP(&count, "count", "", false, "count number of entities returned")
-	listOUsCmd.Flags().StringVarP(&orgUnit, "orgunitpath", "o", "", "orgunitpath or id of starting orgunit")
+	listOUsCmd.Flags().StringVarP(&orgUnit, "orgunit-path", "o", "", "orgunitpath or id of starting orgunit")
 	listOUsCmd.Flags().StringVarP(&searchType, "type", "t", "children", "all sub-organizational units or only immediate children")
 }

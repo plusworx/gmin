@@ -133,7 +133,7 @@ func init() {
 	getCmd.AddCommand(getUserCmd)
 
 	getUserCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required user attributes (separated by ~)")
-	getUserCmd.Flags().StringVarP(&customField, "customfieldmask", "c", "", "custom field mask schemas (separated by ~)")
+	getUserCmd.Flags().StringVarP(&customField, "custom-field-mask", "c", "", "custom field mask schemas (separated by ~)")
 	getUserCmd.Flags().StringVarP(&projection, "projection", "j", "", "type of projection")
-	getUserCmd.Flags().StringVarP(&viewType, "viewtype", "v", "", "data view type")
+	getUserCmd.Flags().StringVarP(&viewType, "view-type", "v", "", "data view type")
 }

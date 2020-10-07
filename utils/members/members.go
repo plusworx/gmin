@@ -207,13 +207,11 @@ func ShowAttrValues(lenArgs int, args []string, filter string) error {
 }
 
 // ShowFlagValues displays enumerated flag values
-func ShowFlagValues(lenArgs int, args []string) error {
+func ShowFlagValues(lenArgs int, args []string, filter string) error {
 	values := []string{}
 
 	if lenArgs == 1 {
-		for _, v := range flagValues {
-			fmt.Println(v)
-		}
+		cmn.ShowFlagValues(flagValues, filter)
 	}
 
 	if lenArgs == 2 {
@@ -224,9 +222,7 @@ func ShowFlagValues(lenArgs int, args []string) error {
 				values = append(values, val)
 			}
 			sort.Strings(values)
-			for _, s := range values {
-				fmt.Println(s)
-			}
+			cmn.ShowFlagValues(values, filter)
 		} else {
 			return fmt.Errorf(cmn.ErrFlagNotRecognized, args[1])
 		}

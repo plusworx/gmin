@@ -28,8 +28,10 @@ import (
 	"strings"
 
 	cdevs "github.com/plusworx/gmin/utils/chromeosdevices"
+	ca "github.com/plusworx/gmin/utils/commandaliases"
 	cmn "github.com/plusworx/gmin/utils/common"
 	grps "github.com/plusworx/gmin/utils/groups"
+	grpset "github.com/plusworx/gmin/utils/groupsettings"
 	gmems "github.com/plusworx/gmin/utils/members"
 	mdevs "github.com/plusworx/gmin/utils/mobiledevices"
 	ous "github.com/plusworx/gmin/utils/orgunits"
@@ -62,41 +64,46 @@ func doShowFlagVals(cmd *cobra.Command, args []string) error {
 		return errors.New(cmn.ErrMax2ArgsExceeded)
 	}
 
-	obj := strings.ToLower(args[0])
+	object := strings.ToLower(args[0])
 
 	switch {
-	case obj == "chromeos-device" || obj == "cros-device" || obj == "cros-dev" || obj == "cdev":
-		err := cdevs.ShowFlagValues(len(args), args)
+	case cmn.SliceContainsStr(ca.CDevAliases, object):
+		err := cdevs.ShowFlagValues(len(args), args, filter)
 		if err != nil {
 			return err
 		}
-	case obj == "global":
-		err := cmn.ShowGlobalFlagValues(len(args), args)
+	case object == "global":
+		err := cmn.ShowGlobalFlagValues(len(args), args, filter)
 		if err != nil {
 			return err
 		}
-	case obj == "group" || obj == "grp":
-		err := grps.ShowFlagValues(len(args), args)
+	case cmn.SliceContainsStr(ca.GroupAliases, object):
+		err := grps.ShowFlagValues(len(args), args, filter)
 		if err != nil {
 			return err
 		}
-	case obj == "group-member" || obj == "grp-member" || obj == "grp-mem" || obj == "gmember" || obj == "gmem":
-		err := gmems.ShowFlagValues(len(args), args)
+	case cmn.SliceContainsStr(ca.GMAliases, object):
+		err := gmems.ShowFlagValues(len(args), args, filter)
 		if err != nil {
 			return err
 		}
-	case obj == "mobile-device" || obj == "mob-device" || obj == "mob-dev" || obj == "mdev":
-		err := mdevs.ShowFlagValues(len(args), args)
+	case cmn.SliceContainsStr(ca.GSAliases, object):
+		err := grpset.ShowFlagValues(len(args), args, filter)
 		if err != nil {
 			return err
 		}
-	case obj == "orgunit" || obj == "ou":
-		err := ous.ShowFlagValues(len(args), args)
+	case cmn.SliceContainsStr(ca.MDevAliases, object):
+		err := mdevs.ShowFlagValues(len(args), args, filter)
 		if err != nil {
 			return err
 		}
-	case obj == "user":
-		err := usrs.ShowFlagValues(len(args), args)
+	case cmn.SliceContainsStr(ca.OUAliases, object):
+		err := ous.ShowFlagValues(len(args), args, filter)
+		if err != nil {
+			return err
+		}
+	case cmn.SliceContainsStr(ca.UserAliases, object):
+		err := usrs.ShowFlagValues(len(args), args, filter)
 		if err != nil {
 			return err
 		}
@@ -108,4 +115,5 @@ func doShowFlagVals(cmd *cobra.Command, args []string) error {
 
 func init() {
 	showCmd.AddCommand(showFlagValsCmd)
+	showFlagValsCmd.Flags().StringVarP(&filter, "filter", "f", "", "string used to filter results")
 }

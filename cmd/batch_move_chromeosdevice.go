@@ -427,7 +427,7 @@ func bmvcProcessObjects(ds *admin.Service, movedDevs []cdevs.MovedDevice) error 
 func init() {
 	batchMoveCmd.AddCommand(batchMoveCrOSDevCmd)
 
-	batchMoveCrOSDevCmd.Flags().StringVarP(&inputFile, "inputfile", "i", "", "filepath to device data file")
+	batchMoveCrOSDevCmd.Flags().StringVarP(&inputFile, "input-file", "i", "", "filepath to device data file")
 	batchMoveCrOSDevCmd.Flags().StringVarP(&format, "format", "f", "json", "user data file format")
-	batchMoveCrOSDevCmd.Flags().StringVarP(&sheetRange, "sheetrange", "s", "", "user data gsheet range")
+	batchMoveCrOSDevCmd.Flags().StringVarP(&sheetRange, "sheet-range", "s", "", "user data gsheet range")
 }

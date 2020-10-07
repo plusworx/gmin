@@ -46,7 +46,7 @@ func doDelete(cmd *cobra.Command, args []string) {
 func init() {
 	rootCmd.AddCommand(deleteCmd)
 	deleteCmd.PersistentFlags().BoolVar(&silent, "silent", false, "suppress console output")
-	deleteCmd.PersistentFlags().StringVar(&logLevel, "loglevel", "info", "log level (debug, info, error, warn)")
+	deleteCmd.PersistentFlags().StringVar(&logLevel, "log-level", "info", "log level (debug, info, error, warn)")
 
 	deleteCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
 		// Set loglevel

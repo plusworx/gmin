@@ -1085,22 +1085,32 @@ func ShowAttrVals(attrSlice []string, filter string) {
 	}
 }
 
-// ShowGlobalFlagValues displays enumerated global flag values
-func ShowGlobalFlagValues(lenArgs int, args []string) error {
-	if lenArgs == 1 {
-		for _, v := range globalFlagValues {
-			fmt.Println(v)
+// ShowFlagValues displays enumerated flag values
+func ShowFlagValues(flagSlice []string, filter string) {
+	for _, value := range flagSlice {
+		if filter == "" {
+			fmt.Println(value)
+			continue
 		}
+		ok := strings.Contains(strings.ToLower(value), strings.ToLower(filter))
+		if ok {
+			fmt.Println(value)
+		}
+	}
+}
+
+// ShowGlobalFlagValues displays enumerated global flag values
+func ShowGlobalFlagValues(lenArgs int, args []string, filter string) error {
+	if lenArgs == 1 {
+		ShowFlagValues(globalFlagValues, filter)
 	}
 
 	if lenArgs == 2 {
 		flag := strings.ToLower(args[1])
 
 		switch {
-		case flag == "loglevel":
-			for _, t := range validLogLevels {
-				fmt.Println(t)
-			}
+		case flag == "log-level":
+			ShowFlagValues(validLogLevels, filter)
 		default:
 			return fmt.Errorf("gmin: error - %v flag not recognized", args[1])
 		}

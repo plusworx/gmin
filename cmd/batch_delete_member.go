@@ -143,5 +143,5 @@ func bdmDeleteObject(wg *sync.WaitGroup, mdc *admin.MembersDeleteCall, member st
 func init() {
 	batchDelCmd.AddCommand(batchDelMemberCmd)
 
-	batchDelMemberCmd.Flags().StringVarP(&inputFile, "inputfile", "i", "", "filepath to member data text file")
+	batchDelMemberCmd.Flags().StringVarP(&inputFile, "input-file", "i", "", "filepath to member data text file")
 }

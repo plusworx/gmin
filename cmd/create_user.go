@@ -164,17 +164,17 @@ func init() {
 
 	createUserCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "user's attributes as a JSON string")
 	createUserCmd.Flags().BoolVarP(&changePassword, "change-password", "c", false, "user must change password on next login")
-	createUserCmd.Flags().StringVarP(&firstName, "firstname", "f", "", "user's first name")
+	createUserCmd.Flags().StringVarP(&firstName, "first-name", "f", "", "user's first name")
 	createUserCmd.Flags().StringVar(&forceSend, "force", "", "field list for ForceSendFields separated by (~)")
-	createUserCmd.Flags().StringVarP(&lastName, "lastname", "l", "", "user's last name")
+	createUserCmd.Flags().StringVarP(&lastName, "last-name", "l", "", "user's last name")
 	createUserCmd.Flags().StringVarP(&orgUnit, "orgunit", "o", "", "user's orgunit")
 	createUserCmd.Flags().StringVarP(&password, "password", "p", "", "user's password")
 	createUserCmd.Flags().StringVarP(&recoveryEmail, "recovery-email", "z", "", "user's recovery email address")
 	createUserCmd.Flags().StringVarP(&recoveryPhone, "recovery-phone", "k", "", "user's recovery phone")
 	createUserCmd.Flags().BoolVarP(&suspended, "suspended", "s", false, "user is suspended")
 
-	createUserCmd.MarkFlagRequired("firstname")
-	createUserCmd.MarkFlagRequired("lastname")
+	createUserCmd.MarkFlagRequired("first-name")
+	createUserCmd.MarkFlagRequired("last-name")
 	createUserCmd.MarkFlagRequired("password")
 }
 

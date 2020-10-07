@@ -78,6 +78,5 @@ func doUndeleteUser(cmd *cobra.Command, args []string) error {
 
 func init() {
 	undeleteCmd.AddCommand(undeleteUserCmd)
-
 	undeleteUserCmd.Flags().StringVarP(&orgUnit, "orgunit", "o", "", "path of orgunit to restore user to")
 }

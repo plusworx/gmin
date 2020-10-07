@@ -198,7 +198,7 @@ func init() {
 
 	listMembersCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required member attributes (separated by ~)")
 	listMembersCmd.Flags().BoolVarP(&count, "count", "", false, "count number of entities returned")
-	listMembersCmd.Flags().Int64VarP(&maxResults, "maxresults", "m", 200, "maximum number or results to return")
+	listMembersCmd.Flags().Int64VarP(&maxResults, "max-results", "m", 200, "maximum number or results to return")
 	listMembersCmd.Flags().StringVarP(&pages, "pages", "p", "", "number of pages of results to be returned ('all' or a number)")
 	listMembersCmd.Flags().StringVarP(&role, "roles", "r", "", "roles to filter results by (separated by ~)")
 }
