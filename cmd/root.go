@@ -59,6 +59,7 @@ var (
 	customerID       string
 	customField      string
 	deleted          bool
+	delFormat        string
 	deliverySetting  string
 	denyNotification bool
 	denyText         string

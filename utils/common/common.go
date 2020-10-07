@@ -133,6 +133,7 @@ const (
 	ErrEmptyString              string = "%v cannot be empty string"
 	ErrFileNumberRequired       string = "a file number is required - try again"
 	ErrFlagNotRecognized        string = "%v flag is not recognized"
+	ErrFormatNotHandled         string = "%v format not handled"
 	ErrInvalidActionType        string = "invalid action type: %v"
 	ErrInvalidAdminEmail        string = "invalid admin email - try again"
 	ErrInvalidConfigPath        string = "invalid config path - try again"
@@ -175,7 +176,7 @@ const (
 	ErrNoNameOrOuPath           string = "name and parentOrgUnitPath must be provided"
 	ErrNoQueryableAttrs         string = "%v does not have any queryable attributes"
 	ErrNoSheetDataFound         string = "no data found in sheet %s - range: %s"
-	ErrNoSheetRange             string = "sheetrange must be provided"
+	ErrNoSheetRange             string = "sheet-range must be provided"
 	ErrNotCompositeAttr         string = "%v is not a composite attribute"
 	ErrObjectNotFound           string = "%v not found"
 	ErrObjectNotRecognized      string = " %v is not recognized"
@@ -642,6 +643,8 @@ var ValidFileFormats = []string{
 	"csv",
 	"gsheet",
 	"json",
+	"text",
+	"txt",
 }
 
 // validLogLevels provides valid log level strings

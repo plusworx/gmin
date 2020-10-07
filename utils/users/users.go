@@ -346,7 +346,7 @@ var UserAttrMap = map[string]string{
 	"title":                      "title",
 	"type":                       "type",
 	"uid":                        "uid",
-	"userkey":                    "userKey", // Used in batch update
+	"userkey":                    "userKey", // Used in batch operations
 	"username":                   "username",
 	"value":                      "value",
 	"websites":                   "websites",
