@@ -15,7 +15,7 @@ At present, there is no automated installation. Users should obtain a pre-compil
 ## Quick start
 Commands usually take the form of `gmin <verb> <object> <flags>`. Although there may be the odd exception like `gmin whoami`.
 
-Command flags can have short names like -x and always hava a long name like --longnameforx. Flags that relate to boolean values (true/false) can be set like this -
+Command flags can have short names like `-x` and always have a a long name like `--longnameforx`. Flags that relate to boolean values (true/false) can be set like this -
 
 `--changepassword=true`
 
@@ -71,7 +71,7 @@ and only the primaryEmail, name and addresses attributes will be returned for ea
 
 If I want to filter the results still further I can provide a query with or without attributes -
 
-`gmin list users -q orgunitpath=/Sales`
+`gmin list users -a primaryemail~name~addresses -q orgunitpath=/Sales`
 
 and only information about users in the Sales organisation unit will be returned.
 
