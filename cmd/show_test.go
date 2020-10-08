@@ -37,10 +37,6 @@ func TestDoShowAttrs(t *testing.T) {
 		queryable   bool
 	}{
 		{
-			args:        []string{"user", "name", "givenname", "anothername"},
-			expectedErr: cmn.ErrMax3ArgsExceeded,
-		},
-		{
 			args:        []string{"grp"},
 			composite:   true,
 			queryable:   true,
@@ -62,7 +58,7 @@ func TestDoShowAttrs(t *testing.T) {
 		},
 		{
 			args:        []string{"group", "email", "id"},
-			expectedErr: fmt.Sprintf(cmn.ErrNoCompositeAttrs, "email"),
+			expectedErr: fmt.Sprintf(cmn.ErrNoCompositeAttrs, "group"),
 		},
 		{
 			args:        []string{"cdev", "recentusers"},
@@ -84,6 +80,8 @@ func TestDoShowAttrs(t *testing.T) {
 			expectedErr: fmt.Sprintf(cmn.ErrNoCompositeAttrs, "gmem"),
 		},
 	}
+
+	showCmd.AddCommand(showAttrsCmd)
 
 	for _, c := range cases {
 		composite = c.composite
