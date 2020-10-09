@@ -29,7 +29,7 @@ Type `gmin <command> -h or --help` to get help about a particular command. For e
 
 **Create a new user**
 
-`gmin create user new.user@mydomain.com --firstname New --lastname User --password MyStrongPassword`
+`gmin create user new.user@mydomain.com --first-name New --last-name User --password MyStrongPassword`
 
 using flag short names the above command would look like this -
 

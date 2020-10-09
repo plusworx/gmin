@@ -168,7 +168,7 @@ func processUpdUsrFlags(cmd *cobra.Command, user *admin.User, name *admin.UserNa
 				return err
 			}
 		}
-		if flName == "firstname" {
+		if flName == "first-name" {
 			err := uuFirstnameFlag(name, "--"+flName)
 			if err != nil {
 				return err
@@ -183,7 +183,7 @@ func processUpdUsrFlags(cmd *cobra.Command, user *admin.User, name *admin.UserNa
 		if flName == "gal" {
 			uuGalFlag(user)
 		}
-		if flName == "lastname" {
+		if flName == "last-name" {
 			err := uuLastnameFlag(name, "--"+flName)
 			if err != nil {
 				return err

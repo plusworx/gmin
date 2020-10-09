@@ -218,7 +218,7 @@ func cuLastnameFlag(name *admin.UserName, flagName string) error {
 	logger.Debugw("starting cuLastnameFlag()",
 		"flagName", flagName)
 	if lastName == "" {
-		err := fmt.Errorf(cmn.ErrEmptyString, "--lastname")
+		err := fmt.Errorf(cmn.ErrEmptyString, "--last-name")
 		if err != nil {
 			return err
 		}
@@ -294,7 +294,7 @@ func processCrtUsrFlags(cmd *cobra.Command, user *admin.User, name *admin.UserNa
 		if flName == "change-password" {
 			user.ChangePasswordAtNextLogin = true
 		}
-		if flName == "firstname" {
+		if flName == "first-name" {
 			err := cuFirstnameFlag(name, "--"+flName)
 			if err != nil {
 				return err
@@ -306,7 +306,7 @@ func processCrtUsrFlags(cmd *cobra.Command, user *admin.User, name *admin.UserNa
 				return err
 			}
 		}
-		if flName == "lastname" {
+		if flName == "last-name" {
 			err := cuLastnameFlag(name, "--"+flName)
 			if err != nil {
 				return err
