@@ -120,6 +120,8 @@ func doBatchUpdGrp(cmd *cobra.Command, args []string) error {
 			logger.Error(err)
 			return err
 		}
+	default:
+		return fmt.Errorf(cmn.ErrInvalidFileFormat, format)
 	}
 	logger.Debug("finished doBatchUpdGrp()")
 	return nil
