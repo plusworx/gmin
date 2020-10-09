@@ -27,14 +27,17 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
+	ous "github.com/plusworx/gmin/utils/orgunits"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
+	sheet "google.golang.org/api/sheets/v4"
 )
 
 var batchDelOrgUnitCmd = &cobra.Command{
@@ -46,11 +49,17 @@ gmin ls ous -o TestOU -a orgunitpath | jq '.organizationUnits[] | .orgUnitPath' 
 	Short: "Deletes a batch of orgunits",
 	Long: `Deletes a batch of orgunits where orgunit details are provided in a text input file or through a pipe.
 			
-The input should have the orgunit paths or ids to be deleted on separate lines like this:
+The input file or piped in data should provide the orgunit paths or ids to be deleted on separate lines like this:
 
 Engineering/Skunkworx
 Engineering/SecretOps
-Engineering/Surplus`,
+Engineering/Surplus
+
+n input Google sheet must have a header row with the following column names being the only ones that are valid:
+
+ouKey [required]
+
+The column name is case insensitive.`,
 	RunE: doBatchDelOrgUnit,
 }
 
@@ -59,12 +68,6 @@ func doBatchDelOrgUnit(cmd *cobra.Command, args []string) error {
 		"args", args)
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryOrgunitScope)
-	if err != nil {
-		logger.Error(err)
-		return err
-	}
-
-	customerID, err := cfg.ReadConfigString("customerid")
 	if err != nil {
 		logger.Error(err)
 		return err
@@ -82,38 +85,31 @@ func doBatchDelOrgUnit(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if scanner == nil {
-		file, err := os.Open(inputFile)
+	lwrFmt := strings.ToLower(delFormat)
+
+	ok := cmn.SliceContainsStr(cmn.ValidFileFormats, lwrFmt)
+	if !ok {
+		err = fmt.Errorf(cmn.ErrInvalidFileFormat, delFormat)
+		logger.Error(err)
+		return err
+	}
+
+	switch {
+	case lwrFmt == "text":
+		err := bdoProcessTextFile(ds, inputFile, scanner)
 		if err != nil {
 			logger.Error(err)
 			return err
 		}
-		defer file.Close()
-
-		scanner = bufio.NewScanner(file)
-	}
-
-	wg := new(sync.WaitGroup)
-
-	for scanner.Scan() {
-		text := scanner.Text()
-
-		if text[0] == '/' {
-			text = text[1:]
+	case lwrFmt == "gsheet":
+		err := bdoProcessGSheet(ds, inputFile)
+		if err != nil {
+			logger.Error(err)
+			return err
 		}
-
-		oudc := ds.Orgunits.Delete(customerID, text)
-
-		// Sleep for 2 seconds because only 1 orgunit can be deleted per second but 1 second interval
-		// still results in rate limit errors
-		time.Sleep(2 * time.Second)
-
-		wg.Add(1)
-
-		go bdoDeleteObject(wg, oudc, text)
+	default:
+		return fmt.Errorf(cmn.ErrInvalidFileFormat, format)
 	}
-
-	wg.Wait()
 
 	logger.Debug("finished doBatchDelOrgUnit()")
 	return nil
@@ -154,8 +150,153 @@ func bdoDeleteObject(wg *sync.WaitGroup, oudc *admin.OrgunitsDeleteCall, ouPath 
 	logger.Debug("finished bdoDeleteObject()")
 }
 
+func bdoFromFileFactory(hdrMap map[int]string, ouData []interface{}) (string, error) {
+	logger.Debugw("starting bdoFromFileFactory()",
+		"hdrMap", hdrMap)
+
+	var orgunit string
+
+	for idx, val := range ouData {
+		attrName := hdrMap[idx]
+		attrVal := fmt.Sprintf("%v", val)
+
+		if attrName == "ouKey" {
+			orgunit = attrVal
+		}
+	}
+	logger.Debug("finished bdoFromFileFactory()")
+	return orgunit, nil
+}
+
+func bdoProcessDeletion(ds *admin.Service, orgunits []string) error {
+	logger.Debug("starting bdoProcessDeletion()")
+
+	customerID, err := cfg.ReadConfigString("customerid")
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+
+	wg := new(sync.WaitGroup)
+
+	for _, orgunit := range orgunits {
+		if orgunit[0] == '/' {
+			orgunit = orgunit[1:]
+		}
+
+		oudc := ds.Orgunits.Delete(customerID, orgunit)
+
+		// Sleep for 2 seconds because only 1 orgunit can be deleted per second but 1 second interval
+		// still results in rate limit errors
+		time.Sleep(2 * time.Second)
+
+		wg.Add(1)
+
+		go bdoDeleteObject(wg, oudc, orgunit)
+	}
+
+	wg.Wait()
+
+	logger.Debug("finished bdoProcessDeletion()")
+	return nil
+}
+
+func bdoProcessGSheet(ds *admin.Service, sheetID string) error {
+	logger.Debugw("starting bdoProcessGSheet()",
+		"sheetID", sheetID)
+
+	var orgunits []string
+
+	if sheetRange == "" {
+		err := errors.New(cmn.ErrNoSheetRange)
+		logger.Error(err)
+		return err
+	}
+
+	ss, err := cmn.CreateSheetService(sheet.DriveReadonlyScope)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+
+	ssvgc := ss.Spreadsheets.Values.Get(sheetID, sheetRange)
+	sValRange, err := ssvgc.Do()
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+
+	if len(sValRange.Values) == 0 {
+		err = fmt.Errorf(cmn.ErrNoSheetDataFound, sheetID, sheetRange)
+		logger.Error(err)
+		return err
+	}
+
+	hdrMap := cmn.ProcessHeader(sValRange.Values[0])
+	err = cmn.ValidateHeader(hdrMap, ous.OrgUnitAttrMap)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+
+	for idx, row := range sValRange.Values {
+		if idx == 0 {
+			continue
+		}
+
+		ouVar, err := bdoFromFileFactory(hdrMap, row)
+		if err != nil {
+			logger.Error(err)
+			return err
+		}
+
+		orgunits = append(orgunits, ouVar)
+	}
+
+	err = bdoProcessDeletion(ds, orgunits)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	logger.Debug("finished bdoProcessGSheet()")
+	return nil
+}
+
+func bdoProcessTextFile(ds *admin.Service, filePath string, scanner *bufio.Scanner) error {
+	logger.Debugw("starting bdoProcessTextFile()",
+		"filePath", filePath)
+
+	var orgunits []string
+
+	if filePath != "" {
+		file, err := os.Open(filePath)
+		if err != nil {
+			logger.Error(err)
+			return err
+		}
+		defer file.Close()
+		scanner = bufio.NewScanner(file)
+	}
+
+	for scanner.Scan() {
+		orgunit := scanner.Text()
+		orgunits = append(orgunits, orgunit)
+	}
+
+	err := bdoProcessDeletion(ds, orgunits)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+
+	logger.Debug("finished bdoProcessTextFile()")
+	return nil
+}
+
 func init() {
 	batchDelCmd.AddCommand(batchDelOrgUnitCmd)
 
 	batchDelOrgUnitCmd.Flags().StringVarP(&inputFile, "input-file", "i", "", "filepath to orgunit data text file")
+	batchDelOrgUnitCmd.Flags().StringVarP(&delFormat, "format", "f", "text", "orgunit data file format (text or gsheet)")
+	batchDelOrgUnitCmd.Flags().StringVarP(&sheetRange, "sheet-range", "s", "", "orgunit data gsheet range")
 }

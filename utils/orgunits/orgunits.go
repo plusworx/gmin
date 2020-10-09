@@ -53,7 +53,7 @@ var OrgUnitAttrMap = map[string]string{
 	"name":              "name",
 	"orgunitid":         "orgUnitId",
 	"orgunitpath":       "orgUnitPath",
-	"oukey":             "ouKey", // Used in batch update
+	"oukey":             "ouKey", // Used in batch commands
 	"parentorgunitid":   "parentOrgUnitId",
 	"parentorgunitpath": "parentOrgUnitPath",
 }
