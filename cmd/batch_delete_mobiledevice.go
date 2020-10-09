@@ -27,14 +27,17 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
+	mdevs "github.com/plusworx/gmin/utils/mobiledevices"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
+	sheet "google.golang.org/api/sheets/v4"
 )
 
 var batchDelMobDevCmd = &cobra.Command{
@@ -46,11 +49,17 @@ var batchDelMobDevCmd = &cobra.Command{
 	Short: "Deletes a batch of mobile devices",
 	Long: `Deletes a batch of mobile devices where mobile device details are provided in a text input file or through a pipe.
 			
-The input should have the mobile device resource ids to be deleted on separate lines like this:
+The input file or piped in data should provide the mobile device resource ids to be deleted on separate lines like this:
 
 4cx07eba348f09b3Yjklj93xjsol0kE30lkl
 Hkj98764yKK4jw8yyoyq9987js07q1hs7y98
-lkalkju9027ja98na65wqHaTBOOUgarTQKk9`,
+lkalkju9027ja98na65wqHaTBOOUgarTQKk9
+
+An input Google sheet must have a header row with the following column names being the only ones that are valid:
+
+resourceId [required]
+
+The column name is case insensitive.`,
 	RunE: doBatchDelMobDev,
 }
 
@@ -59,12 +68,6 @@ func doBatchDelMobDev(cmd *cobra.Command, args []string) error {
 		"args", args)
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryDeviceMobileScope)
-	if err != nil {
-		logger.Error(err)
-		return err
-	}
-
-	customerID, err := cfg.ReadConfigString("customerid")
 	if err != nil {
 		logger.Error(err)
 		return err
@@ -82,29 +85,31 @@ func doBatchDelMobDev(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if scanner == nil {
-		file, err := os.Open(inputFile)
+	lwrFmt := strings.ToLower(delFormat)
+
+	ok := cmn.SliceContainsStr(cmn.ValidFileFormats, lwrFmt)
+	if !ok {
+		err = fmt.Errorf(cmn.ErrInvalidFileFormat, delFormat)
+		logger.Error(err)
+		return err
+	}
+
+	switch {
+	case lwrFmt == "text":
+		err := bdmdProcessTextFile(ds, inputFile, scanner)
 		if err != nil {
 			logger.Error(err)
 			return err
 		}
-		defer file.Close()
-
-		scanner = bufio.NewScanner(file)
+	case lwrFmt == "gsheet":
+		err := bdmdProcessGSheet(ds, inputFile)
+		if err != nil {
+			logger.Error(err)
+			return err
+		}
+	default:
+		return fmt.Errorf(cmn.ErrInvalidFileFormat, format)
 	}
-
-	wg := new(sync.WaitGroup)
-
-	for scanner.Scan() {
-		mobResID := scanner.Text()
-		mdc := ds.Mobiledevices.Delete(customerID, mobResID)
-
-		wg.Add(1)
-
-		go bdmdDeleteObject(wg, mdc, mobResID)
-	}
-
-	wg.Wait()
 
 	logger.Debug("finished doBatchDelMobDev()")
 	return nil
@@ -133,7 +138,7 @@ func bdmdDeleteObject(wg *sync.WaitGroup, mdc *admin.MobiledevicesDeleteCall, re
 		// Log the retries
 		logger.Warnw(err.Error(),
 			"retrying", b.GetElapsedTime().String(),
-			"mobile device", resourceID)
+			"resourceID", resourceID)
 		return fmt.Errorf(cmn.ErrBatchMobileDevice, err.Error(), resourceID)
 	}, b)
 	if err != nil {
@@ -144,8 +149,145 @@ func bdmdDeleteObject(wg *sync.WaitGroup, mdc *admin.MobiledevicesDeleteCall, re
 	logger.Debug("finished bdmdDeleteObject()")
 }
 
+func bdmdFromFileFactory(hdrMap map[int]string, mobDevData []interface{}) (string, error) {
+	logger.Debugw("starting bdmdFromFileFactory()",
+		"hdrMap", hdrMap)
+
+	var mobResID string
+
+	for idx, val := range mobDevData {
+		attrName := hdrMap[idx]
+		attrVal := fmt.Sprintf("%v", val)
+
+		if attrName == "resourceId" {
+			mobResID = attrVal
+		}
+	}
+	logger.Debug("finished bdmdFromFileFactory()")
+	return mobResID, nil
+}
+
+func bdmdProcessDeletion(ds *admin.Service, mobdevs []string) error {
+	logger.Debug("starting bdmdProcessDeletion()")
+
+	customerID, err := cfg.ReadConfigString("customerid")
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+
+	wg := new(sync.WaitGroup)
+
+	for _, mobResID := range mobdevs {
+		mdc := ds.Mobiledevices.Delete(customerID, mobResID)
+
+		wg.Add(1)
+
+		go bdmdDeleteObject(wg, mdc, mobResID)
+	}
+
+	wg.Wait()
+
+	logger.Debug("finished bdmdProcessDeletion()")
+	return nil
+}
+
+func bdmdProcessGSheet(ds *admin.Service, sheetID string) error {
+	logger.Debugw("starting bdmdProcessGSheet()",
+		"sheetID", sheetID)
+
+	var mobdevs []string
+
+	if sheetRange == "" {
+		err := errors.New(cmn.ErrNoSheetRange)
+		logger.Error(err)
+		return err
+	}
+
+	ss, err := cmn.CreateSheetService(sheet.DriveReadonlyScope)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+
+	ssvgc := ss.Spreadsheets.Values.Get(sheetID, sheetRange)
+	sValRange, err := ssvgc.Do()
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+
+	if len(sValRange.Values) == 0 {
+		err = fmt.Errorf(cmn.ErrNoSheetDataFound, sheetID, sheetRange)
+		logger.Error(err)
+		return err
+	}
+
+	hdrMap := cmn.ProcessHeader(sValRange.Values[0])
+	err = cmn.ValidateHeader(hdrMap, mdevs.MobDevAttrMap)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+
+	for idx, row := range sValRange.Values {
+		if idx == 0 {
+			continue
+		}
+
+		mobDevVar, err := bdmdFromFileFactory(hdrMap, row)
+		if err != nil {
+			logger.Error(err)
+			return err
+		}
+
+		mobdevs = append(mobdevs, mobDevVar)
+	}
+
+	err = bdmdProcessDeletion(ds, mobdevs)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	logger.Debug("finished bdmdProcessGSheet()")
+	return nil
+}
+
+func bdmdProcessTextFile(ds *admin.Service, filePath string, scanner *bufio.Scanner) error {
+	logger.Debugw("starting bdmdProcessTextFile()",
+		"filePath", filePath)
+
+	var mobdevs []string
+
+	if filePath != "" {
+		file, err := os.Open(filePath)
+		if err != nil {
+			logger.Error(err)
+			return err
+		}
+		defer file.Close()
+		scanner = bufio.NewScanner(file)
+	}
+
+	for scanner.Scan() {
+		mobdev := scanner.Text()
+		mobdevs = append(mobdevs, mobdev)
+	}
+
+	err := bdmdProcessDeletion(ds, mobdevs)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+
+	logger.Debug("finished bdmdProcessTextFile()")
+	return nil
+}
+
 func init() {
 	batchDelCmd.AddCommand(batchDelMobDevCmd)
 
 	batchDelMobDevCmd.Flags().StringVarP(&inputFile, "input-file", "i", "", "filepath to mobile device data text file")
+	batchDelMobDevCmd.Flags().StringVarP(&delFormat, "format", "f", "text", "mobile device data file format (text or gsheet)")
+	batchDelMobDevCmd.Flags().StringVarP(&sheetRange, "sheet-range", "s", "", "mobile device data gsheet range")
 }

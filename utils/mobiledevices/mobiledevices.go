@@ -66,7 +66,7 @@ var mobDevApplicationsAttrs = []string{
 // MobDevAttrMap provides lowercase mappings to valid admin.MobileDevice attributes
 var MobDevAttrMap = map[string]string{
 	"adbstatus":                      "adbStatus",
-	"action":                         "action", // used in batch manage
+	"action":                         "action", // used in batch commands
 	"applications":                   "applications",
 	"basebandversion":                "basebandVersion",
 	"bootloaderversion":              "bootloaderVersion",
