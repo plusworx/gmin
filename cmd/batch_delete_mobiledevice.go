@@ -138,7 +138,7 @@ func bdmdDeleteObject(wg *sync.WaitGroup, mdc *admin.MobiledevicesDeleteCall, re
 		// Log the retries
 		logger.Warnw(err.Error(),
 			"retrying", b.GetElapsedTime().String(),
-			"resourceID", resourceID)
+			"mobile device", resourceID)
 		return fmt.Errorf(cmn.ErrBatchMobileDevice, err.Error(), resourceID)
 	}, b)
 	if err != nil {
