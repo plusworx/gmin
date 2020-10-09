@@ -248,7 +248,7 @@ func bdgProcessGSheet(ds *admin.Service, sheetID string) error {
 }
 
 func bdgProcessTextFile(ds *admin.Service, filePath string, scanner *bufio.Scanner) error {
-	logger.Debugw("starting bduProcessTextFile()",
+	logger.Debugw("starting bdgProcessTextFile()",
 		"filePath", filePath)
 
 	var groups []string
