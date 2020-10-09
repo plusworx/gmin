@@ -34,8 +34,8 @@ var undeleteCmd = &cobra.Command{
 	Use:     "undelete",
 	Aliases: []string{"und"},
 	Args:    cobra.NoArgs,
-	Short:   "Undeletes G Suite entities",
-	Long:    "Undeletes G Suite entities.",
+	Short:   "Undeletes Google Workspace entities",
+	Long:    "Undeletes Google Workspace entities.",
 	Run:     doUndelete,
 }
 

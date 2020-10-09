@@ -34,8 +34,8 @@ var updateCmd = &cobra.Command{
 	Use:     "update",
 	Aliases: []string{"upd"},
 	Args:    cobra.NoArgs,
-	Short:   "Updates G Suite entities",
-	Long:    `Updates G Suite entities.`,
+	Short:   "Updates Google Workspace entities",
+	Long:    `Updates Google Workspace entities.`,
 	Run:     doUpdate,
 }
 

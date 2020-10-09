@@ -34,8 +34,8 @@ var batchMoveCmd = &cobra.Command{
 	Use:     "batch-move",
 	Aliases: []string{"bmove", "bmv"},
 	Args:    cobra.NoArgs,
-	Short:   "Moves a batch of G Suite devices to another orgunit",
-	Long:    "Moves a batch of G Suite devices to another orgunit.",
+	Short:   "Moves a batch of Google Workspace devices to another orgunit",
+	Long:    "Moves a batch of Google Workspace devices to another orgunit.",
 	Run:     doBatchMove,
 }
 

@@ -34,8 +34,8 @@ var batchCreateCmd = &cobra.Command{
 	Use:     "batch-create",
 	Aliases: []string{"bcreate", "bcrt"},
 	Args:    cobra.NoArgs,
-	Short:   "Creates a batch of G Suite entities",
-	Long:    "Creates a batch of G Suite entities.",
+	Short:   "Creates a batch of Google Workspace entities",
+	Long:    "Creates a batch of Google Workspace entities.",
 	Run:     doBatchCreate,
 }
 

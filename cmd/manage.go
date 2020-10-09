@@ -34,8 +34,8 @@ var manageCmd = &cobra.Command{
 	Use:     "manage",
 	Aliases: []string{"mng"},
 	Args:    cobra.NoArgs,
-	Short:   "Manages G Suite devices",
-	Long:    "Manages G Suite devices.",
+	Short:   "Manages Google Workspace devices",
+	Long:    "Manages Google Workspace devices.",
 	Run:     doManage,
 }
 

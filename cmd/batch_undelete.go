@@ -34,8 +34,8 @@ var batchUndeleteCmd = &cobra.Command{
 	Use:     "batch-undelete",
 	Aliases: []string{"bundelete", "bund"},
 	Args:    cobra.NoArgs,
-	Short:   "Undeletes a batch of G Suite users",
-	Long:    "Undeletes a batch of G Suite users.",
+	Short:   "Undeletes a batch of Google Workspace users",
+	Long:    "Undeletes a batch of Google Workspace users.",
 	Run:     doBatchUndelete,
 }
 

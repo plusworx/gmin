@@ -30,8 +30,8 @@ var listCmd = &cobra.Command{
 	Use:     "list",
 	Aliases: []string{"ls"},
 	Args:    cobra.NoArgs,
-	Short:   "Outputs list of G Suite entities",
-	Long:    "Outputs list of G Suite entities.",
+	Short:   "Outputs list of Google Workspace entities",
+	Long:    "Outputs list of Google Workspace entities.",
 	Run:     doList,
 }
 

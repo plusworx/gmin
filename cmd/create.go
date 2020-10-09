@@ -34,8 +34,8 @@ var createCmd = &cobra.Command{
 	Use:     "create",
 	Aliases: []string{"crt"},
 	Args:    cobra.NoArgs,
-	Short:   "Creates G Suite entities",
-	Long:    "Creates G Suite entities.",
+	Short:   "Creates Google Workspace entities",
+	Long:    "Creates Google Workspace entities.",
 	Run:     doCreate,
 }
 
