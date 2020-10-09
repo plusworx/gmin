@@ -64,7 +64,7 @@ var MemberAttrMap = map[string]string{
 	"etag":              "etag",
 	"id":                "id",
 	"kind":              "kind",
-	"memberkey":         "memberKey", // used in batch update
+	"memberkey":         "memberKey", // used in batch commands
 	"role":              "role",
 	"status":            "status",
 	"type":              "type",
