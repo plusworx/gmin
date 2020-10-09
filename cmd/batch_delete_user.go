@@ -107,7 +107,7 @@ func doBatchDelUser(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	default:
-		return fmt.Errorf(cmn.ErrFormatNotHandled, format)
+		return fmt.Errorf(cmn.ErrInvalidFileFormat, format)
 	}
 
 	logger.Debug("finished doBatchDelUser()")

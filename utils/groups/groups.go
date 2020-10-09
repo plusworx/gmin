@@ -57,7 +57,7 @@ var GroupAttrMap = map[string]string{
 	"email":              "email",
 	"etag":               "etag",
 	"forcesendfields":    "forceSendFields",
-	"groupkey":           "groupKey", // Used in batch update
+	"groupkey":           "groupKey", // Used in batch commands
 	"id":                 "id",
 	"kind":               "kind",
 	"name":               "name",

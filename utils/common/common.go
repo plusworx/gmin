@@ -133,7 +133,6 @@ const (
 	ErrEmptyString              string = "%v cannot be empty string"
 	ErrFileNumberRequired       string = "a file number is required - try again"
 	ErrFlagNotRecognized        string = "%v flag is not recognized"
-	ErrFormatNotHandled         string = "%v format not handled"
 	ErrInvalidActionType        string = "invalid action type: %v"
 	ErrInvalidAdminEmail        string = "invalid admin email - try again"
 	ErrInvalidConfigPath        string = "invalid config path - try again"
