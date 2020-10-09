@@ -127,10 +127,10 @@ var (
 
 var rootCmd = &cobra.Command{
 	Use:   "gmin",
-	Short: "gmin is a CLI for administering G Suite domains",
-	Long: `gmin is a commandline interface (CLI) that enables the 
-	administration of G Suite domains. It aims to provide tools that
-	make G Suite administration from the commandline more manageable.`,
+	Short: "gmin is a CLI for administering Google Workspace domains",
+	Long: `gmin is a friendly Google Workspace administration CLI (command line interface)
+written in Go. It provides tools that make Google Workspace administration from the
+command line more manageable.`,
 	SilenceErrors: true,
 	SilenceUsage:  true,
 	Version:       "v0.8.0",
