@@ -218,7 +218,7 @@ func cuLastnameFlag(name *admin.UserName, flagName string) error {
 	logger.Debugw("starting cuLastnameFlag()",
 		"flagName", flagName)
 	if lastName == "" {
-		err := fmt.Errorf(cmn.ErrEmptyString, "--last-name")
+		err := fmt.Errorf(cmn.ErrEmptyString, flagName)
 		if err != nil {
 			return err
 		}
