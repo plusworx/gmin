@@ -448,14 +448,14 @@ func bumUpdate(member *admin.Member, groupKey string, wg *sync.WaitGroup, muc *a
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(fmt.Errorf(gmess.ErrBatchMember, err.Error(), memKey))
+			return backoff.Permanent(fmt.Errorf(gmess.ErrBatchMember, err.Error(), memKey, groupKey))
 		}
 		// Log the retries
 		logger.Warnw(err.Error(),
 			"retrying", b.GetElapsedTime().String(),
 			"group", groupKey,
 			"member", memKey)
-		return fmt.Errorf(gmess.ErrBatchMember, err.Error(), memKey)
+		return fmt.Errorf(gmess.ErrBatchMember, err.Error(), memKey, groupKey)
 	}, b)
 	if err != nil {
 		// Log final error

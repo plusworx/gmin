@@ -146,14 +146,14 @@ func bcmCreate(member *admin.Member, groupKey string, wg *sync.WaitGroup, mic *a
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(fmt.Errorf(gmess.ErrBatchMember, err.Error(), member.Email))
+			return backoff.Permanent(fmt.Errorf(gmess.ErrBatchMember, err.Error(), member.Email, groupKey))
 		}
 		// Log the retries
 		logger.Warnw(err.Error(),
 			"retrying", b.GetElapsedTime().String(),
 			"group", groupKey,
 			"member", member.Email)
-		return fmt.Errorf(gmess.ErrBatchMember, err.Error(), member.Email)
+		return fmt.Errorf(gmess.ErrBatchMember, err.Error(), member.Email, groupKey)
 	}, b)
 	if err != nil {
 		// Log final error

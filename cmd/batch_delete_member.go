@@ -137,13 +137,13 @@ func bdmDeleteObject(wg *sync.WaitGroup, mdc *admin.MembersDeleteCall, member st
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(fmt.Errorf(gmess.ErrBatchMember, err.Error(), member))
+			return backoff.Permanent(fmt.Errorf(gmess.ErrBatchMember, err.Error(), member, group))
 		}
 		logger.Warnw(err.Error(),
 			"retrying", b.GetElapsedTime().String(),
 			"group", group,
 			"member", member)
-		return fmt.Errorf(gmess.ErrBatchMember, err.Error(), member)
+		return fmt.Errorf(gmess.ErrBatchMember, err.Error(), member, group)
 	}, b)
 	if err != nil {
 		// Log final error
