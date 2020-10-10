@@ -24,9 +24,11 @@ package cmd
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 
 	cfg "github.com/plusworx/gmin/utils/config"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -42,51 +44,47 @@ var showConfigCmd = &cobra.Command{
 }
 
 func doShowConfig(cmd *cobra.Command, args []string) error {
-	fmt.Println("Configuration Information")
-	fmt.Println("=========================")
+	logger.Debug("starting doShowConfig()")
+
+	fmt.Println("gmin Configuration Information")
+	fmt.Println("==============================")
 	fmt.Println("Environment Variables")
 	fmt.Println("---------------------")
 
 	admin := os.Getenv(cfg.EnvPrefix + cfg.EnvVarAdmin)
-	if admin != "" {
-		fmt.Println(cfg.EnvPrefix+cfg.EnvVarAdmin, ": ", admin)
-	}
-
 	credPath := os.Getenv(cfg.EnvPrefix + cfg.EnvVarCredPath)
-	if credPath != "" {
-		fmt.Println(cfg.EnvPrefix+cfg.EnvVarCredPath, ": ", credPath)
-	}
-
 	custID := os.Getenv(cfg.EnvPrefix + cfg.EnvVarCustID)
-	if custID != "" {
-		fmt.Println(cfg.EnvPrefix+cfg.EnvVarCustID, ": ", custID)
-	}
-
 	logPath := os.Getenv(cfg.EnvPrefix + cfg.EnvVarLogPath)
+
+	if admin == "" && credPath == "" && custID == "" && logPath == "" {
+		fmt.Println(gmess.InfoEnvVarsNotFound)
+	}
+	if admin != "" {
+		fmt.Println(cfg.EnvPrefix+cfg.EnvVarAdmin+":", admin)
+	}
+	if credPath != "" {
+		fmt.Println(cfg.EnvPrefix+cfg.EnvVarCredPath+":", credPath)
+	}
+	if custID != "" {
+		fmt.Println(cfg.EnvPrefix+cfg.EnvVarCustID+":", custID)
+	}
 	if logPath != "" {
-		fmt.Println(cfg.EnvPrefix+cfg.EnvVarLogPath, ": ", logPath)
+		fmt.Println(cfg.EnvPrefix+cfg.EnvVarLogPath+":", logPath)
 	}
 
 	fmt.Println("")
 	fmt.Println("Config File")
 	fmt.Println("-----------")
-	cfgAdmin := viper.GetString(cfg.ConfigAdmin)
-	if cfgAdmin != "" {
-		fmt.Println(cfg.ConfigAdmin, ":\t\t", cfgAdmin)
-	}
-	cfgCredPath := viper.GetString(cfg.ConfigCredPath)
-	if cfgCredPath != "" {
-		fmt.Println(cfg.ConfigCredPath, ":\t", cfgCredPath)
-	}
-	cfgCustID := viper.GetString(cfg.ConfigCustID)
-	if cfgCustID != "" {
-		fmt.Println(cfg.ConfigCustID, ":\t\t", cfgCustID)
-	}
-	cfgLogPath := viper.GetString(cfg.ConfigLogPath)
-	if cfgLogPath != "" {
-		fmt.Println(cfg.ConfigLogPath, ":\t\t", cfgLogPath)
+
+	cfgFilePath := viper.GetViper().ConfigFileUsed()
+	yamlFile, err := ioutil.ReadFile(cfgFilePath)
+	if err != nil {
+		fmt.Println(gmess.InfoConfigFileNotFound)
 	}
 
+	fmt.Println(string(yamlFile))
+
+	logger.Debug("finished doShowConfig()")
 	return nil
 }
 
