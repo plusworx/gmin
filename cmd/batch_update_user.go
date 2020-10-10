@@ -36,6 +36,7 @@ import (
 
 	"github.com/cenkalti/backoff/v4"
 	cmn "github.com/plusworx/gmin/utils/common"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	usrs "github.com/plusworx/gmin/utils/users"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
@@ -95,7 +96,7 @@ func doBatchUpdUser(cmd *cobra.Command, args []string) error {
 	}
 
 	if inputFile == "" && scanner == nil {
-		err := errors.New(cmn.ErrNoInputFile)
+		err := errors.New(gmess.ErrNoInputFile)
 		logger.Error(err)
 		return err
 	}
@@ -104,7 +105,7 @@ func doBatchUpdUser(cmd *cobra.Command, args []string) error {
 
 	ok := cmn.SliceContainsStr(cmn.ValidFileFormats, lwrFmt)
 	if !ok {
-		err = fmt.Errorf(cmn.ErrInvalidFileFormat, format)
+		err = fmt.Errorf(gmess.ErrInvalidFileFormat, format)
 		logger.Error(err)
 		return err
 	}
@@ -129,7 +130,7 @@ func doBatchUpdUser(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	default:
-		return fmt.Errorf(cmn.ErrInvalidFileFormat, format)
+		return fmt.Errorf(gmess.ErrInvalidFileFormat, format)
 	}
 	logger.Debug("finished doBatchUpdUser()")
 	return nil
@@ -185,7 +186,7 @@ func bupduFromFileFactory(hdrMap map[int]string, userData []interface{}) (*admin
 		}
 		if attrName == "orgUnitPath" {
 			if attrVal == "" {
-				err := fmt.Errorf(cmn.ErrEmptyString, attrName)
+				err := fmt.Errorf(gmess.ErrEmptyString, attrName)
 				return nil, "", err
 			}
 			user.OrgUnitPath = attrVal
@@ -202,7 +203,7 @@ func bupduFromFileFactory(hdrMap map[int]string, userData []interface{}) (*admin
 		}
 		if attrName == "primaryEmail" {
 			if attrVal == "" {
-				err := fmt.Errorf(cmn.ErrEmptyString, attrName)
+				err := fmt.Errorf(gmess.ErrEmptyString, attrName)
 				return nil, "", err
 			}
 			user.PrimaryEmail = attrVal
@@ -236,7 +237,7 @@ func bupduFromFileFactory(hdrMap map[int]string, userData []interface{}) (*admin
 		}
 		if attrName == "userKey" {
 			if attrVal == "" {
-				err := fmt.Errorf(cmn.ErrEmptyString, attrName)
+				err := fmt.Errorf(gmess.ErrEmptyString, attrName)
 				return nil, "", err
 			}
 			userKey = attrVal
@@ -264,8 +265,8 @@ func bupduFromJSONFactory(ds *admin.Service, jsonData string) (*admin.User, stri
 	jsonBytes := []byte(jsonData)
 
 	if !json.Valid(jsonBytes) {
-		logger.Error(cmn.ErrInvalidJSONAttr)
-		return nil, "", errors.New(cmn.ErrInvalidJSONAttr)
+		logger.Error(gmess.ErrInvalidJSONAttr)
+		return nil, "", errors.New(gmess.ErrInvalidJSONAttr)
 	}
 
 	outStr, err := cmn.ParseInputAttrs(jsonBytes)
@@ -287,7 +288,7 @@ func bupduFromJSONFactory(ds *admin.Service, jsonData string) (*admin.User, stri
 	}
 
 	if usrKey.UserKey == "" {
-		err = errors.New(cmn.ErrNoJSONUserKey)
+		err = errors.New(gmess.ErrNoJSONUserKey)
 		logger.Error(err)
 		return nil, "", err
 	}
@@ -391,7 +392,7 @@ func bupduProcessGSheet(ds *admin.Service, sheetID string) error {
 	)
 
 	if sheetRange == "" {
-		err := errors.New(cmn.ErrNoSheetRange)
+		err := errors.New(gmess.ErrNoSheetRange)
 		logger.Error(err)
 		return err
 	}
@@ -410,7 +411,7 @@ func bupduProcessGSheet(ds *admin.Service, sheetID string) error {
 	}
 
 	if len(sValRange.Values) == 0 {
-		err = fmt.Errorf(cmn.ErrNoSheetDataFound, sheetID, sheetRange)
+		err = fmt.Errorf(gmess.ErrNoSheetDataFound, sheetID, sheetRange)
 		logger.Error(err)
 		return err
 	}
@@ -536,18 +537,18 @@ func bupduUpdate(user *admin.User, wg *sync.WaitGroup, uuc *admin.UsersUpdateCal
 		var err error
 		_, err = uuc.Do()
 		if err == nil {
-			logger.Infof(cmn.InfoUserUpdated, userKey)
-			fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoUserUpdated, userKey)))
+			logger.Infof(gmess.InfoUserUpdated, userKey)
+			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.InfoUserUpdated, userKey)))
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(fmt.Errorf(cmn.ErrBatchUser, err.Error(), userKey))
+			return backoff.Permanent(fmt.Errorf(gmess.ErrBatchUser, err.Error(), userKey))
 		}
 		// Log the retries
 		logger.Warnw(err.Error(),
 			"retrying", b.GetElapsedTime().String(),
 			"user", userKey)
-		return fmt.Errorf(cmn.ErrBatchUser, err.Error(), userKey)
+		return fmt.Errorf(gmess.ErrBatchUser, err.Error(), userKey)
 	}, b)
 	if err != nil {
 		// Log final error

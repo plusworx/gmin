@@ -36,6 +36,7 @@ import (
 
 	"github.com/cenkalti/backoff/v4"
 	cmn "github.com/plusworx/gmin/utils/common"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	mems "github.com/plusworx/gmin/utils/members"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
@@ -87,7 +88,7 @@ func doBatchUpdMember(cmd *cobra.Command, args []string) error {
 	}
 
 	if inputFile == "" && scanner == nil {
-		err := errors.New(cmn.ErrNoInputFile)
+		err := errors.New(gmess.ErrNoInputFile)
 		logger.Error(err)
 		return err
 	}
@@ -96,7 +97,7 @@ func doBatchUpdMember(cmd *cobra.Command, args []string) error {
 
 	ok := cmn.SliceContainsStr(cmn.ValidFileFormats, lwrFmt)
 	if !ok {
-		err = fmt.Errorf(cmn.ErrInvalidFileFormat, format)
+		err = fmt.Errorf(gmess.ErrInvalidFileFormat, format)
 		logger.Error(err)
 		return err
 	}
@@ -123,7 +124,7 @@ func doBatchUpdMember(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	default:
-		return fmt.Errorf(cmn.ErrInvalidFileFormat, format)
+		return fmt.Errorf(gmess.ErrInvalidFileFormat, format)
 	}
 	logger.Debug("finished doBatchUpdMember()")
 	return nil
@@ -161,7 +162,7 @@ func bumFromFileFactory(hdrMap map[int]string, memData []interface{}) (*admin.Me
 			member.Role = validRole
 		case attrName == "memberKey":
 			if attrVal == "" {
-				err := fmt.Errorf(cmn.ErrEmptyString, attrName)
+				err := fmt.Errorf(gmess.ErrEmptyString, attrName)
 				return nil, "", err
 			}
 			memKey = attrVal
@@ -184,8 +185,8 @@ func bumFromJSONFactory(ds *admin.Service, jsonData string) (*admin.Member, stri
 	jsonBytes := []byte(jsonData)
 
 	if !json.Valid(jsonBytes) {
-		logger.Error(cmn.ErrInvalidJSONAttr)
-		return nil, "", errors.New(cmn.ErrInvalidJSONAttr)
+		logger.Error(gmess.ErrInvalidJSONAttr)
+		return nil, "", errors.New(gmess.ErrInvalidJSONAttr)
 	}
 
 	outStr, err := cmn.ParseInputAttrs(jsonBytes)
@@ -207,7 +208,7 @@ func bumFromJSONFactory(ds *admin.Service, jsonData string) (*admin.Member, stri
 	}
 
 	if memKey.MemberKey == "" {
-		err = errors.New(cmn.ErrNoJSONMemberKey)
+		err = errors.New(gmess.ErrNoJSONMemberKey)
 		logger.Error(err)
 		return nil, "", err
 	}
@@ -304,7 +305,7 @@ func bumProcessGSheet(ds *admin.Service, groupKey string, sheetID string) error 
 	)
 
 	if sheetRange == "" {
-		err := errors.New(cmn.ErrNoSheetRange)
+		err := errors.New(gmess.ErrNoSheetRange)
 		logger.Error(err)
 		return err
 	}
@@ -323,7 +324,7 @@ func bumProcessGSheet(ds *admin.Service, groupKey string, sheetID string) error 
 	}
 
 	if len(sValRange.Values) == 0 {
-		err = fmt.Errorf(cmn.ErrNoSheetDataFound, sheetID, sheetRange)
+		err = fmt.Errorf(gmess.ErrNoSheetDataFound, sheetID, sheetRange)
 		logger.Error(err)
 		return err
 	}
@@ -442,19 +443,19 @@ func bumUpdate(member *admin.Member, groupKey string, wg *sync.WaitGroup, muc *a
 		var err error
 		_, err = muc.Do()
 		if err == nil {
-			logger.Infof(cmn.InfoMemberUpdated, memKey, groupKey)
-			fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoMemberUpdated, memKey, groupKey)))
+			logger.Infof(gmess.InfoMemberUpdated, memKey, groupKey)
+			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.InfoMemberUpdated, memKey, groupKey)))
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(fmt.Errorf(cmn.ErrBatchMember, err.Error(), memKey))
+			return backoff.Permanent(fmt.Errorf(gmess.ErrBatchMember, err.Error(), memKey))
 		}
 		// Log the retries
 		logger.Warnw(err.Error(),
 			"retrying", b.GetElapsedTime().String(),
 			"group", groupKey,
 			"member", memKey)
-		return fmt.Errorf(cmn.ErrBatchMember, err.Error(), memKey)
+		return fmt.Errorf(gmess.ErrBatchMember, err.Error(), memKey)
 	}, b)
 	if err != nil {
 		// Log final error

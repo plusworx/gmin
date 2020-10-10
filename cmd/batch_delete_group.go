@@ -33,6 +33,7 @@ import (
 
 	"github.com/cenkalti/backoff/v4"
 	cmn "github.com/plusworx/gmin/utils/common"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	grps "github.com/plusworx/gmin/utils/groups"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
@@ -79,7 +80,7 @@ func doBatchDelGroup(cmd *cobra.Command, args []string) error {
 	}
 
 	if inputFile == "" && scanner == nil {
-		err := errors.New(cmn.ErrNoInputFile)
+		err := errors.New(gmess.ErrNoInputFile)
 		logger.Error(err)
 		return err
 	}
@@ -88,7 +89,7 @@ func doBatchDelGroup(cmd *cobra.Command, args []string) error {
 
 	ok := cmn.SliceContainsStr(cmn.ValidFileFormats, lwrFmt)
 	if !ok {
-		err = fmt.Errorf(cmn.ErrInvalidFileFormat, delFormat)
+		err = fmt.Errorf(gmess.ErrInvalidFileFormat, delFormat)
 		logger.Error(err)
 		return err
 	}
@@ -107,7 +108,7 @@ func doBatchDelGroup(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	default:
-		return fmt.Errorf(cmn.ErrInvalidFileFormat, format)
+		return fmt.Errorf(gmess.ErrInvalidFileFormat, format)
 	}
 
 	logger.Debug("finished doBatchDelGroup()")
@@ -128,18 +129,18 @@ func bdgDeleteObject(wg *sync.WaitGroup, gdc *admin.GroupsDeleteCall, group stri
 
 		err = gdc.Do()
 		if err == nil {
-			logger.Infof(cmn.InfoGroupDeleted, group)
-			fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoGroupDeleted, group)))
+			logger.Infof(gmess.InfoGroupDeleted, group)
+			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.InfoGroupDeleted, group)))
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(fmt.Errorf(cmn.ErrBatchGroup, err.Error(), group))
+			return backoff.Permanent(fmt.Errorf(gmess.ErrBatchGroup, err.Error(), group))
 		}
 		// Log the retries
 		logger.Warnw(err.Error(),
 			"retrying", b.GetElapsedTime().String(),
 			"group", group)
-		return fmt.Errorf(cmn.ErrBatchGroup, err.Error(), group)
+		return fmt.Errorf(gmess.ErrBatchGroup, err.Error(), group)
 	}, b)
 	if err != nil {
 		// Log final error
@@ -193,7 +194,7 @@ func bdgProcessGSheet(ds *admin.Service, sheetID string) error {
 	var groups []string
 
 	if sheetRange == "" {
-		err := errors.New(cmn.ErrNoSheetRange)
+		err := errors.New(gmess.ErrNoSheetRange)
 		logger.Error(err)
 		return err
 	}
@@ -212,7 +213,7 @@ func bdgProcessGSheet(ds *admin.Service, sheetID string) error {
 	}
 
 	if len(sValRange.Values) == 0 {
-		err = fmt.Errorf(cmn.ErrNoSheetDataFound, sheetID, sheetRange)
+		err = fmt.Errorf(gmess.ErrNoSheetDataFound, sheetID, sheetRange)
 		logger.Error(err)
 		return err
 	}

@@ -38,6 +38,7 @@ import (
 	cdevs "github.com/plusworx/gmin/utils/chromeosdevices"
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 	sheet "google.golang.org/api/sheets/v4"
@@ -84,7 +85,7 @@ func doBatchMoveCrOSDev(cmd *cobra.Command, args []string) error {
 	}
 
 	if inputFile == "" && scanner == nil {
-		err := errors.New(cmn.ErrNoInputFile)
+		err := errors.New(gmess.ErrNoInputFile)
 		logger.Error(err)
 		return err
 	}
@@ -93,7 +94,7 @@ func doBatchMoveCrOSDev(cmd *cobra.Command, args []string) error {
 
 	ok := cmn.SliceContainsStr(cmn.ValidFileFormats, lwrFmt)
 	if !ok {
-		err = fmt.Errorf(cmn.ErrInvalidFileFormat, format)
+		err = fmt.Errorf(gmess.ErrInvalidFileFormat, format)
 		logger.Error(err)
 		return err
 	}
@@ -118,7 +119,7 @@ func doBatchMoveCrOSDev(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	default:
-		return fmt.Errorf(cmn.ErrInvalidFileFormat, format)
+		return fmt.Errorf(gmess.ErrInvalidFileFormat, format)
 	}
 	logger.Debug("finished doBatchMoveCrOSDev()")
 	return nil
@@ -137,13 +138,13 @@ func bmvcFromFileFactory(hdrMap map[int]string, cdevData []interface{}) (cdevs.M
 		switch {
 		case attrName == "deviceId":
 			if attrVal == "" {
-				err := fmt.Errorf(cmn.ErrEmptyString, attrName)
+				err := fmt.Errorf(gmess.ErrEmptyString, attrName)
 				return movedDev, err
 			}
 			movedDev.DeviceId = attrVal
 		case attrName == "orgUnitPath":
 			if attrVal == "" {
-				err := fmt.Errorf(cmn.ErrEmptyString, attrName)
+				err := fmt.Errorf(gmess.ErrEmptyString, attrName)
 				return movedDev, err
 			}
 			movedDev.OrgUnitPath = attrVal
@@ -161,8 +162,8 @@ func bmvcFromJSONFactory(ds *admin.Service, jsonData string) (cdevs.MovedDevice,
 	jsonBytes := []byte(jsonData)
 
 	if !json.Valid(jsonBytes) {
-		logger.Error(cmn.ErrInvalidJSONAttr)
-		return movedDev, errors.New(cmn.ErrInvalidJSONAttr)
+		logger.Error(gmess.ErrInvalidJSONAttr)
+		return movedDev, errors.New(gmess.ErrInvalidJSONAttr)
 	}
 
 	outStr, err := cmn.ParseInputAttrs(jsonBytes)
@@ -200,19 +201,19 @@ func bmvcPerformMove(deviceID string, ouPath string, wg *sync.WaitGroup, cdmc *a
 		var err error
 		err = cdmc.Do()
 		if err == nil {
-			logger.Infof(cmn.InfoCDevMovePerformed, deviceID, ouPath)
-			fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoCDevMovePerformed, deviceID, ouPath)))
+			logger.Infof(gmess.InfoCDevMovePerformed, deviceID, ouPath)
+			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.InfoCDevMovePerformed, deviceID, ouPath)))
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(fmt.Errorf(cmn.ErrBatchChromeOSDevice, err.Error(), deviceID))
+			return backoff.Permanent(fmt.Errorf(gmess.ErrBatchChromeOSDevice, err.Error(), deviceID))
 		}
 		// Log the retries
 		logger.Warnw(err.Error(),
 			"retrying", b.GetElapsedTime().String(),
 			"ChromeOS device", deviceID,
 			"orgunit", ouPath)
-		return fmt.Errorf(cmn.ErrBatchChromeOSDevice, err.Error(), deviceID)
+		return fmt.Errorf(gmess.ErrBatchChromeOSDevice, err.Error(), deviceID)
 	}, b)
 	if err != nil {
 		// Log final error
@@ -298,7 +299,7 @@ func bmvcProcessGSheet(ds *admin.Service, sheetID string) error {
 	var movedDevs []cdevs.MovedDevice
 
 	if sheetRange == "" {
-		err := errors.New(cmn.ErrNoSheetRange)
+		err := errors.New(gmess.ErrNoSheetRange)
 		logger.Error(err)
 		return err
 	}
@@ -317,7 +318,7 @@ func bmvcProcessGSheet(ds *admin.Service, sheetID string) error {
 	}
 
 	if len(sValRange.Values) == 0 {
-		err = fmt.Errorf(cmn.ErrNoSheetDataFound, sheetID, sheetRange)
+		err = fmt.Errorf(gmess.ErrNoSheetDataFound, sheetID, sheetRange)
 		logger.Error(err)
 		return err
 	}

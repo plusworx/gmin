@@ -26,7 +26,7 @@ import (
 	"fmt"
 	"testing"
 
-	cmn "github.com/plusworx/gmin/utils/common"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
 )
 
 func TestDoShowAttrs(t *testing.T) {
@@ -40,44 +40,44 @@ func TestDoShowAttrs(t *testing.T) {
 			args:        []string{"grp"},
 			composite:   true,
 			queryable:   true,
-			expectedErr: cmn.ErrQueryAndCompositeFlags,
+			expectedErr: gmess.ErrQueryAndCompositeFlags,
 		},
 		{
 			args:        []string{"user-alias", "email"},
 			queryable:   true,
-			expectedErr: cmn.ErrQueryableFlag1Arg,
+			expectedErr: gmess.ErrQueryableFlag1Arg,
 		},
 		{
 			args:        []string{"unrecognized"},
-			expectedErr: fmt.Sprintf(cmn.ErrObjectNotFound, "unrecognized"),
+			expectedErr: fmt.Sprintf(gmess.ErrObjectNotFound, "unrecognized"),
 		},
 		{
 			args:        []string{"schema", "fieldspec", "numericindexingspec"},
 			composite:   true,
-			expectedErr: fmt.Sprintf(cmn.ErrNoCompositeAttrs, "numericindexingspec"),
+			expectedErr: fmt.Sprintf(gmess.ErrNoCompositeAttrs, "numericindexingspec"),
 		},
 		{
 			args:        []string{"group", "email", "id"},
-			expectedErr: fmt.Sprintf(cmn.ErrNoCompositeAttrs, "group"),
+			expectedErr: fmt.Sprintf(gmess.ErrNoCompositeAttrs, "group"),
 		},
 		{
 			args:        []string{"cdev", "recentusers"},
 			composite:   true,
-			expectedErr: fmt.Sprintf(cmn.ErrNoCompositeAttrs, "recentusers"),
+			expectedErr: fmt.Sprintf(gmess.ErrNoCompositeAttrs, "recentusers"),
 		},
 		{
 			args:        []string{"ou", "name"},
-			expectedErr: fmt.Sprintf(cmn.ErrNoCompositeAttrs, "ou"),
+			expectedErr: fmt.Sprintf(gmess.ErrNoCompositeAttrs, "ou"),
 		},
 		{
 			args:        []string{"ga"},
 			queryable:   true,
-			expectedErr: fmt.Sprintf(cmn.ErrNoQueryableAttrs, "ga"),
+			expectedErr: fmt.Sprintf(gmess.ErrNoQueryableAttrs, "ga"),
 		},
 		{
 			args:        []string{"gmem"},
 			composite:   true,
-			expectedErr: fmt.Sprintf(cmn.ErrNoCompositeAttrs, "gmem"),
+			expectedErr: fmt.Sprintf(gmess.ErrNoCompositeAttrs, "gmem"),
 		},
 	}
 

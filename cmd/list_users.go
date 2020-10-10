@@ -31,6 +31,7 @@ import (
 
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	usrs "github.com/plusworx/gmin/utils/users"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
@@ -58,19 +59,19 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 	)
 
 	if strings.ToLower(projection) == "custom" && customField == "" {
-		err := errors.New(cmn.ErrNoCustomFieldMask)
+		err := errors.New(gmess.ErrNoCustomFieldMask)
 		logger.Error(err)
 		return err
 	}
 
 	if customField != "" && strings.ToLower(projection) != "custom" {
-		err := errors.New(cmn.ErrProjectionFlagNotCustom)
+		err := errors.New(gmess.ErrProjectionFlagNotCustom)
 		logger.Error(err)
 		return err
 	}
 
 	if query != "" && deleted {
-		err := errors.New(cmn.ErrQueryAndDeletedFlags)
+		err := errors.New(gmess.ErrQueryAndDeletedFlags)
 		logger.Error(err)
 		return err
 	}
@@ -114,7 +115,7 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 		proj := strings.ToLower(projection)
 		ok := cmn.SliceContainsStr(usrs.ValidProjections, proj)
 		if !ok {
-			err = fmt.Errorf(cmn.ErrInvalidProjectionType, projection)
+			err = fmt.Errorf(gmess.ErrInvalidProjectionType, projection)
 			logger.Error(err)
 			return err
 		}
@@ -129,7 +130,7 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 				listCall := usrs.AddCustomFieldMask(ulc, mask)
 				ulc = listCall.(*admin.UsersListCall)
 			} else {
-				err = errors.New(cmn.ErrNoCustomFieldMask)
+				err = errors.New(gmess.ErrNoCustomFieldMask)
 				logger.Error(err)
 				return err
 			}
@@ -150,7 +151,7 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 		ob := strings.ToLower(orderBy)
 		ok := cmn.SliceContainsStr(usrs.ValidOrderByStrs, ob)
 		if !ok {
-			err = fmt.Errorf(cmn.ErrInvalidOrderBy, orderBy)
+			err = fmt.Errorf(gmess.ErrInvalidOrderBy, orderBy)
 			logger.Error(err)
 			return err
 		}
@@ -183,7 +184,7 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 		vt := strings.ToLower(viewType)
 		ok := cmn.SliceContainsStr(usrs.ValidViewTypes, vt)
 		if !ok {
-			err = fmt.Errorf(cmn.ErrInvalidViewType, viewType)
+			err = fmt.Errorf(gmess.ErrInvalidViewType, viewType)
 			logger.Error(err)
 			return err
 		}
@@ -284,7 +285,7 @@ func doUserPages(ulc *admin.UsersListCall, users *admin.Users, pages string) err
 	} else {
 		numPages, err := strconv.Atoi(pages)
 		if err != nil {
-			err = errors.New(cmn.ErrInvalidPagesArgument)
+			err = errors.New(gmess.ErrInvalidPagesArgument)
 			logger.Error(err)
 			return err
 		}

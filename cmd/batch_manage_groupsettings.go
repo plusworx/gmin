@@ -37,6 +37,7 @@ import (
 	valid "github.com/asaskevich/govalidator"
 	"github.com/cenkalti/backoff/v4"
 	cmn "github.com/plusworx/gmin/utils/common"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	grpset "github.com/plusworx/gmin/utils/groupsettings"
 	"github.com/spf13/cobra"
 	gset "google.golang.org/api/groupssettings/v1"
@@ -111,7 +112,7 @@ func doBatchMngGrpSettings(cmd *cobra.Command, args []string) error {
 	}
 
 	if inputFile == "" && scanner == nil {
-		err := errors.New(cmn.ErrNoInputFile)
+		err := errors.New(gmess.ErrNoInputFile)
 		logger.Error(err)
 		return err
 	}
@@ -120,7 +121,7 @@ func doBatchMngGrpSettings(cmd *cobra.Command, args []string) error {
 
 	ok := cmn.SliceContainsStr(cmn.ValidFileFormats, lwrFmt)
 	if !ok {
-		err = fmt.Errorf(cmn.ErrInvalidFileFormat, format)
+		err = fmt.Errorf(gmess.ErrInvalidFileFormat, format)
 		logger.Error(err)
 		return err
 	}
@@ -145,7 +146,7 @@ func doBatchMngGrpSettings(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	default:
-		return fmt.Errorf(cmn.ErrInvalidFileFormat, format)
+		return fmt.Errorf(gmess.ErrInvalidFileFormat, format)
 	}
 	logger.Debug("finished doBatchMngGrpSettings()")
 	return nil
@@ -283,7 +284,7 @@ func bmnggFromFileFactory(hdrMap map[int]string, gsData []interface{}) (*gset.Gr
 		}
 		if lowerAttrName == "groupkey" {
 			if attrVal == "" {
-				err := fmt.Errorf(cmn.ErrEmptyString, attrName)
+				err := fmt.Errorf(gmess.ErrEmptyString, attrName)
 				return nil, "", err
 			}
 			groupKey = attrVal
@@ -434,8 +435,8 @@ func bmnggFromJSONFactory(ds *gset.Service, jsonData string) (*gset.Groups, stri
 	jsonBytes := []byte(jsonData)
 
 	if !json.Valid(jsonBytes) {
-		logger.Error(cmn.ErrInvalidJSONAttr)
-		return nil, "", errors.New(cmn.ErrInvalidJSONAttr)
+		logger.Error(gmess.ErrInvalidJSONAttr)
+		return nil, "", errors.New(gmess.ErrInvalidJSONAttr)
 	}
 
 	outStr, err := cmn.ParseInputAttrs(jsonBytes)
@@ -457,7 +458,7 @@ func bmnggFromJSONFactory(ds *gset.Service, jsonData string) (*gset.Groups, stri
 	}
 
 	if grpKey.GroupKey == "" {
-		err = errors.New(cmn.ErrNoJSONGroupKey)
+		err = errors.New(gmess.ErrNoJSONGroupKey)
 		logger.Error(err)
 		return nil, "", err
 	}
@@ -550,18 +551,18 @@ func bmnggPerformUpdate(grpSetting *gset.Groups, groupKey string, wg *sync.WaitG
 		var err error
 		_, err = gsuc.Do()
 		if err == nil {
-			logger.Infof(cmn.InfoGroupSettingsChanged, groupKey)
-			fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoGroupSettingsChanged, groupKey)))
+			logger.Infof(gmess.InfoGroupSettingsChanged, groupKey)
+			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.InfoGroupSettingsChanged, groupKey)))
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(fmt.Errorf(cmn.ErrBatchGroupSettings, err.Error(), groupKey))
+			return backoff.Permanent(fmt.Errorf(gmess.ErrBatchGroupSettings, err.Error(), groupKey))
 		}
 		// Log the retries
 		logger.Warnw(err.Error(),
 			"retrying", b.GetElapsedTime().String(),
 			"group", groupKey)
-		return fmt.Errorf(cmn.ErrBatchGroupSettings, err.Error(), groupKey)
+		return fmt.Errorf(gmess.ErrBatchGroupSettings, err.Error(), groupKey)
 	}, b)
 	if err != nil {
 		// Log final error
@@ -663,7 +664,7 @@ func bmnggProcessGSheet(ds *gset.Service, sheetID string) error {
 	)
 
 	if sheetRange == "" {
-		err := errors.New(cmn.ErrNoSheetRange)
+		err := errors.New(gmess.ErrNoSheetRange)
 		logger.Error(err)
 		return err
 	}
@@ -682,7 +683,7 @@ func bmnggProcessGSheet(ds *gset.Service, sheetID string) error {
 	}
 
 	if len(sValRange.Values) == 0 {
-		err = fmt.Errorf(cmn.ErrNoSheetDataFound, sheetID, sheetRange)
+		err = fmt.Errorf(gmess.ErrNoSheetDataFound, sheetID, sheetRange)
 		logger.Error(err)
 		return err
 	}
@@ -795,7 +796,7 @@ func bmnggReplyEmailVal(grpSettings *gset.Groups, attrValue string) error {
 	}
 	ok := valid.IsEmail(attrValue)
 	if !ok {
-		err := fmt.Errorf(cmn.ErrInvalidEmailAddress, attrValue)
+		err := fmt.Errorf(gmess.ErrInvalidEmailAddress, attrValue)
 		return err
 	}
 	grpSettings.CustomReplyTo = attrValue

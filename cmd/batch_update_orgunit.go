@@ -37,6 +37,7 @@ import (
 	"github.com/cenkalti/backoff/v4"
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	ous "github.com/plusworx/gmin/utils/orgunits"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
@@ -89,7 +90,7 @@ func doBatchUpdOU(cmd *cobra.Command, args []string) error {
 	}
 
 	if inputFile == "" && scanner == nil {
-		err := errors.New(cmn.ErrNoInputFile)
+		err := errors.New(gmess.ErrNoInputFile)
 		logger.Error(err)
 		return err
 	}
@@ -98,7 +99,7 @@ func doBatchUpdOU(cmd *cobra.Command, args []string) error {
 
 	ok := cmn.SliceContainsStr(cmn.ValidFileFormats, lwrFmt)
 	if !ok {
-		err = fmt.Errorf(cmn.ErrInvalidFileFormat, format)
+		err = fmt.Errorf(gmess.ErrInvalidFileFormat, format)
 		logger.Error(err)
 		return err
 	}
@@ -123,7 +124,7 @@ func doBatchUpdOU(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	default:
-		return fmt.Errorf(cmn.ErrInvalidFileFormat, format)
+		return fmt.Errorf(gmess.ErrInvalidFileFormat, format)
 	}
 	logger.Debug("finished doBatchUpdOU()")
 	return nil
@@ -160,19 +161,19 @@ func buoFromFileFactory(hdrMap map[int]string, ouData []interface{}) (*admin.Org
 			}
 		case attrName == "name":
 			if attrVal == "" {
-				err := fmt.Errorf(cmn.ErrEmptyString, attrName)
+				err := fmt.Errorf(gmess.ErrEmptyString, attrName)
 				return nil, "", err
 			}
 			orgunit.Name = attrVal
 		case attrName == "parentOrgUnitPath":
 			if attrVal == "" {
-				err := fmt.Errorf(cmn.ErrEmptyString, attrName)
+				err := fmt.Errorf(gmess.ErrEmptyString, attrName)
 				return nil, "", err
 			}
 			orgunit.ParentOrgUnitPath = attrVal
 		case attrName == "ouKey":
 			if attrVal == "" {
-				err := fmt.Errorf(cmn.ErrEmptyString, attrName)
+				err := fmt.Errorf(gmess.ErrEmptyString, attrName)
 				return nil, "", err
 			}
 			ouKey = attrVal
@@ -196,8 +197,8 @@ func buoFromJSONFactory(ds *admin.Service, jsonData string) (*admin.OrgUnit, str
 	jsonBytes := []byte(jsonData)
 
 	if !json.Valid(jsonBytes) {
-		logger.Error(cmn.ErrInvalidJSONAttr)
-		return nil, "", errors.New(cmn.ErrInvalidJSONAttr)
+		logger.Error(gmess.ErrInvalidJSONAttr)
+		return nil, "", errors.New(gmess.ErrInvalidJSONAttr)
 	}
 
 	outStr, err := cmn.ParseInputAttrs(jsonBytes)
@@ -219,7 +220,7 @@ func buoFromJSONFactory(ds *admin.Service, jsonData string) (*admin.OrgUnit, str
 	}
 
 	if ouKey.OUKey == "" {
-		err = errors.New(cmn.ErrNoJSONOUKey)
+		err = errors.New(gmess.ErrNoJSONOUKey)
 		logger.Error(err)
 		return nil, "", err
 	}
@@ -323,7 +324,7 @@ func buoProcessGSheet(ds *admin.Service, sheetID string) error {
 	)
 
 	if sheetRange == "" {
-		err := errors.New(cmn.ErrNoSheetRange)
+		err := errors.New(gmess.ErrNoSheetRange)
 		logger.Error(err)
 		return err
 	}
@@ -342,7 +343,7 @@ func buoProcessGSheet(ds *admin.Service, sheetID string) error {
 	}
 
 	if len(sValRange.Values) == 0 {
-		err = fmt.Errorf(cmn.ErrNoSheetDataFound, sheetID, sheetRange)
+		err = fmt.Errorf(gmess.ErrNoSheetDataFound, sheetID, sheetRange)
 		logger.Error(err)
 		return err
 	}
@@ -468,18 +469,18 @@ func buoUpdate(orgunit *admin.OrgUnit, wg *sync.WaitGroup, ouuc *admin.OrgunitsU
 		var err error
 		_, err = ouuc.Do()
 		if err == nil {
-			logger.Infof(cmn.InfoOUUpdated, ouKey)
-			fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoOUUpdated, ouKey)))
+			logger.Infof(gmess.InfoOUUpdated, ouKey)
+			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.InfoOUUpdated, ouKey)))
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(fmt.Errorf(cmn.ErrBatchOU, err.Error(), ouKey))
+			return backoff.Permanent(fmt.Errorf(gmess.ErrBatchOU, err.Error(), ouKey))
 		}
 		// Log the retries
 		logger.Warnw(err.Error(),
 			"retrying", b.GetElapsedTime().String(),
 			"orgunit", ouKey)
-		return fmt.Errorf(cmn.ErrBatchOU, err.Error(), ouKey)
+		return fmt.Errorf(gmess.ErrBatchOU, err.Error(), ouKey)
 	}, b)
 	if err != nil {
 		// Log final error

@@ -29,6 +29,7 @@ import (
 
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	ous "github.com/plusworx/gmin/utils/orgunits"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
@@ -88,7 +89,7 @@ func doListOUs(cmd *cobra.Command, args []string) error {
 
 	ok := cmn.SliceContainsStr(ous.ValidSearchTypes, searchType)
 	if !ok {
-		err := fmt.Errorf(cmn.ErrInvalidSearchType, searchType)
+		err := fmt.Errorf(gmess.ErrInvalidSearchType, searchType)
 		logger.Error(err)
 		return err
 	}

@@ -37,6 +37,7 @@ import (
 	"github.com/cenkalti/backoff/v4"
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	ous "github.com/plusworx/gmin/utils/orgunits"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
@@ -86,7 +87,7 @@ func doBatchCrtOrgUnit(cmd *cobra.Command, args []string) error {
 	}
 
 	if inputFile == "" && scanner == nil {
-		err := errors.New(cmn.ErrNoInputFile)
+		err := errors.New(gmess.ErrNoInputFile)
 		logger.Error(err)
 		return err
 	}
@@ -95,7 +96,7 @@ func doBatchCrtOrgUnit(cmd *cobra.Command, args []string) error {
 
 	ok := cmn.SliceContainsStr(cmn.ValidFileFormats, lwrFmt)
 	if !ok {
-		err = fmt.Errorf(cmn.ErrInvalidFileFormat, format)
+		err = fmt.Errorf(gmess.ErrInvalidFileFormat, format)
 		logger.Error(err)
 		return err
 	}
@@ -120,7 +121,7 @@ func doBatchCrtOrgUnit(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	default:
-		return fmt.Errorf(cmn.ErrInvalidFileFormat, format)
+		return fmt.Errorf(gmess.ErrInvalidFileFormat, format)
 	}
 	logger.Debug("finished doBatchCrtOrgUnit()")
 	return nil
@@ -138,18 +139,18 @@ func bcoCreate(orgunit *admin.OrgUnit, wg *sync.WaitGroup, ouic *admin.OrgunitsI
 		var err error
 		newOrgUnit, err := ouic.Do()
 		if err == nil {
-			logger.Infof(cmn.InfoOUCreated, newOrgUnit.OrgUnitPath)
-			fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoOUCreated, newOrgUnit.OrgUnitPath)))
+			logger.Infof(gmess.InfoOUCreated, newOrgUnit.OrgUnitPath)
+			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.InfoOUCreated, newOrgUnit.OrgUnitPath)))
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(fmt.Errorf(cmn.ErrBatchOU, err.Error(), orgunit.Name))
+			return backoff.Permanent(fmt.Errorf(gmess.ErrBatchOU, err.Error(), orgunit.Name))
 		}
 		// Log the retries
 		logger.Warnw(err.Error(),
 			"retrying", b.GetElapsedTime().String(),
 			"orgunit", orgunit.Name)
-		return fmt.Errorf(cmn.ErrBatchOU, err.Error(), orgunit.Name)
+		return fmt.Errorf(gmess.ErrBatchOU, err.Error(), orgunit.Name)
 	}, b)
 	if err != nil {
 		// Log final error
@@ -181,13 +182,13 @@ func bcoFromFileFactory(hdrMap map[int]string, ouData []interface{}) (*admin.Org
 			orgunit.Description = attrVal
 		case attrName == "name":
 			if attrVal == "" {
-				err := fmt.Errorf(cmn.ErrEmptyString, attrName)
+				err := fmt.Errorf(gmess.ErrEmptyString, attrName)
 				return nil, err
 			}
 			orgunit.Name = attrVal
 		case attrName == "parentOrgUnitPath":
 			if attrVal == "" {
-				err := fmt.Errorf(cmn.ErrEmptyString, attrName)
+				err := fmt.Errorf(gmess.ErrEmptyString, attrName)
 				return nil, err
 			}
 			orgunit.ParentOrgUnitPath = attrVal
@@ -210,8 +211,8 @@ func bcoFromJSONFactory(ds *admin.Service, jsonData string) (*admin.OrgUnit, err
 	jsonBytes := []byte(jsonData)
 
 	if !json.Valid(jsonBytes) {
-		logger.Error(cmn.ErrInvalidJSONAttr)
-		return nil, errors.New(cmn.ErrInvalidJSONAttr)
+		logger.Error(gmess.ErrInvalidJSONAttr)
+		return nil, errors.New(gmess.ErrInvalidJSONAttr)
 	}
 
 	outStr, err := cmn.ParseInputAttrs(jsonBytes)
@@ -320,7 +321,7 @@ func bcoProcessGSheet(ds *admin.Service, sheetID string) error {
 	var orgunits []*admin.OrgUnit
 
 	if sheetRange == "" {
-		err := errors.New(cmn.ErrNoSheetRange)
+		err := errors.New(gmess.ErrNoSheetRange)
 		logger.Error(err)
 		return err
 	}
@@ -339,7 +340,7 @@ func bcoProcessGSheet(ds *admin.Service, sheetID string) error {
 	}
 
 	if len(sValRange.Values) == 0 {
-		err = fmt.Errorf(cmn.ErrNoSheetDataFound, sheetID, sheetRange)
+		err = fmt.Errorf(gmess.ErrNoSheetDataFound, sheetID, sheetRange)
 		logger.Error(err)
 		return err
 	}
@@ -430,7 +431,7 @@ func bcoProcessObjects(ds *admin.Service, orgunits []*admin.OrgUnit) error {
 
 	for _, ou := range orgunits {
 		if ou.Name == "" || ou.ParentOrgUnitPath == "" {
-			err = errors.New(cmn.ErrNoNameOrOuPath)
+			err = errors.New(gmess.ErrNoNameOrOuPath)
 			logger.Error(err)
 			return err
 		}

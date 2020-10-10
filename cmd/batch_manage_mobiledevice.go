@@ -37,6 +37,7 @@ import (
 	"github.com/cenkalti/backoff/v4"
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	mdevs "github.com/plusworx/gmin/utils/mobiledevices"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
@@ -94,7 +95,7 @@ func doBatchMngMobDev(cmd *cobra.Command, args []string) error {
 	}
 
 	if inputFile == "" && scanner == nil {
-		err := errors.New(cmn.ErrNoInputFile)
+		err := errors.New(gmess.ErrNoInputFile)
 		logger.Error(err)
 		return err
 	}
@@ -103,7 +104,7 @@ func doBatchMngMobDev(cmd *cobra.Command, args []string) error {
 
 	ok := cmn.SliceContainsStr(cmn.ValidFileFormats, lwrFmt)
 	if !ok {
-		err = fmt.Errorf(cmn.ErrInvalidFileFormat, format)
+		err = fmt.Errorf(gmess.ErrInvalidFileFormat, format)
 		logger.Error(err)
 		return err
 	}
@@ -128,7 +129,7 @@ func doBatchMngMobDev(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	default:
-		return fmt.Errorf(cmn.ErrInvalidFileFormat, format)
+		return fmt.Errorf(gmess.ErrInvalidFileFormat, format)
 	}
 	logger.Debug("finished doBatchMngMobDev()")
 	return nil
@@ -149,7 +150,7 @@ func bmngmFromFileFactory(hdrMap map[int]string, mdevData []interface{}) (mdevs.
 		case attrName == "action":
 			ok := cmn.SliceContainsStr(mdevs.ValidActions, lowerAttrVal)
 			if !ok {
-				err := fmt.Errorf(cmn.ErrInvalidActionType, attrVal)
+				err := fmt.Errorf(gmess.ErrInvalidActionType, attrVal)
 				logger.Error(err)
 				return managedDev, err
 			}
@@ -170,8 +171,8 @@ func bmngmFromJSONFactory(ds *admin.Service, jsonData string) (mdevs.ManagedDevi
 	jsonBytes := []byte(jsonData)
 
 	if !json.Valid(jsonBytes) {
-		logger.Error(cmn.ErrInvalidJSONAttr)
-		return managedDev, errors.New(cmn.ErrInvalidJSONAttr)
+		logger.Error(gmess.ErrInvalidJSONAttr)
+		return managedDev, errors.New(gmess.ErrInvalidJSONAttr)
 	}
 
 	outStr, err := cmn.ParseInputAttrs(jsonBytes)
@@ -209,18 +210,18 @@ func bmngmPerformAction(resourceID string, action string, wg *sync.WaitGroup, md
 		var err error
 		err = mdac.Do()
 		if err == nil {
-			logger.Infof(cmn.InfoMDevActionPerformed, action, resourceID)
-			fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoMDevActionPerformed, action, resourceID)))
+			logger.Infof(gmess.InfoMDevActionPerformed, action, resourceID)
+			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.InfoMDevActionPerformed, action, resourceID)))
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(fmt.Errorf(cmn.ErrBatchMobileDevice, err.Error(), resourceID))
+			return backoff.Permanent(fmt.Errorf(gmess.ErrBatchMobileDevice, err.Error(), resourceID))
 		}
 		// Log the retries
 		logger.Warnw(err.Error(),
 			"retrying", b.GetElapsedTime().String(),
 			"mobile device", resourceID)
-		return fmt.Errorf(cmn.ErrBatchMobileDevice, err.Error(), resourceID)
+		return fmt.Errorf(gmess.ErrBatchMobileDevice, err.Error(), resourceID)
 	}, b)
 	if err != nil {
 		// Log final error
@@ -306,7 +307,7 @@ func bmngmProcessGSheet(ds *admin.Service, sheetID string) error {
 	var managedDevs []mdevs.ManagedDevice
 
 	if sheetRange == "" {
-		err := errors.New(cmn.ErrNoSheetRange)
+		err := errors.New(gmess.ErrNoSheetRange)
 		logger.Error(err)
 		return err
 	}
@@ -325,7 +326,7 @@ func bmngmProcessGSheet(ds *admin.Service, sheetID string) error {
 	}
 
 	if len(sValRange.Values) == 0 {
-		err = fmt.Errorf(cmn.ErrNoSheetDataFound, sheetID, sheetRange)
+		err = fmt.Errorf(gmess.ErrNoSheetDataFound, sheetID, sheetRange)
 		logger.Error(err)
 		return err
 	}

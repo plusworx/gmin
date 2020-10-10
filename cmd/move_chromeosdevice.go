@@ -27,6 +27,7 @@ import (
 
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	"github.com/spf13/cobra"
 
 	admin "google.golang.org/api/admin/directory/v1"
@@ -71,8 +72,8 @@ func doMoveCrOSDev(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	logger.Infof(cmn.InfoCDevMovePerformed, args[0], args[1])
-	fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoCDevMovePerformed, args[0], args[1])))
+	logger.Infof(gmess.InfoCDevMovePerformed, args[0], args[1])
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.InfoCDevMovePerformed, args[0], args[1])))
 
 	logger.Debug("finished doMoveCrOSDev()")
 	return nil

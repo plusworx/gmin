@@ -27,6 +27,7 @@ import (
 
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	admin "google.golang.org/api/admin/directory/v1"
@@ -85,8 +86,8 @@ func doUpdateOU(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	logger.Infof(cmn.InfoOUUpdated, args[0])
-	fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoOUUpdated, args[0])))
+	logger.Infof(gmess.InfoOUUpdated, args[0])
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.InfoOUUpdated, args[0])))
 
 	logger.Debug("finished doUpdateOU()")
 	return nil
@@ -152,7 +153,7 @@ func uoNameFlag(orgunit *admin.OrgUnit, flagName string) error {
 	logger.Debugw("starting uoNameFlag()",
 		"flagName", flagName)
 	if orgUnitName == "" {
-		err := fmt.Errorf(cmn.ErrEmptyString, flagName)
+		err := fmt.Errorf(gmess.ErrEmptyString, flagName)
 		if err != nil {
 			return err
 		}
@@ -166,7 +167,7 @@ func uoParentPathFlag(orgunit *admin.OrgUnit, flagName string) error {
 	logger.Debugw("starting uoParentPathFlag()",
 		"flagName", flagName)
 	if parentOUPath == "" {
-		err := fmt.Errorf(cmn.ErrEmptyString, flagName)
+		err := fmt.Errorf(gmess.ErrEmptyString, flagName)
 		if err != nil {
 			return err
 		}

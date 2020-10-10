@@ -29,6 +29,7 @@ import (
 	"strconv"
 
 	cmn "github.com/plusworx/gmin/utils/common"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	mems "github.com/plusworx/gmin/utils/members"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
@@ -175,7 +176,7 @@ func doMemPages(mlc *admin.MembersListCall, members *admin.Members, pages string
 	} else {
 		numPages, err := strconv.Atoi(pages)
 		if err != nil {
-			err = errors.New(cmn.ErrInvalidPagesArgument)
+			err = errors.New(gmess.ErrInvalidPagesArgument)
 			logger.Error(err)
 			return err
 		}

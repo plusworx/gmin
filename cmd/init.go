@@ -30,8 +30,8 @@ import (
 
 	valid "github.com/asaskevich/govalidator"
 	"github.com/mitchellh/go-homedir"
-	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
 )
@@ -72,7 +72,7 @@ func askForConfigPath() string {
 	}
 
 	if err != nil {
-		fmt.Println(cmn.ErrInvalidConfigPath)
+		fmt.Println(gmess.ErrInvalidConfigPath)
 		return askForConfigPath()
 	}
 
@@ -91,7 +91,7 @@ func askForCredentialPath() string {
 	}
 
 	if err != nil {
-		fmt.Println(cmn.ErrInvalidCredPath)
+		fmt.Println(gmess.ErrInvalidCredPath)
 		return askForCredentialPath()
 	}
 
@@ -110,7 +110,7 @@ func askForCustomerID() string {
 	}
 
 	if err != nil {
-		fmt.Println(cmn.ErrInvalidCustID)
+		fmt.Println(gmess.ErrInvalidCustID)
 		return askForCustomerID()
 	}
 
@@ -124,7 +124,7 @@ func askForEmail() string {
 
 	_, err := fmt.Scanln(&response)
 	if err != nil {
-		fmt.Println(cmn.ErrAdminEmailRequired)
+		fmt.Println(gmess.ErrAdminEmailRequired)
 		return askForEmail()
 	}
 
@@ -134,7 +134,7 @@ func askForEmail() string {
 
 	ok := valid.IsEmail(response)
 	if !ok {
-		fmt.Println(cmn.ErrInvalidAdminEmail)
+		fmt.Println(gmess.ErrInvalidAdminEmail)
 		return askForEmail()
 	}
 
@@ -153,7 +153,7 @@ func askForLogPath() string {
 	}
 
 	if err != nil {
-		fmt.Println(cmn.ErrInvalidLogPath)
+		fmt.Println(gmess.ErrInvalidLogPath)
 		return askForLogPath()
 	}
 
@@ -171,27 +171,27 @@ func doInit(cmd *cobra.Command, args []string) error {
 
 	answers.AdminEmail = askForEmail()
 	if answers.AdminEmail == "q" {
-		fmt.Println(cmn.InfoInitCancelled)
+		fmt.Println(gmess.InfoInitCancelled)
 		return nil
 	}
 	answers.ConfigPath = askForConfigPath()
 	if answers.ConfigPath == "q" {
-		fmt.Println(cmn.InfoInitCancelled)
+		fmt.Println(gmess.InfoInitCancelled)
 		return nil
 	}
 	answers.CredentialPath = askForCredentialPath()
 	if answers.CredentialPath == "q" {
-		fmt.Println(cmn.InfoInitCancelled)
+		fmt.Println(gmess.InfoInitCancelled)
 		return nil
 	}
 	answers.CustomerID = askForCustomerID()
 	if answers.CustomerID == "q" {
-		fmt.Println(cmn.InfoInitCancelled)
+		fmt.Println(gmess.InfoInitCancelled)
 		return nil
 	}
 	answers.LogPath = askForLogPath()
 	if answers.LogPath == "q" {
-		fmt.Println(cmn.InfoInitCancelled)
+		fmt.Println(gmess.InfoInitCancelled)
 		return nil
 	}
 
@@ -237,7 +237,7 @@ func doInit(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Println(cmn.InfoInitCompleted)
+	fmt.Println(gmess.InfoInitCompleted)
 
 	return nil
 }

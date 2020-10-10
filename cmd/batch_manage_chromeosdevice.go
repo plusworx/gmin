@@ -38,6 +38,7 @@ import (
 	cdevs "github.com/plusworx/gmin/utils/chromeosdevices"
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 	sheet "google.golang.org/api/sheets/v4"
@@ -98,7 +99,7 @@ func doBatchMngCrOSDev(cmd *cobra.Command, args []string) error {
 	}
 
 	if inputFile == "" && scanner == nil {
-		err := errors.New(cmn.ErrNoInputFile)
+		err := errors.New(gmess.ErrNoInputFile)
 		logger.Error(err)
 		return err
 	}
@@ -107,7 +108,7 @@ func doBatchMngCrOSDev(cmd *cobra.Command, args []string) error {
 
 	ok := cmn.SliceContainsStr(cmn.ValidFileFormats, lwrFmt)
 	if !ok {
-		err = fmt.Errorf(cmn.ErrInvalidFileFormat, format)
+		err = fmt.Errorf(gmess.ErrInvalidFileFormat, format)
 		logger.Error(err)
 		return err
 	}
@@ -132,7 +133,7 @@ func doBatchMngCrOSDev(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	default:
-		return fmt.Errorf(cmn.ErrInvalidFileFormat, format)
+		return fmt.Errorf(gmess.ErrInvalidFileFormat, format)
 	}
 	logger.Debug("finished doBatchMngCrOSDev()")
 	return nil
@@ -153,7 +154,7 @@ func bmngcFromFileFactory(hdrMap map[int]string, cdevData []interface{}) (cdevs.
 		case attrName == "action":
 			ok := cmn.SliceContainsStr(cdevs.ValidActions, lowerAttrVal)
 			if !ok {
-				err := fmt.Errorf(cmn.ErrInvalidActionType, attrVal)
+				err := fmt.Errorf(gmess.ErrInvalidActionType, attrVal)
 				logger.Error(err)
 				return managedDev, err
 			}
@@ -164,7 +165,7 @@ func bmngcFromFileFactory(hdrMap map[int]string, cdevData []interface{}) (cdevs.
 			if lowerAttrVal != "" {
 				ok := cmn.SliceContainsStr(cdevs.ValidDeprovisionReasons, lowerAttrVal)
 				if !ok {
-					err := fmt.Errorf(cmn.ErrInvalidDeprovisionReason, attrVal)
+					err := fmt.Errorf(gmess.ErrInvalidDeprovisionReason, attrVal)
 					logger.Error(err)
 					return managedDev, err
 				}
@@ -174,7 +175,7 @@ func bmngcFromFileFactory(hdrMap map[int]string, cdevData []interface{}) (cdevs.
 	}
 
 	if managedDev.Action == "deprovision" && managedDev.DeprovisionReason == "" {
-		err := errors.New(cmn.ErrNoDeprovisionReason)
+		err := errors.New(gmess.ErrNoDeprovisionReason)
 		logger.Error(err)
 		return managedDev, err
 	}
@@ -190,8 +191,8 @@ func bmngcFromJSONFactory(ds *admin.Service, jsonData string) (cdevs.ManagedDevi
 	jsonBytes := []byte(jsonData)
 
 	if !json.Valid(jsonBytes) {
-		logger.Error(cmn.ErrInvalidJSONAttr)
-		return managedDev, errors.New(cmn.ErrInvalidJSONAttr)
+		logger.Error(gmess.ErrInvalidJSONAttr)
+		return managedDev, errors.New(gmess.ErrInvalidJSONAttr)
 	}
 
 	outStr, err := cmn.ParseInputAttrs(jsonBytes)
@@ -230,18 +231,18 @@ func bmngcPerformAction(deviceID string, action string, wg *sync.WaitGroup, cdac
 		var err error
 		err = cdac.Do()
 		if err == nil {
-			logger.Infof(cmn.InfoCDevActionPerformed, action, deviceID)
-			fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoCDevActionPerformed, action, deviceID)))
+			logger.Infof(gmess.InfoCDevActionPerformed, action, deviceID)
+			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.InfoCDevActionPerformed, action, deviceID)))
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(fmt.Errorf(cmn.ErrBatchChromeOSDevice, err.Error(), deviceID))
+			return backoff.Permanent(fmt.Errorf(gmess.ErrBatchChromeOSDevice, err.Error(), deviceID))
 		}
 		// Log the retries
 		logger.Warnw(err.Error(),
 			"retrying", b.GetElapsedTime().String(),
 			"ChromeOS device", deviceID)
-		return fmt.Errorf(cmn.ErrBatchChromeOSDevice, err.Error(), deviceID)
+		return fmt.Errorf(gmess.ErrBatchChromeOSDevice, err.Error(), deviceID)
 	}, b)
 	if err != nil {
 		// Log final error
@@ -327,7 +328,7 @@ func bmngcProcessGSheet(ds *admin.Service, sheetID string) error {
 	var managedDevs []cdevs.ManagedDevice
 
 	if sheetRange == "" {
-		err := errors.New(cmn.ErrNoSheetRange)
+		err := errors.New(gmess.ErrNoSheetRange)
 		logger.Error(err)
 		return err
 	}
@@ -346,7 +347,7 @@ func bmngcProcessGSheet(ds *admin.Service, sheetID string) error {
 	}
 
 	if len(sValRange.Values) == 0 {
-		err = fmt.Errorf(cmn.ErrNoSheetDataFound, sheetID, sheetRange)
+		err = fmt.Errorf(gmess.ErrNoSheetDataFound, sheetID, sheetRange)
 		logger.Error(err)
 		return err
 	}

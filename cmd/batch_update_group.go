@@ -36,6 +36,7 @@ import (
 
 	"github.com/cenkalti/backoff/v4"
 	cmn "github.com/plusworx/gmin/utils/common"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	grps "github.com/plusworx/gmin/utils/groups"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
@@ -87,7 +88,7 @@ func doBatchUpdGrp(cmd *cobra.Command, args []string) error {
 	}
 
 	if inputFile == "" && scanner == nil {
-		err := errors.New(cmn.ErrNoInputFile)
+		err := errors.New(gmess.ErrNoInputFile)
 		logger.Error(err)
 		return err
 	}
@@ -96,7 +97,7 @@ func doBatchUpdGrp(cmd *cobra.Command, args []string) error {
 
 	ok := cmn.SliceContainsStr(cmn.ValidFileFormats, lwrFmt)
 	if !ok {
-		err = fmt.Errorf(cmn.ErrInvalidFileFormat, format)
+		err = fmt.Errorf(gmess.ErrInvalidFileFormat, format)
 		logger.Error(err)
 		return err
 	}
@@ -121,7 +122,7 @@ func doBatchUpdGrp(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	default:
-		return fmt.Errorf(cmn.ErrInvalidFileFormat, format)
+		return fmt.Errorf(gmess.ErrInvalidFileFormat, format)
 	}
 	logger.Debug("finished doBatchUpdGrp()")
 	return nil
@@ -150,19 +151,19 @@ func bugFromFileFactory(hdrMap map[int]string, grpData []interface{}) (*admin.Gr
 			}
 		case attrName == "email":
 			if attrVal == "" {
-				err := fmt.Errorf(cmn.ErrEmptyString, attrName)
+				err := fmt.Errorf(gmess.ErrEmptyString, attrName)
 				return nil, "", err
 			}
 			group.Email = attrVal
 		case attrName == "name":
 			if attrVal == "" {
-				err := fmt.Errorf(cmn.ErrEmptyString, attrName)
+				err := fmt.Errorf(gmess.ErrEmptyString, attrName)
 				return nil, "", err
 			}
 			group.Name = attrVal
 		case attrName == "groupKey":
 			if attrVal == "" {
-				err := fmt.Errorf(cmn.ErrEmptyString, attrName)
+				err := fmt.Errorf(gmess.ErrEmptyString, attrName)
 				return nil, "", err
 			}
 			groupKey = attrVal
@@ -186,8 +187,8 @@ func bugFromJSONFactory(ds *admin.Service, jsonData string) (*admin.Group, strin
 	jsonBytes := []byte(jsonData)
 
 	if !json.Valid(jsonBytes) {
-		logger.Error(cmn.ErrInvalidJSONAttr)
-		return nil, "", errors.New(cmn.ErrInvalidJSONAttr)
+		logger.Error(gmess.ErrInvalidJSONAttr)
+		return nil, "", errors.New(gmess.ErrInvalidJSONAttr)
 	}
 
 	outStr, err := cmn.ParseInputAttrs(jsonBytes)
@@ -209,7 +210,7 @@ func bugFromJSONFactory(ds *admin.Service, jsonData string) (*admin.Group, strin
 	}
 
 	if grpKey.GroupKey == "" {
-		err = errors.New(cmn.ErrNoJSONGroupKey)
+		err = errors.New(gmess.ErrNoJSONGroupKey)
 		logger.Error(err)
 		return nil, "", err
 	}
@@ -313,7 +314,7 @@ func bugProcessGSheet(ds *admin.Service, sheetID string) error {
 	)
 
 	if sheetRange == "" {
-		err := errors.New(cmn.ErrNoSheetRange)
+		err := errors.New(gmess.ErrNoSheetRange)
 		logger.Error(err)
 		return err
 	}
@@ -332,7 +333,7 @@ func bugProcessGSheet(ds *admin.Service, sheetID string) error {
 	}
 
 	if len(sValRange.Values) == 0 {
-		err = fmt.Errorf(cmn.ErrNoSheetDataFound, sheetID, sheetRange)
+		err = fmt.Errorf(gmess.ErrNoSheetDataFound, sheetID, sheetRange)
 		logger.Error(err)
 		return err
 	}
@@ -448,18 +449,18 @@ func bugUpdate(group *admin.Group, wg *sync.WaitGroup, guc *admin.GroupsUpdateCa
 		var err error
 		_, err = guc.Do()
 		if err == nil {
-			logger.Infof(cmn.InfoGroupUpdated, groupKey)
-			fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoGroupUpdated, groupKey)))
+			logger.Infof(gmess.InfoGroupUpdated, groupKey)
+			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.InfoGroupUpdated, groupKey)))
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(fmt.Errorf(cmn.ErrBatchGroup, err.Error(), groupKey))
+			return backoff.Permanent(fmt.Errorf(gmess.ErrBatchGroup, err.Error(), groupKey))
 		}
 		// Log the retries
 		logger.Warnw(err.Error(),
 			"retrying", b.GetElapsedTime().String(),
 			"group", groupKey)
-		return fmt.Errorf(cmn.ErrBatchGroup, err.Error(), groupKey)
+		return fmt.Errorf(gmess.ErrBatchGroup, err.Error(), groupKey)
 	}, b)
 	if err != nil {
 		// Log final error

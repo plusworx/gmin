@@ -31,6 +31,7 @@ import (
 
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	mdevs "github.com/plusworx/gmin/utils/mobiledevices"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
@@ -84,7 +85,7 @@ func doListMobDevs(cmd *cobra.Command, args []string) error {
 		ob := strings.ToLower(orderBy)
 		ok := cmn.SliceContainsStr(mdevs.ValidOrderByStrs, ob)
 		if !ok {
-			err = fmt.Errorf(cmn.ErrInvalidOrderBy, orderBy)
+			err = fmt.Errorf(gmess.ErrInvalidOrderBy, orderBy)
 			logger.Error(err)
 			return err
 		}
@@ -117,7 +118,7 @@ func doListMobDevs(cmd *cobra.Command, args []string) error {
 		proj := strings.ToLower(projection)
 		ok := cmn.SliceContainsStr(mdevs.ValidProjections, proj)
 		if !ok {
-			err = fmt.Errorf(cmn.ErrInvalidProjectionType, projection)
+			err = fmt.Errorf(gmess.ErrInvalidProjectionType, projection)
 			logger.Error(err)
 			return err
 		}
@@ -228,7 +229,7 @@ func doMobDevPages(mdlc *admin.MobiledevicesListCall, mobdevs *admin.MobileDevic
 	} else {
 		numPages, err := strconv.Atoi(pages)
 		if err != nil {
-			err = errors.New(cmn.ErrInvalidPagesArgument)
+			err = errors.New(gmess.ErrInvalidPagesArgument)
 			logger.Error(err)
 			return err
 		}

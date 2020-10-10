@@ -29,6 +29,7 @@ import (
 	cdevs "github.com/plusworx/gmin/utils/chromeosdevices"
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 )
@@ -88,7 +89,7 @@ func doUpdateCrOSDev(cmd *cobra.Command, args []string) error {
 		proj := strings.ToLower(projection)
 		ok := cmn.SliceContainsStr(cdevs.ValidProjections, proj)
 		if !ok {
-			err = fmt.Errorf(cmn.ErrInvalidProjectionType, projection)
+			err = fmt.Errorf(gmess.ErrInvalidProjectionType, projection)
 			logger.Error(err)
 			return err
 		}
@@ -103,8 +104,8 @@ func doUpdateCrOSDev(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	logger.Infof(cmn.InfoCDevUpdated, updCrOSDev.DeviceId)
-	fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoCDevUpdated, updCrOSDev.DeviceId)))
+	logger.Infof(gmess.InfoCDevUpdated, updCrOSDev.DeviceId)
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.InfoCDevUpdated, updCrOSDev.DeviceId)))
 
 	logger.Debug("finished doUpdateCrOSDev()")
 	return nil

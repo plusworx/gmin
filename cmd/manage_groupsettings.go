@@ -27,6 +27,7 @@ import (
 
 	valid "github.com/asaskevich/govalidator"
 	cmn "github.com/plusworx/gmin/utils/common"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	grpset "github.com/plusworx/gmin/utils/groupsettings"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -79,8 +80,8 @@ func doManageGroupSettings(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	logger.Infof(cmn.InfoGroupSettingsChanged, newSettings.Email)
-	fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoGroupSettingsChanged, newSettings.Email)))
+	logger.Infof(gmess.InfoGroupSettingsChanged, newSettings.Email)
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.InfoGroupSettingsChanged, newSettings.Email)))
 
 	logger.Debug("finished doManageGroupSettings()")
 	return nil
@@ -541,7 +542,7 @@ func mgsReplyEmailFlag(grpSettings *gset.Groups) error {
 	}
 	ok := valid.IsEmail(replyEmail)
 	if !ok {
-		err := fmt.Errorf(cmn.ErrInvalidEmailAddress, replyEmail)
+		err := fmt.Errorf(gmess.ErrInvalidEmailAddress, replyEmail)
 		return err
 	}
 	grpSettings.CustomReplyTo = replyEmail

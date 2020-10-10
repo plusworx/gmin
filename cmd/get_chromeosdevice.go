@@ -30,6 +30,7 @@ import (
 	cdevs "github.com/plusworx/gmin/utils/chromeosdevices"
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 )
@@ -82,7 +83,7 @@ func doGetCrOSDev(cmd *cobra.Command, args []string) error {
 		proj := strings.ToLower(projection)
 		ok := cmn.SliceContainsStr(cdevs.ValidProjections, proj)
 		if !ok {
-			err = fmt.Errorf(cmn.ErrInvalidProjectionType, projection)
+			err = fmt.Errorf(gmess.ErrInvalidProjectionType, projection)
 			logger.Error(err)
 			return err
 		}

@@ -34,6 +34,7 @@ import (
 	"github.com/cenkalti/backoff/v4"
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	mdevs "github.com/plusworx/gmin/utils/mobiledevices"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
@@ -80,7 +81,7 @@ func doBatchDelMobDev(cmd *cobra.Command, args []string) error {
 	}
 
 	if inputFile == "" && scanner == nil {
-		err := errors.New(cmn.ErrNoInputFile)
+		err := errors.New(gmess.ErrNoInputFile)
 		logger.Error(err)
 		return err
 	}
@@ -89,7 +90,7 @@ func doBatchDelMobDev(cmd *cobra.Command, args []string) error {
 
 	ok := cmn.SliceContainsStr(cmn.ValidFileFormats, lwrFmt)
 	if !ok {
-		err = fmt.Errorf(cmn.ErrInvalidFileFormat, delFormat)
+		err = fmt.Errorf(gmess.ErrInvalidFileFormat, delFormat)
 		logger.Error(err)
 		return err
 	}
@@ -108,7 +109,7 @@ func doBatchDelMobDev(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	default:
-		return fmt.Errorf(cmn.ErrInvalidFileFormat, format)
+		return fmt.Errorf(gmess.ErrInvalidFileFormat, format)
 	}
 
 	logger.Debug("finished doBatchDelMobDev()")
@@ -128,18 +129,18 @@ func bdmdDeleteObject(wg *sync.WaitGroup, mdc *admin.MobiledevicesDeleteCall, re
 		var err error
 		err = mdc.Do()
 		if err == nil {
-			logger.Infof(cmn.InfoMDevDeleted, resourceID)
-			fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoMDevDeleted, resourceID)))
+			logger.Infof(gmess.InfoMDevDeleted, resourceID)
+			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.InfoMDevDeleted, resourceID)))
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(fmt.Errorf(cmn.ErrBatchMobileDevice, err.Error(), resourceID))
+			return backoff.Permanent(fmt.Errorf(gmess.ErrBatchMobileDevice, err.Error(), resourceID))
 		}
 		// Log the retries
 		logger.Warnw(err.Error(),
 			"retrying", b.GetElapsedTime().String(),
 			"mobile device", resourceID)
-		return fmt.Errorf(cmn.ErrBatchMobileDevice, err.Error(), resourceID)
+		return fmt.Errorf(gmess.ErrBatchMobileDevice, err.Error(), resourceID)
 	}, b)
 	if err != nil {
 		// Log final error
@@ -199,7 +200,7 @@ func bdmdProcessGSheet(ds *admin.Service, sheetID string) error {
 	var mobdevs []string
 
 	if sheetRange == "" {
-		err := errors.New(cmn.ErrNoSheetRange)
+		err := errors.New(gmess.ErrNoSheetRange)
 		logger.Error(err)
 		return err
 	}
@@ -218,7 +219,7 @@ func bdmdProcessGSheet(ds *admin.Service, sheetID string) error {
 	}
 
 	if len(sValRange.Values) == 0 {
-		err = fmt.Errorf(cmn.ErrNoSheetDataFound, sheetID, sheetRange)
+		err = fmt.Errorf(gmess.ErrNoSheetDataFound, sheetID, sheetRange)
 		logger.Error(err)
 		return err
 	}

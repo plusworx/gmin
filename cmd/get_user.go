@@ -29,6 +29,7 @@ import (
 	"strings"
 
 	cmn "github.com/plusworx/gmin/utils/common"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	usrs "github.com/plusworx/gmin/utils/users"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
@@ -77,7 +78,7 @@ func doGetUser(cmd *cobra.Command, args []string) error {
 		proj := strings.ToLower(projection)
 		ok := cmn.SliceContainsStr(usrs.ValidProjections, proj)
 		if !ok {
-			err = fmt.Errorf(cmn.ErrInvalidProjectionType, projection)
+			err = fmt.Errorf(gmess.ErrInvalidProjectionType, projection)
 			logger.Error(err)
 			return err
 		}
@@ -92,7 +93,7 @@ func doGetUser(cmd *cobra.Command, args []string) error {
 				getCall := usrs.AddCustomFieldMask(ugc, mask)
 				ugc = getCall.(*admin.UsersGetCall)
 			} else {
-				err = errors.New(cmn.ErrNoCustomFieldMask)
+				err = errors.New(gmess.ErrNoCustomFieldMask)
 				logger.Error(err)
 				return err
 			}
@@ -103,7 +104,7 @@ func doGetUser(cmd *cobra.Command, args []string) error {
 		vt := strings.ToLower(viewType)
 		ok := cmn.SliceContainsStr(usrs.ValidViewTypes, vt)
 		if !ok {
-			err = fmt.Errorf(cmn.ErrInvalidViewType, viewType)
+			err = fmt.Errorf(gmess.ErrInvalidViewType, viewType)
 			logger.Error(err)
 			return err
 		}

@@ -36,6 +36,7 @@ import (
 
 	"github.com/cenkalti/backoff/v4"
 	cmn "github.com/plusworx/gmin/utils/common"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	grps "github.com/plusworx/gmin/utils/groups"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
@@ -83,7 +84,7 @@ func doBatchCrtGroup(cmd *cobra.Command, args []string) error {
 	}
 
 	if inputFile == "" && scanner == nil {
-		err := errors.New(cmn.ErrNoInputFile)
+		err := errors.New(gmess.ErrNoInputFile)
 		logger.Error(err)
 		return err
 	}
@@ -92,7 +93,7 @@ func doBatchCrtGroup(cmd *cobra.Command, args []string) error {
 
 	ok := cmn.SliceContainsStr(cmn.ValidFileFormats, lwrFmt)
 	if !ok {
-		err = fmt.Errorf(cmn.ErrInvalidFileFormat, format)
+		err = fmt.Errorf(gmess.ErrInvalidFileFormat, format)
 		logger.Error(err)
 		return err
 	}
@@ -117,7 +118,7 @@ func doBatchCrtGroup(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	default:
-		return fmt.Errorf(cmn.ErrInvalidFileFormat, format)
+		return fmt.Errorf(gmess.ErrInvalidFileFormat, format)
 	}
 	logger.Debug("finished doBatchCrtGroup()")
 	return nil
@@ -135,18 +136,18 @@ func bcgCreate(group *admin.Group, wg *sync.WaitGroup, gic *admin.GroupsInsertCa
 		var err error
 		newGroup, err := gic.Do()
 		if err == nil {
-			logger.Infof(cmn.InfoGroupCreated, newGroup.Email)
-			fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoGroupCreated, newGroup.Email)))
+			logger.Infof(gmess.InfoGroupCreated, newGroup.Email)
+			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.InfoGroupCreated, newGroup.Email)))
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(fmt.Errorf(cmn.ErrBatchGroup, err.Error(), group.Email))
+			return backoff.Permanent(fmt.Errorf(gmess.ErrBatchGroup, err.Error(), group.Email))
 		}
 		// Log the retries
 		logger.Warnw(err.Error(),
 			"retrying", b.GetElapsedTime().String(),
 			"group", group.Email)
-		return fmt.Errorf(cmn.ErrBatchGroup, err.Error(), group.Email)
+		return fmt.Errorf(gmess.ErrBatchGroup, err.Error(), group.Email)
 	}, b)
 	if err != nil {
 		// Log final error
@@ -173,13 +174,13 @@ func bcgFromFileFactory(hdrMap map[int]string, grpData []interface{}) (*admin.Gr
 			group.Description = attrVal
 		case attrName == "email":
 			if attrVal == "" {
-				err := fmt.Errorf(cmn.ErrEmptyString, attrName)
+				err := fmt.Errorf(gmess.ErrEmptyString, attrName)
 				return nil, err
 			}
 			group.Email = attrVal
 		case attrName == "name":
 			if attrVal == "" {
-				err := fmt.Errorf(cmn.ErrEmptyString, attrName)
+				err := fmt.Errorf(gmess.ErrEmptyString, attrName)
 				return nil, err
 			}
 			group.Name = attrVal
@@ -202,8 +203,8 @@ func bcgFromJSONFactory(ds *admin.Service, jsonData string) (*admin.Group, error
 	jsonBytes := []byte(jsonData)
 
 	if !json.Valid(jsonBytes) {
-		logger.Error(cmn.ErrInvalidJSONAttr)
-		return nil, errors.New(cmn.ErrInvalidJSONAttr)
+		logger.Error(gmess.ErrInvalidJSONAttr)
+		return nil, errors.New(gmess.ErrInvalidJSONAttr)
 	}
 
 	outStr, err := cmn.ParseInputAttrs(jsonBytes)
@@ -312,7 +313,7 @@ func bcgProcessGSheet(ds *admin.Service, sheetID string) error {
 	var groups []*admin.Group
 
 	if sheetRange == "" {
-		err := errors.New(cmn.ErrNoSheetRange)
+		err := errors.New(gmess.ErrNoSheetRange)
 		logger.Error(err)
 		return err
 	}
@@ -331,7 +332,7 @@ func bcgProcessGSheet(ds *admin.Service, sheetID string) error {
 	}
 
 	if len(sValRange.Values) == 0 {
-		err = fmt.Errorf(cmn.ErrNoSheetDataFound, sheetID, sheetRange)
+		err = fmt.Errorf(gmess.ErrNoSheetDataFound, sheetID, sheetRange)
 		logger.Error(err)
 		return err
 	}
@@ -416,7 +417,7 @@ func bcgProcessObjects(ds *admin.Service, groups []*admin.Group) error {
 
 	for _, g := range groups {
 		if g.Email == "" {
-			err := errors.New(cmn.ErrNoGroupEmailAddress)
+			err := errors.New(gmess.ErrNoGroupEmailAddress)
 			logger.Error(err)
 			return err
 		}

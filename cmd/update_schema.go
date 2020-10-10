@@ -30,6 +30,7 @@ import (
 
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	scs "github.com/plusworx/gmin/utils/schemas"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
@@ -100,7 +101,7 @@ func doUpdateSchema(cmd *cobra.Command, args []string) error {
 	schema = new(admin.Schema)
 
 	if inputFile == "" {
-		err := errors.New(cmn.ErrNoInputFile)
+		err := errors.New(gmess.ErrNoInputFile)
 		logger.Error(err)
 		return err
 	}
@@ -112,7 +113,7 @@ func doUpdateSchema(cmd *cobra.Command, args []string) error {
 	}
 
 	if !json.Valid(fileData) {
-		err = errors.New(cmn.ErrInvalidJSONFile)
+		err = errors.New(gmess.ErrInvalidJSONFile)
 		logger.Error(err)
 		return err
 	}
@@ -154,8 +155,8 @@ func doUpdateSchema(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	logger.Infof(cmn.InfoSchemaUpdated, args[0])
-	fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoSchemaUpdated, args[0])))
+	logger.Infof(gmess.InfoSchemaUpdated, args[0])
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.InfoSchemaUpdated, args[0])))
 
 	logger.Debug("finished doUpdateSchema()")
 	return nil

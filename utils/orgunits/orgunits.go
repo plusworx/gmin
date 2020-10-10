@@ -28,6 +28,7 @@ import (
 	"strings"
 
 	cmn "github.com/plusworx/gmin/utils/common"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	admin "google.golang.org/api/admin/directory/v1"
 	"google.golang.org/api/googleapi"
 )
@@ -163,7 +164,7 @@ func ShowFlagValues(lenArgs int, args []string, filter string) error {
 		case flag == "type":
 			cmn.ShowFlagValues(ValidSearchTypes, filter)
 		default:
-			return fmt.Errorf(cmn.ErrFlagNotRecognized, args[1])
+			return fmt.Errorf(gmess.ErrFlagNotRecognized, args[1])
 		}
 	}
 

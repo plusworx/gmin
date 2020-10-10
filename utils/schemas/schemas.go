@@ -28,6 +28,7 @@ import (
 	"strings"
 
 	cmn "github.com/plusworx/gmin/utils/common"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	admin "google.golang.org/api/admin/directory/v1"
 	"google.golang.org/api/googleapi"
 )
@@ -187,7 +188,7 @@ func ShowCompAttrs(filter string) {
 func ShowSubCompAttrs(subAttr string, filter string) error {
 	lwrSubAttr := strings.ToLower(subAttr)
 	if lwrSubAttr != "fields" {
-		return fmt.Errorf(cmn.ErrInvalidSchemaCompAttr, subAttr)
+		return fmt.Errorf(gmess.ErrInvalidSchemaCompAttr, subAttr)
 	}
 
 	keys := make([]string, 0, len(schemaFieldSpecCompAttrs))
@@ -213,7 +214,7 @@ func ShowSubCompAttrs(subAttr string, filter string) error {
 func ShowSubAttrs(subAttr string, filter string) error {
 	subAttrVal := strings.ToLower(subAttr)
 	if subAttrVal != "fields" {
-		return fmt.Errorf(cmn.ErrNotCompositeAttr, subAttr)
+		return fmt.Errorf(gmess.ErrNotCompositeAttr, subAttr)
 	}
 
 	for _, a := range fieldSpecAttrs {
@@ -243,7 +244,7 @@ func ShowSubAttrs(subAttr string, filter string) error {
 // ShowSubSubAttrs displays attributes of composite attributes
 func ShowSubSubAttrs(subAttr string) error {
 	if strings.ToLower(subAttr) != "numericindexingspec" {
-		return fmt.Errorf(cmn.ErrNotCompositeAttr, subAttr)
+		return fmt.Errorf(gmess.ErrNotCompositeAttr, subAttr)
 	}
 
 	for _, a := range schemaFieldSpecNumIdxSpecAttrs {

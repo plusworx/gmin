@@ -30,6 +30,7 @@ import (
 	cdevs "github.com/plusworx/gmin/utils/chromeosdevices"
 	ca "github.com/plusworx/gmin/utils/commandaliases"
 	cmn "github.com/plusworx/gmin/utils/common"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	grps "github.com/plusworx/gmin/utils/groups"
 	grpset "github.com/plusworx/gmin/utils/groupsettings"
 	gmems "github.com/plusworx/gmin/utils/members"
@@ -61,7 +62,7 @@ user`,
 
 func doShowFlagVals(cmd *cobra.Command, args []string) error {
 	if len(args) > 2 {
-		return errors.New(cmn.ErrMax2ArgsExceeded)
+		return errors.New(gmess.ErrMax2ArgsExceeded)
 	}
 
 	object := strings.ToLower(args[0])
@@ -108,7 +109,7 @@ func doShowFlagVals(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	default:
-		return fmt.Errorf(cmn.ErrObjectNotRecognized, args[0])
+		return fmt.Errorf(gmess.ErrObjectNotRecognized, args[0])
 	}
 	return nil
 }

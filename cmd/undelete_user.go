@@ -26,6 +26,7 @@ import (
 	"fmt"
 
 	cmn "github.com/plusworx/gmin/utils/common"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 )
@@ -69,8 +70,8 @@ func doUndeleteUser(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	logger.Infof(cmn.InfoUserUndeleted, args[0])
-	fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoUserUndeleted, args[0])))
+	logger.Infof(gmess.InfoUserUndeleted, args[0])
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.InfoUserUndeleted, args[0])))
 
 	logger.Debug("finished doUndeleteUser()")
 	return nil

@@ -27,6 +27,7 @@ import (
 
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 )
@@ -85,8 +86,8 @@ func doCreateOU(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	logger.Infof(cmn.InfoOUCreated, newOrgUnit.OrgUnitPath)
-	fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoOUCreated, newOrgUnit.OrgUnitPath)))
+	logger.Infof(gmess.InfoOUCreated, newOrgUnit.OrgUnitPath)
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.InfoOUCreated, newOrgUnit.OrgUnitPath)))
 
 	logger.Debug("finished doCreateOU()")
 	return nil

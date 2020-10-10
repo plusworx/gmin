@@ -30,6 +30,7 @@ import (
 	cdevs "github.com/plusworx/gmin/utils/chromeosdevices"
 	ca "github.com/plusworx/gmin/utils/commandaliases"
 	cmn "github.com/plusworx/gmin/utils/common"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	grpset "github.com/plusworx/gmin/utils/groupsettings"
 	gmems "github.com/plusworx/gmin/utils/members"
 	mdevs "github.com/plusworx/gmin/utils/mobiledevices"
@@ -60,7 +61,7 @@ func doShowAttrVals(cmd *cobra.Command, args []string) error {
 	lowerFilter := strings.ToLower(filter)
 
 	if lArgs > 3 {
-		return errors.New(cmn.ErrMax3ArgsExceeded)
+		return errors.New(gmess.ErrMax3ArgsExceeded)
 	}
 
 	object := strings.ToLower(args[0])
@@ -92,7 +93,7 @@ func doShowAttrVals(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	default:
-		return fmt.Errorf(cmn.ErrObjectNotRecognized, args[0])
+		return fmt.Errorf(gmess.ErrObjectNotRecognized, args[0])
 	}
 	return nil
 }

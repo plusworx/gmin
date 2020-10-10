@@ -36,6 +36,7 @@ import (
 
 	"github.com/cenkalti/backoff/v4"
 	cmn "github.com/plusworx/gmin/utils/common"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	mems "github.com/plusworx/gmin/utils/members"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
@@ -85,7 +86,7 @@ func doBatchCrtMember(cmd *cobra.Command, args []string) error {
 	}
 
 	if inputFile == "" && scanner == nil {
-		err := errors.New(cmn.ErrNoInputFile)
+		err := errors.New(gmess.ErrNoInputFile)
 		logger.Error(err)
 		return err
 	}
@@ -94,7 +95,7 @@ func doBatchCrtMember(cmd *cobra.Command, args []string) error {
 
 	ok := cmn.SliceContainsStr(cmn.ValidFileFormats, lwrFmt)
 	if !ok {
-		err = fmt.Errorf(cmn.ErrInvalidFileFormat, format)
+		err = fmt.Errorf(gmess.ErrInvalidFileFormat, format)
 		logger.Error(err)
 		return err
 	}
@@ -121,7 +122,7 @@ func doBatchCrtMember(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	default:
-		return fmt.Errorf(cmn.ErrInvalidFileFormat, format)
+		return fmt.Errorf(gmess.ErrInvalidFileFormat, format)
 	}
 	logger.Debug("finished doBatchCrtMember()")
 	return nil
@@ -140,19 +141,19 @@ func bcmCreate(member *admin.Member, groupKey string, wg *sync.WaitGroup, mic *a
 		var err error
 		newMember, err := mic.Do()
 		if err == nil {
-			logger.Infof(cmn.InfoMemberCreated, newMember.Email, groupKey)
-			fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoMemberCreated, newMember.Email, groupKey)))
+			logger.Infof(gmess.InfoMemberCreated, newMember.Email, groupKey)
+			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.InfoMemberCreated, newMember.Email, groupKey)))
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(fmt.Errorf(cmn.ErrBatchMember, err.Error(), member.Email))
+			return backoff.Permanent(fmt.Errorf(gmess.ErrBatchMember, err.Error(), member.Email))
 		}
 		// Log the retries
 		logger.Warnw(err.Error(),
 			"retrying", b.GetElapsedTime().String(),
 			"group", groupKey,
 			"member", member.Email)
-		return fmt.Errorf(cmn.ErrBatchMember, err.Error(), member.Email)
+		return fmt.Errorf(gmess.ErrBatchMember, err.Error(), member.Email)
 	}, b)
 	if err != nil {
 		// Log final error
@@ -184,7 +185,7 @@ func bcmFromFileFactory(hdrMap map[int]string, grpData []interface{}) (*admin.Me
 			member.DeliverySettings = validDS
 		case attrName == "email":
 			if attrVal == "" {
-				err := fmt.Errorf(cmn.ErrEmptyString, attrName)
+				err := fmt.Errorf(gmess.ErrEmptyString, attrName)
 				return nil, err
 			}
 			member.Email = attrVal
@@ -214,8 +215,8 @@ func bcmFromJSONFactory(ds *admin.Service, jsonData string) (*admin.Member, erro
 	jsonBytes := []byte(jsonData)
 
 	if !json.Valid(jsonBytes) {
-		logger.Error(cmn.ErrInvalidJSONAttr)
-		return nil, errors.New(cmn.ErrInvalidJSONAttr)
+		logger.Error(gmess.ErrInvalidJSONAttr)
+		return nil, errors.New(gmess.ErrInvalidJSONAttr)
 	}
 
 	outStr, err := cmn.ParseInputAttrs(jsonBytes)
@@ -325,7 +326,7 @@ func bcmProcessGSheet(ds *admin.Service, groupKey string, sheetID string) error 
 	var members []*admin.Member
 
 	if sheetRange == "" {
-		err := errors.New(cmn.ErrNoSheetRange)
+		err := errors.New(gmess.ErrNoSheetRange)
 		logger.Error(err)
 		return err
 	}
@@ -344,7 +345,7 @@ func bcmProcessGSheet(ds *admin.Service, groupKey string, sheetID string) error 
 	}
 
 	if len(sValRange.Values) == 0 {
-		err = fmt.Errorf(cmn.ErrNoSheetDataFound, sheetID, sheetRange)
+		err = fmt.Errorf(gmess.ErrNoSheetDataFound, sheetID, sheetRange)
 		logger.Error(err)
 		return err
 	}
@@ -431,7 +432,7 @@ func bcmProcessObjects(ds *admin.Service, groupKey string, members []*admin.Memb
 
 	for _, m := range members {
 		if m.Email == "" {
-			err := errors.New(cmn.ErrNoMemberEmailAddress)
+			err := errors.New(gmess.ErrNoMemberEmailAddress)
 			logger.Error(err)
 			return err
 		}

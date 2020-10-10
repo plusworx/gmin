@@ -26,6 +26,7 @@ import (
 	"fmt"
 
 	cmn "github.com/plusworx/gmin/utils/common"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 )
@@ -59,8 +60,8 @@ func doDeleteUser(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	logger.Infof(cmn.InfoUserDeleted, args[0])
-	fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoUserDeleted, args[0])))
+	logger.Infof(gmess.InfoUserDeleted, args[0])
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.InfoUserDeleted, args[0])))
 
 	logger.Debug("finished doDeleteUser()")
 	return nil

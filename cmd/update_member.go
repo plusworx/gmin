@@ -26,6 +26,7 @@ import (
 	"fmt"
 
 	cmn "github.com/plusworx/gmin/utils/common"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	mems "github.com/plusworx/gmin/utils/members"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
@@ -85,8 +86,8 @@ func doUpdateMember(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	logger.Infof(cmn.InfoMemberUpdated, memberKey, args[1])
-	fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoMemberUpdated, memberKey, args[1])))
+	logger.Infof(gmess.InfoMemberUpdated, memberKey, args[1])
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.InfoMemberUpdated, memberKey, args[1])))
 
 	logger.Debug("finished doUpdateMember()")
 	return nil

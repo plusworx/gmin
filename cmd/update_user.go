@@ -29,6 +29,7 @@ import (
 
 	"github.com/imdario/mergo"
 	cmn "github.com/plusworx/gmin/utils/common"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	usrs "github.com/plusworx/gmin/utils/users"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -79,7 +80,7 @@ func doUpdateUser(cmd *cobra.Command, args []string) error {
 		emptyVals := cmn.EmptyValues{}
 		jsonBytes := []byte(attrs)
 		if !json.Valid(jsonBytes) {
-			err = errors.New(cmn.ErrInvalidJSONAttr)
+			err = errors.New(gmess.ErrInvalidJSONAttr)
 			logger.Error(err)
 			return err
 		}
@@ -131,8 +132,8 @@ func doUpdateUser(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	logger.Infof(cmn.InfoUserUpdated, userKey)
-	fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoUserUpdated, userKey)))
+	logger.Infof(gmess.InfoUserUpdated, userKey)
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.InfoUserUpdated, userKey)))
 
 	logger.Debug("finished doUpdateUser()")
 	return nil
@@ -236,7 +237,7 @@ func uuEmailFlag(user *admin.User, flagName string) error {
 	logger.Debugw("starting uuEmailFlag()",
 		"flagName", flagName)
 	if userEmail == "" {
-		err := fmt.Errorf(cmn.ErrEmptyString, flagName)
+		err := fmt.Errorf(gmess.ErrEmptyString, flagName)
 		return err
 	}
 	user.PrimaryEmail = userEmail
@@ -248,7 +249,7 @@ func uuFirstnameFlag(name *admin.UserName, flagName string) error {
 	logger.Debugw("starting uuFirstnameFlag()",
 		"flagName", flagName)
 	if firstName == "" {
-		err := fmt.Errorf(cmn.ErrEmptyString, flagName)
+		err := fmt.Errorf(gmess.ErrEmptyString, flagName)
 		return err
 	}
 	name.GivenName = firstName
@@ -285,7 +286,7 @@ func uuLastnameFlag(name *admin.UserName, flagName string) error {
 	logger.Debugw("starting uuLastnameFlag()",
 		"flagName", flagName)
 	if lastName == "" {
-		err := fmt.Errorf(cmn.ErrEmptyString, flagName)
+		err := fmt.Errorf(gmess.ErrEmptyString, flagName)
 		return err
 	}
 	name.FamilyName = lastName
@@ -297,7 +298,7 @@ func uuOrgunitFlag(user *admin.User, flagName string) error {
 	logger.Debugw("starting uuOrgunitFlag()",
 		"flagName", flagName)
 	if orgUnit == "" {
-		err := fmt.Errorf(cmn.ErrEmptyString, flagName)
+		err := fmt.Errorf(gmess.ErrEmptyString, flagName)
 		if err != nil {
 			return err
 		}
@@ -311,7 +312,7 @@ func uuPasswordFlag(user *admin.User, flagName string) error {
 	logger.Debugw("starting uuPasswordFlag()",
 		"flagName", flagName)
 	if password == "" {
-		err := fmt.Errorf(cmn.ErrEmptyString, flagName)
+		err := fmt.Errorf(gmess.ErrEmptyString, flagName)
 		return err
 	}
 	pwd, err := cmn.HashPassword(password)
@@ -328,7 +329,7 @@ func uuRecoveryEmailFlag(user *admin.User, flagName string) error {
 	logger.Debugw("starting uuRecoveryEmailFlag()",
 		"flagName", flagName)
 	if recoveryEmail == "" {
-		err := fmt.Errorf(cmn.ErrEmptyString, flagName)
+		err := fmt.Errorf(gmess.ErrEmptyString, flagName)
 		return err
 	}
 	user.RecoveryEmail = recoveryEmail
@@ -340,11 +341,11 @@ func uuRecoveryPhoneFlag(user *admin.User, flagName string) error {
 	logger.Debugw("starting uuRecoveryPhoneFlag()",
 		"flagName", flagName)
 	if recoveryPhone == "" {
-		err := fmt.Errorf(cmn.ErrEmptyString, flagName)
+		err := fmt.Errorf(gmess.ErrEmptyString, flagName)
 		return err
 	}
 	if string(recoveryPhone[0]) != "+" {
-		err := fmt.Errorf(cmn.ErrInvalidRecoveryPhone, recoveryPhone)
+		err := fmt.Errorf(gmess.ErrInvalidRecoveryPhone, recoveryPhone)
 		return err
 	}
 	user.RecoveryPhone = recoveryPhone

@@ -36,6 +36,7 @@ import (
 
 	"github.com/cenkalti/backoff/v4"
 	cmn "github.com/plusworx/gmin/utils/common"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	usrs "github.com/plusworx/gmin/utils/users"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
@@ -92,7 +93,7 @@ func doBatchCrtUser(cmd *cobra.Command, args []string) error {
 	}
 
 	if inputFile == "" && scanner == nil {
-		err := errors.New(cmn.ErrNoInputFile)
+		err := errors.New(gmess.ErrNoInputFile)
 		logger.Error(err)
 		return err
 	}
@@ -101,7 +102,7 @@ func doBatchCrtUser(cmd *cobra.Command, args []string) error {
 
 	ok := cmn.SliceContainsStr(cmn.ValidFileFormats, lwrFmt)
 	if !ok {
-		err = fmt.Errorf(cmn.ErrInvalidFileFormat, format)
+		err = fmt.Errorf(gmess.ErrInvalidFileFormat, format)
 		logger.Error(err)
 		return err
 	}
@@ -126,7 +127,7 @@ func doBatchCrtUser(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	default:
-		return fmt.Errorf(cmn.ErrInvalidFileFormat, format)
+		return fmt.Errorf(gmess.ErrInvalidFileFormat, format)
 	}
 	logger.Debug("finished doBatchCrtUser()")
 	return nil
@@ -144,18 +145,18 @@ func bcuCreate(user *admin.User, wg *sync.WaitGroup, uic *admin.UsersInsertCall)
 		var err error
 		newUser, err := uic.Do()
 		if err == nil {
-			logger.Infof(cmn.InfoUserCreated, newUser.PrimaryEmail)
-			fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoUserCreated, newUser.PrimaryEmail)))
+			logger.Infof(gmess.InfoUserCreated, newUser.PrimaryEmail)
+			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.InfoUserCreated, newUser.PrimaryEmail)))
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(fmt.Errorf(cmn.ErrBatchUser, err.Error(), user.PrimaryEmail))
+			return backoff.Permanent(fmt.Errorf(gmess.ErrBatchUser, err.Error(), user.PrimaryEmail))
 		}
 		// Log the retries
 		logger.Warnw(err.Error(),
 			"retrying", b.GetElapsedTime().String(),
 			"user", user.PrimaryEmail)
-		return fmt.Errorf(cmn.ErrBatchUser, err.Error(), user.PrimaryEmail)
+		return fmt.Errorf(gmess.ErrBatchUser, err.Error(), user.PrimaryEmail)
 	}, b)
 	if err != nil {
 		// Log final error
@@ -209,7 +210,7 @@ func bcuFromFileFactory(hdrMap map[int]string, userData []interface{}) (*admin.U
 		}
 		if attrName == "password" {
 			if attrVal == "" {
-				err := fmt.Errorf(cmn.ErrEmptyString, attrName)
+				err := fmt.Errorf(gmess.ErrEmptyString, attrName)
 				return nil, err
 			}
 			pwd, err := cmn.HashPassword(attrVal)
@@ -221,7 +222,7 @@ func bcuFromFileFactory(hdrMap map[int]string, userData []interface{}) (*admin.U
 		}
 		if attrName == "primaryEmail" {
 			if attrVal == "" {
-				err := fmt.Errorf(cmn.ErrEmptyString, attrName)
+				err := fmt.Errorf(gmess.ErrEmptyString, attrName)
 				return nil, err
 			}
 			user.PrimaryEmail = attrVal
@@ -263,8 +264,8 @@ func bcuFromJSONFactory(ds *admin.Service, jsonData string) (*admin.User, error)
 	jsonBytes := []byte(jsonData)
 
 	if !json.Valid(jsonBytes) {
-		logger.Error(cmn.ErrInvalidJSONAttr)
-		return nil, errors.New(cmn.ErrInvalidJSONAttr)
+		logger.Error(gmess.ErrInvalidJSONAttr)
+		return nil, errors.New(gmess.ErrInvalidJSONAttr)
 	}
 
 	outStr, err := cmn.ParseInputAttrs(jsonBytes)
@@ -373,7 +374,7 @@ func bcuProcessGSheet(ds *admin.Service, sheetID string) error {
 	var users []*admin.User
 
 	if sheetRange == "" {
-		err := errors.New(cmn.ErrNoSheetRange)
+		err := errors.New(gmess.ErrNoSheetRange)
 		logger.Error(err)
 		return err
 	}
@@ -392,7 +393,7 @@ func bcuProcessGSheet(ds *admin.Service, sheetID string) error {
 	}
 
 	if len(sValRange.Values) == 0 {
-		err = fmt.Errorf(cmn.ErrNoSheetDataFound, sheetID, sheetRange)
+		err = fmt.Errorf(gmess.ErrNoSheetDataFound, sheetID, sheetRange)
 		logger.Error(err)
 		return err
 	}
@@ -477,7 +478,7 @@ func bcuProcessObjects(ds *admin.Service, users []*admin.User) error {
 
 	for _, u := range users {
 		if u.PrimaryEmail == "" || u.Name.GivenName == "" || u.Name.FamilyName == "" || u.Password == "" {
-			err := errors.New(cmn.ErrBatchMissingUserData)
+			err := errors.New(gmess.ErrBatchMissingUserData)
 			logger.Error(err)
 			return err
 		}

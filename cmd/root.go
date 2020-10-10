@@ -33,6 +33,7 @@ import (
 	"github.com/mitchellh/go-homedir"
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
@@ -199,7 +200,7 @@ func setupLogging(loglevel string) (*zap.Logger, error) {
 	case "warn":
 		zconf.Level.SetLevel(zapcore.WarnLevel)
 	default:
-		return nil, fmt.Errorf(cmn.ErrInvalidLogLevel, loglevel)
+		return nil, fmt.Errorf(gmess.ErrInvalidLogLevel, loglevel)
 	}
 
 	zconf.EncoderConfig.EncodeTime = zapcore.TimeEncoder(func(t time.Time, enc zapcore.PrimitiveArrayEncoder) {

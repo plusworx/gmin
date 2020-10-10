@@ -30,6 +30,7 @@ import (
 	cdevs "github.com/plusworx/gmin/utils/chromeosdevices"
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	"github.com/spf13/cobra"
 
 	admin "google.golang.org/api/admin/directory/v1"
@@ -61,7 +62,7 @@ func doManageCrOSDev(cmd *cobra.Command, args []string) error {
 	action := strings.ToLower(args[1])
 	ok := cmn.SliceContainsStr(cdevs.ValidActions, action)
 	if !ok {
-		err = fmt.Errorf(cmn.ErrInvalidActionType, args[1])
+		err = fmt.Errorf(gmess.ErrInvalidActionType, args[1])
 		logger.Error(err)
 		return err
 	}
@@ -69,7 +70,7 @@ func doManageCrOSDev(cmd *cobra.Command, args []string) error {
 	devAction.Action = action
 	if action == "deprovision" {
 		if reason == "" {
-			err = errors.New(cmn.ErrNoDeprovisionReason)
+			err = errors.New(gmess.ErrNoDeprovisionReason)
 			logger.Error(err)
 			return err
 		}
@@ -90,8 +91,8 @@ func doManageCrOSDev(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	logger.Infof(cmn.InfoCDevActionPerformed, args[1], args[0])
-	fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoCDevActionPerformed, args[1], args[0])))
+	logger.Infof(gmess.InfoCDevActionPerformed, args[1], args[0])
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.InfoCDevActionPerformed, args[1], args[0])))
 
 	logger.Debug("finished doManageCrOSDev()")
 	return nil

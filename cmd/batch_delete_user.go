@@ -33,6 +33,7 @@ import (
 
 	"github.com/cenkalti/backoff/v4"
 	cmn "github.com/plusworx/gmin/utils/common"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	usrs "github.com/plusworx/gmin/utils/users"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
@@ -79,7 +80,7 @@ func doBatchDelUser(cmd *cobra.Command, args []string) error {
 	}
 
 	if inputFile == "" && scanner == nil {
-		err := errors.New(cmn.ErrNoInputFile)
+		err := errors.New(gmess.ErrNoInputFile)
 		logger.Error(err)
 		return err
 	}
@@ -88,7 +89,7 @@ func doBatchDelUser(cmd *cobra.Command, args []string) error {
 
 	ok := cmn.SliceContainsStr(cmn.ValidFileFormats, lwrFmt)
 	if !ok {
-		err = fmt.Errorf(cmn.ErrInvalidFileFormat, delFormat)
+		err = fmt.Errorf(gmess.ErrInvalidFileFormat, delFormat)
 		logger.Error(err)
 		return err
 	}
@@ -107,7 +108,7 @@ func doBatchDelUser(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	default:
-		return fmt.Errorf(cmn.ErrInvalidFileFormat, format)
+		return fmt.Errorf(gmess.ErrInvalidFileFormat, format)
 	}
 
 	logger.Debug("finished doBatchDelUser()")
@@ -128,18 +129,18 @@ func bduDeleteObject(wg *sync.WaitGroup, udc *admin.UsersDeleteCall, user string
 
 		err = udc.Do()
 		if err == nil {
-			logger.Infof(cmn.InfoUserDeleted, user)
-			fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoUserDeleted, user)))
+			logger.Infof(gmess.InfoUserDeleted, user)
+			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.InfoUserDeleted, user)))
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(fmt.Errorf(cmn.ErrBatchUser, err.Error(), user))
+			return backoff.Permanent(fmt.Errorf(gmess.ErrBatchUser, err.Error(), user))
 		}
 		// Log the retries
 		logger.Warnw(err.Error(),
 			"retrying", b.GetElapsedTime().String(),
 			"user", user)
-		return fmt.Errorf(cmn.ErrBatchUser, err.Error(), user)
+		return fmt.Errorf(gmess.ErrBatchUser, err.Error(), user)
 	}, b)
 	if err != nil {
 		// Log final error
@@ -193,7 +194,7 @@ func bduProcessGSheet(ds *admin.Service, sheetID string) error {
 	var users []string
 
 	if sheetRange == "" {
-		err := errors.New(cmn.ErrNoSheetRange)
+		err := errors.New(gmess.ErrNoSheetRange)
 		logger.Error(err)
 		return err
 	}
@@ -212,7 +213,7 @@ func bduProcessGSheet(ds *admin.Service, sheetID string) error {
 	}
 
 	if len(sValRange.Values) == 0 {
-		err = fmt.Errorf(cmn.ErrNoSheetDataFound, sheetID, sheetRange)
+		err = fmt.Errorf(gmess.ErrNoSheetDataFound, sheetID, sheetRange)
 		logger.Error(err)
 		return err
 	}

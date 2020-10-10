@@ -28,6 +28,7 @@ import (
 	valid "github.com/asaskevich/govalidator"
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -49,20 +50,20 @@ func doSetConfig(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return err
 		}
-		fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoCustomerIDSet, customerID)))
+		fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.InfoCustomerIDSet, customerID)))
 	}
 
 	if adminEmail != "" {
 		ok := valid.IsEmail(adminEmail)
 		if !ok {
-			return fmt.Errorf(cmn.ErrInvalidEmailAddress, adminEmail)
+			return fmt.Errorf(gmess.ErrInvalidEmailAddress, adminEmail)
 		}
 		viper.Set(cfg.ConfigAdmin, adminEmail)
 		err := viper.WriteConfig()
 		if err != nil {
 			return err
 		}
-		fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoCustomerIDSet, adminEmail)))
+		fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.InfoCustomerIDSet, adminEmail)))
 	}
 
 	if credentialPath != "" {
@@ -71,7 +72,7 @@ func doSetConfig(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return err
 		}
-		fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoCredentialPathSet, credentialPath)))
+		fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.InfoCredentialPathSet, credentialPath)))
 	}
 
 	if logPath != "" {
@@ -80,7 +81,7 @@ func doSetConfig(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return err
 		}
-		fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoLogPathSet, logPath)))
+		fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.InfoLogPathSet, logPath)))
 	}
 
 	if adminEmail == "" && customerID == "" && credentialPath == "" && logPath == "" {

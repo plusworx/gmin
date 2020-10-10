@@ -31,6 +31,7 @@ import (
 
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	grps "github.com/plusworx/gmin/utils/groups"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
@@ -102,7 +103,7 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 		ob := strings.ToLower(orderBy)
 		ok := cmn.SliceContainsStr(grps.ValidOrderByStrs, ob)
 		if !ok {
-			err = fmt.Errorf(cmn.ErrInvalidOrderBy, orderBy)
+			err = fmt.Errorf(gmess.ErrInvalidOrderBy, orderBy)
 			logger.Error(err)
 			return err
 		}
@@ -131,7 +132,7 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 		if domain != "" {
 			glc = grps.AddUserKey(glc, userKey)
 		} else {
-			err = errors.New(cmn.ErrNoDomainWithUserKey)
+			err = errors.New(gmess.ErrNoDomainWithUserKey)
 			logger.Error(err)
 			return err
 		}
@@ -229,7 +230,7 @@ func doGrpPages(glc *admin.GroupsListCall, groups *admin.Groups, pages string) e
 	} else {
 		numPages, err := strconv.Atoi(pages)
 		if err != nil {
-			err = errors.New(cmn.ErrInvalidPagesArgument)
+			err = errors.New(gmess.ErrInvalidPagesArgument)
 			logger.Error(err)
 			return err
 		}

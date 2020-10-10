@@ -28,6 +28,7 @@ import (
 	"strings"
 
 	cmn "github.com/plusworx/gmin/utils/common"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	"google.golang.org/api/googleapi"
 	gset "google.golang.org/api/groupssettings/v1"
 )
@@ -376,7 +377,7 @@ func ShowAttrValues(lenArgs int, args []string, filter string) error {
 	values := []string{}
 
 	if lenArgs > 2 {
-		return fmt.Errorf(cmn.ErrTooManyArgsMax1, args[0])
+		return fmt.Errorf(gmess.ErrTooManyArgsMax1, args[0])
 	}
 
 	if lenArgs == 1 {
@@ -466,7 +467,7 @@ func ShowAttrValues(lenArgs int, args []string, filter string) error {
 			}
 		}
 		if len(values) < 1 {
-			return fmt.Errorf(cmn.ErrAttrNotRecognized, args[1])
+			return fmt.Errorf(gmess.ErrAttrNotRecognized, args[1])
 		}
 	}
 	sort.Strings(values)
@@ -557,7 +558,7 @@ func ShowFlagValues(lenArgs int, args []string, filter string) error {
 			return nil
 		}
 		// Flag not recognized
-		return fmt.Errorf(cmn.ErrFlagNotRecognized, args[1])
+		return fmt.Errorf(gmess.ErrFlagNotRecognized, args[1])
 	}
 
 	return nil
@@ -568,7 +569,7 @@ func ValidateGroupSettingValue(valueMap map[string]string, name string, value st
 	lowerVal := strings.ToLower(value)
 	validStr := valueMap[lowerVal]
 	if validStr == "" {
-		return "", fmt.Errorf(cmn.ErrInvalidString, name, value)
+		return "", fmt.Errorf(gmess.ErrInvalidString, name, value)
 	}
 	return validStr, nil
 }

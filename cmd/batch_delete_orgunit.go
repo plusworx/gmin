@@ -34,6 +34,7 @@ import (
 	"github.com/cenkalti/backoff/v4"
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	ous "github.com/plusworx/gmin/utils/orgunits"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
@@ -80,7 +81,7 @@ func doBatchDelOrgUnit(cmd *cobra.Command, args []string) error {
 	}
 
 	if inputFile == "" && scanner == nil {
-		err := errors.New(cmn.ErrNoInputFile)
+		err := errors.New(gmess.ErrNoInputFile)
 		logger.Error(err)
 		return err
 	}
@@ -89,7 +90,7 @@ func doBatchDelOrgUnit(cmd *cobra.Command, args []string) error {
 
 	ok := cmn.SliceContainsStr(cmn.ValidFileFormats, lwrFmt)
 	if !ok {
-		err = fmt.Errorf(cmn.ErrInvalidFileFormat, delFormat)
+		err = fmt.Errorf(gmess.ErrInvalidFileFormat, delFormat)
 		logger.Error(err)
 		return err
 	}
@@ -108,7 +109,7 @@ func doBatchDelOrgUnit(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	default:
-		return fmt.Errorf(cmn.ErrInvalidFileFormat, format)
+		return fmt.Errorf(gmess.ErrInvalidFileFormat, format)
 	}
 
 	logger.Debug("finished doBatchDelOrgUnit()")
@@ -129,18 +130,18 @@ func bdoDeleteObject(wg *sync.WaitGroup, oudc *admin.OrgunitsDeleteCall, ouPath 
 
 		err = oudc.Do()
 		if err == nil {
-			logger.Infof(cmn.InfoOUDeleted, ouPath)
-			fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoOUDeleted, ouPath)))
+			logger.Infof(gmess.InfoOUDeleted, ouPath)
+			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.InfoOUDeleted, ouPath)))
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(fmt.Errorf(cmn.ErrBatchOU, err.Error(), ouPath))
+			return backoff.Permanent(fmt.Errorf(gmess.ErrBatchOU, err.Error(), ouPath))
 		}
 		// Log the retries
 		logger.Warnw(err.Error(),
 			"retrying", b.GetElapsedTime().String(),
 			"orgunit", ouPath)
-		return fmt.Errorf(cmn.ErrBatchOU, err.Error(), ouPath)
+		return fmt.Errorf(gmess.ErrBatchOU, err.Error(), ouPath)
 	}, b)
 	if err != nil {
 		// Log final error
@@ -208,7 +209,7 @@ func bdoProcessGSheet(ds *admin.Service, sheetID string) error {
 	var orgunits []string
 
 	if sheetRange == "" {
-		err := errors.New(cmn.ErrNoSheetRange)
+		err := errors.New(gmess.ErrNoSheetRange)
 		logger.Error(err)
 		return err
 	}
@@ -227,7 +228,7 @@ func bdoProcessGSheet(ds *admin.Service, sheetID string) error {
 	}
 
 	if len(sValRange.Values) == 0 {
-		err = fmt.Errorf(cmn.ErrNoSheetDataFound, sheetID, sheetRange)
+		err = fmt.Errorf(gmess.ErrNoSheetDataFound, sheetID, sheetRange)
 		logger.Error(err)
 		return err
 	}

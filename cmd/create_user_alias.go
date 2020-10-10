@@ -26,6 +26,7 @@ import (
 	"fmt"
 
 	cmn "github.com/plusworx/gmin/utils/common"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 )
@@ -64,8 +65,8 @@ func doCreateUserAlias(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	logger.Infof(cmn.InfoUserAliasCreated, newAlias.Alias, args[1])
-	fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoUserAliasCreated, newAlias.Alias, args[1])))
+	logger.Infof(gmess.InfoUserAliasCreated, newAlias.Alias, args[1])
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.InfoUserAliasCreated, newAlias.Alias, args[1])))
 
 	logger.Debug("finished doCreateUserAlias()")
 	return nil

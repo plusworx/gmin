@@ -28,6 +28,7 @@ import (
 	"strings"
 
 	cmn "github.com/plusworx/gmin/utils/common"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	admin "google.golang.org/api/admin/directory/v1"
 	"google.golang.org/api/googleapi"
 )
@@ -348,7 +349,7 @@ func ShowAttrs(filter string) {
 // ShowAttrValues displays enumerated attribute values
 func ShowAttrValues(lenArgs int, args []string, filter string) error {
 	if lenArgs > 2 {
-		return fmt.Errorf(cmn.ErrTooManyArgsMax2, "mobiledevice")
+		return fmt.Errorf(gmess.ErrTooManyArgsMax2, "mobiledevice")
 	}
 
 	if lenArgs == 1 {
@@ -361,7 +362,7 @@ func ShowAttrValues(lenArgs int, args []string, filter string) error {
 		if attr == "action" {
 			cmn.ShowAttrVals(ValidActions, filter)
 		} else {
-			return fmt.Errorf(cmn.ErrAttrNotRecognized, args[1])
+			return fmt.Errorf(gmess.ErrAttrNotRecognized, args[1])
 		}
 	}
 
@@ -419,7 +420,7 @@ func ShowFlagValues(lenArgs int, args []string, filter string) error {
 			uniqueSlice := cmn.UniqueStrSlice(valSlice)
 			cmn.ShowFlagValues(uniqueSlice, filter)
 		default:
-			return fmt.Errorf(cmn.ErrFlagNotRecognized, args[1])
+			return fmt.Errorf(gmess.ErrFlagNotRecognized, args[1])
 		}
 	}
 
@@ -433,7 +434,7 @@ func ShowSubAttrs(compAttr string, filter string) error {
 	case "applications":
 		cmn.ShowAttrs(mobDevApplicationsAttrs, MobDevAttrMap, filter)
 	default:
-		return fmt.Errorf(cmn.ErrNotCompositeAttr, compAttr)
+		return fmt.Errorf(gmess.ErrNotCompositeAttr, compAttr)
 	}
 
 	return nil

@@ -32,6 +32,7 @@ import (
 
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -65,7 +66,7 @@ func askForCredentialsFile(nFiles int) int {
 
 	_, err := fmt.Scanln(&response)
 	if err != nil {
-		fmt.Println(cmn.ErrFileNumberRequired)
+		fmt.Println(gmess.ErrFileNumberRequired)
 		return askForCredentialsFile(nFiles)
 	}
 
@@ -75,12 +76,12 @@ func askForCredentialsFile(nFiles int) int {
 
 	fileNum, err := strconv.Atoi(response)
 	if err != nil {
-		fmt.Println(cmn.ErrInvalidFileNumber)
+		fmt.Println(gmess.ErrInvalidFileNumber)
 		return askForCredentialsFile(nFiles)
 	}
 
 	if fileNum > nFiles || fileNum < 1 {
-		fmt.Println(cmn.ErrInvalidFileNumber)
+		fmt.Println(gmess.ErrInvalidFileNumber)
 		return askForCredentialsFile(nFiles)
 	}
 
@@ -120,7 +121,7 @@ func doSetCredentials(cmd *cobra.Command, args []string) error {
 
 	fileNum := askForCredentialsFile(len(validFiles))
 	if fileNum == cmn.Quit {
-		fmt.Println(cmn.InfoSetCommandCancelled)
+		fmt.Println(gmess.InfoSetCommandCancelled)
 		return nil
 	}
 
@@ -148,7 +149,7 @@ func doSetCredentials(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoCredentialsSet, usedName)))
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.InfoCredentialsSet, usedName)))
 	return nil
 }
 

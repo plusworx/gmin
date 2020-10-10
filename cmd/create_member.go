@@ -26,6 +26,7 @@ import (
 	"fmt"
 
 	cmn "github.com/plusworx/gmin/utils/common"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	mems "github.com/plusworx/gmin/utils/members"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
@@ -83,8 +84,8 @@ func doCreateMember(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	logger.Infof(cmn.InfoMemberCreated, newMember.Email, args[1])
-	fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoMemberCreated, newMember.Email, args[1])))
+	logger.Infof(gmess.InfoMemberCreated, newMember.Email, args[1])
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.InfoMemberCreated, newMember.Email, args[1])))
 
 	logger.Debug("finished doCreateMember()")
 	return nil

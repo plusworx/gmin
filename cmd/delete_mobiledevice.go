@@ -27,6 +27,7 @@ import (
 
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 )
@@ -65,8 +66,8 @@ func doDeleteMobDev(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	logger.Infof(cmn.InfoMDevDeleted, args[0])
-	fmt.Println(cmn.GminMessage(fmt.Sprintf(cmn.InfoMDevDeleted, args[0])))
+	logger.Infof(gmess.InfoMDevDeleted, args[0])
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.InfoMDevDeleted, args[0])))
 
 	logger.Debug("finished doDeleteMobDev()")
 	return nil

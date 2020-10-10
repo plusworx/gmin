@@ -28,6 +28,7 @@ import (
 	"strings"
 
 	cmn "github.com/plusworx/gmin/utils/common"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	admin "google.golang.org/api/admin/directory/v1"
 	"google.golang.org/api/googleapi"
 )
@@ -175,7 +176,7 @@ func ShowAttrs(filter string) {
 // ShowAttrValues displays enumerated attribute values
 func ShowAttrValues(lenArgs int, args []string, filter string) error {
 	if lenArgs > 2 {
-		return fmt.Errorf(cmn.ErrTooManyArgsMax1, args[0])
+		return fmt.Errorf(gmess.ErrTooManyArgsMax1, args[0])
 	}
 
 	if lenArgs == 1 {
@@ -196,7 +197,7 @@ func ShowAttrValues(lenArgs int, args []string, filter string) error {
 				values = append(values, val)
 			}
 		default:
-			return fmt.Errorf(cmn.ErrAttrNotRecognized, args[1])
+			return fmt.Errorf(gmess.ErrAttrNotRecognized, args[1])
 		}
 
 		sort.Strings(values)
@@ -224,7 +225,7 @@ func ShowFlagValues(lenArgs int, args []string, filter string) error {
 			sort.Strings(values)
 			cmn.ShowFlagValues(values, filter)
 		} else {
-			return fmt.Errorf(cmn.ErrFlagNotRecognized, args[1])
+			return fmt.Errorf(gmess.ErrFlagNotRecognized, args[1])
 		}
 	}
 
@@ -237,7 +238,7 @@ func ValidateDeliverySetting(ds string) (string, error) {
 
 	validSetting := deliverySettingMap[lowerDS]
 	if validSetting == "" {
-		return "", fmt.Errorf(cmn.ErrInvalidDeliverySetting, ds)
+		return "", fmt.Errorf(gmess.ErrInvalidDeliverySetting, ds)
 	}
 
 	return validSetting, nil
@@ -249,7 +250,7 @@ func ValidateRole(role string) (string, error) {
 
 	validRole := RoleMap[lowerRole]
 	if validRole == "" {
-		return "", fmt.Errorf(cmn.ErrInvalidRole, role)
+		return "", fmt.Errorf(gmess.ErrInvalidRole, role)
 	}
 
 	return validRole, nil
