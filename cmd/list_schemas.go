@@ -28,6 +28,7 @@ import (
 
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
+	gpars "github.com/plusworx/gmin/utils/gminparsers"
 	scs "github.com/plusworx/gmin/utils/schemas"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
@@ -68,7 +69,7 @@ func doListSchemas(cmd *cobra.Command, args []string) error {
 	sclc := ds.Schemas.List(customerID)
 
 	if attrs != "" {
-		listAttrs, err := cmn.ParseOutputAttrs(attrs, scs.SchemaAttrMap)
+		listAttrs, err := gpars.ParseOutputAttrs(attrs, scs.SchemaAttrMap)
 		if err != nil {
 			logger.Error(err)
 			return err

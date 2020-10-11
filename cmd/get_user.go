@@ -30,6 +30,7 @@ import (
 
 	cmn "github.com/plusworx/gmin/utils/common"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	gpars "github.com/plusworx/gmin/utils/gminparsers"
 	usrs "github.com/plusworx/gmin/utils/users"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
@@ -64,7 +65,7 @@ func doGetUser(cmd *cobra.Command, args []string) error {
 	ugc := ds.Users.Get(args[0])
 
 	if attrs != "" {
-		formattedAttrs, err := cmn.ParseOutputAttrs(attrs, usrs.UserAttrMap)
+		formattedAttrs, err := gpars.ParseOutputAttrs(attrs, usrs.UserAttrMap)
 		if err != nil {
 			logger.Error(err)
 			return err

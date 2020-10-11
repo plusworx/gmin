@@ -32,6 +32,7 @@ import (
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	gpars "github.com/plusworx/gmin/utils/gminparsers"
 	usrs "github.com/plusworx/gmin/utils/users"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
@@ -85,7 +86,7 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 	ulc := ds.Users.List()
 
 	if attrs != "" {
-		listAttrs, err := cmn.ParseOutputAttrs(attrs, usrs.UserAttrMap)
+		listAttrs, err := gpars.ParseOutputAttrs(attrs, usrs.UserAttrMap)
 		if err != nil {
 			logger.Error(err)
 			return err
@@ -138,7 +139,7 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 	}
 
 	if query != "" {
-		formattedQuery, err := cmn.ParseQuery(query, usrs.QueryAttrMap)
+		formattedQuery, err := gpars.ParseQuery(query, usrs.QueryAttrMap)
 		if err != nil {
 			logger.Error(err)
 			return err

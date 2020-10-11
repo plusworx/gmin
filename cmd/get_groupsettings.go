@@ -27,6 +27,7 @@ import (
 	"fmt"
 
 	cmn "github.com/plusworx/gmin/utils/common"
+	gpars "github.com/plusworx/gmin/utils/gminparsers"
 	grpset "github.com/plusworx/gmin/utils/groupsettings"
 	"github.com/spf13/cobra"
 	gset "google.golang.org/api/groupssettings/v1"
@@ -61,7 +62,7 @@ func doGetGroupSettings(cmd *cobra.Command, args []string) error {
 	gsgc := gss.Groups.Get(args[0])
 
 	if attrs != "" {
-		formattedAttrs, err := cmn.ParseOutputAttrs(attrs, grpset.GroupSettingsAttrMap)
+		formattedAttrs, err := gpars.ParseOutputAttrs(attrs, grpset.GroupSettingsAttrMap)
 		if err != nil {
 			logger.Error(err)
 			return err

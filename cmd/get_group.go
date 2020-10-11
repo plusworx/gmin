@@ -27,6 +27,7 @@ import (
 	"fmt"
 
 	cmn "github.com/plusworx/gmin/utils/common"
+	gpars "github.com/plusworx/gmin/utils/gminparsers"
 	grps "github.com/plusworx/gmin/utils/groups"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
@@ -61,7 +62,7 @@ func doGetGroup(cmd *cobra.Command, args []string) error {
 	ggc := ds.Groups.Get(args[0])
 
 	if attrs != "" {
-		formattedAttrs, err := cmn.ParseOutputAttrs(attrs, grps.GroupAttrMap)
+		formattedAttrs, err := gpars.ParseOutputAttrs(attrs, grps.GroupAttrMap)
 		if err != nil {
 			logger.Error(err)
 			return err

@@ -30,6 +30,7 @@ import (
 
 	cmn "github.com/plusworx/gmin/utils/common"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	gpars "github.com/plusworx/gmin/utils/gminparsers"
 	mems "github.com/plusworx/gmin/utils/members"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
@@ -64,7 +65,7 @@ func doListMembers(cmd *cobra.Command, args []string) error {
 	mlc := ds.Members.List(args[0])
 
 	if attrs != "" {
-		listAttrs, err := cmn.ParseOutputAttrs(attrs, mems.MemberAttrMap)
+		listAttrs, err := gpars.ParseOutputAttrs(attrs, mems.MemberAttrMap)
 		if err != nil {
 			logger.Error(err)
 			return err
@@ -76,7 +77,7 @@ func doListMembers(cmd *cobra.Command, args []string) error {
 	}
 
 	if role != "" {
-		formattedRoles, err := cmn.ParseOutputAttrs(role, mems.RoleMap)
+		formattedRoles, err := gpars.ParseOutputAttrs(role, mems.RoleMap)
 		if err != nil {
 			logger.Error(err)
 			return err

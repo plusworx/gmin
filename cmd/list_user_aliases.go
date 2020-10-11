@@ -27,6 +27,7 @@ import (
 	"fmt"
 
 	cmn "github.com/plusworx/gmin/utils/common"
+	gpars "github.com/plusworx/gmin/utils/gminparsers"
 	uas "github.com/plusworx/gmin/utils/useraliases"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
@@ -58,7 +59,7 @@ func doListUserAliases(cmd *cobra.Command, args []string) error {
 	ualc := ds.Users.Aliases.List(args[0])
 
 	if attrs != "" {
-		listAttrs, err := cmn.ParseOutputAttrs(attrs, uas.UserAliasAttrMap)
+		listAttrs, err := gpars.ParseOutputAttrs(attrs, uas.UserAliasAttrMap)
 		if err != nil {
 			logger.Error(err)
 			return err

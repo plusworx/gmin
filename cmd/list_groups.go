@@ -32,6 +32,7 @@ import (
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	gpars "github.com/plusworx/gmin/utils/gminparsers"
 	grps "github.com/plusworx/gmin/utils/groups"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
@@ -67,7 +68,7 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 	glc := ds.Groups.List()
 
 	if attrs != "" {
-		listAttrs, err := cmn.ParseOutputAttrs(attrs, grps.GroupAttrMap)
+		listAttrs, err := gpars.ParseOutputAttrs(attrs, grps.GroupAttrMap)
 		if err != nil {
 			logger.Error(err)
 			return err
@@ -90,7 +91,7 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 	}
 
 	if query != "" {
-		formattedQuery, err := cmn.ParseQuery(query, grps.QueryAttrMap)
+		formattedQuery, err := gpars.ParseQuery(query, grps.QueryAttrMap)
 		if err != nil {
 			logger.Error(err)
 			return err

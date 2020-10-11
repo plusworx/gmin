@@ -33,6 +33,7 @@ import (
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	gpars "github.com/plusworx/gmin/utils/gminparsers"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 )
@@ -71,7 +72,7 @@ func doListCrOSDevs(cmd *cobra.Command, args []string) error {
 	cdlc := ds.Chromeosdevices.List(customerID)
 
 	if attrs != "" {
-		listAttrs, err := cmn.ParseOutputAttrs(attrs, cdevs.CrOSDevAttrMap)
+		listAttrs, err := gpars.ParseOutputAttrs(attrs, cdevs.CrOSDevAttrMap)
 		if err != nil {
 			logger.Error(err)
 			return err
@@ -128,7 +129,7 @@ func doListCrOSDevs(cmd *cobra.Command, args []string) error {
 	}
 
 	if query != "" {
-		formattedQuery, err := cmn.ParseQuery(query, cdevs.QueryAttrMap)
+		formattedQuery, err := gpars.ParseQuery(query, cdevs.QueryAttrMap)
 		if err != nil {
 			logger.Error(err)
 			return err

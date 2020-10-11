@@ -30,6 +30,7 @@ import (
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	gpars "github.com/plusworx/gmin/utils/gminparsers"
 	mdevs "github.com/plusworx/gmin/utils/mobiledevices"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
@@ -69,7 +70,7 @@ func doGetMobDev(cmd *cobra.Command, args []string) error {
 	mdgc := ds.Mobiledevices.Get(customerID, args[0])
 
 	if attrs != "" {
-		formattedAttrs, err := cmn.ParseOutputAttrs(attrs, mdevs.MobDevAttrMap)
+		formattedAttrs, err := gpars.ParseOutputAttrs(attrs, mdevs.MobDevAttrMap)
 		if err != nil {
 			logger.Error(err)
 			return err

@@ -89,11 +89,12 @@ const (
 	ErrObjectNotRecognized      string = " %v is not recognized"
 	ErrPipeInputFileConflict    string = "cannot provide input file when piping in input"
 	ErrProjectionFlagNotCustom  string = "--projection must be set to 'custom' in order to use custom field mask"
-	ErrTooManyArgsMax1          string = "too many arguments, %v has maximum of 1"
-	ErrTooManyArgsMax2          string = "too many arguments, %v has maximum of 2"
 	ErrQueryableFlag1Arg        string = "only one argument is allowed with --queryable flag"
 	ErrQueryAndCompositeFlags   string = "cannot provide both --composite and --queryable flags"
 	ErrQueryAndDeletedFlags     string = "cannot provide both --query and --deleted flags"
+	ErrTooManyArgsMax1          string = "too many arguments, %v has maximum of 1"
+	ErrTooManyArgsMax2          string = "too many arguments, %v has maximum of 2"
+	ErrUnexpectedAttrChar       string = "unexpected character %v found in attribute string"
 
 	// Infos
 

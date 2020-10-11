@@ -30,6 +30,7 @@ import (
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	gpars "github.com/plusworx/gmin/utils/gminparsers"
 	ous "github.com/plusworx/gmin/utils/orgunits"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
@@ -70,7 +71,7 @@ func doListOUs(cmd *cobra.Command, args []string) error {
 	oulc := ds.Orgunits.List(customerID)
 
 	if attrs != "" {
-		listAttrs, err := cmn.ParseOutputAttrs(attrs, ous.OrgUnitAttrMap)
+		listAttrs, err := gpars.ParseOutputAttrs(attrs, ous.OrgUnitAttrMap)
 		if err != nil {
 			logger.Error(err)
 			return err

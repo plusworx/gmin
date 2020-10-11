@@ -27,6 +27,7 @@ import (
 	"fmt"
 
 	cmn "github.com/plusworx/gmin/utils/common"
+	gpars "github.com/plusworx/gmin/utils/gminparsers"
 	mems "github.com/plusworx/gmin/utils/members"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
@@ -86,7 +87,7 @@ func processGroupMember(memID string, attrs string, groupEmail string) ([]byte, 
 	mgc := ds.Members.Get(groupEmail, memID)
 
 	if attrs != "" {
-		formattedAttrs, err := cmn.ParseOutputAttrs(attrs, mems.MemberAttrMap)
+		formattedAttrs, err := gpars.ParseOutputAttrs(attrs, mems.MemberAttrMap)
 		if err != nil {
 			logger.Error(err)
 			return nil, err
