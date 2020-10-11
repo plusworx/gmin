@@ -128,16 +128,16 @@ func (oap *OutputAttrParser) Parse(attrMap map[string]string) (*OutputAttrStr, e
 }
 
 // scan returns the next token from the underlying OutputAttrScanner
-func (oap *OutputAttrParser) scan() (tok Token, lit string) {
+func (oap *OutputAttrParser) scan() (Token, string) {
 	// read the next token from the scanner
-	tok, lit = oap.oas.Scan()
+	tok, lit := oap.oas.Scan()
 
 	return tok, lit
 }
 
 // scanIgnoreWhitespace scans the next non-whitespace token
-func (oap *OutputAttrParser) scanIgnoreWhitespace() (tok Token, lit string) {
-	tok, lit = oap.scan()
+func (oap *OutputAttrParser) scanIgnoreWhitespace() (Token, string) {
+	tok, lit := oap.scan()
 	if tok == WS {
 		tok, lit = oap.scan()
 	}
@@ -151,7 +151,7 @@ type OutputAttrScanner struct {
 }
 
 // Scan returns the next token and literal value from OutputAttrScanner
-func (oas *OutputAttrScanner) Scan() (tok Token, lit string) {
+func (oas *OutputAttrScanner) Scan() (Token, string) {
 	// Read the next rune
 	ch := oas.scanr.read()
 
@@ -205,16 +205,16 @@ type QueryParser struct {
 }
 
 // scan returns the next token from the underlying QueryScanner
-func (qp *QueryParser) scan() (tok Token, lit string) {
+func (qp *QueryParser) scan() (Token, string) {
 	// read the next token from the scanner
-	tok, lit = qp.qs.Scan()
+	tok, lit := qp.qs.Scan()
 
 	return tok, lit
 }
 
 // scanIgnoreWhitespace scans the next non-whitespace token for QueryParser
-func (qp *QueryParser) scanIgnoreWhitespace() (tok Token, lit string) {
-	tok, lit = qp.scan()
+func (qp *QueryParser) scanIgnoreWhitespace() (Token, string) {
+	tok, lit := qp.scan()
 	if tok == WS {
 		tok, lit = qp.scan()
 	}
@@ -235,14 +235,14 @@ func (qp *QueryParser) Parse(qAttrMap map[string]string) (*QueryStr, error) {
 		if tok != ASTERISK && tok != BSLASH && tok != COLON && tok != COMMA && tok != CLOSEBRACK &&
 			tok != CLOSESQBRACK && tok != FSLASH && tok != GT && tok != EQUALS && tok != IDENT && tok != LT &&
 			tok != OP && tok != OPENBRACK && tok != OPENSQBRACK && tok != TILDE && tok != VALUE {
-			return nil, fmt.Errorf("gmin: unexpected character %q found in query string", lit)
+			return nil, fmt.Errorf(gmess.ErrUnexpectedQueryChar, lit)
 		}
 
 		if tok == IDENT && !strings.Contains(lit, ".") {
 			lowerLit := strings.ToLower(lit)
 			validAttr := qAttrMap[lowerLit]
 			if validAttr == "" {
-				err := fmt.Errorf("gmin: error - query attribute %v is unrecognized", lit)
+				err := fmt.Errorf(gmess.ErrAttrNotRecognized, lit)
 				return nil, err
 			}
 			lit = validAttr
@@ -274,7 +274,7 @@ type QueryScanner struct {
 }
 
 // Scan returns the next token and literal value from QueryScanner
-func (qs *QueryScanner) Scan() (tok Token, lit string) {
+func (qs *QueryScanner) Scan() (Token, string) {
 	// Read the next rune
 	ch := qs.scanr.read()
 
@@ -360,7 +360,7 @@ func (qs *QueryScanner) Scan() (tok Token, lit string) {
 }
 
 // scanIdent consumes the current rune and all contiguous ident runes for QueryScanner
-func (qs *QueryScanner) scanIdent() (tok Token, lit string) {
+func (qs *QueryScanner) scanIdent() (Token, string) {
 	// Create a buffer and read the current character into it
 	var (
 		buf bytes.Buffer
@@ -388,7 +388,7 @@ func (qs *QueryScanner) scanIdent() (tok Token, lit string) {
 }
 
 // scanOperator consumes the current rune and all contiguous operator runes
-func (qs *QueryScanner) scanOperator() (tok Token, lit string) {
+func (qs *QueryScanner) scanOperator() (Token, string) {
 	// Create a buffer and read the current character into it
 	var (
 		buf bytes.Buffer
@@ -416,7 +416,7 @@ func (qs *QueryScanner) scanOperator() (tok Token, lit string) {
 }
 
 // scanValue consumes the current rune and all contiguous value runes
-func (qs *QueryScanner) scanValue() (tok Token, lit string) {
+func (qs *QueryScanner) scanValue() (Token, string) {
 	// Create a buffer and read the current character into it
 	var (
 		buf bytes.Buffer
@@ -466,7 +466,7 @@ func (scanr *Scanner) read() rune {
 }
 
 // scanIdent consumes the current rune and all contiguous ident runes
-func (scanr *Scanner) scanIdent() (tok Token, lit string) {
+func (scanr *Scanner) scanIdent() (Token, string) {
 	// Create a buffer and read the current character into it
 	var (
 		buf bytes.Buffer
@@ -493,7 +493,7 @@ func (scanr *Scanner) scanIdent() (tok Token, lit string) {
 }
 
 // scanWhitespace consumes the current rune and all contiguous whitespace
-func (scanr *Scanner) scanWhitespace() (tok Token, lit string) {
+func (scanr *Scanner) scanWhitespace() (Token, string) {
 	// Create a buffer and read the current character into it
 	var (
 		buf bytes.Buffer

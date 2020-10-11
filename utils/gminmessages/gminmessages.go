@@ -95,6 +95,7 @@ const (
 	ErrTooManyArgsMax1          string = "too many arguments, %v has maximum of 1"
 	ErrTooManyArgsMax2          string = "too many arguments, %v has maximum of 2"
 	ErrUnexpectedAttrChar       string = "unexpected character %v found in attribute string"
+	ErrUnexpectedQueryChar      string = "unexpected character %v found in query string"
 
 	// Infos
 

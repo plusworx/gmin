@@ -153,7 +153,7 @@ func TestParseQuery(t *testing.T) {
 		},
 		{
 			query:       "wrongattr:Value",
-			expectedErr: "gmin: error - query attribute wrongattr is unrecognized",
+			expectedErr: "wrongattr attribute is not recognized",
 		},
 	}
 
