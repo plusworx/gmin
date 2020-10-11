@@ -23,10 +23,6 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"os"
-
-	cmn "github.com/plusworx/gmin/utils/common"
-	cfg "github.com/plusworx/gmin/utils/config"
 	"github.com/spf13/cobra"
 )
 
@@ -48,29 +44,5 @@ func init() {
 	batchMoveCmd.PersistentFlags().BoolVar(&silent, "silent", false, "suppress console output")
 	batchMoveCmd.PersistentFlags().StringVar(&logLevel, "log-level", "info", "log level (debug, info, error, warn)")
 
-	batchMoveCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
-		// Set log level
-		zlog, err := setupLogging(logLevel)
-		if err != nil {
-			return err
-		}
-		logger = zlog.Sugar()
-		// Suppress console output according to silent flag
-		if silent {
-			os.Stdout = nil
-			os.Stderr = nil
-		}
-		// Get gmin admin email address
-		admAddr, err := cfg.ReadConfigString("administrator")
-		if err != nil {
-			return err
-		}
-		// Log current user
-		logger.Infow("User Information",
-			"gmin admin", admAddr,
-			"Username", cmn.Username(),
-			"Hostname", cmn.Hostname(),
-			"IP Address", cmn.IPAddress())
-		return nil
-	}
+	batchMoveCmd.PersistentPreRunE = preRun
 }

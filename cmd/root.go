@@ -182,6 +182,40 @@ func initConfig() {
 	viper.ReadInConfig()
 }
 
+func preRun(cmd *cobra.Command, args []string) error {
+	// Set loglevel
+	logFlgVal, err := cmd.Flags().GetString("log-level")
+	if err != nil {
+		return err
+	}
+	zlog, err := setupLogging(logFlgVal)
+	if err != nil {
+		return err
+	}
+	logger = zlog.Sugar()
+	// Suppress console output according to silent flag
+	silentFlgVal, err := cmd.Flags().GetBool("silent")
+	if err != nil {
+		return err
+	}
+	if silentFlgVal {
+		os.Stdout = nil
+		os.Stderr = nil
+	}
+	// Get gmin admin email address
+	admAddr, err := cfg.ReadConfigString("administrator")
+	if err != nil {
+		return err
+	}
+	// Log current user
+	logger.Infow("User Information",
+		"gmin admin", admAddr,
+		"Username", cmn.Username(),
+		"Hostname", cmn.Hostname(),
+		"IP Address", cmn.IPAddress())
+	return nil
+}
+
 func setupLogging(loglevel string) (*zap.Logger, error) {
 	var (
 		err  error
