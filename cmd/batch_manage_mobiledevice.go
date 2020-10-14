@@ -103,7 +103,7 @@ func doBatchMngMobDev(cmd *cobra.Command, args []string) error {
 	}
 
 	if inputFlgVal == "" && scanner == nil {
-		err := errors.New(gmess.ERRNOINPUTFILE)
+		err := errors.New(gmess.ERR_NOINPUTFILE)
 		logger.Error(err)
 		return err
 	}
@@ -117,7 +117,7 @@ func doBatchMngMobDev(cmd *cobra.Command, args []string) error {
 
 	ok := cmn.SliceContainsStr(cmn.ValidFileFormats, lwrFmt)
 	if !ok {
-		err = fmt.Errorf(gmess.ERRINVALIDFILEFORMAT, formatFlgVal)
+		err = fmt.Errorf(gmess.ERR_INVALIDFILEFORMAT, formatFlgVal)
 		logger.Error(err)
 		return err
 	}
@@ -148,7 +148,7 @@ func doBatchMngMobDev(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	default:
-		return fmt.Errorf(gmess.ERRINVALIDFILEFORMAT, formatFlgVal)
+		return fmt.Errorf(gmess.ERR_INVALIDFILEFORMAT, formatFlgVal)
 	}
 
 	err = bmngmProcessObjects(ds, managedDevs)
@@ -176,7 +176,7 @@ func bmngmFromFileFactory(hdrMap map[int]string, mdevData []interface{}) (mdevs.
 		case attrName == "action":
 			ok := cmn.SliceContainsStr(mdevs.ValidActions, lowerAttrVal)
 			if !ok {
-				err := fmt.Errorf(gmess.ERRINVALIDACTIONTYPE, attrVal)
+				err := fmt.Errorf(gmess.ERR_INVALIDACTIONTYPE, attrVal)
 				logger.Error(err)
 				return managedDev, err
 			}
@@ -197,8 +197,8 @@ func bmngmFromJSONFactory(ds *admin.Service, jsonData string) (mdevs.ManagedDevi
 	jsonBytes := []byte(jsonData)
 
 	if !json.Valid(jsonBytes) {
-		logger.Error(gmess.ERRINVALIDJSONATTR)
-		return managedDev, errors.New(gmess.ERRINVALIDJSONATTR)
+		logger.Error(gmess.ERR_INVALIDJSONATTR)
+		return managedDev, errors.New(gmess.ERR_INVALIDJSONATTR)
 	}
 
 	outStr, err := cmn.ParseInputAttrs(jsonBytes)
@@ -236,18 +236,18 @@ func bmngmPerformAction(resourceID string, action string, wg *sync.WaitGroup, md
 		var err error
 		err = mdac.Do()
 		if err == nil {
-			logger.Infof(gmess.INFOMDEVACTIONPERFORMED, action, resourceID)
-			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFOMDEVACTIONPERFORMED, action, resourceID)))
+			logger.Infof(gmess.INFO_MDEVACTIONPERFORMED, action, resourceID)
+			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_MDEVACTIONPERFORMED, action, resourceID)))
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(fmt.Errorf(gmess.ERRBATCHMOBILEDEVICE, err.Error(), resourceID))
+			return backoff.Permanent(fmt.Errorf(gmess.ERR_BATCHMOBILEDEVICE, err.Error(), resourceID))
 		}
 		// Log the retries
 		logger.Warnw(err.Error(),
 			"retrying", b.GetElapsedTime().String(),
 			"mobile device", resourceID)
-		return fmt.Errorf(gmess.ERRBATCHMOBILEDEVICE, err.Error(), resourceID)
+		return fmt.Errorf(gmess.ERR_BATCHMOBILEDEVICE, err.Error(), resourceID)
 	}, b)
 	if err != nil {
 		// Log final error
@@ -329,7 +329,7 @@ func bmngmProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([
 	var managedDevs []mdevs.ManagedDevice
 
 	if sheetrange == "" {
-		err := errors.New(gmess.ERRNOSHEETRANGE)
+		err := errors.New(gmess.ERR_NOSHEETRANGE)
 		logger.Error(err)
 		return nil, err
 	}
@@ -348,7 +348,7 @@ func bmngmProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([
 	}
 
 	if len(sValRange.Values) == 0 {
-		err = fmt.Errorf(gmess.ERRNOSHEETDATAFOUND, sheetID, sheetrange)
+		err = fmt.Errorf(gmess.ERR_NOSHEETDATAFOUND, sheetID, sheetrange)
 		logger.Error(err)
 		return nil, err
 	}

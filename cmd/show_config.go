@@ -57,7 +57,7 @@ func doShowConfig(cmd *cobra.Command, args []string) error {
 	logPath := os.Getenv(cfg.ENVPREFIX + cfg.ENVVARLOGPATH)
 
 	if admin == "" && credPath == "" && custID == "" && logPath == "" {
-		fmt.Println(gmess.INFOENVVARSNOTFOUND)
+		fmt.Println(gmess.INFO_ENVVARSNOTFOUND)
 	}
 	if admin != "" {
 		fmt.Println(cfg.ENVPREFIX+cfg.ENVVARADMIN+":", admin)
@@ -79,7 +79,7 @@ func doShowConfig(cmd *cobra.Command, args []string) error {
 	cfgFilePath := viper.GetViper().ConfigFileUsed()
 	yamlFile, err := ioutil.ReadFile(cfgFilePath)
 	if err != nil {
-		fmt.Println(gmess.INFOCONFIGFILENOTFOUND)
+		fmt.Println(gmess.INFO_CONFIGFILENOTFOUND)
 	}
 
 	fmt.Println(string(yamlFile))

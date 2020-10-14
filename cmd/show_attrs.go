@@ -74,16 +74,16 @@ func doShowAttrs(cmd *cobra.Command, args []string) error {
 	object := strings.ToLower(args[0])
 
 	if queryable && lArgs > 1 {
-		return errors.New(gmess.ERRQUERYABLEFLAG1ARG)
+		return errors.New(gmess.ERR_QUERYABLEFLAG1ARG)
 	}
 
 	if composite && queryable {
-		return errors.New(gmess.ERRQUERYANDCOMPOSITEFLAGS)
+		return errors.New(gmess.ERR_QUERYANDCOMPOSITEFLAGS)
 	}
 
 	ok := cmn.SliceContainsStr(cmn.ValidPrimaryShowArgs, object)
 	if !ok {
-		return fmt.Errorf(gmess.ERROBJECTNOTFOUND, args[0])
+		return fmt.Errorf(gmess.ERR_OBJECTNOTFOUND, args[0])
 	}
 
 	if cmn.SliceContainsStr(ca.CDevAliases, object) {
@@ -191,7 +191,7 @@ func saChromeOSDev(args []string, lArgs int, objectName string) error {
 
 	if lArgs == 2 {
 		if composite {
-			return fmt.Errorf(gmess.ERRNOCOMPOSITEATTRS, args[lArgs-1])
+			return fmt.Errorf(gmess.ERR_NOCOMPOSITEATTRS, args[lArgs-1])
 		}
 		err := cdevs.ShowSubAttrs(args[lArgs-1], lowerFilter)
 		if err != nil {
@@ -200,7 +200,7 @@ func saChromeOSDev(args []string, lArgs int, objectName string) error {
 	}
 
 	if lArgs > 2 {
-		return fmt.Errorf(gmess.ERRNOCOMPOSITEATTRS, args[2])
+		return fmt.Errorf(gmess.ERR_NOCOMPOSITEATTRS, args[2])
 	}
 
 	logger.Debug("finished saChromeOSDev()")
@@ -222,13 +222,13 @@ func saGroup(args []string, lArgs int, objectName string) error {
 
 	if lArgs == 1 {
 		if composite {
-			return fmt.Errorf(gmess.ERRNOCOMPOSITEATTRS, objectName)
+			return fmt.Errorf(gmess.ERR_NOCOMPOSITEATTRS, objectName)
 		}
 		grps.ShowAttrs(lowerFilter)
 	}
 
 	if lArgs > 1 {
-		return fmt.Errorf(gmess.ERRNOCOMPOSITEATTRS, objectName)
+		return fmt.Errorf(gmess.ERR_NOCOMPOSITEATTRS, objectName)
 	}
 
 	logger.Debug("finished saGroup()")
@@ -242,18 +242,18 @@ func saGroupAlias(args []string, lArgs int, objectName string) error {
 		"objectName", objectName)
 
 	if queryable {
-		return fmt.Errorf(gmess.ERRNOQUERYABLEATTRS, objectName)
+		return fmt.Errorf(gmess.ERR_NOQUERYABLEATTRS, objectName)
 	}
 
 	if lArgs == 1 {
 		if composite {
-			return fmt.Errorf(gmess.ERRNOCOMPOSITEATTRS, objectName)
+			return fmt.Errorf(gmess.ERR_NOCOMPOSITEATTRS, objectName)
 		}
 		gas.ShowAttrs(strings.ToLower(filter))
 	}
 
 	if lArgs > 1 {
-		return fmt.Errorf(gmess.ERRNOCOMPOSITEATTRS, objectName)
+		return fmt.Errorf(gmess.ERR_NOCOMPOSITEATTRS, objectName)
 	}
 
 	logger.Debug("finished saGroupAlias()")
@@ -267,18 +267,18 @@ func saGroupMember(args []string, lArgs int, objectName string) error {
 		"objectName", objectName)
 
 	if queryable {
-		return fmt.Errorf(gmess.ERRNOQUERYABLEATTRS, objectName)
+		return fmt.Errorf(gmess.ERR_NOQUERYABLEATTRS, objectName)
 	}
 
 	if lArgs == 1 {
 		if composite {
-			return fmt.Errorf(gmess.ERRNOCOMPOSITEATTRS, objectName)
+			return fmt.Errorf(gmess.ERR_NOCOMPOSITEATTRS, objectName)
 		}
 		mems.ShowAttrs(strings.ToLower(filter))
 	}
 
 	if lArgs > 1 {
-		return fmt.Errorf(gmess.ERRNOCOMPOSITEATTRS, objectName)
+		return fmt.Errorf(gmess.ERR_NOCOMPOSITEATTRS, objectName)
 	}
 
 	logger.Debug("finished saGroupMember()")
@@ -292,18 +292,18 @@ func saGroupSettings(args []string, lArgs int, objectName string) error {
 		"objectName", objectName)
 
 	if queryable {
-		return fmt.Errorf(gmess.ERRNOQUERYABLEATTRS, objectName)
+		return fmt.Errorf(gmess.ERR_NOQUERYABLEATTRS, objectName)
 	}
 
 	if lArgs == 1 {
 		if composite {
-			return fmt.Errorf(gmess.ERRNOCOMPOSITEATTRS, objectName)
+			return fmt.Errorf(gmess.ERR_NOCOMPOSITEATTRS, objectName)
 		}
 		grpset.ShowAttrs(strings.ToLower(filter))
 	}
 
 	if lArgs > 1 {
-		return fmt.Errorf(gmess.ERRNOCOMPOSITEATTRS, objectName)
+		return fmt.Errorf(gmess.ERR_NOCOMPOSITEATTRS, objectName)
 	}
 
 	logger.Debug("finished saGroupSettings()")
@@ -334,7 +334,7 @@ func saMobileDev(args []string, lArgs int, objectName string) error {
 
 	if lArgs == 2 {
 		if composite {
-			return fmt.Errorf(gmess.ERRNOCOMPOSITEATTRS, args[lArgs-1])
+			return fmt.Errorf(gmess.ERR_NOCOMPOSITEATTRS, args[lArgs-1])
 		}
 		err := mdevs.ShowSubAttrs(args[lArgs-1], lowerFilter)
 		if err != nil {
@@ -343,7 +343,7 @@ func saMobileDev(args []string, lArgs int, objectName string) error {
 	}
 
 	if lArgs > 2 {
-		return fmt.Errorf(gmess.ERRNOCOMPOSITEATTRS, args[2])
+		return fmt.Errorf(gmess.ERR_NOCOMPOSITEATTRS, args[2])
 	}
 
 	logger.Debug("finished saMobileDev()")
@@ -357,18 +357,18 @@ func saOrgUnit(args []string, lArgs int, objectName string) error {
 		"objectName", objectName)
 
 	if queryable {
-		return fmt.Errorf(gmess.ERRNOQUERYABLEATTRS, objectName)
+		return fmt.Errorf(gmess.ERR_NOQUERYABLEATTRS, objectName)
 	}
 
 	if lArgs == 1 {
 		if composite {
-			return fmt.Errorf(gmess.ERRNOCOMPOSITEATTRS, objectName)
+			return fmt.Errorf(gmess.ERR_NOCOMPOSITEATTRS, objectName)
 		}
 		ous.ShowAttrs(strings.ToLower(filter))
 	}
 
 	if lArgs > 1 {
-		return fmt.Errorf(gmess.ERRNOCOMPOSITEATTRS, objectName)
+		return fmt.Errorf(gmess.ERR_NOCOMPOSITEATTRS, objectName)
 	}
 
 	logger.Debug("finished saOrgUnit()")
@@ -384,7 +384,7 @@ func saSchema(args []string, lArgs int, objectName string) error {
 	lowerFilter := strings.ToLower(filter)
 
 	if queryable {
-		return fmt.Errorf(gmess.ERRNOQUERYABLEATTRS, objectName)
+		return fmt.Errorf(gmess.ERR_NOQUERYABLEATTRS, objectName)
 	}
 
 	if lArgs == 1 {
@@ -412,7 +412,7 @@ func saSchema(args []string, lArgs int, objectName string) error {
 
 	if lArgs == 3 {
 		if composite {
-			return fmt.Errorf(gmess.ERRNOCOMPOSITEATTRS, args[lArgs-1])
+			return fmt.Errorf(gmess.ERR_NOCOMPOSITEATTRS, args[lArgs-1])
 		}
 		err := scs.ShowSubSubAttrs(args[lArgs-1])
 		if err != nil {
@@ -447,7 +447,7 @@ func saUser(args []string, lArgs int, objectName string) error {
 
 	if lArgs == 2 {
 		if composite {
-			return fmt.Errorf(gmess.ERRNOCOMPOSITEATTRS, args[lArgs-1])
+			return fmt.Errorf(gmess.ERR_NOCOMPOSITEATTRS, args[lArgs-1])
 		}
 		err := usrs.ShowSubAttrs(args[lArgs-1], lowerFilter)
 		if err != nil {
@@ -456,7 +456,7 @@ func saUser(args []string, lArgs int, objectName string) error {
 	}
 
 	if lArgs > 2 {
-		return fmt.Errorf(gmess.ERRNOCOMPOSITEATTRS, args[2])
+		return fmt.Errorf(gmess.ERR_NOCOMPOSITEATTRS, args[2])
 	}
 
 	logger.Debug("finished saUser()")
@@ -470,18 +470,18 @@ func saUserAlias(args []string, lArgs int, objectName string) error {
 		"objectName", objectName)
 
 	if queryable {
-		return fmt.Errorf(gmess.ERRNOQUERYABLEATTRS, objectName)
+		return fmt.Errorf(gmess.ERR_NOQUERYABLEATTRS, objectName)
 	}
 
 	if lArgs == 1 {
 		if composite {
-			return fmt.Errorf(gmess.ERRNOCOMPOSITEATTRS, objectName)
+			return fmt.Errorf(gmess.ERR_NOCOMPOSITEATTRS, objectName)
 		}
 		uas.ShowAttrs(strings.ToLower(filter))
 	}
 
 	if lArgs > 1 {
-		return fmt.Errorf(gmess.ERRNOCOMPOSITEATTRS, objectName)
+		return fmt.Errorf(gmess.ERR_NOCOMPOSITEATTRS, objectName)
 	}
 
 	logger.Debug("finished saUserAlias()")

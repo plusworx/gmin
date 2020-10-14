@@ -99,7 +99,7 @@ func doBatchUpdMember(cmd *cobra.Command, args []string) error {
 	}
 
 	if inputFlgVal == "" && scanner == nil {
-		err := errors.New(gmess.ERRNOINPUTFILE)
+		err := errors.New(gmess.ERR_NOINPUTFILE)
 		logger.Error(err)
 		return err
 	}
@@ -113,7 +113,7 @@ func doBatchUpdMember(cmd *cobra.Command, args []string) error {
 
 	ok := cmn.SliceContainsStr(cmn.ValidFileFormats, lwrFmt)
 	if !ok {
-		err = fmt.Errorf(gmess.ERRINVALIDFILEFORMAT, formatFlgVal)
+		err = fmt.Errorf(gmess.ERR_INVALIDFILEFORMAT, formatFlgVal)
 		logger.Error(err)
 		return err
 	}
@@ -146,7 +146,7 @@ func doBatchUpdMember(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	default:
-		return fmt.Errorf(gmess.ERRINVALIDFILEFORMAT, formatFlgVal)
+		return fmt.Errorf(gmess.ERR_INVALIDFILEFORMAT, formatFlgVal)
 	}
 
 	err = bumProcessObjects(ds, groupKey, members, memKeys)
@@ -191,7 +191,7 @@ func bumFromFileFactory(hdrMap map[int]string, memData []interface{}) (*admin.Me
 			member.Role = validRole
 		case attrName == "memberKey":
 			if attrVal == "" {
-				err := fmt.Errorf(gmess.ERREMPTYSTRING, attrName)
+				err := fmt.Errorf(gmess.ERR_EMPTYSTRING, attrName)
 				return nil, "", err
 			}
 			memKey = attrVal
@@ -214,8 +214,8 @@ func bumFromJSONFactory(ds *admin.Service, jsonData string) (*admin.Member, stri
 	jsonBytes := []byte(jsonData)
 
 	if !json.Valid(jsonBytes) {
-		logger.Error(gmess.ERRINVALIDJSONATTR)
-		return nil, "", errors.New(gmess.ERRINVALIDJSONATTR)
+		logger.Error(gmess.ERR_INVALIDJSONATTR)
+		return nil, "", errors.New(gmess.ERR_INVALIDJSONATTR)
 	}
 
 	outStr, err := cmn.ParseInputAttrs(jsonBytes)
@@ -237,7 +237,7 @@ func bumFromJSONFactory(ds *admin.Service, jsonData string) (*admin.Member, stri
 	}
 
 	if memKey.MemberKey == "" {
-		err = errors.New(gmess.ERRNOJSONMEMBERKEY)
+		err = errors.New(gmess.ERR_NOJSONMEMBERKEY)
 		logger.Error(err)
 		return nil, "", err
 	}
@@ -328,7 +328,7 @@ func bumProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]s
 	)
 
 	if sheetrange == "" {
-		err := errors.New(gmess.ERRNOSHEETRANGE)
+		err := errors.New(gmess.ERR_NOSHEETRANGE)
 		logger.Error(err)
 		return nil, nil, err
 	}
@@ -347,7 +347,7 @@ func bumProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]s
 	}
 
 	if len(sValRange.Values) == 0 {
-		err = fmt.Errorf(gmess.ERRNOSHEETDATAFOUND, sheetID, sheetrange)
+		err = fmt.Errorf(gmess.ERR_NOSHEETDATAFOUND, sheetID, sheetrange)
 		logger.Error(err)
 		return nil, nil, err
 	}
@@ -455,19 +455,19 @@ func bumUpdate(member *admin.Member, groupKey string, wg *sync.WaitGroup, muc *a
 		var err error
 		_, err = muc.Do()
 		if err == nil {
-			logger.Infof(gmess.INFOMEMBERUPDATED, memKey, groupKey)
-			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFOMEMBERUPDATED, memKey, groupKey)))
+			logger.Infof(gmess.INFO_MEMBERUPDATED, memKey, groupKey)
+			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_MEMBERUPDATED, memKey, groupKey)))
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(fmt.Errorf(gmess.ERRBATCHMEMBER, err.Error(), memKey, groupKey))
+			return backoff.Permanent(fmt.Errorf(gmess.ERR_BATCHMEMBER, err.Error(), memKey, groupKey))
 		}
 		// Log the retries
 		logger.Warnw(err.Error(),
 			"retrying", b.GetElapsedTime().String(),
 			"group", groupKey,
 			"member", memKey)
-		return fmt.Errorf(gmess.ERRBATCHMEMBER, err.Error(), memKey, groupKey)
+		return fmt.Errorf(gmess.ERR_BATCHMEMBER, err.Error(), memKey, groupKey)
 	}, b)
 	if err != nil {
 		// Log final error

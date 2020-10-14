@@ -67,8 +67,8 @@ func doDeleteOU(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	logger.Infof(gmess.INFOOUDELETED, args[0])
-	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFOOUDELETED, args[0])))
+	logger.Infof(gmess.INFO_OUDELETED, args[0])
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_OUDELETED, args[0])))
 
 	logger.Debug("finished doDeleteOU()")
 	return nil

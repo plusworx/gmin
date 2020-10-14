@@ -176,7 +176,7 @@ func ShowAttrs(filter string) {
 // ShowAttrValues displays enumerated attribute values
 func ShowAttrValues(lenArgs int, args []string, filter string) error {
 	if lenArgs > 2 {
-		return fmt.Errorf(gmess.ERRTOOMANYARGSMAX1, args[0])
+		return fmt.Errorf(gmess.ERR_TOOMANYARGSMAX1, args[0])
 	}
 
 	if lenArgs == 1 {
@@ -197,7 +197,7 @@ func ShowAttrValues(lenArgs int, args []string, filter string) error {
 				values = append(values, val)
 			}
 		default:
-			return fmt.Errorf(gmess.ERRATTRNOTRECOGNIZED, args[1])
+			return fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[1])
 		}
 
 		sort.Strings(values)
@@ -225,7 +225,7 @@ func ShowFlagValues(lenArgs int, args []string, filter string) error {
 			sort.Strings(values)
 			cmn.ShowFlagValues(values, filter)
 		} else {
-			return fmt.Errorf(gmess.ERRFLAGNOTRECOGNIZED, args[1])
+			return fmt.Errorf(gmess.ERR_FLAGNOTRECOGNIZED, args[1])
 		}
 	}
 
@@ -238,7 +238,7 @@ func ValidateDeliverySetting(ds string) (string, error) {
 
 	validSetting := deliverySettingMap[lowerDS]
 	if validSetting == "" {
-		return "", fmt.Errorf(gmess.ERRINVALIDDELIVERYSETTING, ds)
+		return "", fmt.Errorf(gmess.ERR_INVALIDDELIVERYSETTING, ds)
 	}
 
 	return validSetting, nil
@@ -250,7 +250,7 @@ func ValidateRole(role string) (string, error) {
 
 	validRole := RoleMap[lowerRole]
 	if validRole == "" {
-		return "", fmt.Errorf(gmess.ERRINVALIDROLE, role)
+		return "", fmt.Errorf(gmess.ERR_INVALIDROLE, role)
 	}
 
 	return validRole, nil

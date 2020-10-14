@@ -188,7 +188,7 @@ func ShowCompAttrs(filter string) {
 func ShowSubCompAttrs(subAttr string, filter string) error {
 	lwrSubAttr := strings.ToLower(subAttr)
 	if lwrSubAttr != "fields" {
-		return fmt.Errorf(gmess.ERRINVALIDSCHEMACOMPATTR, subAttr)
+		return fmt.Errorf(gmess.ERR_INVALIDSCHEMACOMPATTR, subAttr)
 	}
 
 	keys := make([]string, 0, len(schemaFieldSpecCompAttrs))
@@ -214,7 +214,7 @@ func ShowSubCompAttrs(subAttr string, filter string) error {
 func ShowSubAttrs(subAttr string, filter string) error {
 	subAttrVal := strings.ToLower(subAttr)
 	if subAttrVal != "fields" {
-		return fmt.Errorf(gmess.ERRNOTCOMPOSITEATTR, subAttr)
+		return fmt.Errorf(gmess.ERR_NOTCOMPOSITEATTR, subAttr)
 	}
 
 	for _, a := range fieldSpecAttrs {
@@ -244,7 +244,7 @@ func ShowSubAttrs(subAttr string, filter string) error {
 // ShowSubSubAttrs displays attributes of composite attributes
 func ShowSubSubAttrs(subAttr string) error {
 	if strings.ToLower(subAttr) != "numericindexingspec" {
-		return fmt.Errorf(gmess.ERRNOTCOMPOSITEATTR, subAttr)
+		return fmt.Errorf(gmess.ERR_NOTCOMPOSITEATTR, subAttr)
 	}
 
 	for _, a := range schemaFieldSpecNumIdxSpecAttrs {

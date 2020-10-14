@@ -66,8 +66,8 @@ func doDeleteMobDev(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	logger.Infof(gmess.INFOMDEVDELETED, args[0])
-	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFOMDEVDELETED, args[0])))
+	logger.Infof(gmess.INFO_MDEVDELETED, args[0])
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_MDEVDELETED, args[0])))
 
 	logger.Debug("finished doDeleteMobDev()")
 	return nil

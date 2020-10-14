@@ -816,7 +816,7 @@ func ShowAttrValues(lenArgs int, args []string, filter string) error {
 		case attr == "posixaccount":
 			fmt.Println("operatingSystemType")
 		default:
-			return fmt.Errorf(gmess.ERRATTRNOTRECOGNIZED, args[1])
+			return fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[1])
 		}
 	}
 
@@ -829,84 +829,84 @@ func ShowAttrValues(lenArgs int, args []string, filter string) error {
 				cmn.ShowAttrVals(validAddressTypes, filter)
 				return nil
 			}
-			return fmt.Errorf(gmess.ERRATTRNOTRECOGNIZED, args[2])
+			return fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[2])
 		}
 		if attr2 == "email" {
 			if attr3 == "type" {
 				cmn.ShowAttrVals(validEmailTypes, filter)
 				return nil
 			}
-			return fmt.Errorf(gmess.ERRATTRNOTRECOGNIZED, args[2])
+			return fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[2])
 		}
 		if attr2 == "externalid" {
 			if attr3 == "type" {
 				cmn.ShowAttrVals(validExtIDTypes, filter)
 				return nil
 			}
-			return fmt.Errorf(gmess.ERRATTRNOTRECOGNIZED, args[2])
+			return fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[2])
 		}
 		if attr2 == "gender" {
 			if attr3 == "type" {
 				cmn.ShowAttrVals(validGenders, filter)
 				return nil
 			}
-			return fmt.Errorf(gmess.ERRATTRNOTRECOGNIZED, args[2])
+			return fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[2])
 		}
 		if attr2 == "keyword" {
 			if attr3 == "type" {
 				cmn.ShowAttrVals(validKeywordTypes, filter)
 				return nil
 			}
-			return fmt.Errorf(gmess.ERRATTRNOTRECOGNIZED, args[2])
+			return fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[2])
 		}
 		if attr2 == "location" {
 			if attr3 == "type" {
 				cmn.ShowAttrVals(validLocationTypes, filter)
 				return nil
 			}
-			return fmt.Errorf(gmess.ERRATTRNOTRECOGNIZED, args[2])
+			return fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[2])
 		}
 		if attr2 == "notes" {
 			if attr3 == "type" {
 				cmn.ShowAttrVals(validNotesContentTypes, filter)
 				return nil
 			}
-			return fmt.Errorf(gmess.ERRATTRNOTRECOGNIZED, args[2])
+			return fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[2])
 		}
 		if attr2 == "organization" {
 			if attr3 == "type" {
 				cmn.ShowAttrVals(validOrgTypes, filter)
 				return nil
 			}
-			return fmt.Errorf(gmess.ERRATTRNOTRECOGNIZED, args[2])
+			return fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[2])
 		}
 		if attr2 == "phone" {
 			if attr3 == "type" {
 				cmn.ShowAttrVals(validPhoneTypes, filter)
 				return nil
 			}
-			return fmt.Errorf(gmess.ERRATTRNOTRECOGNIZED, args[2])
+			return fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[2])
 		}
 		if attr2 == "posixaccount" {
 			if attr3 == "operatingsystemtype" {
 				cmn.ShowAttrVals(validOSTypes, filter)
 				return nil
 			}
-			return fmt.Errorf(gmess.ERRATTRNOTRECOGNIZED, args[2])
+			return fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[2])
 		}
 		if attr2 == "relation" {
 			if attr3 == "type" {
 				cmn.ShowAttrVals(validRelationTypes, filter)
 				return nil
 			}
-			return fmt.Errorf(gmess.ERRATTRNOTRECOGNIZED, args[2])
+			return fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[2])
 		}
 		if attr2 == "website" {
 			if attr3 == "type" {
 				cmn.ShowAttrVals(validWebsiteTypes, filter)
 				return nil
 			}
-			return fmt.Errorf(gmess.ERRATTRNOTRECOGNIZED, args[2])
+			return fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[2])
 		}
 		if attr2 == "im" {
 			if attr3 == "protocol" {
@@ -917,10 +917,10 @@ func ShowAttrValues(lenArgs int, args []string, filter string) error {
 				cmn.ShowAttrVals(validImTypes, filter)
 				return nil
 			}
-			return fmt.Errorf(gmess.ERRATTRNOTRECOGNIZED, args[2])
+			return fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[2])
 		}
 		// Attribute not recognized
-		return fmt.Errorf(gmess.ERRATTRNOTRECOGNIZED, args[1])
+		return fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[1])
 	}
 
 	return nil
@@ -979,7 +979,7 @@ func ShowFlagValues(lenArgs int, args []string, filter string) error {
 		case flag == "view-type":
 			cmn.ShowFlagValues(ValidViewTypes, filter)
 		default:
-			return fmt.Errorf(gmess.ERRFLAGNOTRECOGNIZED, args[1])
+			return fmt.Errorf(gmess.ERR_FLAGNOTRECOGNIZED, args[1])
 		}
 	}
 
@@ -1023,7 +1023,7 @@ func ShowSubAttrs(compAttr string, filter string) error {
 	case "website":
 		cmn.ShowAttrs(websiteAttrs, UserAttrMap, filter)
 	default:
-		return fmt.Errorf(gmess.ERRNOTCOMPOSITEATTR, compAttr)
+		return fmt.Errorf(gmess.ERR_NOTCOMPOSITEATTR, compAttr)
 	}
 
 	return nil

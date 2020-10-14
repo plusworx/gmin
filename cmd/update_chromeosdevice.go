@@ -89,7 +89,7 @@ func doUpdateCrOSDev(cmd *cobra.Command, args []string) error {
 		proj := strings.ToLower(projection)
 		ok := cmn.SliceContainsStr(cdevs.ValidProjections, proj)
 		if !ok {
-			err = fmt.Errorf(gmess.ERRINVALIDPROJECTIONTYPE, projection)
+			err = fmt.Errorf(gmess.ERR_INVALIDPROJECTIONTYPE, projection)
 			logger.Error(err)
 			return err
 		}
@@ -104,8 +104,8 @@ func doUpdateCrOSDev(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	logger.Infof(gmess.INFOCDEVUPDATED, updCrOSDev.DeviceId)
-	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFOCDEVUPDATED, updCrOSDev.DeviceId)))
+	logger.Infof(gmess.INFO_CDEVUPDATED, updCrOSDev.DeviceId)
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_CDEVUPDATED, updCrOSDev.DeviceId)))
 
 	logger.Debug("finished doUpdateCrOSDev()")
 	return nil

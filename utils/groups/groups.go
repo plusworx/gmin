@@ -232,7 +232,7 @@ func ShowFlagValues(lenArgs int, args []string, filter string) error {
 			uniqueSlice := cmn.UniqueStrSlice(valSlice)
 			cmn.ShowFlagValues(uniqueSlice, filter)
 		default:
-			return fmt.Errorf(gmess.ERRFLAGNOTRECOGNIZED, args[1])
+			return fmt.Errorf(gmess.ERR_FLAGNOTRECOGNIZED, args[1])
 		}
 	}
 	return nil

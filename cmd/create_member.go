@@ -84,8 +84,8 @@ func doCreateMember(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	logger.Infof(gmess.INFOMEMBERCREATED, newMember.Email, args[1])
-	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFOMEMBERCREATED, newMember.Email, args[1])))
+	logger.Infof(gmess.INFO_MEMBERCREATED, newMember.Email, args[1])
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_MEMBERCREATED, newMember.Email, args[1])))
 
 	logger.Debug("finished doCreateMember()")
 	return nil

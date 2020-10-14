@@ -107,7 +107,7 @@ func doBatchUpdUser(cmd *cobra.Command, args []string) error {
 	}
 
 	if inputFlgVal == "" && scanner == nil {
-		err := errors.New(gmess.ERRNOINPUTFILE)
+		err := errors.New(gmess.ERR_NOINPUTFILE)
 		logger.Error(err)
 		return err
 	}
@@ -121,7 +121,7 @@ func doBatchUpdUser(cmd *cobra.Command, args []string) error {
 
 	ok := cmn.SliceContainsStr(cmn.ValidFileFormats, lwrFmt)
 	if !ok {
-		err = fmt.Errorf(gmess.ERRINVALIDFILEFORMAT, formatFlgVal)
+		err = fmt.Errorf(gmess.ERR_INVALIDFILEFORMAT, formatFlgVal)
 		logger.Error(err)
 		return err
 	}
@@ -152,7 +152,7 @@ func doBatchUpdUser(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	default:
-		return fmt.Errorf(gmess.ERRINVALIDFILEFORMAT, formatFlgVal)
+		return fmt.Errorf(gmess.ERR_INVALIDFILEFORMAT, formatFlgVal)
 	}
 
 	err = bupduProcessObjects(ds, users, userKeys)
@@ -215,7 +215,7 @@ func bupduFromFileFactory(hdrMap map[int]string, userData []interface{}) (*admin
 		}
 		if attrName == "orgUnitPath" {
 			if attrVal == "" {
-				err := fmt.Errorf(gmess.ERREMPTYSTRING, attrName)
+				err := fmt.Errorf(gmess.ERR_EMPTYSTRING, attrName)
 				return nil, "", err
 			}
 			user.OrgUnitPath = attrVal
@@ -232,7 +232,7 @@ func bupduFromFileFactory(hdrMap map[int]string, userData []interface{}) (*admin
 		}
 		if attrName == "primaryEmail" {
 			if attrVal == "" {
-				err := fmt.Errorf(gmess.ERREMPTYSTRING, attrName)
+				err := fmt.Errorf(gmess.ERR_EMPTYSTRING, attrName)
 				return nil, "", err
 			}
 			user.PrimaryEmail = attrVal
@@ -266,7 +266,7 @@ func bupduFromFileFactory(hdrMap map[int]string, userData []interface{}) (*admin
 		}
 		if attrName == "userKey" {
 			if attrVal == "" {
-				err := fmt.Errorf(gmess.ERREMPTYSTRING, attrName)
+				err := fmt.Errorf(gmess.ERR_EMPTYSTRING, attrName)
 				return nil, "", err
 			}
 			userKey = attrVal
@@ -294,8 +294,8 @@ func bupduFromJSONFactory(ds *admin.Service, jsonData string) (*admin.User, stri
 	jsonBytes := []byte(jsonData)
 
 	if !json.Valid(jsonBytes) {
-		logger.Error(gmess.ERRINVALIDJSONATTR)
-		return nil, "", errors.New(gmess.ERRINVALIDJSONATTR)
+		logger.Error(gmess.ERR_INVALIDJSONATTR)
+		return nil, "", errors.New(gmess.ERR_INVALIDJSONATTR)
 	}
 
 	outStr, err := cmn.ParseInputAttrs(jsonBytes)
@@ -317,7 +317,7 @@ func bupduFromJSONFactory(ds *admin.Service, jsonData string) (*admin.User, stri
 	}
 
 	if usrKey.UserKey == "" {
-		err = errors.New(gmess.ERRNOJSONUSERKEY)
+		err = errors.New(gmess.ERR_NOJSONUSERKEY)
 		logger.Error(err)
 		return nil, "", err
 	}
@@ -417,7 +417,7 @@ func bupduProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([
 	)
 
 	if sheetrange == "" {
-		err := errors.New(gmess.ERRNOSHEETRANGE)
+		err := errors.New(gmess.ERR_NOSHEETRANGE)
 		logger.Error(err)
 		return nil, nil, err
 	}
@@ -436,7 +436,7 @@ func bupduProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([
 	}
 
 	if len(sValRange.Values) == 0 {
-		err = fmt.Errorf(gmess.ERRNOSHEETDATAFOUND, sheetID, sheetrange)
+		err = fmt.Errorf(gmess.ERR_NOSHEETDATAFOUND, sheetID, sheetrange)
 		logger.Error(err)
 		return nil, nil, err
 	}
@@ -552,18 +552,18 @@ func bupduUpdate(user *admin.User, wg *sync.WaitGroup, uuc *admin.UsersUpdateCal
 		var err error
 		_, err = uuc.Do()
 		if err == nil {
-			logger.Infof(gmess.INFOUSERUPDATED, userKey)
-			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFOUSERUPDATED, userKey)))
+			logger.Infof(gmess.INFO_USERUPDATED, userKey)
+			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_USERUPDATED, userKey)))
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(fmt.Errorf(gmess.ERRBATCHUSER, err.Error(), userKey))
+			return backoff.Permanent(fmt.Errorf(gmess.ERR_BATCHUSER, err.Error(), userKey))
 		}
 		// Log the retries
 		logger.Warnw(err.Error(),
 			"retrying", b.GetElapsedTime().String(),
 			"user", userKey)
-		return fmt.Errorf(gmess.ERRBATCHUSER, err.Error(), userKey)
+		return fmt.Errorf(gmess.ERR_BATCHUSER, err.Error(), userKey)
 	}, b)
 	if err != nil {
 		// Log final error

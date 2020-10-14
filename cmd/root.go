@@ -234,7 +234,7 @@ func setupLogging(loglevel string) (*zap.Logger, error) {
 	case "warn":
 		zconf.Level.SetLevel(zapcore.WarnLevel)
 	default:
-		return nil, fmt.Errorf(gmess.ERRINVALIDLOGLEVEL, loglevel)
+		return nil, fmt.Errorf(gmess.ERR_INVALIDLOGLEVEL, loglevel)
 	}
 
 	zconf.EncoderConfig.EncodeTime = zapcore.TimeEncoder(func(t time.Time, enc zapcore.PrimitiveArrayEncoder) {

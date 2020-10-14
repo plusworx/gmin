@@ -104,7 +104,7 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 		ob := strings.ToLower(orderBy)
 		ok := cmn.SliceContainsStr(grps.ValidOrderByStrs, ob)
 		if !ok {
-			err = fmt.Errorf(gmess.ERRINVALIDORDERBY, orderBy)
+			err = fmt.Errorf(gmess.ERR_INVALIDORDERBY, orderBy)
 			logger.Error(err)
 			return err
 		}
@@ -133,7 +133,7 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 		if domain != "" {
 			glc = grps.AddUserKey(glc, userKey)
 		} else {
-			err = errors.New(gmess.ERRNODOMAINWITHUSERKEY)
+			err = errors.New(gmess.ERR_NODOMAINWITHUSERKEY)
 			logger.Error(err)
 			return err
 		}
@@ -231,7 +231,7 @@ func doGrpPages(glc *admin.GroupsListCall, groups *admin.Groups, pages string) e
 	} else {
 		numPages, err := strconv.Atoi(pages)
 		if err != nil {
-			err = errors.New(gmess.ERRINVALIDPAGESARGUMENT)
+			err = errors.New(gmess.ERR_INVALIDPAGESARGUMENT)
 			logger.Error(err)
 			return err
 		}

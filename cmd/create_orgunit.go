@@ -86,8 +86,8 @@ func doCreateOU(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	logger.Infof(gmess.INFOOUCREATED, newOrgUnit.OrgUnitPath)
-	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFOOUCREATED, newOrgUnit.OrgUnitPath)))
+	logger.Infof(gmess.INFO_OUCREATED, newOrgUnit.OrgUnitPath)
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_OUCREATED, newOrgUnit.OrgUnitPath)))
 
 	logger.Debug("finished doCreateOU()")
 	return nil

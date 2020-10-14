@@ -349,7 +349,7 @@ func ShowAttrs(filter string) {
 // ShowAttrValues displays enumerated attribute values
 func ShowAttrValues(lenArgs int, args []string, filter string) error {
 	if lenArgs > 2 {
-		return fmt.Errorf(gmess.ERRTOOMANYARGSMAX2, "mobiledevice")
+		return fmt.Errorf(gmess.ERR_TOOMANYARGSMAX2, "mobiledevice")
 	}
 
 	if lenArgs == 1 {
@@ -362,7 +362,7 @@ func ShowAttrValues(lenArgs int, args []string, filter string) error {
 		if attr == "action" {
 			cmn.ShowAttrVals(ValidActions, filter)
 		} else {
-			return fmt.Errorf(gmess.ERRATTRNOTRECOGNIZED, args[1])
+			return fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[1])
 		}
 	}
 
@@ -420,7 +420,7 @@ func ShowFlagValues(lenArgs int, args []string, filter string) error {
 			uniqueSlice := cmn.UniqueStrSlice(valSlice)
 			cmn.ShowFlagValues(uniqueSlice, filter)
 		default:
-			return fmt.Errorf(gmess.ERRFLAGNOTRECOGNIZED, args[1])
+			return fmt.Errorf(gmess.ERR_FLAGNOTRECOGNIZED, args[1])
 		}
 	}
 
@@ -434,7 +434,7 @@ func ShowSubAttrs(compAttr string, filter string) error {
 	case "applications":
 		cmn.ShowAttrs(mobDevApplicationsAttrs, MobDevAttrMap, filter)
 	default:
-		return fmt.Errorf(gmess.ERRNOTCOMPOSITEATTR, compAttr)
+		return fmt.Errorf(gmess.ERR_NOTCOMPOSITEATTR, compAttr)
 	}
 
 	return nil

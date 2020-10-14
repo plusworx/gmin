@@ -164,7 +164,7 @@ func ShowFlagValues(lenArgs int, args []string, filter string) error {
 		case flag == "type":
 			cmn.ShowFlagValues(ValidSearchTypes, filter)
 		default:
-			return fmt.Errorf(gmess.ERRFLAGNOTRECOGNIZED, args[1])
+			return fmt.Errorf(gmess.ERR_FLAGNOTRECOGNIZED, args[1])
 		}
 	}
 

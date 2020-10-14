@@ -177,7 +177,7 @@ func doMemPages(mlc *admin.MembersListCall, members *admin.Members, pages string
 	} else {
 		numPages, err := strconv.Atoi(pages)
 		if err != nil {
-			err = errors.New(gmess.ERRINVALIDPAGESARGUMENT)
+			err = errors.New(gmess.ERR_INVALIDPAGESARGUMENT)
 			logger.Error(err)
 			return err
 		}

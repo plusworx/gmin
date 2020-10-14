@@ -50,20 +50,20 @@ func doSetConfig(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return err
 		}
-		fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFOCUSTOMERIDSET, customerID)))
+		fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_CUSTOMERIDSET, customerID)))
 	}
 
 	if adminEmail != "" {
 		ok := valid.IsEmail(adminEmail)
 		if !ok {
-			return fmt.Errorf(gmess.ERRINVALIDEMAILADDRESS, adminEmail)
+			return fmt.Errorf(gmess.ERR_INVALIDEMAILADDRESS, adminEmail)
 		}
 		viper.Set(cfg.CONFIGADMIN, adminEmail)
 		err := viper.WriteConfig()
 		if err != nil {
 			return err
 		}
-		fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFOADMINSET, adminEmail)))
+		fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_ADMINSET, adminEmail)))
 	}
 
 	if credentialPath != "" {
@@ -72,7 +72,7 @@ func doSetConfig(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return err
 		}
-		fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFOCREDENTIALPATHSET, credentialPath)))
+		fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_CREDENTIALPATHSET, credentialPath)))
 	}
 
 	if logPath != "" {
@@ -81,7 +81,7 @@ func doSetConfig(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return err
 		}
-		fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFOLOGPATHSET, logPath)))
+		fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_LOGPATHSET, logPath)))
 	}
 
 	if adminEmail == "" && customerID == "" && credentialPath == "" && logPath == "" {

@@ -40,44 +40,44 @@ func TestDoShowAttrs(t *testing.T) {
 			args:        []string{"grp"},
 			composite:   true,
 			queryable:   true,
-			expectedErr: gmess.ERRQUERYANDCOMPOSITEFLAGS,
+			expectedErr: gmess.ERR_QUERYANDCOMPOSITEFLAGS,
 		},
 		{
 			args:        []string{"user-alias", "email"},
 			queryable:   true,
-			expectedErr: gmess.ERRQUERYABLEFLAG1ARG,
+			expectedErr: gmess.ERR_QUERYABLEFLAG1ARG,
 		},
 		{
 			args:        []string{"unrecognized"},
-			expectedErr: fmt.Sprintf(gmess.ERROBJECTNOTFOUND, "unrecognized"),
+			expectedErr: fmt.Sprintf(gmess.ERR_OBJECTNOTFOUND, "unrecognized"),
 		},
 		{
 			args:        []string{"schema", "fieldspec", "numericindexingspec"},
 			composite:   true,
-			expectedErr: fmt.Sprintf(gmess.ERRNOCOMPOSITEATTRS, "numericindexingspec"),
+			expectedErr: fmt.Sprintf(gmess.ERR_NOCOMPOSITEATTRS, "numericindexingspec"),
 		},
 		{
 			args:        []string{"group", "email", "id"},
-			expectedErr: fmt.Sprintf(gmess.ERRNOCOMPOSITEATTRS, "group"),
+			expectedErr: fmt.Sprintf(gmess.ERR_NOCOMPOSITEATTRS, "group"),
 		},
 		{
 			args:        []string{"cdev", "recentusers"},
 			composite:   true,
-			expectedErr: fmt.Sprintf(gmess.ERRNOCOMPOSITEATTRS, "recentusers"),
+			expectedErr: fmt.Sprintf(gmess.ERR_NOCOMPOSITEATTRS, "recentusers"),
 		},
 		{
 			args:        []string{"ou", "name"},
-			expectedErr: fmt.Sprintf(gmess.ERRNOCOMPOSITEATTRS, "ou"),
+			expectedErr: fmt.Sprintf(gmess.ERR_NOCOMPOSITEATTRS, "ou"),
 		},
 		{
 			args:        []string{"ga"},
 			queryable:   true,
-			expectedErr: fmt.Sprintf(gmess.ERRNOQUERYABLEATTRS, "ga"),
+			expectedErr: fmt.Sprintf(gmess.ERR_NOQUERYABLEATTRS, "ga"),
 		},
 		{
 			args:        []string{"gmem"},
 			composite:   true,
-			expectedErr: fmt.Sprintf(gmess.ERRNOCOMPOSITEATTRS, "gmem"),
+			expectedErr: fmt.Sprintf(gmess.ERR_NOCOMPOSITEATTRS, "gmem"),
 		},
 	}
 

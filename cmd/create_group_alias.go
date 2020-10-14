@@ -65,8 +65,8 @@ func doCreateGroupAlias(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	logger.Infof(gmess.INFOGROUPALIASCREATED, newAlias.Alias, args[1])
-	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFOGROUPALIASCREATED, newAlias.Alias, args[1])))
+	logger.Infof(gmess.INFO_GROUPALIASCREATED, newAlias.Alias, args[1])
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_GROUPALIASCREATED, newAlias.Alias, args[1])))
 
 	logger.Debug("finished doCreateGroupAlias()")
 	return nil

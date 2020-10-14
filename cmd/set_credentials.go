@@ -66,7 +66,7 @@ func askForCredentialsFile(nFiles int) int {
 
 	_, err := fmt.Scanln(&response)
 	if err != nil {
-		fmt.Println(gmess.ERRFILENUMBERREQUIRED)
+		fmt.Println(gmess.ERR_FILENUMBERR_EQUIRED)
 		return askForCredentialsFile(nFiles)
 	}
 
@@ -76,12 +76,12 @@ func askForCredentialsFile(nFiles int) int {
 
 	fileNum, err := strconv.Atoi(response)
 	if err != nil {
-		fmt.Println(gmess.ERRINVALIDFILENUMBER)
+		fmt.Println(gmess.ERR_INVALIDFILENUMBER)
 		return askForCredentialsFile(nFiles)
 	}
 
 	if fileNum > nFiles || fileNum < 1 {
-		fmt.Println(gmess.ERRINVALIDFILENUMBER)
+		fmt.Println(gmess.ERR_INVALIDFILENUMBER)
 		return askForCredentialsFile(nFiles)
 	}
 
@@ -121,7 +121,7 @@ func doSetCredentials(cmd *cobra.Command, args []string) error {
 
 	fileNum := askForCredentialsFile(len(validFiles))
 	if fileNum == cmn.QUIT {
-		fmt.Println(gmess.INFOSETCOMMANDCANCELLED)
+		fmt.Println(gmess.INFO_SETCOMMANDCANCELLED)
 		return nil
 	}
 
@@ -149,7 +149,7 @@ func doSetCredentials(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFOCREDENTIALSSET, usedName)))
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_CREDENTIALSSET, usedName)))
 	return nil
 }
 

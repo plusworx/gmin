@@ -60,8 +60,8 @@ func doDeleteMember(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	logger.Infof(gmess.INFOMEMBERDELETED, args[0], args[1])
-	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFOMEMBERDELETED, args[0], args[1])))
+	logger.Infof(gmess.INFO_MEMBERDELETED, args[0], args[1])
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_MEMBERDELETED, args[0], args[1])))
 
 	logger.Debug("finished doDeleteMember()")
 	return nil

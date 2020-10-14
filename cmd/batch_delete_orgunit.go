@@ -89,7 +89,7 @@ func doBatchDelOrgUnit(cmd *cobra.Command, args []string) error {
 	}
 
 	if inputFlgVal == "" && scanner == nil {
-		err := errors.New(gmess.ERRNOINPUTFILE)
+		err := errors.New(gmess.ERR_NOINPUTFILE)
 		logger.Error(err)
 		return err
 	}
@@ -103,7 +103,7 @@ func doBatchDelOrgUnit(cmd *cobra.Command, args []string) error {
 
 	ok := cmn.SliceContainsStr(cmn.ValidFileFormats, lwrFmt)
 	if !ok {
-		err = fmt.Errorf(gmess.ERRINVALIDFILEFORMAT, formatFlgVal)
+		err = fmt.Errorf(gmess.ERR_INVALIDFILEFORMAT, formatFlgVal)
 		logger.Error(err)
 		return err
 	}
@@ -128,7 +128,7 @@ func doBatchDelOrgUnit(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	default:
-		return fmt.Errorf(gmess.ERRINVALIDFILEFORMAT, formatFlgVal)
+		return fmt.Errorf(gmess.ERR_INVALIDFILEFORMAT, formatFlgVal)
 	}
 
 	err = bdoProcessDeletion(ds, orgunits)
@@ -155,18 +155,18 @@ func bdoDelete(wg *sync.WaitGroup, oudc *admin.OrgunitsDeleteCall, ouPath string
 
 		err = oudc.Do()
 		if err == nil {
-			logger.Infof(gmess.INFOOUDELETED, ouPath)
-			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFOOUDELETED, ouPath)))
+			logger.Infof(gmess.INFO_OUDELETED, ouPath)
+			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_OUDELETED, ouPath)))
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(fmt.Errorf(gmess.ERRBATCHOU, err.Error(), ouPath))
+			return backoff.Permanent(fmt.Errorf(gmess.ERR_BATCHOU, err.Error(), ouPath))
 		}
 		// Log the retries
 		logger.Warnw(err.Error(),
 			"retrying", b.GetElapsedTime().String(),
 			"orgunit", ouPath)
-		return fmt.Errorf(gmess.ERRBATCHOU, err.Error(), ouPath)
+		return fmt.Errorf(gmess.ERR_BATCHOU, err.Error(), ouPath)
 	}, b)
 	if err != nil {
 		// Log final error
@@ -235,7 +235,7 @@ func bdoProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]s
 	var orgunits []string
 
 	if sheetrange == "" {
-		err := errors.New(gmess.ERRNOSHEETRANGE)
+		err := errors.New(gmess.ERR_NOSHEETRANGE)
 		logger.Error(err)
 		return nil, err
 	}
@@ -254,7 +254,7 @@ func bdoProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]s
 	}
 
 	if len(sValRange.Values) == 0 {
-		err = fmt.Errorf(gmess.ERRNOSHEETDATAFOUND, sheetID, sheetrange)
+		err = fmt.Errorf(gmess.ERR_NOSHEETDATAFOUND, sheetID, sheetrange)
 		logger.Error(err)
 		return nil, err
 	}

@@ -94,7 +94,7 @@ func doBatchCrtMember(cmd *cobra.Command, args []string) error {
 	}
 
 	if inputFlgVal == "" && scanner == nil {
-		err := errors.New(gmess.ERRNOINPUTFILE)
+		err := errors.New(gmess.ERR_NOINPUTFILE)
 		logger.Error(err)
 		return err
 	}
@@ -108,7 +108,7 @@ func doBatchCrtMember(cmd *cobra.Command, args []string) error {
 
 	ok := cmn.SliceContainsStr(cmn.ValidFileFormats, lwrFmt)
 	if !ok {
-		err = fmt.Errorf(gmess.ERRINVALIDFILEFORMAT, formatFlgVal)
+		err = fmt.Errorf(gmess.ERR_INVALIDFILEFORMAT, formatFlgVal)
 		logger.Error(err)
 		return err
 	}
@@ -141,7 +141,7 @@ func doBatchCrtMember(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	default:
-		return fmt.Errorf(gmess.ERRINVALIDFILEFORMAT, formatFlgVal)
+		return fmt.Errorf(gmess.ERR_INVALIDFILEFORMAT, formatFlgVal)
 	}
 
 	err = bcmProcessObjects(ds, groupKey, members)
@@ -167,19 +167,19 @@ func bcmCreate(member *admin.Member, groupKey string, wg *sync.WaitGroup, mic *a
 		var err error
 		newMember, err := mic.Do()
 		if err == nil {
-			logger.Infof(gmess.INFOMEMBERCREATED, newMember.Email, groupKey)
-			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFOMEMBERCREATED, newMember.Email, groupKey)))
+			logger.Infof(gmess.INFO_MEMBERCREATED, newMember.Email, groupKey)
+			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_MEMBERCREATED, newMember.Email, groupKey)))
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(fmt.Errorf(gmess.ERRBATCHMEMBER, err.Error(), member.Email, groupKey))
+			return backoff.Permanent(fmt.Errorf(gmess.ERR_BATCHMEMBER, err.Error(), member.Email, groupKey))
 		}
 		// Log the retries
 		logger.Warnw(err.Error(),
 			"retrying", b.GetElapsedTime().String(),
 			"group", groupKey,
 			"member", member.Email)
-		return fmt.Errorf(gmess.ERRBATCHMEMBER, err.Error(), member.Email, groupKey)
+		return fmt.Errorf(gmess.ERR_BATCHMEMBER, err.Error(), member.Email, groupKey)
 	}, b)
 	if err != nil {
 		// Log final error
@@ -211,7 +211,7 @@ func bcmFromFileFactory(hdrMap map[int]string, grpData []interface{}) (*admin.Me
 			member.DeliverySettings = validDS
 		case attrName == "email":
 			if attrVal == "" {
-				err := fmt.Errorf(gmess.ERREMPTYSTRING, attrName)
+				err := fmt.Errorf(gmess.ERR_EMPTYSTRING, attrName)
 				return nil, err
 			}
 			member.Email = attrVal
@@ -241,8 +241,8 @@ func bcmFromJSONFactory(ds *admin.Service, jsonData string) (*admin.Member, erro
 	jsonBytes := []byte(jsonData)
 
 	if !json.Valid(jsonBytes) {
-		logger.Error(gmess.ERRINVALIDJSONATTR)
-		return nil, errors.New(gmess.ERRINVALIDJSONATTR)
+		logger.Error(gmess.ERR_INVALIDJSONATTR)
+		return nil, errors.New(gmess.ERR_INVALIDJSONATTR)
 	}
 
 	outStr, err := cmn.ParseInputAttrs(jsonBytes)
@@ -346,7 +346,7 @@ func bcmProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]*
 	var members []*admin.Member
 
 	if sheetrange == "" {
-		err := errors.New(gmess.ERRNOSHEETRANGE)
+		err := errors.New(gmess.ERR_NOSHEETRANGE)
 		logger.Error(err)
 		return nil, err
 	}
@@ -365,7 +365,7 @@ func bcmProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]*
 	}
 
 	if len(sValRange.Values) == 0 {
-		err = fmt.Errorf(gmess.ERRNOSHEETDATAFOUND, sheetID, sheetrange)
+		err = fmt.Errorf(gmess.ERR_NOSHEETDATAFOUND, sheetID, sheetrange)
 		logger.Error(err)
 		return nil, err
 	}
@@ -441,7 +441,7 @@ func bcmProcessObjects(ds *admin.Service, groupKey string, members []*admin.Memb
 
 	for _, m := range members {
 		if m.Email == "" {
-			err := errors.New(gmess.ERRNOMEMBEREMAILADDRESS)
+			err := errors.New(gmess.ERR_NOMEMBEREMAILADDRESS)
 			logger.Error(err)
 			return err
 		}

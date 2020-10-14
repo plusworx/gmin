@@ -72,7 +72,7 @@ func askForConfigPath() string {
 	}
 
 	if err != nil {
-		fmt.Println(gmess.ERRINVALIDCONFIGPATH)
+		fmt.Println(gmess.ERR_INVALIDCONFIGPATH)
 		return askForConfigPath()
 	}
 
@@ -91,7 +91,7 @@ func askForCredentialPath() string {
 	}
 
 	if err != nil {
-		fmt.Println(gmess.ERRINVALIDCREDPATH)
+		fmt.Println(gmess.ERR_INVALIDCREDPATH)
 		return askForCredentialPath()
 	}
 
@@ -110,7 +110,7 @@ func askForCustomerID() string {
 	}
 
 	if err != nil {
-		fmt.Println(gmess.ERRINVALIDCUSTID)
+		fmt.Println(gmess.ERR_INVALIDCUSTID)
 		return askForCustomerID()
 	}
 
@@ -124,7 +124,7 @@ func askForEmail() string {
 
 	_, err := fmt.Scanln(&response)
 	if err != nil {
-		fmt.Println(gmess.ERRADMINEMAILREQUIRED)
+		fmt.Println(gmess.ERR_ADMINEMAILREQUIRED)
 		return askForEmail()
 	}
 
@@ -134,7 +134,7 @@ func askForEmail() string {
 
 	ok := valid.IsEmail(response)
 	if !ok {
-		fmt.Println(gmess.ERRINVALIDADMINEMAIL)
+		fmt.Println(gmess.ERR_INVALIDADMINEMAIL)
 		return askForEmail()
 	}
 
@@ -153,7 +153,7 @@ func askForLogPath() string {
 	}
 
 	if err != nil {
-		fmt.Println(gmess.ERRINVALIDLOGPATH)
+		fmt.Println(gmess.ERR_INVALIDLOGPATH)
 		return askForLogPath()
 	}
 
@@ -171,27 +171,27 @@ func doInit(cmd *cobra.Command, args []string) error {
 
 	answers.AdminEmail = askForEmail()
 	if answers.AdminEmail == "q" {
-		fmt.Println(gmess.INFOINITCANCELLED)
+		fmt.Println(gmess.INFO_INITCANCELLED)
 		return nil
 	}
 	answers.ConfigPath = askForConfigPath()
 	if answers.ConfigPath == "q" {
-		fmt.Println(gmess.INFOINITCANCELLED)
+		fmt.Println(gmess.INFO_INITCANCELLED)
 		return nil
 	}
 	answers.CredentialPath = askForCredentialPath()
 	if answers.CredentialPath == "q" {
-		fmt.Println(gmess.INFOINITCANCELLED)
+		fmt.Println(gmess.INFO_INITCANCELLED)
 		return nil
 	}
 	answers.CustomerID = askForCustomerID()
 	if answers.CustomerID == "q" {
-		fmt.Println(gmess.INFOINITCANCELLED)
+		fmt.Println(gmess.INFO_INITCANCELLED)
 		return nil
 	}
 	answers.LogPath = askForLogPath()
 	if answers.LogPath == "q" {
-		fmt.Println(gmess.INFOINITCANCELLED)
+		fmt.Println(gmess.INFO_INITCANCELLED)
 		return nil
 	}
 
@@ -237,7 +237,7 @@ func doInit(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Println(gmess.INFOINITCOMPLETED)
+	fmt.Println(gmess.INFO_INITCOMPLETED)
 
 	return nil
 }

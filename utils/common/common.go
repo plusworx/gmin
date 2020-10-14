@@ -139,7 +139,7 @@ func CreateDirectoryService(scope ...string) (*admin.Service, error) {
 
 	srv, err := admin.NewService(ctx, option.WithTokenSource(ts))
 	if err != nil {
-		return nil, fmt.Errorf(gmess.ERRCREATEDIRECTORYSERVICE, err)
+		return nil, fmt.Errorf(gmess.ERR_CREATEDIRECTORYSERVICE, err)
 	}
 	return srv, nil
 }
@@ -153,7 +153,7 @@ func CreateGroupSettingService(scope ...string) (*gset.Service, error) {
 
 	srv, err := gset.NewService(ctx, option.WithTokenSource(ts))
 	if err != nil {
-		return nil, fmt.Errorf(gmess.ERRCREATEGRPSETTINGSERVICE, err)
+		return nil, fmt.Errorf(gmess.ERR_CREATEGRPSETTINGSERVICE, err)
 	}
 	return srv, nil
 }
@@ -167,7 +167,7 @@ func CreateSheetService(scope ...string) (*sheet.Service, error) {
 
 	srv, err := sheet.NewService(ctx, option.WithTokenSource(ts))
 	if err != nil {
-		return nil, fmt.Errorf(gmess.ERRCREATESHEETSERVICE, err)
+		return nil, fmt.Errorf(gmess.ERR_CREATESHEETSERVICE, err)
 	}
 	return srv, nil
 }
@@ -230,7 +230,7 @@ func InputFromStdIn(inputFile string) (*bufio.Scanner, error) {
 		return nil, nil
 	}
 	if inputFile != "" {
-		err = errors.New(gmess.ERRPIPEINPUTFILECONFLICT)
+		err = errors.New(gmess.ERR_PIPEINPUTFILECONFLICT)
 		return nil, err
 	}
 	scanner := bufio.NewScanner(os.Stdin)

@@ -67,8 +67,8 @@ func doDeleteSchema(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	logger.Infof(gmess.INFOSCHEMADELETED, args[0])
-	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFOSCHEMADELETED, args[0])))
+	logger.Infof(gmess.INFO_SCHEMADELETED, args[0])
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_SCHEMADELETED, args[0])))
 
 	logger.Debug("finished doDeleteSchema()")
 	return nil

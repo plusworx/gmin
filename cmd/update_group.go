@@ -80,8 +80,8 @@ func doUpdateGroup(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	logger.Infof(gmess.INFOGROUPUPDATED, groupKey)
-	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFOGROUPUPDATED, groupKey)))
+	logger.Infof(gmess.INFO_GROUPUPDATED, groupKey)
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_GROUPUPDATED, groupKey)))
 
 	logger.Debug("finished doUpdateGroup()")
 	return nil

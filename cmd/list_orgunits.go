@@ -90,7 +90,7 @@ func doListOUs(cmd *cobra.Command, args []string) error {
 
 	ok := cmn.SliceContainsStr(ous.ValidSearchTypes, searchType)
 	if !ok {
-		err := fmt.Errorf(gmess.ERRINVALIDSEARCHTYPE, searchType)
+		err := fmt.Errorf(gmess.ERR_INVALIDSEARCHTYPE, searchType)
 		logger.Error(err)
 		return err
 	}
