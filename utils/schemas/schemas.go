@@ -34,10 +34,10 @@ import (
 )
 
 const (
-	// EndField is List call attribute string terminator
-	EndField = ")"
-	// StartSchemasField is List call attribute string prefix
-	StartSchemasField = "schemas("
+	// ENDFIELD is List call attribute string terminator
+	ENDFIELD = ")"
+	// STARTSCHEMASFIELD is List call attribute string prefix
+	STARTSCHEMASFIELD = "schemas("
 )
 
 // SchemaAttrMap provides lowercase mappings to valid admin.Schema attributes
@@ -188,7 +188,7 @@ func ShowCompAttrs(filter string) {
 func ShowSubCompAttrs(subAttr string, filter string) error {
 	lwrSubAttr := strings.ToLower(subAttr)
 	if lwrSubAttr != "fields" {
-		return fmt.Errorf(gmess.ErrInvalidSchemaCompAttr, subAttr)
+		return fmt.Errorf(gmess.ERRINVALIDSCHEMACOMPATTR, subAttr)
 	}
 
 	keys := make([]string, 0, len(schemaFieldSpecCompAttrs))
@@ -214,7 +214,7 @@ func ShowSubCompAttrs(subAttr string, filter string) error {
 func ShowSubAttrs(subAttr string, filter string) error {
 	subAttrVal := strings.ToLower(subAttr)
 	if subAttrVal != "fields" {
-		return fmt.Errorf(gmess.ErrNotCompositeAttr, subAttr)
+		return fmt.Errorf(gmess.ERRNOTCOMPOSITEATTR, subAttr)
 	}
 
 	for _, a := range fieldSpecAttrs {
@@ -244,7 +244,7 @@ func ShowSubAttrs(subAttr string, filter string) error {
 // ShowSubSubAttrs displays attributes of composite attributes
 func ShowSubSubAttrs(subAttr string) error {
 	if strings.ToLower(subAttr) != "numericindexingspec" {
-		return fmt.Errorf(gmess.ErrNotCompositeAttr, subAttr)
+		return fmt.Errorf(gmess.ERRNOTCOMPOSITEATTR, subAttr)
 	}
 
 	for _, a := range schemaFieldSpecNumIdxSpecAttrs {

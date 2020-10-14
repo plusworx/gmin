@@ -86,8 +86,8 @@ func doUpdateMember(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	logger.Infof(gmess.InfoMemberUpdated, memberKey, args[1])
-	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.InfoMemberUpdated, memberKey, args[1])))
+	logger.Infof(gmess.INFOMEMBERUPDATED, memberKey, args[1])
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFOMEMBERUPDATED, memberKey, args[1])))
 
 	logger.Debug("finished doUpdateMember()")
 	return nil

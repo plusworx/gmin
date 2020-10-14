@@ -62,7 +62,7 @@ user`,
 
 func doShowFlagVals(cmd *cobra.Command, args []string) error {
 	if len(args) > 2 {
-		return errors.New(gmess.ErrMax2ArgsExceeded)
+		return errors.New(gmess.ERRMAX2ARGSEXCEEDED)
 	}
 
 	object := strings.ToLower(args[0])
@@ -109,7 +109,7 @@ func doShowFlagVals(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	default:
-		return fmt.Errorf(gmess.ErrObjectNotRecognized, args[0])
+		return fmt.Errorf(gmess.ERROBJECTNOTRECOGNIZED, args[0])
 	}
 	return nil
 }

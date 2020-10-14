@@ -124,7 +124,7 @@ func doBatchMngGrpSettings(cmd *cobra.Command, args []string) error {
 	}
 
 	if inputFlgVal == "" && scanner == nil {
-		err := errors.New(gmess.ErrNoInputFile)
+		err := errors.New(gmess.ERRNOINPUTFILE)
 		logger.Error(err)
 		return err
 	}
@@ -138,7 +138,7 @@ func doBatchMngGrpSettings(cmd *cobra.Command, args []string) error {
 
 	ok := cmn.SliceContainsStr(cmn.ValidFileFormats, lwrFmt)
 	if !ok {
-		err = fmt.Errorf(gmess.ErrInvalidFileFormat, formatFlgVal)
+		err = fmt.Errorf(gmess.ERRINVALIDFILEFORMAT, formatFlgVal)
 		logger.Error(err)
 		return err
 	}
@@ -169,7 +169,7 @@ func doBatchMngGrpSettings(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	default:
-		return fmt.Errorf(gmess.ErrInvalidFileFormat, formatFlgVal)
+		return fmt.Errorf(gmess.ERRINVALIDFILEFORMAT, formatFlgVal)
 	}
 
 	err = bmnggProcessObjects(ds, groupKeys, grpSettings)
@@ -314,7 +314,7 @@ func bmnggFromFileFactory(hdrMap map[int]string, gsData []interface{}) (*gset.Gr
 		}
 		if lowerAttrName == "groupkey" {
 			if attrVal == "" {
-				err := fmt.Errorf(gmess.ErrEmptyString, attrName)
+				err := fmt.Errorf(gmess.ERREMPTYSTRING, attrName)
 				return nil, "", err
 			}
 			groupKey = attrVal
@@ -465,8 +465,8 @@ func bmnggFromJSONFactory(ds *gset.Service, jsonData string) (*gset.Groups, stri
 	jsonBytes := []byte(jsonData)
 
 	if !json.Valid(jsonBytes) {
-		logger.Error(gmess.ErrInvalidJSONAttr)
-		return nil, "", errors.New(gmess.ErrInvalidJSONAttr)
+		logger.Error(gmess.ERRINVALIDJSONATTR)
+		return nil, "", errors.New(gmess.ERRINVALIDJSONATTR)
 	}
 
 	outStr, err := cmn.ParseInputAttrs(jsonBytes)
@@ -488,7 +488,7 @@ func bmnggFromJSONFactory(ds *gset.Service, jsonData string) (*gset.Groups, stri
 	}
 
 	if grpKey.GroupKey == "" {
-		err = errors.New(gmess.ErrNoJSONGroupKey)
+		err = errors.New(gmess.ERRNOJSONGROUPKEY)
 		logger.Error(err)
 		return nil, "", err
 	}
@@ -581,18 +581,18 @@ func bmnggPerformUpdate(grpSetting *gset.Groups, groupKey string, wg *sync.WaitG
 		var err error
 		_, err = gsuc.Do()
 		if err == nil {
-			logger.Infof(gmess.InfoGroupSettingsChanged, groupKey)
-			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.InfoGroupSettingsChanged, groupKey)))
+			logger.Infof(gmess.INFOGROUPSETTINGSCHANGED, groupKey)
+			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFOGROUPSETTINGSCHANGED, groupKey)))
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(fmt.Errorf(gmess.ErrBatchGroupSettings, err.Error(), groupKey))
+			return backoff.Permanent(fmt.Errorf(gmess.ERRBATCHGROUPSETTINGS, err.Error(), groupKey))
 		}
 		// Log the retries
 		logger.Warnw(err.Error(),
 			"retrying", b.GetElapsedTime().String(),
 			"group", groupKey)
-		return fmt.Errorf(gmess.ErrBatchGroupSettings, err.Error(), groupKey)
+		return fmt.Errorf(gmess.ERRBATCHGROUPSETTINGS, err.Error(), groupKey)
 	}, b)
 	if err != nil {
 		// Log final error
@@ -690,7 +690,7 @@ func bmnggProcessGSheet(ds *gset.Service, sheetID string, sheetrange string) ([]
 	)
 
 	if sheetrange == "" {
-		err := errors.New(gmess.ErrNoSheetRange)
+		err := errors.New(gmess.ERRNOSHEETRANGE)
 		logger.Error(err)
 		return nil, nil, err
 	}
@@ -709,7 +709,7 @@ func bmnggProcessGSheet(ds *gset.Service, sheetID string, sheetrange string) ([]
 	}
 
 	if len(sValRange.Values) == 0 {
-		err = fmt.Errorf(gmess.ErrNoSheetDataFound, sheetID, sheetrange)
+		err = fmt.Errorf(gmess.ERRNOSHEETDATAFOUND, sheetID, sheetrange)
 		logger.Error(err)
 		return nil, nil, err
 	}
@@ -812,7 +812,7 @@ func bmnggReplyEmailVal(grpSettings *gset.Groups, attrValue string) error {
 	}
 	ok := valid.IsEmail(attrValue)
 	if !ok {
-		err := fmt.Errorf(gmess.ErrInvalidEmailAddress, attrValue)
+		err := fmt.Errorf(gmess.ERRINVALIDEMAILADDRESS, attrValue)
 		return err
 	}
 	grpSettings.CustomReplyTo = attrValue

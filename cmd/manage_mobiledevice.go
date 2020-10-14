@@ -61,7 +61,7 @@ func doManageMobDev(cmd *cobra.Command, args []string) error {
 	action := strings.ToLower(args[1])
 	ok := cmn.SliceContainsStr(mdevs.ValidActions, action)
 	if !ok {
-		err = fmt.Errorf(gmess.ErrInvalidActionType, args[1])
+		err = fmt.Errorf(gmess.ERRINVALIDACTIONTYPE, args[1])
 		logger.Error(err)
 		return err
 	}
@@ -82,8 +82,8 @@ func doManageMobDev(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	logger.Infof(gmess.InfoMDevActionPerformed, args[1], args[0])
-	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.InfoMDevActionPerformed, args[1], args[0])))
+	logger.Infof(gmess.INFOMDEVACTIONPERFORMED, args[1], args[0])
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFOMDEVACTIONPERFORMED, args[1], args[0])))
 
 	logger.Debug("finished doManageMobDev()")
 	return nil

@@ -66,22 +66,22 @@ func askForCredentialsFile(nFiles int) int {
 
 	_, err := fmt.Scanln(&response)
 	if err != nil {
-		fmt.Println(gmess.ErrFileNumberRequired)
+		fmt.Println(gmess.ERRFILENUMBERREQUIRED)
 		return askForCredentialsFile(nFiles)
 	}
 
 	if response == "q" {
-		return cmn.Quit
+		return cmn.QUIT
 	}
 
 	fileNum, err := strconv.Atoi(response)
 	if err != nil {
-		fmt.Println(gmess.ErrInvalidFileNumber)
+		fmt.Println(gmess.ERRINVALIDFILENUMBER)
 		return askForCredentialsFile(nFiles)
 	}
 
 	if fileNum > nFiles || fileNum < 1 {
-		fmt.Println(gmess.ErrInvalidFileNumber)
+		fmt.Println(gmess.ERRINVALIDFILENUMBER)
 		return askForCredentialsFile(nFiles)
 	}
 
@@ -94,7 +94,7 @@ func doSetCredentials(cmd *cobra.Command, args []string) error {
 		validFiles []os.FileInfo
 	)
 
-	credPath := viper.GetString(cfg.ConfigCredPath)
+	credPath := viper.GetString(cfg.CONFIGCREDPATH)
 
 	files, err := ioutil.ReadDir(credPath)
 	if err != nil {
@@ -110,7 +110,7 @@ func doSetCredentials(cmd *cobra.Command, args []string) error {
 
 	// Remove gmin_credentials from slice
 	for _, f := range justFiles {
-		if f.Name() != cfg.CredentialFile {
+		if f.Name() != cfg.CREDENTIALFILE {
 			validFiles = append(validFiles, f)
 		}
 	}
@@ -120,8 +120,8 @@ func doSetCredentials(cmd *cobra.Command, args []string) error {
 	}
 
 	fileNum := askForCredentialsFile(len(validFiles))
-	if fileNum == cmn.Quit {
-		fmt.Println(gmess.InfoSetCommandCancelled)
+	if fileNum == cmn.QUIT {
+		fmt.Println(gmess.INFOSETCOMMANDCANCELLED)
 		return nil
 	}
 
@@ -133,7 +133,7 @@ func doSetCredentials(cmd *cobra.Command, args []string) error {
 	}
 	defer newCred.Close()
 
-	gminCred, err := os.Create(filepath.Join(filepath.ToSlash(credPath), cfg.CredentialFile))
+	gminCred, err := os.Create(filepath.Join(filepath.ToSlash(credPath), cfg.CREDENTIALFILE))
 	if err != nil {
 		return err
 	}
@@ -149,7 +149,7 @@ func doSetCredentials(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.InfoCredentialsSet, usedName)))
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFOCREDENTIALSSET, usedName)))
 	return nil
 }
 

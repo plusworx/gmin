@@ -80,7 +80,7 @@ func doUpdateUser(cmd *cobra.Command, args []string) error {
 		emptyVals := cmn.EmptyValues{}
 		jsonBytes := []byte(attrs)
 		if !json.Valid(jsonBytes) {
-			err = errors.New(gmess.ErrInvalidJSONAttr)
+			err = errors.New(gmess.ERRINVALIDJSONATTR)
 			logger.Error(err)
 			return err
 		}
@@ -132,8 +132,8 @@ func doUpdateUser(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	logger.Infof(gmess.InfoUserUpdated, userKey)
-	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.InfoUserUpdated, userKey)))
+	logger.Infof(gmess.INFOUSERUPDATED, userKey)
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFOUSERUPDATED, userKey)))
 
 	logger.Debug("finished doUpdateUser()")
 	return nil
@@ -237,7 +237,7 @@ func uuEmailFlag(user *admin.User, flagName string) error {
 	logger.Debugw("starting uuEmailFlag()",
 		"flagName", flagName)
 	if userEmail == "" {
-		err := fmt.Errorf(gmess.ErrEmptyString, flagName)
+		err := fmt.Errorf(gmess.ERREMPTYSTRING, flagName)
 		return err
 	}
 	user.PrimaryEmail = userEmail
@@ -249,7 +249,7 @@ func uuFirstnameFlag(name *admin.UserName, flagName string) error {
 	logger.Debugw("starting uuFirstnameFlag()",
 		"flagName", flagName)
 	if firstName == "" {
-		err := fmt.Errorf(gmess.ErrEmptyString, flagName)
+		err := fmt.Errorf(gmess.ERREMPTYSTRING, flagName)
 		return err
 	}
 	name.GivenName = firstName
@@ -286,7 +286,7 @@ func uuLastnameFlag(name *admin.UserName, flagName string) error {
 	logger.Debugw("starting uuLastnameFlag()",
 		"flagName", flagName)
 	if lastName == "" {
-		err := fmt.Errorf(gmess.ErrEmptyString, flagName)
+		err := fmt.Errorf(gmess.ERREMPTYSTRING, flagName)
 		return err
 	}
 	name.FamilyName = lastName
@@ -298,7 +298,7 @@ func uuOrgunitFlag(user *admin.User, flagName string) error {
 	logger.Debugw("starting uuOrgunitFlag()",
 		"flagName", flagName)
 	if orgUnit == "" {
-		err := fmt.Errorf(gmess.ErrEmptyString, flagName)
+		err := fmt.Errorf(gmess.ERREMPTYSTRING, flagName)
 		if err != nil {
 			return err
 		}
@@ -312,7 +312,7 @@ func uuPasswordFlag(user *admin.User, flagName string) error {
 	logger.Debugw("starting uuPasswordFlag()",
 		"flagName", flagName)
 	if password == "" {
-		err := fmt.Errorf(gmess.ErrEmptyString, flagName)
+		err := fmt.Errorf(gmess.ERREMPTYSTRING, flagName)
 		return err
 	}
 	pwd, err := cmn.HashPassword(password)
@@ -320,7 +320,7 @@ func uuPasswordFlag(user *admin.User, flagName string) error {
 		return err
 	}
 	user.Password = pwd
-	user.HashFunction = cmn.HashFunction
+	user.HashFunction = cmn.HASHFUNCTION
 	logger.Debug("finished uuPasswordFlag()")
 	return nil
 }
@@ -329,7 +329,7 @@ func uuRecoveryEmailFlag(user *admin.User, flagName string) error {
 	logger.Debugw("starting uuRecoveryEmailFlag()",
 		"flagName", flagName)
 	if recoveryEmail == "" {
-		err := fmt.Errorf(gmess.ErrEmptyString, flagName)
+		err := fmt.Errorf(gmess.ERREMPTYSTRING, flagName)
 		return err
 	}
 	user.RecoveryEmail = recoveryEmail
@@ -341,11 +341,11 @@ func uuRecoveryPhoneFlag(user *admin.User, flagName string) error {
 	logger.Debugw("starting uuRecoveryPhoneFlag()",
 		"flagName", flagName)
 	if recoveryPhone == "" {
-		err := fmt.Errorf(gmess.ErrEmptyString, flagName)
+		err := fmt.Errorf(gmess.ERREMPTYSTRING, flagName)
 		return err
 	}
 	if string(recoveryPhone[0]) != "+" {
-		err := fmt.Errorf(gmess.ErrInvalidRecoveryPhone, recoveryPhone)
+		err := fmt.Errorf(gmess.ERRINVALIDRECOVERYPHONE, recoveryPhone)
 		return err
 	}
 	user.RecoveryPhone = recoveryPhone

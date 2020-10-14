@@ -53,10 +53,10 @@ import (
 )
 
 const (
-	// HashFunction specifies password hash function
-	HashFunction string = "SHA-1"
-	// Quit is used for terminating commands
-	Quit int = 99
+	// HASHFUNCTION specifies password hash function
+	HASHFUNCTION string = "SHA-1"
+	// QUIT is used for terminating commands
+	QUIT int = 99
 )
 
 // EmptyValues is struct used to extract ForceSendFields from JSON
@@ -139,7 +139,7 @@ func CreateDirectoryService(scope ...string) (*admin.Service, error) {
 
 	srv, err := admin.NewService(ctx, option.WithTokenSource(ts))
 	if err != nil {
-		return nil, fmt.Errorf(gmess.ErrCreateDirectoryService, err)
+		return nil, fmt.Errorf(gmess.ERRCREATEDIRECTORYSERVICE, err)
 	}
 	return srv, nil
 }
@@ -153,7 +153,7 @@ func CreateGroupSettingService(scope ...string) (*gset.Service, error) {
 
 	srv, err := gset.NewService(ctx, option.WithTokenSource(ts))
 	if err != nil {
-		return nil, fmt.Errorf(gmess.ErrCreateGrpSettingService, err)
+		return nil, fmt.Errorf(gmess.ERRCREATEGRPSETTINGSERVICE, err)
 	}
 	return srv, nil
 }
@@ -167,7 +167,7 @@ func CreateSheetService(scope ...string) (*sheet.Service, error) {
 
 	srv, err := sheet.NewService(ctx, option.WithTokenSource(ts))
 	if err != nil {
-		return nil, fmt.Errorf(gmess.ErrCreateSheetService, err)
+		return nil, fmt.Errorf(gmess.ERRCREATESHEETSERVICE, err)
 	}
 	return srv, nil
 }
@@ -230,7 +230,7 @@ func InputFromStdIn(inputFile string) (*bufio.Scanner, error) {
 		return nil, nil
 	}
 	if inputFile != "" {
-		err = errors.New(gmess.ErrPipeInputFileConflict)
+		err = errors.New(gmess.ERRPIPEINPUTFILECONFLICT)
 		return nil, err
 	}
 	scanner := bufio.NewScanner(os.Stdin)
@@ -302,7 +302,7 @@ func oauthSetup(scope []string) (context.Context, oauth2.TokenSource, error) {
 
 	ctx := context.Background()
 
-	ServiceAccountFilePath := filepath.Join(filepath.ToSlash(credentialPath), cfg.CredentialFile)
+	ServiceAccountFilePath := filepath.Join(filepath.ToSlash(credentialPath), cfg.CREDENTIALFILE)
 
 	jsonCredentials, err := ioutil.ReadFile(ServiceAccountFilePath)
 	if err != nil {

@@ -51,25 +51,25 @@ func doShowConfig(cmd *cobra.Command, args []string) error {
 	fmt.Println("Environment Variables")
 	fmt.Println("---------------------")
 
-	admin := os.Getenv(cfg.EnvPrefix + cfg.EnvVarAdmin)
-	credPath := os.Getenv(cfg.EnvPrefix + cfg.EnvVarCredPath)
-	custID := os.Getenv(cfg.EnvPrefix + cfg.EnvVarCustID)
-	logPath := os.Getenv(cfg.EnvPrefix + cfg.EnvVarLogPath)
+	admin := os.Getenv(cfg.ENVPREFIX + cfg.ENVVARADMIN)
+	credPath := os.Getenv(cfg.ENVPREFIX + cfg.ENVVARCREDPATH)
+	custID := os.Getenv(cfg.ENVPREFIX + cfg.ENVVARCUSTID)
+	logPath := os.Getenv(cfg.ENVPREFIX + cfg.ENVVARLOGPATH)
 
 	if admin == "" && credPath == "" && custID == "" && logPath == "" {
-		fmt.Println(gmess.InfoEnvVarsNotFound)
+		fmt.Println(gmess.INFOENVVARSNOTFOUND)
 	}
 	if admin != "" {
-		fmt.Println(cfg.EnvPrefix+cfg.EnvVarAdmin+":", admin)
+		fmt.Println(cfg.ENVPREFIX+cfg.ENVVARADMIN+":", admin)
 	}
 	if credPath != "" {
-		fmt.Println(cfg.EnvPrefix+cfg.EnvVarCredPath+":", credPath)
+		fmt.Println(cfg.ENVPREFIX+cfg.ENVVARCREDPATH+":", credPath)
 	}
 	if custID != "" {
-		fmt.Println(cfg.EnvPrefix+cfg.EnvVarCustID+":", custID)
+		fmt.Println(cfg.ENVPREFIX+cfg.ENVVARCUSTID+":", custID)
 	}
 	if logPath != "" {
-		fmt.Println(cfg.EnvPrefix+cfg.EnvVarLogPath+":", logPath)
+		fmt.Println(cfg.ENVPREFIX+cfg.ENVVARLOGPATH+":", logPath)
 	}
 
 	fmt.Println("")
@@ -79,7 +79,7 @@ func doShowConfig(cmd *cobra.Command, args []string) error {
 	cfgFilePath := viper.GetViper().ConfigFileUsed()
 	yamlFile, err := ioutil.ReadFile(cfgFilePath)
 	if err != nil {
-		fmt.Println(gmess.InfoConfigFileNotFound)
+		fmt.Println(gmess.INFOCONFIGFILENOTFOUND)
 	}
 
 	fmt.Println(string(yamlFile))

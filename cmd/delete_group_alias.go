@@ -60,8 +60,8 @@ func doDeleteGroupAlias(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	logger.Infof(gmess.InfoGroupAliasDeleted, args[0], args[1])
-	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.InfoGroupAliasDeleted, args[0], args[1])))
+	logger.Infof(gmess.INFOGROUPALIASDELETED, args[0], args[1])
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFOGROUPALIASDELETED, args[0], args[1])))
 
 	logger.Debug("finished doDeleteGroupAlias()")
 	return nil

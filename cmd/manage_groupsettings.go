@@ -80,8 +80,8 @@ func doManageGroupSettings(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	logger.Infof(gmess.InfoGroupSettingsChanged, newSettings.Email)
-	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.InfoGroupSettingsChanged, newSettings.Email)))
+	logger.Infof(gmess.INFOGROUPSETTINGSCHANGED, newSettings.Email)
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFOGROUPSETTINGSCHANGED, newSettings.Email)))
 
 	logger.Debug("finished doManageGroupSettings()")
 	return nil
@@ -542,7 +542,7 @@ func mgsReplyEmailFlag(grpSettings *gset.Groups) error {
 	}
 	ok := valid.IsEmail(replyEmail)
 	if !ok {
-		err := fmt.Errorf(gmess.ErrInvalidEmailAddress, replyEmail)
+		err := fmt.Errorf(gmess.ERRINVALIDEMAILADDRESS, replyEmail)
 		return err
 	}
 	grpSettings.CustomReplyTo = replyEmail

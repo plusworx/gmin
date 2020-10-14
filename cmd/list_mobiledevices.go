@@ -77,7 +77,7 @@ func doListMobDevs(cmd *cobra.Command, args []string) error {
 			logger.Error(err)
 			return err
 		}
-		formattedAttrs := mdevs.StartMobDevicesField + listAttrs + mdevs.EndField
+		formattedAttrs := mdevs.STARTMOBDEVICESFIELD + listAttrs + mdevs.ENDFIELD
 		listCall := mdevs.AddFields(mdlc, formattedAttrs)
 		mdlc = listCall.(*admin.MobiledevicesListCall)
 	}
@@ -86,7 +86,7 @@ func doListMobDevs(cmd *cobra.Command, args []string) error {
 		ob := strings.ToLower(orderBy)
 		ok := cmn.SliceContainsStr(mdevs.ValidOrderByStrs, ob)
 		if !ok {
-			err = fmt.Errorf(gmess.ErrInvalidOrderBy, orderBy)
+			err = fmt.Errorf(gmess.ERRINVALIDORDERBY, orderBy)
 			logger.Error(err)
 			return err
 		}
@@ -119,7 +119,7 @@ func doListMobDevs(cmd *cobra.Command, args []string) error {
 		proj := strings.ToLower(projection)
 		ok := cmn.SliceContainsStr(mdevs.ValidProjections, proj)
 		if !ok {
-			err = fmt.Errorf(gmess.ErrInvalidProjectionType, projection)
+			err = fmt.Errorf(gmess.ERRINVALIDPROJECTIONTYPE, projection)
 			logger.Error(err)
 			return err
 		}
@@ -230,7 +230,7 @@ func doMobDevPages(mdlc *admin.MobiledevicesListCall, mobdevs *admin.MobileDevic
 	} else {
 		numPages, err := strconv.Atoi(pages)
 		if err != nil {
-			err = errors.New(gmess.ErrInvalidPagesArgument)
+			err = errors.New(gmess.ERRINVALIDPAGESARGUMENT)
 			logger.Error(err)
 			return err
 		}

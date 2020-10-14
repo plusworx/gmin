@@ -101,7 +101,7 @@ func doBatchUpdOU(cmd *cobra.Command, args []string) error {
 	}
 
 	if inputFlgVal == "" && scanner == nil {
-		err := errors.New(gmess.ErrNoInputFile)
+		err := errors.New(gmess.ERRNOINPUTFILE)
 		logger.Error(err)
 		return err
 	}
@@ -115,7 +115,7 @@ func doBatchUpdOU(cmd *cobra.Command, args []string) error {
 
 	ok := cmn.SliceContainsStr(cmn.ValidFileFormats, lwrFmt)
 	if !ok {
-		err = fmt.Errorf(gmess.ErrInvalidFileFormat, formatFlgVal)
+		err = fmt.Errorf(gmess.ERRINVALIDFILEFORMAT, formatFlgVal)
 		logger.Error(err)
 		return err
 	}
@@ -146,7 +146,7 @@ func doBatchUpdOU(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	default:
-		return fmt.Errorf(gmess.ErrInvalidFileFormat, formatFlgVal)
+		return fmt.Errorf(gmess.ERRINVALIDFILEFORMAT, formatFlgVal)
 	}
 
 	err = buoProcessObjects(ds, orgunits, ouKeys)
@@ -190,19 +190,19 @@ func buoFromFileFactory(hdrMap map[int]string, ouData []interface{}) (*admin.Org
 			}
 		case attrName == "name":
 			if attrVal == "" {
-				err := fmt.Errorf(gmess.ErrEmptyString, attrName)
+				err := fmt.Errorf(gmess.ERREMPTYSTRING, attrName)
 				return nil, "", err
 			}
 			orgunit.Name = attrVal
 		case attrName == "parentOrgUnitPath":
 			if attrVal == "" {
-				err := fmt.Errorf(gmess.ErrEmptyString, attrName)
+				err := fmt.Errorf(gmess.ERREMPTYSTRING, attrName)
 				return nil, "", err
 			}
 			orgunit.ParentOrgUnitPath = attrVal
 		case attrName == "ouKey":
 			if attrVal == "" {
-				err := fmt.Errorf(gmess.ErrEmptyString, attrName)
+				err := fmt.Errorf(gmess.ERREMPTYSTRING, attrName)
 				return nil, "", err
 			}
 			ouKey = attrVal
@@ -226,8 +226,8 @@ func buoFromJSONFactory(ds *admin.Service, jsonData string) (*admin.OrgUnit, str
 	jsonBytes := []byte(jsonData)
 
 	if !json.Valid(jsonBytes) {
-		logger.Error(gmess.ErrInvalidJSONAttr)
-		return nil, "", errors.New(gmess.ErrInvalidJSONAttr)
+		logger.Error(gmess.ERRINVALIDJSONATTR)
+		return nil, "", errors.New(gmess.ERRINVALIDJSONATTR)
 	}
 
 	outStr, err := cmn.ParseInputAttrs(jsonBytes)
@@ -249,7 +249,7 @@ func buoFromJSONFactory(ds *admin.Service, jsonData string) (*admin.OrgUnit, str
 	}
 
 	if ouKey.OUKey == "" {
-		err = errors.New(gmess.ErrNoJSONOUKey)
+		err = errors.New(gmess.ERRNOJSONOUKEY)
 		logger.Error(err)
 		return nil, "", err
 	}
@@ -349,7 +349,7 @@ func buoProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]s
 	)
 
 	if sheetrange == "" {
-		err := errors.New(gmess.ErrNoSheetRange)
+		err := errors.New(gmess.ERRNOSHEETRANGE)
 		logger.Error(err)
 		return nil, nil, err
 	}
@@ -368,7 +368,7 @@ func buoProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]s
 	}
 
 	if len(sValRange.Values) == 0 {
-		err = fmt.Errorf(gmess.ErrNoSheetDataFound, sheetID, sheetrange)
+		err = fmt.Errorf(gmess.ERRNOSHEETDATAFOUND, sheetID, sheetrange)
 		logger.Error(err)
 		return nil, nil, err
 	}
@@ -484,18 +484,18 @@ func buoUpdate(orgunit *admin.OrgUnit, wg *sync.WaitGroup, ouuc *admin.OrgunitsU
 		var err error
 		_, err = ouuc.Do()
 		if err == nil {
-			logger.Infof(gmess.InfoOUUpdated, ouKey)
-			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.InfoOUUpdated, ouKey)))
+			logger.Infof(gmess.INFOOUUPDATED, ouKey)
+			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFOOUUPDATED, ouKey)))
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(fmt.Errorf(gmess.ErrBatchOU, err.Error(), ouKey))
+			return backoff.Permanent(fmt.Errorf(gmess.ERRBATCHOU, err.Error(), ouKey))
 		}
 		// Log the retries
 		logger.Warnw(err.Error(),
 			"retrying", b.GetElapsedTime().String(),
 			"orgunit", ouKey)
-		return fmt.Errorf(gmess.ErrBatchOU, err.Error(), ouKey)
+		return fmt.Errorf(gmess.ERRBATCHOU, err.Error(), ouKey)
 	}, b)
 	if err != nil {
 		// Log final error

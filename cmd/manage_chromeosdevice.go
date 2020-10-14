@@ -62,7 +62,7 @@ func doManageCrOSDev(cmd *cobra.Command, args []string) error {
 	action := strings.ToLower(args[1])
 	ok := cmn.SliceContainsStr(cdevs.ValidActions, action)
 	if !ok {
-		err = fmt.Errorf(gmess.ErrInvalidActionType, args[1])
+		err = fmt.Errorf(gmess.ERRINVALIDACTIONTYPE, args[1])
 		logger.Error(err)
 		return err
 	}
@@ -70,7 +70,7 @@ func doManageCrOSDev(cmd *cobra.Command, args []string) error {
 	devAction.Action = action
 	if action == "deprovision" {
 		if reason == "" {
-			err = errors.New(gmess.ErrNoDeprovisionReason)
+			err = errors.New(gmess.ERRNODEPROVISIONREASON)
 			logger.Error(err)
 			return err
 		}
@@ -91,8 +91,8 @@ func doManageCrOSDev(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	logger.Infof(gmess.InfoCDevActionPerformed, args[1], args[0])
-	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.InfoCDevActionPerformed, args[1], args[0])))
+	logger.Infof(gmess.INFOCDEVACTIONPERFORMED, args[1], args[0])
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFOCDEVACTIONPERFORMED, args[1], args[0])))
 
 	logger.Debug("finished doManageCrOSDev()")
 	return nil

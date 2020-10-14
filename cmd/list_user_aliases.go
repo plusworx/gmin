@@ -64,7 +64,7 @@ func doListUserAliases(cmd *cobra.Command, args []string) error {
 			logger.Error(err)
 			return err
 		}
-		formattedAttrs := uas.StartAliasesField + listAttrs + uas.EndField
+		formattedAttrs := uas.STARTALIASESFIELD + listAttrs + uas.ENDFIELD
 
 		ualc = uas.AddFields(ualc, formattedAttrs)
 	}

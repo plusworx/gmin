@@ -34,10 +34,10 @@ import (
 )
 
 const (
-	// EndField is List call attribute string terminator
-	EndField string = ")"
-	// StartChromeDevicesField is List call attribute string prefix
-	StartChromeDevicesField string = "chromeosdevices("
+	// ENDFIELD is List call attribute string terminator
+	ENDFIELD string = ")"
+	// STARTCHROMEDEVICESFIELD is List call attribute string prefix
+	STARTCHROMEDEVICESFIELD string = "chromeosdevices("
 )
 
 // ManagedDevice is struct to extract device data
@@ -468,7 +468,7 @@ func ShowAttrs(filter string) {
 // ShowAttrValues displays enumerated attribute values
 func ShowAttrValues(lenArgs int, args []string, filter string) error {
 	if lenArgs > 2 {
-		return fmt.Errorf(gmess.ErrTooManyArgsMax1, args[0])
+		return fmt.Errorf(gmess.ERRTOOMANYARGSMAX1, args[0])
 	}
 
 	if lenArgs == 1 {
@@ -481,7 +481,7 @@ func ShowAttrValues(lenArgs int, args []string, filter string) error {
 		if attr == "action" {
 			cmn.ShowAttrVals(ValidActions, filter)
 		} else {
-			return fmt.Errorf(gmess.ErrAttrNotRecognized, args[1])
+			return fmt.Errorf(gmess.ERRATTRNOTRECOGNIZED, args[1])
 		}
 	}
 
@@ -541,7 +541,7 @@ func ShowFlagValues(lenArgs int, args []string, filter string) error {
 			uniqueSlice := cmn.UniqueStrSlice(valSlice)
 			cmn.ShowFlagValues(uniqueSlice, filter)
 		default:
-			return fmt.Errorf(gmess.ErrFlagNotRecognized, args[1])
+			return fmt.Errorf(gmess.ERRFLAGNOTRECOGNIZED, args[1])
 		}
 	}
 
@@ -569,7 +569,7 @@ func ShowSubAttrs(compAttr string, filter string) error {
 	case "tpmversioninfo":
 		cmn.ShowAttrs(crOsDevTpmVersionInfoAttrs, CrOSDevAttrMap, filter)
 	default:
-		return fmt.Errorf(gmess.ErrNotCompositeAttr, compAttr)
+		return fmt.Errorf(gmess.ERRNOTCOMPOSITEATTR, compAttr)
 	}
 
 	return nil

@@ -61,7 +61,7 @@ func doShowAttrVals(cmd *cobra.Command, args []string) error {
 	lowerFilter := strings.ToLower(filter)
 
 	if lArgs > 3 {
-		return errors.New(gmess.ErrMax3ArgsExceeded)
+		return errors.New(gmess.ERRMAX3ARGSEXCEEDED)
 	}
 
 	object := strings.ToLower(args[0])
@@ -93,7 +93,7 @@ func doShowAttrVals(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	default:
-		return fmt.Errorf(gmess.ErrObjectNotRecognized, args[0])
+		return fmt.Errorf(gmess.ERROBJECTNOTRECOGNIZED, args[0])
 	}
 	return nil
 }

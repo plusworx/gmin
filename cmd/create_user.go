@@ -60,7 +60,7 @@ func doCreateUser(cmd *cobra.Command, args []string) error {
 
 	ok := valid.IsEmail(args[0])
 	if !ok {
-		err := fmt.Errorf(gmess.ErrInvalidEmailAddress, args[0])
+		err := fmt.Errorf(gmess.ERRINVALIDEMAILADDRESS, args[0])
 		logger.Error(err)
 		return err
 	}
@@ -86,7 +86,7 @@ func doCreateUser(cmd *cobra.Command, args []string) error {
 		emptyVals := cmn.EmptyValues{}
 		jsonBytes := []byte(attrs)
 		if !json.Valid(jsonBytes) {
-			err = errors.New(gmess.ErrInvalidJSONAttr)
+			err = errors.New(gmess.ERRINVALIDJSONATTR)
 			logger.Error(err)
 			return err
 		}
@@ -125,7 +125,7 @@ func doCreateUser(cmd *cobra.Command, args []string) error {
 				return err
 			}
 			attrUser.Password = pwd
-			attrUser.HashFunction = cmn.HashFunction
+			attrUser.HashFunction = cmn.HASHFUNCTION
 		}
 
 		err = mergo.Merge(user, attrUser)
@@ -136,7 +136,7 @@ func doCreateUser(cmd *cobra.Command, args []string) error {
 	}
 
 	if user.Name.GivenName == "" || user.Name.FamilyName == "" || user.Password == "" {
-		err = errors.New(gmess.ErrMissingUserData)
+		err = errors.New(gmess.ERRMISSINGUSERDATA)
 		logger.Error(err)
 		return err
 	}
@@ -154,8 +154,8 @@ func doCreateUser(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	logger.Infof(gmess.InfoUserCreated, newUser.PrimaryEmail)
-	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.InfoUserCreated, newUser.PrimaryEmail)))
+	logger.Infof(gmess.INFOUSERCREATED, newUser.PrimaryEmail)
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFOUSERCREATED, newUser.PrimaryEmail)))
 
 	logger.Debug("finished doCreateUser()")
 	return nil
@@ -184,7 +184,7 @@ func cuFirstnameFlag(name *admin.UserName, flagName string) error {
 	logger.Debugw("starting cuFirstnameFlag()",
 		"flagName", flagName)
 	if firstName == "" {
-		err := fmt.Errorf(gmess.ErrEmptyString, flagName)
+		err := fmt.Errorf(gmess.ERREMPTYSTRING, flagName)
 		if err != nil {
 			return err
 		}
@@ -219,7 +219,7 @@ func cuLastnameFlag(name *admin.UserName, flagName string) error {
 	logger.Debugw("starting cuLastnameFlag()",
 		"flagName", flagName)
 	if lastName == "" {
-		err := fmt.Errorf(gmess.ErrEmptyString, flagName)
+		err := fmt.Errorf(gmess.ERREMPTYSTRING, flagName)
 		if err != nil {
 			return err
 		}
@@ -233,7 +233,7 @@ func cuOrgunitFlag(user *admin.User, flagName string) error {
 	logger.Debugw("starting cuOrgunitFlag()",
 		"flagName", flagName)
 	if orgUnit == "" {
-		err := fmt.Errorf(gmess.ErrEmptyString, flagName)
+		err := fmt.Errorf(gmess.ERREMPTYSTRING, flagName)
 		if err != nil {
 			return err
 		}
@@ -247,7 +247,7 @@ func cuPasswordFlag(user *admin.User, flagName string) error {
 	logger.Debugw("starting cuPasswordFlag()",
 		"flagName", flagName)
 	if password == "" {
-		err := fmt.Errorf(gmess.ErrEmptyString, flagName)
+		err := fmt.Errorf(gmess.ERREMPTYSTRING, flagName)
 		return err
 	}
 	pwd, err := cmn.HashPassword(password)
@@ -255,7 +255,7 @@ func cuPasswordFlag(user *admin.User, flagName string) error {
 		return err
 	}
 	user.Password = pwd
-	user.HashFunction = cmn.HashFunction
+	user.HashFunction = cmn.HASHFUNCTION
 	logger.Debug("finished cuPasswordFlag()")
 	return nil
 }
@@ -264,7 +264,7 @@ func cuRecoveryEmailFlag(user *admin.User, flagName string) error {
 	logger.Debugw("starting cuRecoveryEmailFlag()",
 		"flagName", flagName)
 	if recoveryEmail == "" {
-		err := fmt.Errorf(gmess.ErrEmptyString, flagName)
+		err := fmt.Errorf(gmess.ERREMPTYSTRING, flagName)
 		return err
 	}
 	user.RecoveryEmail = recoveryEmail
@@ -276,11 +276,11 @@ func cuRecoveryPhoneFlag(user *admin.User, flagName string) error {
 	logger.Debugw("starting cuRecoveryPhoneFlag()",
 		"flagName", flagName)
 	if recoveryPhone == "" {
-		err := fmt.Errorf(gmess.ErrEmptyString, flagName)
+		err := fmt.Errorf(gmess.ERREMPTYSTRING, flagName)
 		return err
 	}
 	if string(recoveryPhone[0]) != "+" {
-		err := fmt.Errorf(gmess.ErrInvalidRecoveryPhone, recoveryPhone)
+		err := fmt.Errorf(gmess.ERRINVALIDRECOVERYPHONE, recoveryPhone)
 		return err
 	}
 	user.RecoveryPhone = recoveryPhone

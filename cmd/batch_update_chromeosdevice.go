@@ -99,7 +99,7 @@ func doBatchUpdCrOSDev(cmd *cobra.Command, args []string) error {
 	}
 
 	if inputFlgVal == "" && scanner == nil {
-		err := errors.New(gmess.ErrNoInputFile)
+		err := errors.New(gmess.ERRNOINPUTFILE)
 		logger.Error(err)
 		return err
 	}
@@ -113,7 +113,7 @@ func doBatchUpdCrOSDev(cmd *cobra.Command, args []string) error {
 
 	ok := cmn.SliceContainsStr(cmn.ValidFileFormats, lwrFmt)
 	if !ok {
-		err = fmt.Errorf(gmess.ErrInvalidFileFormat, formatFlgVal)
+		err = fmt.Errorf(gmess.ERRINVALIDFILEFORMAT, formatFlgVal)
 		logger.Error(err)
 		return err
 	}
@@ -144,7 +144,7 @@ func doBatchUpdCrOSDev(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	default:
-		return fmt.Errorf(gmess.ErrInvalidFileFormat, formatFlgVal)
+		return fmt.Errorf(gmess.ERRINVALIDFILEFORMAT, formatFlgVal)
 	}
 
 	err = bucProcessObjects(ds, crosdevs)
@@ -211,8 +211,8 @@ func bucFromJSONFactory(ds *admin.Service, jsonData string) (*admin.ChromeOsDevi
 	jsonBytes := []byte(jsonData)
 
 	if !json.Valid(jsonBytes) {
-		logger.Error(gmess.ErrInvalidJSONAttr)
-		return nil, errors.New(gmess.ErrInvalidJSONAttr)
+		logger.Error(gmess.ERRINVALIDJSONATTR)
+		return nil, errors.New(gmess.ERRINVALIDJSONATTR)
 	}
 
 	outStr, err := cmn.ParseInputAttrs(jsonBytes)
@@ -234,7 +234,7 @@ func bucFromJSONFactory(ds *admin.Service, jsonData string) (*admin.ChromeOsDevi
 	}
 
 	if crosdev.DeviceId == "" {
-		err = errors.New(gmess.ErrNoJSONDeviceID)
+		err = errors.New(gmess.ERRNOJSONDEVICEID)
 		logger.Error(err)
 		return nil, err
 	}
@@ -322,7 +322,7 @@ func bucProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]*
 	var crosdevs []*admin.ChromeOsDevice
 
 	if sheetrange == "" {
-		err := errors.New(gmess.ErrNoSheetRange)
+		err := errors.New(gmess.ERRNOSHEETRANGE)
 		logger.Error(err)
 		return nil, err
 	}
@@ -341,7 +341,7 @@ func bucProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]*
 	}
 
 	if len(sValRange.Values) == 0 {
-		err = fmt.Errorf(gmess.ErrNoSheetDataFound, sheetID, sheetrange)
+		err = fmt.Errorf(gmess.ERRNOSHEETDATAFOUND, sheetID, sheetrange)
 		logger.Error(err)
 		return nil, err
 	}
@@ -444,18 +444,18 @@ func bucUpdate(crosdev *admin.ChromeOsDevice, wg *sync.WaitGroup, cduc *admin.Ch
 		var err error
 		_, err = cduc.Do()
 		if err == nil {
-			logger.Infof(gmess.InfoCDevUpdated, crosdev.DeviceId)
-			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.InfoCDevUpdated, crosdev.DeviceId)))
+			logger.Infof(gmess.INFOCDEVUPDATED, crosdev.DeviceId)
+			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFOCDEVUPDATED, crosdev.DeviceId)))
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(fmt.Errorf(gmess.ErrBatchChromeOSDevice, err.Error(), crosdev.DeviceId))
+			return backoff.Permanent(fmt.Errorf(gmess.ERRBATCHCHROMEOSDEVICE, err.Error(), crosdev.DeviceId))
 		}
 		// Log the retries
 		logger.Warnw(err.Error(),
 			"retrying", b.GetElapsedTime().String(),
 			"ChromeOS device", crosdev.DeviceId)
-		return fmt.Errorf(gmess.ErrBatchChromeOSDevice, err.Error(), crosdev.DeviceId)
+		return fmt.Errorf(gmess.ERRBATCHCHROMEOSDEVICE, err.Error(), crosdev.DeviceId)
 	}, b)
 	if err != nil {
 		// Log final error

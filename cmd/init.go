@@ -72,7 +72,7 @@ func askForConfigPath() string {
 	}
 
 	if err != nil {
-		fmt.Println(gmess.ErrInvalidConfigPath)
+		fmt.Println(gmess.ERRINVALIDCONFIGPATH)
 		return askForConfigPath()
 	}
 
@@ -91,7 +91,7 @@ func askForCredentialPath() string {
 	}
 
 	if err != nil {
-		fmt.Println(gmess.ErrInvalidCredPath)
+		fmt.Println(gmess.ERRINVALIDCREDPATH)
 		return askForCredentialPath()
 	}
 
@@ -110,7 +110,7 @@ func askForCustomerID() string {
 	}
 
 	if err != nil {
-		fmt.Println(gmess.ErrInvalidCustID)
+		fmt.Println(gmess.ERRINVALIDCUSTID)
 		return askForCustomerID()
 	}
 
@@ -124,7 +124,7 @@ func askForEmail() string {
 
 	_, err := fmt.Scanln(&response)
 	if err != nil {
-		fmt.Println(gmess.ErrAdminEmailRequired)
+		fmt.Println(gmess.ERRADMINEMAILREQUIRED)
 		return askForEmail()
 	}
 
@@ -134,7 +134,7 @@ func askForEmail() string {
 
 	ok := valid.IsEmail(response)
 	if !ok {
-		fmt.Println(gmess.ErrInvalidAdminEmail)
+		fmt.Println(gmess.ERRINVALIDADMINEMAIL)
 		return askForEmail()
 	}
 
@@ -153,7 +153,7 @@ func askForLogPath() string {
 	}
 
 	if err != nil {
-		fmt.Println(gmess.ErrInvalidLogPath)
+		fmt.Println(gmess.ERRINVALIDLOGPATH)
 		return askForLogPath()
 	}
 
@@ -171,27 +171,27 @@ func doInit(cmd *cobra.Command, args []string) error {
 
 	answers.AdminEmail = askForEmail()
 	if answers.AdminEmail == "q" {
-		fmt.Println(gmess.InfoInitCancelled)
+		fmt.Println(gmess.INFOINITCANCELLED)
 		return nil
 	}
 	answers.ConfigPath = askForConfigPath()
 	if answers.ConfigPath == "q" {
-		fmt.Println(gmess.InfoInitCancelled)
+		fmt.Println(gmess.INFOINITCANCELLED)
 		return nil
 	}
 	answers.CredentialPath = askForCredentialPath()
 	if answers.CredentialPath == "q" {
-		fmt.Println(gmess.InfoInitCancelled)
+		fmt.Println(gmess.INFOINITCANCELLED)
 		return nil
 	}
 	answers.CustomerID = askForCustomerID()
 	if answers.CustomerID == "q" {
-		fmt.Println(gmess.InfoInitCancelled)
+		fmt.Println(gmess.INFOINITCANCELLED)
 		return nil
 	}
 	answers.LogPath = askForLogPath()
 	if answers.LogPath == "q" {
-		fmt.Println(gmess.InfoInitCancelled)
+		fmt.Println(gmess.INFOINITCANCELLED)
 		return nil
 	}
 
@@ -212,7 +212,7 @@ func doInit(cmd *cobra.Command, args []string) error {
 	}
 
 	if answers.CustomerID == "" {
-		answers.CustomerID = cfg.DefaultCustID
+		answers.CustomerID = cfg.DEFAULTCUSTID
 	}
 
 	if answers.LogPath == "" {
@@ -220,13 +220,13 @@ func doInit(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			log.Fatal(err)
 		}
-		answers.LogPath = filepath.Join(filepath.ToSlash(hmDir), cfg.LogFile)
+		answers.LogPath = filepath.Join(filepath.ToSlash(hmDir), cfg.LOGFILE)
 	}
 
 	cfgFile := cfg.File{Administrator: answers.AdminEmail, CredentialPath: answers.CredentialPath,
 		CustomerID: answers.CustomerID, LogPath: answers.LogPath}
 
-	path := filepath.Join(filepath.ToSlash(answers.ConfigPath), cfg.ConfigFileName)
+	path := filepath.Join(filepath.ToSlash(answers.ConfigPath), cfg.CONFIGFILENAME)
 
 	cfgYaml, err := yaml.Marshal(&cfgFile)
 	if err != nil {
@@ -237,7 +237,7 @@ func doInit(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Println(gmess.InfoInitCompleted)
+	fmt.Println(gmess.INFOINITCOMPLETED)
 
 	return nil
 }

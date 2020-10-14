@@ -34,10 +34,10 @@ import (
 )
 
 const (
-	// EndField is List call attribute string terminator
-	EndField string = ")"
-	// StartOrgUnitsField is List call attribute string prefix
-	StartOrgUnitsField string = "organizationUnits("
+	// ENDFIELD is List call attribute string terminator
+	ENDFIELD string = ")"
+	// STARTORGUNITSFIELD is List call attribute string prefix
+	STARTORGUNITSFIELD string = "organizationUnits("
 )
 
 var flagValues = []string{
@@ -164,7 +164,7 @@ func ShowFlagValues(lenArgs int, args []string, filter string) error {
 		case flag == "type":
 			cmn.ShowFlagValues(ValidSearchTypes, filter)
 		default:
-			return fmt.Errorf(gmess.ErrFlagNotRecognized, args[1])
+			return fmt.Errorf(gmess.ERRFLAGNOTRECOGNIZED, args[1])
 		}
 	}
 

@@ -41,10 +41,10 @@ var whoamiCmd = &cobra.Command{
 func doWhoami(cmd *cobra.Command, args []string) error {
 	var err error
 
-	email := os.Getenv(cfg.EnvPrefix + cfg.EnvVarAdmin)
+	email := os.Getenv(cfg.ENVPREFIX + cfg.ENVVARADMIN)
 
 	if email == "" {
-		email, err = cfg.ReadConfigString(cfg.ConfigAdmin)
+		email, err = cfg.ReadConfigString(cfg.CONFIGADMIN)
 		if err != nil {
 			return err
 		}

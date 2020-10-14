@@ -70,7 +70,7 @@ func doListMembers(cmd *cobra.Command, args []string) error {
 			logger.Error(err)
 			return err
 		}
-		formattedAttrs := mems.StartMembersField + listAttrs + mems.EndField
+		formattedAttrs := mems.STARTMEMBERSFIELD + listAttrs + mems.ENDFIELD
 
 		listCall := mems.AddFields(mlc, formattedAttrs)
 		mlc = listCall.(*admin.MembersListCall)
@@ -177,7 +177,7 @@ func doMemPages(mlc *admin.MembersListCall, members *admin.Members, pages string
 	} else {
 		numPages, err := strconv.Atoi(pages)
 		if err != nil {
-			err = errors.New(gmess.ErrInvalidPagesArgument)
+			err = errors.New(gmess.ERRINVALIDPAGESARGUMENT)
 			logger.Error(err)
 			return err
 		}

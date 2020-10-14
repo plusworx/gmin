@@ -29,34 +29,34 @@ import (
 )
 
 const (
-	// ConfigAdmin is config file administrator variable name
-	ConfigAdmin string = "administrator"
-	// ConfigCustID is config file customer id variable name
-	ConfigCustID string = "customerid"
-	// ConfigCredPath is config file credential path variable name
-	ConfigCredPath string = "credentialpath"
-	// ConfigFileName is configuration file name
-	ConfigFileName string = ".gmin.yaml"
-	// ConfigFilePrefix is name of gmin config file without the .yaml suffix
-	ConfigFilePrefix string = ".gmin"
-	// ConfigLogPath is config file log path variable name
-	ConfigLogPath string = "logpath"
-	// CredentialFile service account credentials file name
-	CredentialFile string = "gmin_credentials"
-	// DefaultCustID is default customer id value
-	DefaultCustID string = "my_customer"
-	// EnvPrefix is prefix for gmin environment variables
-	EnvPrefix string = "GMIN"
-	// EnvVarAdmin is gmin administrator environment variable suffix
-	EnvVarAdmin string = "_ADMINISTRATOR"
-	// EnvVarCredPath is gmin credential path environment variable suffix
-	EnvVarCredPath string = "_CREDENTIALPATH"
-	// EnvVarCustID is gmin custormer id environment variable suffix
-	EnvVarCustID string = "_CUSTOMERID"
-	// EnvVarLogPath is gmin log path environment variable suffix
-	EnvVarLogPath string = "_LOGPATH"
-	// LogFile is default gmin log file name
-	LogFile string = "gmin.log"
+	// CONFIGADMIN is config file administrator variable name
+	CONFIGADMIN string = "administrator"
+	// CONFIGCUSTID is config file customer id variable name
+	CONFIGCUSTID string = "customerid"
+	// CONFIGCREDPATH is config file credential path variable name
+	CONFIGCREDPATH string = "credentialpath"
+	// CONFIGFILENAME is configuration file name
+	CONFIGFILENAME string = ".gmin.yaml"
+	// CONFIGFILEPREFIX is name of gmin config file without the .yaml suffix
+	CONFIGFILEPREFIX string = ".gmin"
+	// CONFIGLOGPATH is config file log path variable name
+	CONFIGLOGPATH string = "logpath"
+	// CREDENTIALFILE service account credentials file name
+	CREDENTIALFILE string = "gmin_credentials"
+	// DEFAULTCUSTID is default customer id value
+	DEFAULTCUSTID string = "my_customer"
+	// ENVPREFIX is prefix for gmin environment variables
+	ENVPREFIX string = "GMIN"
+	// ENVVARADMIN is gmin administrator environment variable suffix
+	ENVVARADMIN string = "_ADMINISTRATOR"
+	// ENVVARCREDPATH is gmin credential path environment variable suffix
+	ENVVARCREDPATH string = "_CREDENTIALPATH"
+	// ENVVARCUSTID is gmin custormer id environment variable suffix
+	ENVVARCUSTID string = "_CUSTOMERID"
+	// ENVVARLOGPATH is gmin log path environment variable suffix
+	ENVVARLOGPATH string = "_LOGPATH"
+	// LOGFILE is default gmin log file name
+	LOGFILE string = "gmin.log"
 )
 
 // File holds configuration data

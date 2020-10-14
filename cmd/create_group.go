@@ -73,8 +73,8 @@ func doCreateGroup(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	logger.Infof(gmess.InfoGroupCreated, newGroup.Email)
-	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.InfoGroupCreated, newGroup.Email)))
+	logger.Infof(gmess.INFOGROUPCREATED, newGroup.Email)
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFOGROUPCREATED, newGroup.Email)))
 
 	logger.Debug("finished doCreateGroup()")
 	return nil

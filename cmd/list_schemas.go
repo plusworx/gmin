@@ -74,7 +74,7 @@ func doListSchemas(cmd *cobra.Command, args []string) error {
 			logger.Error(err)
 			return err
 		}
-		formattedAttrs := scs.StartSchemasField + listAttrs + scs.EndField
+		formattedAttrs := scs.STARTSCHEMASFIELD + listAttrs + scs.ENDFIELD
 
 		listCall := scs.AddFields(sclc, formattedAttrs)
 		sclc = listCall.(*admin.SchemasListCall)

@@ -72,8 +72,8 @@ func doMoveCrOSDev(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	logger.Infof(gmess.InfoCDevMovePerformed, args[0], args[1])
-	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.InfoCDevMovePerformed, args[0], args[1])))
+	logger.Infof(gmess.INFOCDEVMOVEPERFORMED, args[0], args[1])
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFOCDEVMOVEPERFORMED, args[0], args[1])))
 
 	logger.Debug("finished doMoveCrOSDev()")
 	return nil

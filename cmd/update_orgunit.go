@@ -86,8 +86,8 @@ func doUpdateOU(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	logger.Infof(gmess.InfoOUUpdated, args[0])
-	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.InfoOUUpdated, args[0])))
+	logger.Infof(gmess.INFOOUUPDATED, args[0])
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFOOUUPDATED, args[0])))
 
 	logger.Debug("finished doUpdateOU()")
 	return nil
@@ -153,7 +153,7 @@ func uoNameFlag(orgunit *admin.OrgUnit, flagName string) error {
 	logger.Debugw("starting uoNameFlag()",
 		"flagName", flagName)
 	if orgUnitName == "" {
-		err := fmt.Errorf(gmess.ErrEmptyString, flagName)
+		err := fmt.Errorf(gmess.ERREMPTYSTRING, flagName)
 		if err != nil {
 			return err
 		}
@@ -167,7 +167,7 @@ func uoParentPathFlag(orgunit *admin.OrgUnit, flagName string) error {
 	logger.Debugw("starting uoParentPathFlag()",
 		"flagName", flagName)
 	if parentOUPath == "" {
-		err := fmt.Errorf(gmess.ErrEmptyString, flagName)
+		err := fmt.Errorf(gmess.ERREMPTYSTRING, flagName)
 		if err != nil {
 			return err
 		}

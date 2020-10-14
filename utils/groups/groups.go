@@ -34,10 +34,10 @@ import (
 )
 
 const (
-	// EndField is List call attribute string terminator
-	EndField string = ")"
-	// StartGroupsField is List call attribute string prefix
-	StartGroupsField string = "groups("
+	// ENDFIELD is List call attribute string terminator
+	ENDFIELD string = ")"
+	// STARTGROUPSFIELD is List call attribute string prefix
+	STARTGROUPSFIELD string = "groups("
 )
 
 // Key is struct used to extract groupKey
@@ -232,7 +232,7 @@ func ShowFlagValues(lenArgs int, args []string, filter string) error {
 			uniqueSlice := cmn.UniqueStrSlice(valSlice)
 			cmn.ShowFlagValues(uniqueSlice, filter)
 		default:
-			return fmt.Errorf(gmess.ErrFlagNotRecognized, args[1])
+			return fmt.Errorf(gmess.ERRFLAGNOTRECOGNIZED, args[1])
 		}
 	}
 	return nil

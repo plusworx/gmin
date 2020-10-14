@@ -79,7 +79,7 @@ func doGetUser(cmd *cobra.Command, args []string) error {
 		proj := strings.ToLower(projection)
 		ok := cmn.SliceContainsStr(usrs.ValidProjections, proj)
 		if !ok {
-			err = fmt.Errorf(gmess.ErrInvalidProjectionType, projection)
+			err = fmt.Errorf(gmess.ERRINVALIDPROJECTIONTYPE, projection)
 			logger.Error(err)
 			return err
 		}
@@ -94,7 +94,7 @@ func doGetUser(cmd *cobra.Command, args []string) error {
 				getCall := usrs.AddCustomFieldMask(ugc, mask)
 				ugc = getCall.(*admin.UsersGetCall)
 			} else {
-				err = errors.New(gmess.ErrNoCustomFieldMask)
+				err = errors.New(gmess.ERRNOCUSTOMFIELDMASK)
 				logger.Error(err)
 				return err
 			}
@@ -105,7 +105,7 @@ func doGetUser(cmd *cobra.Command, args []string) error {
 		vt := strings.ToLower(viewType)
 		ok := cmn.SliceContainsStr(usrs.ValidViewTypes, vt)
 		if !ok {
-			err = fmt.Errorf(gmess.ErrInvalidViewType, viewType)
+			err = fmt.Errorf(gmess.ERRINVALIDVIEWTYPE, viewType)
 			logger.Error(err)
 			return err
 		}

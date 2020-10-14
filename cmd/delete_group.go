@@ -60,8 +60,8 @@ func doDeleteGroup(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	logger.Infof(gmess.InfoGroupDeleted, args[0])
-	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.InfoGroupDeleted, args[0])))
+	logger.Infof(gmess.INFOGROUPDELETED, args[0])
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFOGROUPDELETED, args[0])))
 
 	logger.Debug("finished doDeleteGroup()")
 	return nil

@@ -88,7 +88,7 @@ func doBatchDelGroup(cmd *cobra.Command, args []string) error {
 	}
 
 	if inputFlgVal == "" && scanner == nil {
-		err := errors.New(gmess.ErrNoInputFile)
+		err := errors.New(gmess.ERRNOINPUTFILE)
 		logger.Error(err)
 		return err
 	}
@@ -102,7 +102,7 @@ func doBatchDelGroup(cmd *cobra.Command, args []string) error {
 
 	ok := cmn.SliceContainsStr(cmn.ValidFileFormats, lwrFmt)
 	if !ok {
-		err = fmt.Errorf(gmess.ErrInvalidFileFormat, formatFlgVal)
+		err = fmt.Errorf(gmess.ERRINVALIDFILEFORMAT, formatFlgVal)
 		logger.Error(err)
 		return err
 	}
@@ -127,7 +127,7 @@ func doBatchDelGroup(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	default:
-		return fmt.Errorf(gmess.ErrInvalidFileFormat, formatFlgVal)
+		return fmt.Errorf(gmess.ERRINVALIDFILEFORMAT, formatFlgVal)
 	}
 
 	err = bdgProcessDeletion(ds, groups)
@@ -154,18 +154,18 @@ func bdgDelete(wg *sync.WaitGroup, gdc *admin.GroupsDeleteCall, group string) {
 
 		err = gdc.Do()
 		if err == nil {
-			logger.Infof(gmess.InfoGroupDeleted, group)
-			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.InfoGroupDeleted, group)))
+			logger.Infof(gmess.INFOGROUPDELETED, group)
+			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFOGROUPDELETED, group)))
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(fmt.Errorf(gmess.ErrBatchGroup, err.Error(), group))
+			return backoff.Permanent(fmt.Errorf(gmess.ERRBATCHGROUP, err.Error(), group))
 		}
 		// Log the retries
 		logger.Warnw(err.Error(),
 			"retrying", b.GetElapsedTime().String(),
 			"group", group)
-		return fmt.Errorf(gmess.ErrBatchGroup, err.Error(), group)
+		return fmt.Errorf(gmess.ERRBATCHGROUP, err.Error(), group)
 	}, b)
 	if err != nil {
 		// Log final error
@@ -220,7 +220,7 @@ func bdgProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]s
 	var groups []string
 
 	if sheetrange == "" {
-		err := errors.New(gmess.ErrNoSheetRange)
+		err := errors.New(gmess.ERRNOSHEETRANGE)
 		logger.Error(err)
 		return nil, err
 	}
@@ -239,7 +239,7 @@ func bdgProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]s
 	}
 
 	if len(sValRange.Values) == 0 {
-		err = fmt.Errorf(gmess.ErrNoSheetDataFound, sheetID, sheetrange)
+		err = fmt.Errorf(gmess.ERRNOSHEETDATAFOUND, sheetID, sheetrange)
 		logger.Error(err)
 		return nil, err
 	}

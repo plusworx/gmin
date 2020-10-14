@@ -88,7 +88,7 @@ func doBatchDelUser(cmd *cobra.Command, args []string) error {
 	}
 
 	if inputFlgVal == "" && scanner == nil {
-		err := errors.New(gmess.ErrNoInputFile)
+		err := errors.New(gmess.ERRNOINPUTFILE)
 		logger.Error(err)
 		return err
 	}
@@ -102,7 +102,7 @@ func doBatchDelUser(cmd *cobra.Command, args []string) error {
 
 	ok := cmn.SliceContainsStr(cmn.ValidFileFormats, lwrFmt)
 	if !ok {
-		err = fmt.Errorf(gmess.ErrInvalidFileFormat, formatFlgVal)
+		err = fmt.Errorf(gmess.ERRINVALIDFILEFORMAT, formatFlgVal)
 		logger.Error(err)
 		return err
 	}
@@ -127,7 +127,7 @@ func doBatchDelUser(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	default:
-		return fmt.Errorf(gmess.ErrInvalidFileFormat, formatFlgVal)
+		return fmt.Errorf(gmess.ERRINVALIDFILEFORMAT, formatFlgVal)
 	}
 
 	err = bduProcessDeletion(ds, users)
@@ -154,18 +154,18 @@ func bduDelete(wg *sync.WaitGroup, udc *admin.UsersDeleteCall, user string) {
 
 		err = udc.Do()
 		if err == nil {
-			logger.Infof(gmess.InfoUserDeleted, user)
-			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.InfoUserDeleted, user)))
+			logger.Infof(gmess.INFOUSERDELETED, user)
+			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFOUSERDELETED, user)))
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(fmt.Errorf(gmess.ErrBatchUser, err.Error(), user))
+			return backoff.Permanent(fmt.Errorf(gmess.ERRBATCHUSER, err.Error(), user))
 		}
 		// Log the retries
 		logger.Warnw(err.Error(),
 			"retrying", b.GetElapsedTime().String(),
 			"user", user)
-		return fmt.Errorf(gmess.ErrBatchUser, err.Error(), user)
+		return fmt.Errorf(gmess.ERRBATCHUSER, err.Error(), user)
 	}, b)
 	if err != nil {
 		// Log final error
@@ -220,7 +220,7 @@ func bduProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]s
 	var users []string
 
 	if sheetrange == "" {
-		err := errors.New(gmess.ErrNoSheetRange)
+		err := errors.New(gmess.ERRNOSHEETRANGE)
 		logger.Error(err)
 		return nil, err
 	}
@@ -239,7 +239,7 @@ func bduProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]s
 	}
 
 	if len(sValRange.Values) == 0 {
-		err = fmt.Errorf(gmess.ErrNoSheetDataFound, sheetID, sheetrange)
+		err = fmt.Errorf(gmess.ERRNOSHEETDATAFOUND, sheetID, sheetrange)
 		logger.Error(err)
 		return nil, err
 	}

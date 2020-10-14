@@ -91,7 +91,7 @@ func doBatchDelMember(cmd *cobra.Command, args []string) error {
 	}
 
 	if inputFlgVal == "" && scanner == nil {
-		err := errors.New(gmess.ErrNoInputFile)
+		err := errors.New(gmess.ERRNOINPUTFILE)
 		logger.Error(err)
 		return err
 	}
@@ -105,7 +105,7 @@ func doBatchDelMember(cmd *cobra.Command, args []string) error {
 
 	ok := cmn.SliceContainsStr(cmn.ValidFileFormats, lwrFmt)
 	if !ok {
-		err = fmt.Errorf(gmess.ErrInvalidFileFormat, formatFlgVal)
+		err = fmt.Errorf(gmess.ERRINVALIDFILEFORMAT, formatFlgVal)
 		logger.Error(err)
 		return err
 	}
@@ -130,7 +130,7 @@ func doBatchDelMember(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	default:
-		return fmt.Errorf(gmess.ErrInvalidFileFormat, formatFlgVal)
+		return fmt.Errorf(gmess.ERRINVALIDFILEFORMAT, formatFlgVal)
 	}
 
 	err = bdmProcessDeletion(ds, group, members)
@@ -157,18 +157,18 @@ func bdmDelete(wg *sync.WaitGroup, mdc *admin.MembersDeleteCall, member string, 
 		var err error
 		err = mdc.Do()
 		if err == nil {
-			logger.Infof(gmess.InfoMemberDeleted, member, group)
-			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.InfoMemberDeleted, member, group)))
+			logger.Infof(gmess.INFOMEMBERDELETED, member, group)
+			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFOMEMBERDELETED, member, group)))
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(fmt.Errorf(gmess.ErrBatchMember, err.Error(), member, group))
+			return backoff.Permanent(fmt.Errorf(gmess.ERRBATCHMEMBER, err.Error(), member, group))
 		}
 		logger.Warnw(err.Error(),
 			"retrying", b.GetElapsedTime().String(),
 			"group", group,
 			"member", member)
-		return fmt.Errorf(gmess.ErrBatchMember, err.Error(), member, group)
+		return fmt.Errorf(gmess.ERRBATCHMEMBER, err.Error(), member, group)
 	}, b)
 	if err != nil {
 		// Log final error
@@ -223,7 +223,7 @@ func bdmProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]s
 	var members []string
 
 	if sheetrange == "" {
-		err := errors.New(gmess.ErrNoSheetRange)
+		err := errors.New(gmess.ERRNOSHEETRANGE)
 		logger.Error(err)
 		return nil, err
 	}
@@ -242,7 +242,7 @@ func bdmProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]s
 	}
 
 	if len(sValRange.Values) == 0 {
-		err = fmt.Errorf(gmess.ErrNoSheetDataFound, sheetID, sheetrange)
+		err = fmt.Errorf(gmess.ERRNOSHEETDATAFOUND, sheetID, sheetrange)
 		logger.Error(err)
 		return nil, err
 	}

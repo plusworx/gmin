@@ -101,7 +101,7 @@ func doUpdateSchema(cmd *cobra.Command, args []string) error {
 	schema = new(admin.Schema)
 
 	if inputFile == "" {
-		err := errors.New(gmess.ErrNoInputFile)
+		err := errors.New(gmess.ERRNOINPUTFILE)
 		logger.Error(err)
 		return err
 	}
@@ -113,7 +113,7 @@ func doUpdateSchema(cmd *cobra.Command, args []string) error {
 	}
 
 	if !json.Valid(fileData) {
-		err = errors.New(gmess.ErrInvalidJSONFile)
+		err = errors.New(gmess.ERRINVALIDJSONFILE)
 		logger.Error(err)
 		return err
 	}
@@ -155,8 +155,8 @@ func doUpdateSchema(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	logger.Infof(gmess.InfoSchemaUpdated, args[0])
-	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.InfoSchemaUpdated, args[0])))
+	logger.Infof(gmess.INFOSCHEMAUPDATED, args[0])
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFOSCHEMAUPDATED, args[0])))
 
 	logger.Debug("finished doUpdateSchema()")
 	return nil

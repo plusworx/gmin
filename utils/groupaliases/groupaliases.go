@@ -32,10 +32,10 @@ import (
 )
 
 const (
-	// EndField is List call attribute string terminator
-	EndField string = ")"
-	// StartAliasesField is List call attribute string prefix
-	StartAliasesField string = "aliases("
+	// ENDFIELD is List call attribute string terminator
+	ENDFIELD string = ")"
+	// STARTALIASESFIELD is List call attribute string prefix
+	STARTALIASESFIELD string = "aliases("
 )
 
 // GroupAliasAttrMap provides lowercase mappings to valid admin.Alias attributes

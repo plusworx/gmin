@@ -94,7 +94,7 @@ func doBatchUndelUser(cmd *cobra.Command, args []string) error {
 	}
 
 	if inputFlgVal == "" && scanner == nil {
-		err := errors.New(gmess.ErrNoInputFile)
+		err := errors.New(gmess.ERRNOINPUTFILE)
 		logger.Error(err)
 		return err
 	}
@@ -108,7 +108,7 @@ func doBatchUndelUser(cmd *cobra.Command, args []string) error {
 
 	ok := cmn.SliceContainsStr(cmn.ValidFileFormats, lwrFmt)
 	if !ok {
-		err = fmt.Errorf(gmess.ErrInvalidFileFormat, formatFlgVal)
+		err = fmt.Errorf(gmess.ERRINVALIDFILEFORMAT, formatFlgVal)
 		logger.Error(err)
 		return err
 	}
@@ -139,7 +139,7 @@ func doBatchUndelUser(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	default:
-		return fmt.Errorf(gmess.ErrInvalidFileFormat, formatFlgVal)
+		return fmt.Errorf(gmess.ERRINVALIDFILEFORMAT, formatFlgVal)
 	}
 
 	err = bunduProcessObjects(ds, undelUsers)
@@ -180,8 +180,8 @@ func bunduFromJSONFactory(ds *admin.Service, jsonData string) (usrs.UndeleteUser
 	jsonBytes := []byte(jsonData)
 
 	if !json.Valid(jsonBytes) {
-		logger.Error(gmess.ErrInvalidJSONAttr)
-		return undelUser, errors.New(gmess.ErrInvalidJSONAttr)
+		logger.Error(gmess.ERRINVALIDJSONATTR)
+		return undelUser, errors.New(gmess.ERRINVALIDJSONATTR)
 	}
 
 	outStr, err := cmn.ParseInputAttrs(jsonBytes)
@@ -277,7 +277,7 @@ func bunduProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([
 	var undelUsers []usrs.UndeleteUser
 
 	if sheetrange == "" {
-		err := errors.New(gmess.ErrNoSheetRange)
+		err := errors.New(gmess.ERRNOSHEETRANGE)
 		logger.Error(err)
 		return nil, err
 	}
@@ -296,7 +296,7 @@ func bunduProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([
 	}
 
 	if len(sValRange.Values) == 0 {
-		err = fmt.Errorf(gmess.ErrNoSheetDataFound, sheetID, sheetrange)
+		err = fmt.Errorf(gmess.ERRNOSHEETDATAFOUND, sheetID, sheetrange)
 		logger.Error(err)
 		return nil, err
 	}
@@ -403,18 +403,18 @@ func bunduUndelete(userKey string, wg *sync.WaitGroup, uuc *admin.UsersUndeleteC
 		var err error
 		err = uuc.Do()
 		if err == nil {
-			logger.Infof(gmess.InfoUserUndeleted, userKey)
-			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.InfoUserUndeleted, userKey)))
+			logger.Infof(gmess.INFOUSERUNDELETED, userKey)
+			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFOUSERUNDELETED, userKey)))
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(fmt.Errorf(gmess.ErrBatchUser, err.Error(), userKey))
+			return backoff.Permanent(fmt.Errorf(gmess.ERRBATCHUSER, err.Error(), userKey))
 		}
 		// Log the retries
 		logger.Warnw(err.Error(),
 			"retrying", b.GetElapsedTime().String(),
 			"user", userKey)
-		return fmt.Errorf(gmess.ErrBatchUser, err.Error(), userKey)
+		return fmt.Errorf(gmess.ERRBATCHUSER, err.Error(), userKey)
 	}, b)
 	if err != nil {
 		// Log final error

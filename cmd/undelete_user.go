@@ -70,8 +70,8 @@ func doUndeleteUser(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	logger.Infof(gmess.InfoUserUndeleted, args[0])
-	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.InfoUserUndeleted, args[0])))
+	logger.Infof(gmess.INFOUSERUNDELETED, args[0])
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFOUSERUNDELETED, args[0])))
 
 	logger.Debug("finished doUndeleteUser()")
 	return nil

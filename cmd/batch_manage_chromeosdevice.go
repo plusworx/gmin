@@ -107,7 +107,7 @@ func doBatchMngCrOSDev(cmd *cobra.Command, args []string) error {
 	}
 
 	if inputFlgVal == "" && scanner == nil {
-		err := errors.New(gmess.ErrNoInputFile)
+		err := errors.New(gmess.ERRNOINPUTFILE)
 		logger.Error(err)
 		return err
 	}
@@ -121,7 +121,7 @@ func doBatchMngCrOSDev(cmd *cobra.Command, args []string) error {
 
 	ok := cmn.SliceContainsStr(cmn.ValidFileFormats, lwrFmt)
 	if !ok {
-		err = fmt.Errorf(gmess.ErrInvalidFileFormat, formatFlgVal)
+		err = fmt.Errorf(gmess.ERRINVALIDFILEFORMAT, formatFlgVal)
 		logger.Error(err)
 		return err
 	}
@@ -152,7 +152,7 @@ func doBatchMngCrOSDev(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	default:
-		return fmt.Errorf(gmess.ErrInvalidFileFormat, formatFlgVal)
+		return fmt.Errorf(gmess.ERRINVALIDFILEFORMAT, formatFlgVal)
 	}
 
 	err = bmngcProcessObjects(ds, managedDevs)
@@ -180,7 +180,7 @@ func bmngcFromFileFactory(hdrMap map[int]string, cdevData []interface{}) (cdevs.
 		case attrName == "action":
 			ok := cmn.SliceContainsStr(cdevs.ValidActions, lowerAttrVal)
 			if !ok {
-				err := fmt.Errorf(gmess.ErrInvalidActionType, attrVal)
+				err := fmt.Errorf(gmess.ERRINVALIDACTIONTYPE, attrVal)
 				logger.Error(err)
 				return managedDev, err
 			}
@@ -191,7 +191,7 @@ func bmngcFromFileFactory(hdrMap map[int]string, cdevData []interface{}) (cdevs.
 			if lowerAttrVal != "" {
 				ok := cmn.SliceContainsStr(cdevs.ValidDeprovisionReasons, lowerAttrVal)
 				if !ok {
-					err := fmt.Errorf(gmess.ErrInvalidDeprovisionReason, attrVal)
+					err := fmt.Errorf(gmess.ERRINVALIDDEPROVISIONREASON, attrVal)
 					logger.Error(err)
 					return managedDev, err
 				}
@@ -201,7 +201,7 @@ func bmngcFromFileFactory(hdrMap map[int]string, cdevData []interface{}) (cdevs.
 	}
 
 	if managedDev.Action == "deprovision" && managedDev.DeprovisionReason == "" {
-		err := errors.New(gmess.ErrNoDeprovisionReason)
+		err := errors.New(gmess.ERRNODEPROVISIONREASON)
 		logger.Error(err)
 		return managedDev, err
 	}
@@ -217,8 +217,8 @@ func bmngcFromJSONFactory(ds *admin.Service, jsonData string) (cdevs.ManagedDevi
 	jsonBytes := []byte(jsonData)
 
 	if !json.Valid(jsonBytes) {
-		logger.Error(gmess.ErrInvalidJSONAttr)
-		return managedDev, errors.New(gmess.ErrInvalidJSONAttr)
+		logger.Error(gmess.ERRINVALIDJSONATTR)
+		return managedDev, errors.New(gmess.ERRINVALIDJSONATTR)
 	}
 
 	outStr, err := cmn.ParseInputAttrs(jsonBytes)
@@ -257,18 +257,18 @@ func bmngcPerformAction(deviceID string, action string, wg *sync.WaitGroup, cdac
 		var err error
 		err = cdac.Do()
 		if err == nil {
-			logger.Infof(gmess.InfoCDevActionPerformed, action, deviceID)
-			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.InfoCDevActionPerformed, action, deviceID)))
+			logger.Infof(gmess.INFOCDEVACTIONPERFORMED, action, deviceID)
+			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFOCDEVACTIONPERFORMED, action, deviceID)))
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(fmt.Errorf(gmess.ErrBatchChromeOSDevice, err.Error(), deviceID))
+			return backoff.Permanent(fmt.Errorf(gmess.ERRBATCHCHROMEOSDEVICE, err.Error(), deviceID))
 		}
 		// Log the retries
 		logger.Warnw(err.Error(),
 			"retrying", b.GetElapsedTime().String(),
 			"ChromeOS device", deviceID)
-		return fmt.Errorf(gmess.ErrBatchChromeOSDevice, err.Error(), deviceID)
+		return fmt.Errorf(gmess.ERRBATCHCHROMEOSDEVICE, err.Error(), deviceID)
 	}, b)
 	if err != nil {
 		// Log final error
@@ -350,7 +350,7 @@ func bmngcProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([
 	var managedDevs []cdevs.ManagedDevice
 
 	if sheetrange == "" {
-		err := errors.New(gmess.ErrNoSheetRange)
+		err := errors.New(gmess.ERRNOSHEETRANGE)
 		logger.Error(err)
 		return nil, err
 	}
@@ -369,7 +369,7 @@ func bmngcProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([
 	}
 
 	if len(sValRange.Values) == 0 {
-		err = fmt.Errorf(gmess.ErrNoSheetDataFound, sheetID, sheetrange)
+		err = fmt.Errorf(gmess.ERRNOSHEETDATAFOUND, sheetID, sheetrange)
 		logger.Error(err)
 		return nil, err
 	}

@@ -45,43 +45,43 @@ gmin set cfg -a my.admin@mycompany.org`,
 
 func doSetConfig(cmd *cobra.Command, args []string) error {
 	if customerID != "" {
-		viper.Set(cfg.ConfigCustID, customerID)
+		viper.Set(cfg.CONFIGCUSTID, customerID)
 		err := viper.WriteConfig()
 		if err != nil {
 			return err
 		}
-		fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.InfoCustomerIDSet, customerID)))
+		fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFOCUSTOMERIDSET, customerID)))
 	}
 
 	if adminEmail != "" {
 		ok := valid.IsEmail(adminEmail)
 		if !ok {
-			return fmt.Errorf(gmess.ErrInvalidEmailAddress, adminEmail)
+			return fmt.Errorf(gmess.ERRINVALIDEMAILADDRESS, adminEmail)
 		}
-		viper.Set(cfg.ConfigAdmin, adminEmail)
+		viper.Set(cfg.CONFIGADMIN, adminEmail)
 		err := viper.WriteConfig()
 		if err != nil {
 			return err
 		}
-		fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.InfoAdminSet, adminEmail)))
+		fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFOADMINSET, adminEmail)))
 	}
 
 	if credentialPath != "" {
-		viper.Set(cfg.ConfigCredPath, credentialPath)
+		viper.Set(cfg.CONFIGCREDPATH, credentialPath)
 		err := viper.WriteConfig()
 		if err != nil {
 			return err
 		}
-		fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.InfoCredentialPathSet, credentialPath)))
+		fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFOCREDENTIALPATHSET, credentialPath)))
 	}
 
 	if logPath != "" {
-		viper.Set(cfg.ConfigLogPath, logPath)
+		viper.Set(cfg.CONFIGLOGPATH, logPath)
 		err := viper.WriteConfig()
 		if err != nil {
 			return err
 		}
-		fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.InfoLogPathSet, logPath)))
+		fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFOLOGPATHSET, logPath)))
 	}
 
 	if adminEmail == "" && customerID == "" && credentialPath == "" && logPath == "" {

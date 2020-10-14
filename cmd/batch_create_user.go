@@ -101,7 +101,7 @@ func doBatchCrtUser(cmd *cobra.Command, args []string) error {
 	}
 
 	if inputFlgVal == "" && scanner == nil {
-		err := errors.New(gmess.ErrNoInputFile)
+		err := errors.New(gmess.ERRNOINPUTFILE)
 		logger.Error(err)
 		return err
 	}
@@ -115,7 +115,7 @@ func doBatchCrtUser(cmd *cobra.Command, args []string) error {
 
 	ok := cmn.SliceContainsStr(cmn.ValidFileFormats, lwrFmt)
 	if !ok {
-		err = fmt.Errorf(gmess.ErrInvalidFileFormat, formatFlgVal)
+		err = fmt.Errorf(gmess.ERRINVALIDFILEFORMAT, formatFlgVal)
 		logger.Error(err)
 		return err
 	}
@@ -146,7 +146,7 @@ func doBatchCrtUser(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	default:
-		return fmt.Errorf(gmess.ErrInvalidFileFormat, formatFlgVal)
+		return fmt.Errorf(gmess.ERRINVALIDFILEFORMAT, formatFlgVal)
 	}
 
 	err = bcuProcessObjects(ds, users)
@@ -171,18 +171,18 @@ func bcuCreate(user *admin.User, wg *sync.WaitGroup, uic *admin.UsersInsertCall)
 		var err error
 		newUser, err := uic.Do()
 		if err == nil {
-			logger.Infof(gmess.InfoUserCreated, newUser.PrimaryEmail)
-			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.InfoUserCreated, newUser.PrimaryEmail)))
+			logger.Infof(gmess.INFOUSERCREATED, newUser.PrimaryEmail)
+			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFOUSERCREATED, newUser.PrimaryEmail)))
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(fmt.Errorf(gmess.ErrBatchUser, err.Error(), user.PrimaryEmail))
+			return backoff.Permanent(fmt.Errorf(gmess.ERRBATCHUSER, err.Error(), user.PrimaryEmail))
 		}
 		// Log the retries
 		logger.Warnw(err.Error(),
 			"retrying", b.GetElapsedTime().String(),
 			"user", user.PrimaryEmail)
-		return fmt.Errorf(gmess.ErrBatchUser, err.Error(), user.PrimaryEmail)
+		return fmt.Errorf(gmess.ERRBATCHUSER, err.Error(), user.PrimaryEmail)
 	}, b)
 	if err != nil {
 		// Log final error
@@ -236,7 +236,7 @@ func bcuFromFileFactory(hdrMap map[int]string, userData []interface{}) (*admin.U
 		}
 		if attrName == "password" {
 			if attrVal == "" {
-				err := fmt.Errorf(gmess.ErrEmptyString, attrName)
+				err := fmt.Errorf(gmess.ERREMPTYSTRING, attrName)
 				return nil, err
 			}
 			pwd, err := cmn.HashPassword(attrVal)
@@ -244,11 +244,11 @@ func bcuFromFileFactory(hdrMap map[int]string, userData []interface{}) (*admin.U
 				return nil, err
 			}
 			user.Password = pwd
-			user.HashFunction = cmn.HashFunction
+			user.HashFunction = cmn.HASHFUNCTION
 		}
 		if attrName == "primaryEmail" {
 			if attrVal == "" {
-				err := fmt.Errorf(gmess.ErrEmptyString, attrName)
+				err := fmt.Errorf(gmess.ERREMPTYSTRING, attrName)
 				return nil, err
 			}
 			user.PrimaryEmail = attrVal
@@ -290,8 +290,8 @@ func bcuFromJSONFactory(ds *admin.Service, jsonData string) (*admin.User, error)
 	jsonBytes := []byte(jsonData)
 
 	if !json.Valid(jsonBytes) {
-		logger.Error(gmess.ErrInvalidJSONAttr)
-		return nil, errors.New(gmess.ErrInvalidJSONAttr)
+		logger.Error(gmess.ERRINVALIDJSONATTR)
+		return nil, errors.New(gmess.ERRINVALIDJSONATTR)
 	}
 
 	outStr, err := cmn.ParseInputAttrs(jsonBytes)
@@ -396,7 +396,7 @@ func bcuProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]*
 	var users []*admin.User
 
 	if sheetrange == "" {
-		err := errors.New(gmess.ErrNoSheetRange)
+		err := errors.New(gmess.ERRNOSHEETRANGE)
 		logger.Error(err)
 		return nil, err
 	}
@@ -415,7 +415,7 @@ func bcuProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]*
 	}
 
 	if len(sValRange.Values) == 0 {
-		err = fmt.Errorf(gmess.ErrNoSheetDataFound, sheetID, sheetrange)
+		err = fmt.Errorf(gmess.ERRNOSHEETDATAFOUND, sheetID, sheetrange)
 		logger.Error(err)
 		return nil, err
 	}
@@ -490,12 +490,12 @@ func bcuProcessObjects(ds *admin.Service, users []*admin.User) error {
 
 	for _, u := range users {
 		if u.PrimaryEmail == "" || u.Name.GivenName == "" || u.Name.FamilyName == "" || u.Password == "" {
-			err := errors.New(gmess.ErrBatchMissingUserData)
+			err := errors.New(gmess.ERRBATCHMISSINGUSERDATA)
 			logger.Error(err)
 			return err
 		}
 
-		u.HashFunction = cmn.HashFunction
+		u.HashFunction = cmn.HASHFUNCTION
 		pwd, err := cmn.HashPassword(u.Password)
 		if err != nil {
 			logger.Error(err)

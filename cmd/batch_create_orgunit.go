@@ -95,7 +95,7 @@ func doBatchCrtOrgUnit(cmd *cobra.Command, args []string) error {
 	}
 
 	if inputFlgVal == "" && scanner == nil {
-		err := errors.New(gmess.ErrNoInputFile)
+		err := errors.New(gmess.ERRNOINPUTFILE)
 		logger.Error(err)
 		return err
 	}
@@ -109,7 +109,7 @@ func doBatchCrtOrgUnit(cmd *cobra.Command, args []string) error {
 
 	ok := cmn.SliceContainsStr(cmn.ValidFileFormats, lwrFmt)
 	if !ok {
-		err = fmt.Errorf(gmess.ErrInvalidFileFormat, formatFlgVal)
+		err = fmt.Errorf(gmess.ERRINVALIDFILEFORMAT, formatFlgVal)
 		logger.Error(err)
 		return err
 	}
@@ -140,7 +140,7 @@ func doBatchCrtOrgUnit(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	default:
-		return fmt.Errorf(gmess.ErrInvalidFileFormat, formatFlgVal)
+		return fmt.Errorf(gmess.ERRINVALIDFILEFORMAT, formatFlgVal)
 	}
 
 	err = bcoProcessObjects(ds, orgunits)
@@ -165,18 +165,18 @@ func bcoCreate(orgunit *admin.OrgUnit, wg *sync.WaitGroup, ouic *admin.OrgunitsI
 		var err error
 		newOrgUnit, err := ouic.Do()
 		if err == nil {
-			logger.Infof(gmess.InfoOUCreated, newOrgUnit.OrgUnitPath)
-			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.InfoOUCreated, newOrgUnit.OrgUnitPath)))
+			logger.Infof(gmess.INFOOUCREATED, newOrgUnit.OrgUnitPath)
+			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFOOUCREATED, newOrgUnit.OrgUnitPath)))
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(fmt.Errorf(gmess.ErrBatchOU, err.Error(), orgunit.Name))
+			return backoff.Permanent(fmt.Errorf(gmess.ERRBATCHOU, err.Error(), orgunit.Name))
 		}
 		// Log the retries
 		logger.Warnw(err.Error(),
 			"retrying", b.GetElapsedTime().String(),
 			"orgunit", orgunit.Name)
-		return fmt.Errorf(gmess.ErrBatchOU, err.Error(), orgunit.Name)
+		return fmt.Errorf(gmess.ERRBATCHOU, err.Error(), orgunit.Name)
 	}, b)
 	if err != nil {
 		// Log final error
@@ -208,13 +208,13 @@ func bcoFromFileFactory(hdrMap map[int]string, ouData []interface{}) (*admin.Org
 			orgunit.Description = attrVal
 		case attrName == "name":
 			if attrVal == "" {
-				err := fmt.Errorf(gmess.ErrEmptyString, attrName)
+				err := fmt.Errorf(gmess.ERREMPTYSTRING, attrName)
 				return nil, err
 			}
 			orgunit.Name = attrVal
 		case attrName == "parentOrgUnitPath":
 			if attrVal == "" {
-				err := fmt.Errorf(gmess.ErrEmptyString, attrName)
+				err := fmt.Errorf(gmess.ERREMPTYSTRING, attrName)
 				return nil, err
 			}
 			orgunit.ParentOrgUnitPath = attrVal
@@ -237,8 +237,8 @@ func bcoFromJSONFactory(ds *admin.Service, jsonData string) (*admin.OrgUnit, err
 	jsonBytes := []byte(jsonData)
 
 	if !json.Valid(jsonBytes) {
-		logger.Error(gmess.ErrInvalidJSONAttr)
-		return nil, errors.New(gmess.ErrInvalidJSONAttr)
+		logger.Error(gmess.ERRINVALIDJSONATTR)
+		return nil, errors.New(gmess.ERRINVALIDJSONATTR)
 	}
 
 	outStr, err := cmn.ParseInputAttrs(jsonBytes)
@@ -343,7 +343,7 @@ func bcoProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]*
 	var orgunits []*admin.OrgUnit
 
 	if sheetrange == "" {
-		err := errors.New(gmess.ErrNoSheetRange)
+		err := errors.New(gmess.ERRNOSHEETRANGE)
 		logger.Error(err)
 		return nil, err
 	}
@@ -362,7 +362,7 @@ func bcoProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]*
 	}
 
 	if len(sValRange.Values) == 0 {
-		err = fmt.Errorf(gmess.ErrNoSheetDataFound, sheetID, sheetrange)
+		err = fmt.Errorf(gmess.ERRNOSHEETDATAFOUND, sheetID, sheetrange)
 		logger.Error(err)
 		return nil, err
 	}
@@ -443,7 +443,7 @@ func bcoProcessObjects(ds *admin.Service, orgunits []*admin.OrgUnit) error {
 
 	for _, ou := range orgunits {
 		if ou.Name == "" || ou.ParentOrgUnitPath == "" {
-			err = errors.New(gmess.ErrNoNameOrOuPath)
+			err = errors.New(gmess.ERRNONAMEOROUPATH)
 			logger.Error(err)
 			return err
 		}

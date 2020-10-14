@@ -377,7 +377,7 @@ func ShowAttrValues(lenArgs int, args []string, filter string) error {
 	values := []string{}
 
 	if lenArgs > 2 {
-		return fmt.Errorf(gmess.ErrTooManyArgsMax1, args[0])
+		return fmt.Errorf(gmess.ERRTOOMANYARGSMAX1, args[0])
 	}
 
 	if lenArgs == 1 {
@@ -467,7 +467,7 @@ func ShowAttrValues(lenArgs int, args []string, filter string) error {
 			}
 		}
 		if len(values) < 1 {
-			return fmt.Errorf(gmess.ErrAttrNotRecognized, args[1])
+			return fmt.Errorf(gmess.ERRATTRNOTRECOGNIZED, args[1])
 		}
 	}
 	sort.Strings(values)
@@ -558,7 +558,7 @@ func ShowFlagValues(lenArgs int, args []string, filter string) error {
 			return nil
 		}
 		// Flag not recognized
-		return fmt.Errorf(gmess.ErrFlagNotRecognized, args[1])
+		return fmt.Errorf(gmess.ERRFLAGNOTRECOGNIZED, args[1])
 	}
 
 	return nil
@@ -569,7 +569,7 @@ func ValidateGroupSettingValue(valueMap map[string]string, name string, value st
 	lowerVal := strings.ToLower(value)
 	validStr := valueMap[lowerVal]
 	if validStr == "" {
-		return "", fmt.Errorf(gmess.ErrInvalidString, name, value)
+		return "", fmt.Errorf(gmess.ERRINVALIDSTRING, name, value)
 	}
 	return validStr, nil
 }

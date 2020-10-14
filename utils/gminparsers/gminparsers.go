@@ -101,14 +101,14 @@ func (oap *OutputAttrParser) Parse(attrMap map[string]string) (*OutputAttrStr, e
 
 		if tok != IDENT && tok != ASTERISK && tok != OPENBRACK && tok != CLOSEBRACK &&
 			tok != COMMA && tok != FSLASH && tok != TILDE {
-			return nil, fmt.Errorf(gmess.ErrUnexpectedAttrChar, lit)
+			return nil, fmt.Errorf(gmess.ERRUNEXPECTEDATTRCHAR, lit)
 		}
 
 		if tok == IDENT && oap.oas.bCustomSchema == false {
 			lowerLit := strings.ToLower(lit)
 			validAttr := attrMap[lowerLit]
 			if validAttr == "" {
-				err := fmt.Errorf(gmess.ErrAttrNotRecognized, lit)
+				err := fmt.Errorf(gmess.ERRATTRNOTRECOGNIZED, lit)
 				return nil, err
 			}
 			lit = validAttr
@@ -235,14 +235,14 @@ func (qp *QueryParser) Parse(qAttrMap map[string]string) (*QueryStr, error) {
 		if tok != ASTERISK && tok != BSLASH && tok != COLON && tok != COMMA && tok != CLOSEBRACK &&
 			tok != CLOSESQBRACK && tok != FSLASH && tok != GT && tok != EQUALS && tok != IDENT && tok != LT &&
 			tok != OP && tok != OPENBRACK && tok != OPENSQBRACK && tok != TILDE && tok != VALUE {
-			return nil, fmt.Errorf(gmess.ErrUnexpectedQueryChar, lit)
+			return nil, fmt.Errorf(gmess.ERRUNEXPECTEDQUERYCHAR, lit)
 		}
 
 		if tok == IDENT && !strings.Contains(lit, ".") {
 			lowerLit := strings.ToLower(lit)
 			validAttr := qAttrMap[lowerLit]
 			if validAttr == "" {
-				err := fmt.Errorf(gmess.ErrAttrNotRecognized, lit)
+				err := fmt.Errorf(gmess.ERRATTRNOTRECOGNIZED, lit)
 				return nil, err
 			}
 			lit = validAttr

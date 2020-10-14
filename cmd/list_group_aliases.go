@@ -64,7 +64,7 @@ func doListGroupAliases(cmd *cobra.Command, args []string) error {
 			logger.Error(err)
 			return err
 		}
-		formattedAttrs := gas.StartAliasesField + listAttrs + gas.EndField
+		formattedAttrs := gas.STARTALIASESFIELD + listAttrs + gas.ENDFIELD
 
 		galc = gas.AddFields(galc, formattedAttrs)
 	}

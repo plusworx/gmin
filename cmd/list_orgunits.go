@@ -76,7 +76,7 @@ func doListOUs(cmd *cobra.Command, args []string) error {
 			logger.Error(err)
 			return err
 		}
-		formattedAttrs := ous.StartOrgUnitsField + listAttrs + ous.EndField
+		formattedAttrs := ous.STARTORGUNITSFIELD + listAttrs + ous.ENDFIELD
 
 		listCall := ous.AddFields(oulc, formattedAttrs)
 		oulc = listCall.(*admin.OrgunitsListCall)
@@ -90,7 +90,7 @@ func doListOUs(cmd *cobra.Command, args []string) error {
 
 	ok := cmn.SliceContainsStr(ous.ValidSearchTypes, searchType)
 	if !ok {
-		err := fmt.Errorf(gmess.ErrInvalidSearchType, searchType)
+		err := fmt.Errorf(gmess.ERRINVALIDSEARCHTYPE, searchType)
 		logger.Error(err)
 		return err
 	}

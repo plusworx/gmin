@@ -164,7 +164,7 @@ func init() {
 }
 
 func initConfig() {
-	viper.SetEnvPrefix(cfg.EnvPrefix)
+	viper.SetEnvPrefix(cfg.ENVPREFIX)
 
 	if cfgFile != "" {
 		viper.SetConfigFile(cfgFile)
@@ -175,7 +175,7 @@ func initConfig() {
 		}
 
 		viper.AddConfigPath(home)
-		viper.SetConfigName(cfg.ConfigFilePrefix)
+		viper.SetConfigName(cfg.CONFIGFILEPREFIX)
 	}
 
 	viper.AutomaticEnv()
@@ -234,7 +234,7 @@ func setupLogging(loglevel string) (*zap.Logger, error) {
 	case "warn":
 		zconf.Level.SetLevel(zapcore.WarnLevel)
 	default:
-		return nil, fmt.Errorf(gmess.ErrInvalidLogLevel, loglevel)
+		return nil, fmt.Errorf(gmess.ERRINVALIDLOGLEVEL, loglevel)
 	}
 
 	zconf.EncoderConfig.EncodeTime = zapcore.TimeEncoder(func(t time.Time, enc zapcore.PrimitiveArrayEncoder) {

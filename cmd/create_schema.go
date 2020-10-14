@@ -101,7 +101,7 @@ func doCreateSchema(cmd *cobra.Command, args []string) error {
 	schema = new(admin.Schema)
 
 	if inputFile == "" {
-		err := errors.New(gmess.ErrNoInputFile)
+		err := errors.New(gmess.ERRNOINPUTFILE)
 		logger.Error(err)
 		return err
 	}
@@ -113,7 +113,7 @@ func doCreateSchema(cmd *cobra.Command, args []string) error {
 	}
 
 	if !json.Valid(fileData) {
-		err = errors.New(gmess.ErrInvalidJSONFile)
+		err = errors.New(gmess.ERRINVALIDJSONFILE)
 		logger.Error(err)
 		return err
 	}
@@ -155,8 +155,8 @@ func doCreateSchema(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	logger.Infof(gmess.InfoSchemaCreated, newSchema.SchemaName)
-	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.InfoSchemaCreated, newSchema.SchemaName)))
+	logger.Infof(gmess.INFOSCHEMACREATED, newSchema.SchemaName)
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFOSCHEMACREATED, newSchema.SchemaName)))
 
 	logger.Debug("finished doCreateSchema()")
 	return nil

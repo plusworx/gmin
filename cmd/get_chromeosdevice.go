@@ -84,7 +84,7 @@ func doGetCrOSDev(cmd *cobra.Command, args []string) error {
 		proj := strings.ToLower(projection)
 		ok := cmn.SliceContainsStr(cdevs.ValidProjections, proj)
 		if !ok {
-			err = fmt.Errorf(gmess.ErrInvalidProjectionType, projection)
+			err = fmt.Errorf(gmess.ERRINVALIDPROJECTIONTYPE, projection)
 			logger.Error(err)
 			return err
 		}
