@@ -68,6 +68,8 @@ func doBatchDelMember(cmd *cobra.Command, args []string) error {
 	logger.Debugw("starting doBatchDelMember()",
 		"args", args)
 
+	var members []string
+
 	group := args[0]
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupMemberScope)
@@ -76,50 +78,73 @@ func doBatchDelMember(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	scanner, err := cmn.InputFromStdIn(inputFile)
+	inputFlgVal, err := cmd.Flags().GetString("input-file")
 	if err != nil {
 		logger.Error(err)
 		return err
 	}
 
-	if inputFile == "" && scanner == nil {
+	scanner, err := cmn.InputFromStdIn(inputFlgVal)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+
+	if inputFlgVal == "" && scanner == nil {
 		err := errors.New(gmess.ErrNoInputFile)
 		logger.Error(err)
 		return err
 	}
 
-	lwrFmt := strings.ToLower(delFormat)
+	formatFlgVal, err := cmd.Flags().GetString("format")
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	lwrFmt := strings.ToLower(formatFlgVal)
 
 	ok := cmn.SliceContainsStr(cmn.ValidFileFormats, lwrFmt)
 	if !ok {
-		err = fmt.Errorf(gmess.ErrInvalidFileFormat, delFormat)
+		err = fmt.Errorf(gmess.ErrInvalidFileFormat, formatFlgVal)
 		logger.Error(err)
 		return err
 	}
 
 	switch {
 	case lwrFmt == "text":
-		err := bdmProcessTextFile(ds, inputFile, group, scanner)
+		members, err = bdmProcessTextFile(ds, inputFlgVal, scanner)
 		if err != nil {
 			logger.Error(err)
 			return err
 		}
 	case lwrFmt == "gsheet":
-		err := bdmProcessGSheet(ds, group, inputFile)
+		rangeFlgVal, err := cmd.Flags().GetString("sheet-range")
+		if err != nil {
+			logger.Error(err)
+			return err
+		}
+
+		members, err = bdmProcessGSheet(ds, inputFlgVal, rangeFlgVal)
 		if err != nil {
 			logger.Error(err)
 			return err
 		}
 	default:
-		return fmt.Errorf(gmess.ErrInvalidFileFormat, format)
+		return fmt.Errorf(gmess.ErrInvalidFileFormat, formatFlgVal)
+	}
+
+	err = bdmProcessDeletion(ds, group, members)
+	if err != nil {
+		logger.Error(err)
+		return err
 	}
 
 	logger.Debug("finished doBatchDelMember()")
 	return nil
 }
 
-func bdmDeleteObject(wg *sync.WaitGroup, mdc *admin.MembersDeleteCall, member string, group string) {
-	logger.Debugw("starting bdmDeleteObject()",
+func bdmDelete(wg *sync.WaitGroup, mdc *admin.MembersDeleteCall, member string, group string) {
+	logger.Debugw("starting bdmDelete()",
 		"group", group,
 		"member", member)
 
@@ -150,7 +175,7 @@ func bdmDeleteObject(wg *sync.WaitGroup, mdc *admin.MembersDeleteCall, member st
 		logger.Error(err)
 		fmt.Println(cmn.GminMessage(err.Error()))
 	}
-	logger.Debug("finished bdmDeleteObject()")
+	logger.Debug("finished bdmDelete()")
 }
 
 func bdmFromFileFactory(hdrMap map[int]string, memberData []interface{}) (string, error) {
@@ -181,7 +206,7 @@ func bdmProcessDeletion(ds *admin.Service, group string, members []string) error
 
 		wg.Add(1)
 
-		go bdmDeleteObject(wg, mdc, member, group)
+		go bdmDelete(wg, mdc, member, group)
 	}
 
 	wg.Wait()
@@ -190,42 +215,43 @@ func bdmProcessDeletion(ds *admin.Service, group string, members []string) error
 	return nil
 }
 
-func bdmProcessGSheet(ds *admin.Service, group string, sheetID string) error {
+func bdmProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]string, error) {
 	logger.Debugw("starting bdmProcessGSheet()",
-		"sheetID", sheetID)
+		"sheetID", sheetID,
+		"sheetrange", sheetrange)
 
 	var members []string
 
-	if sheetRange == "" {
+	if sheetrange == "" {
 		err := errors.New(gmess.ErrNoSheetRange)
 		logger.Error(err)
-		return err
+		return nil, err
 	}
 
 	ss, err := cmn.CreateSheetService(sheet.DriveReadonlyScope)
 	if err != nil {
 		logger.Error(err)
-		return err
+		return nil, err
 	}
 
-	ssvgc := ss.Spreadsheets.Values.Get(sheetID, sheetRange)
+	ssvgc := ss.Spreadsheets.Values.Get(sheetID, sheetrange)
 	sValRange, err := ssvgc.Do()
 	if err != nil {
 		logger.Error(err)
-		return err
+		return nil, err
 	}
 
 	if len(sValRange.Values) == 0 {
-		err = fmt.Errorf(gmess.ErrNoSheetDataFound, sheetID, sheetRange)
+		err = fmt.Errorf(gmess.ErrNoSheetDataFound, sheetID, sheetrange)
 		logger.Error(err)
-		return err
+		return nil, err
 	}
 
 	hdrMap := cmn.ProcessHeader(sValRange.Values[0])
 	err = cmn.ValidateHeader(hdrMap, mems.MemberAttrMap)
 	if err != nil {
 		logger.Error(err)
-		return err
+		return nil, err
 	}
 
 	for idx, row := range sValRange.Values {
@@ -236,22 +262,17 @@ func bdmProcessGSheet(ds *admin.Service, group string, sheetID string) error {
 		memVar, err := bdgFromFileFactory(hdrMap, row)
 		if err != nil {
 			logger.Error(err)
-			return err
+			return nil, err
 		}
 
 		members = append(members, memVar)
 	}
 
-	err = bdmProcessDeletion(ds, group, members)
-	if err != nil {
-		logger.Error(err)
-		return err
-	}
 	logger.Debug("finished bdmProcessGSheet()")
-	return nil
+	return members, nil
 }
 
-func bdmProcessTextFile(ds *admin.Service, filePath string, group string, scanner *bufio.Scanner) error {
+func bdmProcessTextFile(ds *admin.Service, filePath string, scanner *bufio.Scanner) ([]string, error) {
 	logger.Debugw("starting bdmProcessTextFile()",
 		"filePath", filePath)
 
@@ -261,7 +282,7 @@ func bdmProcessTextFile(ds *admin.Service, filePath string, group string, scanne
 		file, err := os.Open(filePath)
 		if err != nil {
 			logger.Error(err)
-			return err
+			return nil, err
 		}
 		defer file.Close()
 		scanner = bufio.NewScanner(file)
@@ -272,14 +293,8 @@ func bdmProcessTextFile(ds *admin.Service, filePath string, group string, scanne
 		members = append(members, member)
 	}
 
-	err := bdmProcessDeletion(ds, group, members)
-	if err != nil {
-		logger.Error(err)
-		return err
-	}
-
 	logger.Debug("finished bdmProcessTextFile()")
-	return nil
+	return members, nil
 }
 
 func init() {

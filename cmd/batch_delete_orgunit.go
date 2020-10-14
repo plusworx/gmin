@@ -68,56 +68,81 @@ func doBatchDelOrgUnit(cmd *cobra.Command, args []string) error {
 	logger.Debugw("starting doBatchDelOrgUnit()",
 		"args", args)
 
+	var orgunits []string
+
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryOrgunitScope)
 	if err != nil {
 		logger.Error(err)
 		return err
 	}
 
-	scanner, err := cmn.InputFromStdIn(inputFile)
+	inputFlgVal, err := cmd.Flags().GetString("input-file")
 	if err != nil {
 		logger.Error(err)
 		return err
 	}
 
-	if inputFile == "" && scanner == nil {
+	scanner, err := cmn.InputFromStdIn(inputFlgVal)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+
+	if inputFlgVal == "" && scanner == nil {
 		err := errors.New(gmess.ErrNoInputFile)
 		logger.Error(err)
 		return err
 	}
 
-	lwrFmt := strings.ToLower(delFormat)
+	formatFlgVal, err := cmd.Flags().GetString("format")
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	lwrFmt := strings.ToLower(formatFlgVal)
 
 	ok := cmn.SliceContainsStr(cmn.ValidFileFormats, lwrFmt)
 	if !ok {
-		err = fmt.Errorf(gmess.ErrInvalidFileFormat, delFormat)
+		err = fmt.Errorf(gmess.ErrInvalidFileFormat, formatFlgVal)
 		logger.Error(err)
 		return err
 	}
 
 	switch {
 	case lwrFmt == "text":
-		err := bdoProcessTextFile(ds, inputFile, scanner)
+		orgunits, err = bdoProcessTextFile(ds, inputFlgVal, scanner)
 		if err != nil {
 			logger.Error(err)
 			return err
 		}
 	case lwrFmt == "gsheet":
-		err := bdoProcessGSheet(ds, inputFile)
+		rangeFlgVal, err := cmd.Flags().GetString("sheet-range")
+		if err != nil {
+			logger.Error(err)
+			return err
+		}
+
+		orgunits, err = bdoProcessGSheet(ds, inputFlgVal, rangeFlgVal)
 		if err != nil {
 			logger.Error(err)
 			return err
 		}
 	default:
-		return fmt.Errorf(gmess.ErrInvalidFileFormat, format)
+		return fmt.Errorf(gmess.ErrInvalidFileFormat, formatFlgVal)
+	}
+
+	err = bdoProcessDeletion(ds, orgunits)
+	if err != nil {
+		logger.Error(err)
+		return err
 	}
 
 	logger.Debug("finished doBatchDelOrgUnit()")
 	return nil
 }
 
-func bdoDeleteObject(wg *sync.WaitGroup, oudc *admin.OrgunitsDeleteCall, ouPath string) {
-	logger.Debugw("starting bdoDeleteObject()",
+func bdoDelete(wg *sync.WaitGroup, oudc *admin.OrgunitsDeleteCall, ouPath string) {
+	logger.Debugw("starting bdoDelete()",
 		"ouPath", ouPath)
 
 	defer wg.Done()
@@ -148,7 +173,7 @@ func bdoDeleteObject(wg *sync.WaitGroup, oudc *admin.OrgunitsDeleteCall, ouPath 
 		logger.Error(err)
 		fmt.Println(cmn.GminMessage(err.Error()))
 	}
-	logger.Debug("finished bdoDeleteObject()")
+	logger.Debug("finished bdoDelete()")
 }
 
 func bdoFromFileFactory(hdrMap map[int]string, ouData []interface{}) (string, error) {
@@ -193,7 +218,7 @@ func bdoProcessDeletion(ds *admin.Service, orgunits []string) error {
 
 		wg.Add(1)
 
-		go bdoDeleteObject(wg, oudc, orgunit)
+		go bdoDelete(wg, oudc, orgunit)
 	}
 
 	wg.Wait()
@@ -202,42 +227,43 @@ func bdoProcessDeletion(ds *admin.Service, orgunits []string) error {
 	return nil
 }
 
-func bdoProcessGSheet(ds *admin.Service, sheetID string) error {
+func bdoProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]string, error) {
 	logger.Debugw("starting bdoProcessGSheet()",
-		"sheetID", sheetID)
+		"sheetID", sheetID,
+		"sheetrange", sheetrange)
 
 	var orgunits []string
 
-	if sheetRange == "" {
+	if sheetrange == "" {
 		err := errors.New(gmess.ErrNoSheetRange)
 		logger.Error(err)
-		return err
+		return nil, err
 	}
 
 	ss, err := cmn.CreateSheetService(sheet.DriveReadonlyScope)
 	if err != nil {
 		logger.Error(err)
-		return err
+		return nil, err
 	}
 
-	ssvgc := ss.Spreadsheets.Values.Get(sheetID, sheetRange)
+	ssvgc := ss.Spreadsheets.Values.Get(sheetID, sheetrange)
 	sValRange, err := ssvgc.Do()
 	if err != nil {
 		logger.Error(err)
-		return err
+		return nil, err
 	}
 
 	if len(sValRange.Values) == 0 {
-		err = fmt.Errorf(gmess.ErrNoSheetDataFound, sheetID, sheetRange)
+		err = fmt.Errorf(gmess.ErrNoSheetDataFound, sheetID, sheetrange)
 		logger.Error(err)
-		return err
+		return nil, err
 	}
 
 	hdrMap := cmn.ProcessHeader(sValRange.Values[0])
 	err = cmn.ValidateHeader(hdrMap, ous.OrgUnitAttrMap)
 	if err != nil {
 		logger.Error(err)
-		return err
+		return nil, err
 	}
 
 	for idx, row := range sValRange.Values {
@@ -248,22 +274,17 @@ func bdoProcessGSheet(ds *admin.Service, sheetID string) error {
 		ouVar, err := bdoFromFileFactory(hdrMap, row)
 		if err != nil {
 			logger.Error(err)
-			return err
+			return nil, err
 		}
 
 		orgunits = append(orgunits, ouVar)
 	}
 
-	err = bdoProcessDeletion(ds, orgunits)
-	if err != nil {
-		logger.Error(err)
-		return err
-	}
 	logger.Debug("finished bdoProcessGSheet()")
-	return nil
+	return orgunits, nil
 }
 
-func bdoProcessTextFile(ds *admin.Service, filePath string, scanner *bufio.Scanner) error {
+func bdoProcessTextFile(ds *admin.Service, filePath string, scanner *bufio.Scanner) ([]string, error) {
 	logger.Debugw("starting bdoProcessTextFile()",
 		"filePath", filePath)
 
@@ -273,7 +294,7 @@ func bdoProcessTextFile(ds *admin.Service, filePath string, scanner *bufio.Scann
 		file, err := os.Open(filePath)
 		if err != nil {
 			logger.Error(err)
-			return err
+			return nil, err
 		}
 		defer file.Close()
 		scanner = bufio.NewScanner(file)
@@ -284,14 +305,8 @@ func bdoProcessTextFile(ds *admin.Service, filePath string, scanner *bufio.Scann
 		orgunits = append(orgunits, orgunit)
 	}
 
-	err := bdoProcessDeletion(ds, orgunits)
-	if err != nil {
-		logger.Error(err)
-		return err
-	}
-
 	logger.Debug("finished bdoProcessTextFile()")
-	return nil
+	return orgunits, nil
 }
 
 func init() {

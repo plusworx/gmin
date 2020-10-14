@@ -99,55 +99,85 @@ The column names are case insensitive and can be in any order.`,
 func doBatchMngGrpSettings(cmd *cobra.Command, args []string) error {
 	logger.Debugw("starting doBatchMngGrpSettings()",
 		"args", args)
+
+	var (
+		groupKeys   []string
+		grpSettings []*gset.Groups
+	)
+
 	ds, err := cmn.CreateGroupSettingService(gset.AppsGroupsSettingsScope)
 	if err != nil {
 		logger.Error(err)
 		return err
 	}
 
-	scanner, err := cmn.InputFromStdIn(inputFile)
+	inputFlgVal, err := cmd.Flags().GetString("input-file")
 	if err != nil {
 		logger.Error(err)
 		return err
 	}
 
-	if inputFile == "" && scanner == nil {
+	scanner, err := cmn.InputFromStdIn(inputFlgVal)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+
+	if inputFlgVal == "" && scanner == nil {
 		err := errors.New(gmess.ErrNoInputFile)
 		logger.Error(err)
 		return err
 	}
 
-	lwrFmt := strings.ToLower(format)
+	formatFlgVal, err := cmd.Flags().GetString("format")
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	lwrFmt := strings.ToLower(formatFlgVal)
 
 	ok := cmn.SliceContainsStr(cmn.ValidFileFormats, lwrFmt)
 	if !ok {
-		err = fmt.Errorf(gmess.ErrInvalidFileFormat, format)
+		err = fmt.Errorf(gmess.ErrInvalidFileFormat, formatFlgVal)
 		logger.Error(err)
 		return err
 	}
 
 	switch {
 	case lwrFmt == "csv":
-		err := bmnggProcessCSVFile(ds, inputFile)
+		groupKeys, grpSettings, err = bmnggProcessCSVFile(ds, inputFlgVal)
 		if err != nil {
 			logger.Error(err)
 			return err
 		}
 	case lwrFmt == "json":
-		err := bmnggProcessJSON(ds, inputFile, scanner)
+		groupKeys, grpSettings, err = bmnggProcessJSON(ds, inputFlgVal, scanner)
 		if err != nil {
 			logger.Error(err)
 			return err
 		}
 	case lwrFmt == "gsheet":
-		err := bmnggProcessGSheet(ds, inputFile)
+		rangeFlgVal, err := cmd.Flags().GetString("sheet-range")
+		if err != nil {
+			logger.Error(err)
+			return err
+		}
+
+		groupKeys, grpSettings, err = bmnggProcessGSheet(ds, inputFlgVal, rangeFlgVal)
 		if err != nil {
 			logger.Error(err)
 			return err
 		}
 	default:
-		return fmt.Errorf(gmess.ErrInvalidFileFormat, format)
+		return fmt.Errorf(gmess.ErrInvalidFileFormat, formatFlgVal)
 	}
+
+	err = bmnggProcessObjects(ds, groupKeys, grpSettings)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+
 	logger.Debug("finished doBatchMngGrpSettings()")
 	return nil
 }
@@ -583,7 +613,7 @@ func bmnggPostMessageVal(grpSettings *gset.Groups, attrName string, attrValue st
 	return nil
 }
 
-func bmnggProcessCSVFile(ds *gset.Service, filePath string) error {
+func bmnggProcessCSVFile(ds *gset.Service, filePath string) ([]string, []*gset.Groups, error) {
 	logger.Debugw("starting bmnggProcessCSVFile()",
 		"filePath", filePath)
 
@@ -597,7 +627,7 @@ func bmnggProcessCSVFile(ds *gset.Service, filePath string) error {
 	csvfile, err := os.Open(filePath)
 	if err != nil {
 		logger.Error(err)
-		return err
+		return nil, nil, err
 	}
 	defer csvfile.Close()
 
@@ -611,7 +641,7 @@ func bmnggProcessCSVFile(ds *gset.Service, filePath string) error {
 		}
 		if err != nil {
 			logger.Error(err)
-			return err
+			return nil, nil, err
 		}
 
 		if count == 0 {
@@ -623,7 +653,7 @@ func bmnggProcessCSVFile(ds *gset.Service, filePath string) error {
 			err = cmn.ValidateHeader(hdrMap, grpset.GroupSettingsAttrMap)
 			if err != nil {
 				logger.Error(err)
-				return err
+				return nil, nil, err
 			}
 			count = count + 1
 			continue
@@ -636,7 +666,7 @@ func bmnggProcessCSVFile(ds *gset.Service, filePath string) error {
 		gsVar, groupKey, err := bmnggFromFileFactory(hdrMap, iSlice)
 		if err != nil {
 			logger.Error(err)
-			return err
+			return nil, nil, err
 		}
 
 		groupKeys = append(groupKeys, groupKey)
@@ -644,18 +674,14 @@ func bmnggProcessCSVFile(ds *gset.Service, filePath string) error {
 		count = count + 1
 	}
 
-	err = bmnggProcessObjects(ds, groupKeys, grpSettings)
-	if err != nil {
-		logger.Error(err)
-		return err
-	}
 	logger.Debug("finished bmnggProcessCSVFile()")
-	return nil
+	return groupKeys, grpSettings, nil
 }
 
-func bmnggProcessGSheet(ds *gset.Service, sheetID string) error {
+func bmnggProcessGSheet(ds *gset.Service, sheetID string, sheetrange string) ([]string, []*gset.Groups, error) {
 	logger.Debugw("starting bmnggProcessGSheet()",
-		"sheetID", sheetID)
+		"sheetID", sheetID,
+		"sheetrange", sheetrange)
 
 	var (
 		err         error
@@ -663,36 +689,36 @@ func bmnggProcessGSheet(ds *gset.Service, sheetID string) error {
 		grpSettings []*gset.Groups
 	)
 
-	if sheetRange == "" {
+	if sheetrange == "" {
 		err := errors.New(gmess.ErrNoSheetRange)
 		logger.Error(err)
-		return err
+		return nil, nil, err
 	}
 
 	ss, err := cmn.CreateSheetService(sheet.DriveReadonlyScope)
 	if err != nil {
 		logger.Error(err)
-		return err
+		return nil, nil, err
 	}
 
-	ssvgc := ss.Spreadsheets.Values.Get(sheetID, sheetRange)
+	ssvgc := ss.Spreadsheets.Values.Get(sheetID, sheetrange)
 	sValRange, err := ssvgc.Do()
 	if err != nil {
 		logger.Error(err)
-		return err
+		return nil, nil, err
 	}
 
 	if len(sValRange.Values) == 0 {
-		err = fmt.Errorf(gmess.ErrNoSheetDataFound, sheetID, sheetRange)
+		err = fmt.Errorf(gmess.ErrNoSheetDataFound, sheetID, sheetrange)
 		logger.Error(err)
-		return err
+		return nil, nil, err
 	}
 
 	hdrMap := cmn.ProcessHeader(sValRange.Values[0])
 	err = cmn.ValidateHeader(hdrMap, grpset.GroupSettingsAttrMap)
 	if err != nil {
 		logger.Error(err)
-		return err
+		return nil, nil, err
 	}
 
 	for idx, row := range sValRange.Values {
@@ -703,23 +729,18 @@ func bmnggProcessGSheet(ds *gset.Service, sheetID string) error {
 		gsVar, groupKey, err := bmnggFromFileFactory(hdrMap, row)
 		if err != nil {
 			logger.Error(err)
-			return err
+			return nil, nil, err
 		}
 
 		groupKeys = append(groupKeys, groupKey)
 		grpSettings = append(grpSettings, gsVar)
 	}
 
-	err = bmnggProcessObjects(ds, groupKeys, grpSettings)
-	if err != nil {
-		logger.Error(err)
-		return err
-	}
 	logger.Debug("finished bmnggProcessGSheet()")
-	return nil
+	return groupKeys, grpSettings, nil
 }
 
-func bmnggProcessJSON(ds *gset.Service, filePath string, scanner *bufio.Scanner) error {
+func bmnggProcessJSON(ds *gset.Service, filePath string, scanner *bufio.Scanner) ([]string, []*gset.Groups, error) {
 	logger.Debugw("starting bmnggProcessJSON()",
 		"filePath", filePath)
 
@@ -733,7 +754,7 @@ func bmnggProcessJSON(ds *gset.Service, filePath string, scanner *bufio.Scanner)
 		file, err := os.Open(filePath)
 		if err != nil {
 			logger.Error(err)
-			return err
+			return nil, nil, err
 		}
 		defer file.Close()
 
@@ -746,7 +767,7 @@ func bmnggProcessJSON(ds *gset.Service, filePath string, scanner *bufio.Scanner)
 		gsVar, groupKey, err := bmnggFromJSONFactory(ds, jsonData)
 		if err != nil {
 			logger.Error(err)
-			return err
+			return nil, nil, err
 		}
 
 		groupKeys = append(groupKeys, groupKey)
@@ -755,16 +776,11 @@ func bmnggProcessJSON(ds *gset.Service, filePath string, scanner *bufio.Scanner)
 	err = scanner.Err()
 	if err != nil {
 		logger.Error(err)
-		return err
+		return nil, nil, err
 	}
 
-	err = bmnggProcessObjects(ds, groupKeys, grpSettings)
-	if err != nil {
-		logger.Error(err)
-		return err
-	}
 	logger.Debug("finished bmnggProcessJSON()")
-	return nil
+	return groupKeys, grpSettings, nil
 }
 
 func bmnggProcessObjects(ds *gset.Service, groupKeys []string, grpSettings []*gset.Groups) error {

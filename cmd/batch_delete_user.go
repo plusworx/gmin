@@ -67,56 +67,81 @@ func doBatchDelUser(cmd *cobra.Command, args []string) error {
 	logger.Debugw("starting doBatchDelUser()",
 		"args", args)
 
+	var users []string
+
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserScope)
 	if err != nil {
 		logger.Error(err)
 		return err
 	}
 
-	scanner, err := cmn.InputFromStdIn(inputFile)
+	inputFlgVal, err := cmd.Flags().GetString("input-file")
 	if err != nil {
 		logger.Error(err)
 		return err
 	}
 
-	if inputFile == "" && scanner == nil {
+	scanner, err := cmn.InputFromStdIn(inputFlgVal)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+
+	if inputFlgVal == "" && scanner == nil {
 		err := errors.New(gmess.ErrNoInputFile)
 		logger.Error(err)
 		return err
 	}
 
-	lwrFmt := strings.ToLower(delFormat)
+	formatFlgVal, err := cmd.Flags().GetString("format")
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	lwrFmt := strings.ToLower(formatFlgVal)
 
 	ok := cmn.SliceContainsStr(cmn.ValidFileFormats, lwrFmt)
 	if !ok {
-		err = fmt.Errorf(gmess.ErrInvalidFileFormat, delFormat)
+		err = fmt.Errorf(gmess.ErrInvalidFileFormat, formatFlgVal)
 		logger.Error(err)
 		return err
 	}
 
 	switch {
 	case lwrFmt == "text":
-		err := bduProcessTextFile(ds, inputFile, scanner)
+		users, err = bduProcessTextFile(ds, inputFlgVal, scanner)
 		if err != nil {
 			logger.Error(err)
 			return err
 		}
 	case lwrFmt == "gsheet":
-		err := bduProcessGSheet(ds, inputFile)
+		rangeFlgVal, err := cmd.Flags().GetString("sheet-range")
+		if err != nil {
+			logger.Error(err)
+			return err
+		}
+
+		users, err = bduProcessGSheet(ds, inputFlgVal, rangeFlgVal)
 		if err != nil {
 			logger.Error(err)
 			return err
 		}
 	default:
-		return fmt.Errorf(gmess.ErrInvalidFileFormat, format)
+		return fmt.Errorf(gmess.ErrInvalidFileFormat, formatFlgVal)
+	}
+
+	err = bduProcessDeletion(ds, users)
+	if err != nil {
+		logger.Error(err)
+		return err
 	}
 
 	logger.Debug("finished doBatchDelUser()")
 	return nil
 }
 
-func bduDeleteObject(wg *sync.WaitGroup, udc *admin.UsersDeleteCall, user string) {
-	logger.Debugw("starting bduDeleteObject()",
+func bduDelete(wg *sync.WaitGroup, udc *admin.UsersDeleteCall, user string) {
+	logger.Debugw("starting bduDelete()",
 		"user", user)
 
 	defer wg.Done()
@@ -147,7 +172,7 @@ func bduDeleteObject(wg *sync.WaitGroup, udc *admin.UsersDeleteCall, user string
 		logger.Error(err)
 		fmt.Println(cmn.GminMessage(err.Error()))
 	}
-	logger.Debug("finished bduDeleteObject()")
+	logger.Debug("finished bduDelete()")
 }
 
 func bduFromFileFactory(hdrMap map[int]string, userData []interface{}) (string, error) {
@@ -178,7 +203,7 @@ func bduProcessDeletion(ds *admin.Service, users []string) error {
 
 		wg.Add(1)
 
-		go bduDeleteObject(wg, udc, user)
+		go bduDelete(wg, udc, user)
 	}
 
 	wg.Wait()
@@ -187,42 +212,43 @@ func bduProcessDeletion(ds *admin.Service, users []string) error {
 	return nil
 }
 
-func bduProcessGSheet(ds *admin.Service, sheetID string) error {
+func bduProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]string, error) {
 	logger.Debugw("starting bduProcessGSheet()",
-		"sheetID", sheetID)
+		"sheetID", sheetID,
+		"sheetrange", sheetrange)
 
 	var users []string
 
-	if sheetRange == "" {
+	if sheetrange == "" {
 		err := errors.New(gmess.ErrNoSheetRange)
 		logger.Error(err)
-		return err
+		return nil, err
 	}
 
 	ss, err := cmn.CreateSheetService(sheet.DriveReadonlyScope)
 	if err != nil {
 		logger.Error(err)
-		return err
+		return nil, err
 	}
 
-	ssvgc := ss.Spreadsheets.Values.Get(sheetID, sheetRange)
+	ssvgc := ss.Spreadsheets.Values.Get(sheetID, sheetrange)
 	sValRange, err := ssvgc.Do()
 	if err != nil {
 		logger.Error(err)
-		return err
+		return nil, err
 	}
 
 	if len(sValRange.Values) == 0 {
-		err = fmt.Errorf(gmess.ErrNoSheetDataFound, sheetID, sheetRange)
+		err = fmt.Errorf(gmess.ErrNoSheetDataFound, sheetID, sheetrange)
 		logger.Error(err)
-		return err
+		return nil, err
 	}
 
 	hdrMap := cmn.ProcessHeader(sValRange.Values[0])
 	err = cmn.ValidateHeader(hdrMap, usrs.UserAttrMap)
 	if err != nil {
 		logger.Error(err)
-		return err
+		return nil, err
 	}
 
 	for idx, row := range sValRange.Values {
@@ -233,22 +259,17 @@ func bduProcessGSheet(ds *admin.Service, sheetID string) error {
 		userVar, err := bduFromFileFactory(hdrMap, row)
 		if err != nil {
 			logger.Error(err)
-			return err
+			return nil, err
 		}
 
 		users = append(users, userVar)
 	}
 
-	err = bduProcessDeletion(ds, users)
-	if err != nil {
-		logger.Error(err)
-		return err
-	}
 	logger.Debug("finished bduProcessGSheet()")
-	return nil
+	return users, nil
 }
 
-func bduProcessTextFile(ds *admin.Service, filePath string, scanner *bufio.Scanner) error {
+func bduProcessTextFile(ds *admin.Service, filePath string, scanner *bufio.Scanner) ([]string, error) {
 	logger.Debugw("starting bduProcessTextFile()",
 		"filePath", filePath)
 
@@ -258,7 +279,7 @@ func bduProcessTextFile(ds *admin.Service, filePath string, scanner *bufio.Scann
 		file, err := os.Open(filePath)
 		if err != nil {
 			logger.Error(err)
-			return err
+			return nil, err
 		}
 		defer file.Close()
 		scanner = bufio.NewScanner(file)
@@ -269,14 +290,8 @@ func bduProcessTextFile(ds *admin.Service, filePath string, scanner *bufio.Scann
 		users = append(users, user)
 	}
 
-	err := bduProcessDeletion(ds, users)
-	if err != nil {
-		logger.Error(err)
-		return err
-	}
-
 	logger.Debug("finished bduProcessTextFile()")
-	return nil
+	return users, nil
 }
 
 func init() {

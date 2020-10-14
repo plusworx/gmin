@@ -83,55 +83,84 @@ func doBatchUpdUser(cmd *cobra.Command, args []string) error {
 	logger.Debugw("starting doBatchUpdUser()",
 		"args", args)
 
+	var (
+		userKeys []string
+		users    []*admin.User
+	)
+
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserScope)
 	if err != nil {
 		logger.Error(err)
 		return err
 	}
 
-	scanner, err := cmn.InputFromStdIn(inputFile)
+	inputFlgVal, err := cmd.Flags().GetString("input-file")
 	if err != nil {
 		logger.Error(err)
 		return err
 	}
 
-	if inputFile == "" && scanner == nil {
+	scanner, err := cmn.InputFromStdIn(inputFlgVal)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+
+	if inputFlgVal == "" && scanner == nil {
 		err := errors.New(gmess.ErrNoInputFile)
 		logger.Error(err)
 		return err
 	}
 
-	lwrFmt := strings.ToLower(format)
+	formatFlgVal, err := cmd.Flags().GetString("format")
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	lwrFmt := strings.ToLower(formatFlgVal)
 
 	ok := cmn.SliceContainsStr(cmn.ValidFileFormats, lwrFmt)
 	if !ok {
-		err = fmt.Errorf(gmess.ErrInvalidFileFormat, format)
+		err = fmt.Errorf(gmess.ErrInvalidFileFormat, formatFlgVal)
 		logger.Error(err)
 		return err
 	}
 
 	switch {
 	case lwrFmt == "csv":
-		err := bupduProcessCSVFile(ds, inputFile)
+		userKeys, users, err = bupduProcessCSVFile(ds, inputFlgVal)
 		if err != nil {
 			logger.Error(err)
 			return err
 		}
 	case lwrFmt == "json":
-		err := bupduProcessJSON(ds, inputFile, scanner)
+		userKeys, users, err = bupduProcessJSON(ds, inputFlgVal, scanner)
 		if err != nil {
 			logger.Error(err)
 			return err
 		}
 	case lwrFmt == "gsheet":
-		err := bupduProcessGSheet(ds, inputFile)
+		rangeFlgVal, err := cmd.Flags().GetString("sheet-range")
+		if err != nil {
+			logger.Error(err)
+			return err
+		}
+
+		userKeys, users, err = bupduProcessGSheet(ds, inputFlgVal, rangeFlgVal)
 		if err != nil {
 			logger.Error(err)
 			return err
 		}
 	default:
-		return fmt.Errorf(gmess.ErrInvalidFileFormat, format)
+		return fmt.Errorf(gmess.ErrInvalidFileFormat, formatFlgVal)
 	}
+
+	err = bupduProcessObjects(ds, users, userKeys)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+
 	logger.Debug("finished doBatchUpdUser()")
 	return nil
 }
@@ -311,7 +340,7 @@ func bupduFromJSONFactory(ds *admin.Service, jsonData string) (*admin.User, stri
 	return user, usrKey.UserKey, nil
 }
 
-func bupduProcessCSVFile(ds *admin.Service, filePath string) error {
+func bupduProcessCSVFile(ds *admin.Service, filePath string) ([]string, []*admin.User, error) {
 	logger.Debugw("starting bupduProcessCSVFile()",
 		"filePath", filePath)
 
@@ -325,7 +354,7 @@ func bupduProcessCSVFile(ds *admin.Service, filePath string) error {
 	csvfile, err := os.Open(filePath)
 	if err != nil {
 		logger.Error(err)
-		return err
+		return nil, nil, err
 	}
 	defer csvfile.Close()
 
@@ -339,7 +368,7 @@ func bupduProcessCSVFile(ds *admin.Service, filePath string) error {
 		}
 		if err != nil {
 			logger.Error(err)
-			return err
+			return nil, nil, err
 		}
 
 		if count == 0 {
@@ -351,7 +380,7 @@ func bupduProcessCSVFile(ds *admin.Service, filePath string) error {
 			err = cmn.ValidateHeader(hdrMap, usrs.UserAttrMap)
 			if err != nil {
 				logger.Error(err)
-				return err
+				return nil, nil, err
 			}
 			count = count + 1
 			continue
@@ -364,7 +393,7 @@ func bupduProcessCSVFile(ds *admin.Service, filePath string) error {
 		userVar, userKey, err := bupduFromFileFactory(hdrMap, iSlice)
 		if err != nil {
 			logger.Error(err)
-			return err
+			return nil, nil, err
 		}
 
 		users = append(users, userVar)
@@ -373,54 +402,50 @@ func bupduProcessCSVFile(ds *admin.Service, filePath string) error {
 		count = count + 1
 	}
 
-	err = bupduProcessObjects(ds, users, userKeys)
-	if err != nil {
-		logger.Error(err)
-		return err
-	}
 	logger.Debug("finished bupduProcessCSVFile()")
-	return nil
+	return userKeys, users, nil
 }
 
-func bupduProcessGSheet(ds *admin.Service, sheetID string) error {
+func bupduProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]string, []*admin.User, error) {
 	logger.Debugw("starting bupduProcessGSheet()",
-		"sheetID", sheetID)
+		"sheetID", sheetID,
+		"sheetrange", sheetrange)
 
 	var (
 		userKeys []string
 		users    []*admin.User
 	)
 
-	if sheetRange == "" {
+	if sheetrange == "" {
 		err := errors.New(gmess.ErrNoSheetRange)
 		logger.Error(err)
-		return err
+		return nil, nil, err
 	}
 
 	ss, err := cmn.CreateSheetService(sheet.DriveReadonlyScope)
 	if err != nil {
 		logger.Error(err)
-		return err
+		return nil, nil, err
 	}
 
-	ssvgc := ss.Spreadsheets.Values.Get(sheetID, sheetRange)
+	ssvgc := ss.Spreadsheets.Values.Get(sheetID, sheetrange)
 	sValRange, err := ssvgc.Do()
 	if err != nil {
 		logger.Error(err)
-		return err
+		return nil, nil, err
 	}
 
 	if len(sValRange.Values) == 0 {
-		err = fmt.Errorf(gmess.ErrNoSheetDataFound, sheetID, sheetRange)
+		err = fmt.Errorf(gmess.ErrNoSheetDataFound, sheetID, sheetrange)
 		logger.Error(err)
-		return err
+		return nil, nil, err
 	}
 
 	hdrMap := cmn.ProcessHeader(sValRange.Values[0])
 	err = cmn.ValidateHeader(hdrMap, usrs.UserAttrMap)
 	if err != nil {
 		logger.Error(err)
-		return err
+		return nil, nil, err
 	}
 
 	for idx, row := range sValRange.Values {
@@ -431,23 +456,18 @@ func bupduProcessGSheet(ds *admin.Service, sheetID string) error {
 		userVar, userKey, err := bupduFromFileFactory(hdrMap, row)
 		if err != nil {
 			logger.Error(err)
-			return err
+			return nil, nil, err
 		}
 
 		userKeys = append(userKeys, userKey)
 		users = append(users, userVar)
 	}
 
-	err = bupduProcessObjects(ds, users, userKeys)
-	if err != nil {
-		logger.Error(err)
-		return err
-	}
 	logger.Debug("finished bupduProcessGSheet()")
-	return nil
+	return userKeys, users, nil
 }
 
-func bupduProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner) error {
+func bupduProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner) ([]string, []*admin.User, error) {
 	logger.Debugw("starting bupduProcessJSON()",
 		"filePath", filePath)
 
@@ -460,7 +480,7 @@ func bupduProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner
 		file, err := os.Open(filePath)
 		if err != nil {
 			logger.Error(err)
-			return err
+			return nil, nil, err
 		}
 		defer file.Close()
 
@@ -473,7 +493,7 @@ func bupduProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner
 		userVar, userKey, err := bupduFromJSONFactory(ds, jsonData)
 		if err != nil {
 			logger.Error(err)
-			return err
+			return nil, nil, err
 		}
 
 		userKeys = append(userKeys, userKey)
@@ -482,16 +502,11 @@ func bupduProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner
 	err := scanner.Err()
 	if err != nil {
 		logger.Error(err)
-		return err
+		return nil, nil, err
 	}
 
-	err = bupduProcessObjects(ds, users, userKeys)
-	if err != nil {
-		logger.Error(err)
-		return err
-	}
 	logger.Debug("finished bupduProcessJSON()")
-	return nil
+	return userKeys, users, nil
 }
 
 func bupduProcessObjects(ds *admin.Service, users []*admin.User, userKeys []string) error {

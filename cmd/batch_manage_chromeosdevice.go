@@ -86,55 +86,81 @@ func doBatchMngCrOSDev(cmd *cobra.Command, args []string) error {
 	logger.Debugw("starting doBatchMngCrOSDev()",
 		"args", args)
 
+	var managedDevs []cdevs.ManagedDevice
+
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryDeviceChromeosScope)
 	if err != nil {
 		logger.Error(err)
 		return err
 	}
 
-	scanner, err := cmn.InputFromStdIn(inputFile)
+	inputFlgVal, err := cmd.Flags().GetString("input-file")
 	if err != nil {
 		logger.Error(err)
 		return err
 	}
 
-	if inputFile == "" && scanner == nil {
+	scanner, err := cmn.InputFromStdIn(inputFlgVal)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+
+	if inputFlgVal == "" && scanner == nil {
 		err := errors.New(gmess.ErrNoInputFile)
 		logger.Error(err)
 		return err
 	}
 
-	lwrFmt := strings.ToLower(format)
+	formatFlgVal, err := cmd.Flags().GetString("format")
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	lwrFmt := strings.ToLower(formatFlgVal)
 
 	ok := cmn.SliceContainsStr(cmn.ValidFileFormats, lwrFmt)
 	if !ok {
-		err = fmt.Errorf(gmess.ErrInvalidFileFormat, format)
+		err = fmt.Errorf(gmess.ErrInvalidFileFormat, formatFlgVal)
 		logger.Error(err)
 		return err
 	}
 
 	switch {
 	case lwrFmt == "csv":
-		err := bmngcProcessCSVFile(ds, inputFile)
+		managedDevs, err = bmngcProcessCSVFile(ds, inputFlgVal)
 		if err != nil {
 			logger.Error(err)
 			return err
 		}
 	case lwrFmt == "json":
-		err := bmngcProcessJSON(ds, inputFile, scanner)
+		managedDevs, err = bmngcProcessJSON(ds, inputFlgVal, scanner)
 		if err != nil {
 			logger.Error(err)
 			return err
 		}
 	case lwrFmt == "gsheet":
-		err := bmngcProcessGSheet(ds, inputFile)
+		rangeFlgVal, err := cmd.Flags().GetString("sheet-range")
+		if err != nil {
+			logger.Error(err)
+			return err
+		}
+
+		managedDevs, err = bmngcProcessGSheet(ds, inputFlgVal, rangeFlgVal)
 		if err != nil {
 			logger.Error(err)
 			return err
 		}
 	default:
-		return fmt.Errorf(gmess.ErrInvalidFileFormat, format)
+		return fmt.Errorf(gmess.ErrInvalidFileFormat, formatFlgVal)
 	}
+
+	err = bmngcProcessObjects(ds, managedDevs)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+
 	logger.Debug("finished doBatchMngCrOSDev()")
 	return nil
 }
@@ -252,7 +278,7 @@ func bmngcPerformAction(deviceID string, action string, wg *sync.WaitGroup, cdac
 	logger.Debug("finished bmngcPerformAction()")
 }
 
-func bmngcProcessCSVFile(ds *admin.Service, filePath string) error {
+func bmngcProcessCSVFile(ds *admin.Service, filePath string) ([]cdevs.ManagedDevice, error) {
 	logger.Debugw("starting bmngcProcessCSVFile()",
 		"filePath", filePath)
 
@@ -265,7 +291,7 @@ func bmngcProcessCSVFile(ds *admin.Service, filePath string) error {
 	csvfile, err := os.Open(filePath)
 	if err != nil {
 		logger.Error(err)
-		return err
+		return nil, err
 	}
 	defer csvfile.Close()
 
@@ -279,7 +305,7 @@ func bmngcProcessCSVFile(ds *admin.Service, filePath string) error {
 		}
 		if err != nil {
 			logger.Error(err)
-			return err
+			return nil, err
 		}
 
 		if count == 0 {
@@ -291,7 +317,7 @@ func bmngcProcessCSVFile(ds *admin.Service, filePath string) error {
 			err = cmn.ValidateHeader(hdrMap, cdevs.CrOSDevAttrMap)
 			if err != nil {
 				logger.Error(err)
-				return err
+				return nil, err
 			}
 			count = count + 1
 			continue
@@ -304,7 +330,7 @@ func bmngcProcessCSVFile(ds *admin.Service, filePath string) error {
 		mngCdevVar, err := bmngcFromFileFactory(hdrMap, iSlice)
 		if err != nil {
 			logger.Error(err)
-			return err
+			return nil, err
 		}
 
 		managedDevs = append(managedDevs, mngCdevVar)
@@ -312,51 +338,47 @@ func bmngcProcessCSVFile(ds *admin.Service, filePath string) error {
 		count = count + 1
 	}
 
-	err = bmngcProcessObjects(ds, managedDevs)
-	if err != nil {
-		logger.Error(err)
-		return err
-	}
 	logger.Debug("finished bmngcProcessCSVFile()")
-	return nil
+	return managedDevs, nil
 }
 
-func bmngcProcessGSheet(ds *admin.Service, sheetID string) error {
+func bmngcProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]cdevs.ManagedDevice, error) {
 	logger.Debugw("starting bmngcProcessGSheet()",
-		"sheetID", sheetID)
+		"sheetID", sheetID,
+		"sheetrange", sheetrange)
 
 	var managedDevs []cdevs.ManagedDevice
 
-	if sheetRange == "" {
+	if sheetrange == "" {
 		err := errors.New(gmess.ErrNoSheetRange)
 		logger.Error(err)
-		return err
+		return nil, err
 	}
 
 	ss, err := cmn.CreateSheetService(sheet.DriveReadonlyScope)
 	if err != nil {
 		logger.Error(err)
-		return err
+		return nil, err
 	}
 
-	ssvgc := ss.Spreadsheets.Values.Get(sheetID, sheetRange)
+	ssvgc := ss.Spreadsheets.Values.Get(sheetID, sheetrange)
 	sValRange, err := ssvgc.Do()
 	if err != nil {
 		logger.Error(err)
-		return err
+		return nil, err
 	}
 
 	if len(sValRange.Values) == 0 {
-		err = fmt.Errorf(gmess.ErrNoSheetDataFound, sheetID, sheetRange)
+		err = fmt.Errorf(gmess.ErrNoSheetDataFound, sheetID, sheetrange)
 		logger.Error(err)
-		return err
+		return nil, err
 	}
 
 	hdrMap := cmn.ProcessHeader(sValRange.Values[0])
 	err = cmn.ValidateHeader(hdrMap, cdevs.CrOSDevAttrMap)
 	if err != nil {
 		logger.Error(err)
-		return err
+		return nil, err
 	}
 
 	for idx, row := range sValRange.Values {
@@ -367,22 +389,17 @@ func bmngcProcessGSheet(ds *admin.Service, sheetID string) error {
 		mngCdevVar, err := bmngcFromFileFactory(hdrMap, row)
 		if err != nil {
 			logger.Error(err)
-			return err
+			return nil, err
 		}
 
 		managedDevs = append(managedDevs, mngCdevVar)
 	}
 
-	err = bmngcProcessObjects(ds, managedDevs)
-	if err != nil {
-		logger.Error(err)
-		return err
-	}
 	logger.Debug("finished bmngcProcessGSheet()")
-	return nil
+	return managedDevs, nil
 }
 
-func bmngcProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner) error {
+func bmngcProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner) ([]cdevs.ManagedDevice, error) {
 	logger.Debugw("starting bmngcProcessJSON()",
 		"filePath", filePath)
 
@@ -392,7 +409,7 @@ func bmngcProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner
 		file, err := os.Open(filePath)
 		if err != nil {
 			logger.Error(err)
-			return err
+			return nil, err
 		}
 		defer file.Close()
 
@@ -405,7 +422,7 @@ func bmngcProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner
 		mngCdevVar, err := bmngcFromJSONFactory(ds, jsonData)
 		if err != nil {
 			logger.Error(err)
-			return err
+			return nil, err
 		}
 
 		managedDevs = append(managedDevs, mngCdevVar)
@@ -413,16 +430,11 @@ func bmngcProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner
 	err := scanner.Err()
 	if err != nil {
 		logger.Error(err)
-		return err
+		return nil, err
 	}
 
-	err = bmngcProcessObjects(ds, managedDevs)
-	if err != nil {
-		logger.Error(err)
-		return err
-	}
 	logger.Debug("finished bmngcProcessJSON()")
-	return nil
+	return managedDevs, nil
 }
 
 func bmngcProcessObjects(ds *admin.Service, managedDevs []cdevs.ManagedDevice) error {

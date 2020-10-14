@@ -80,55 +80,81 @@ func doBatchCrtUser(cmd *cobra.Command, args []string) error {
 	logger.Debugw("starting doBatchCrtUser()",
 		"args", args)
 
+	var users []*admin.User
+
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserScope)
 	if err != nil {
 		logger.Error(err)
 		return err
 	}
 
-	scanner, err := cmn.InputFromStdIn(inputFile)
+	inputFlgVal, err := cmd.Flags().GetString("input-file")
 	if err != nil {
 		logger.Error(err)
 		return err
 	}
 
-	if inputFile == "" && scanner == nil {
+	scanner, err := cmn.InputFromStdIn(inputFlgVal)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+
+	if inputFlgVal == "" && scanner == nil {
 		err := errors.New(gmess.ErrNoInputFile)
 		logger.Error(err)
 		return err
 	}
 
-	lwrFmt := strings.ToLower(format)
+	formatFlgVal, err := cmd.Flags().GetString("format")
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	lwrFmt := strings.ToLower(formatFlgVal)
 
 	ok := cmn.SliceContainsStr(cmn.ValidFileFormats, lwrFmt)
 	if !ok {
-		err = fmt.Errorf(gmess.ErrInvalidFileFormat, format)
+		err = fmt.Errorf(gmess.ErrInvalidFileFormat, formatFlgVal)
 		logger.Error(err)
 		return err
 	}
 
 	switch {
 	case lwrFmt == "csv":
-		err := bcuProcessCSVFile(ds, inputFile)
+		users, err = bcuProcessCSVFile(ds, inputFlgVal)
 		if err != nil {
 			logger.Error(err)
 			return err
 		}
 	case lwrFmt == "json":
-		err := bcuProcessJSON(ds, inputFile, scanner)
+		users, err = bcuProcessJSON(ds, inputFlgVal, scanner)
 		if err != nil {
 			logger.Error(err)
 			return err
 		}
 	case lwrFmt == "gsheet":
-		err := bcuProcessGSheet(ds, inputFile)
+		rangeFlgVal, err := cmd.Flags().GetString("sheet-range")
+		if err != nil {
+			logger.Error(err)
+			return err
+		}
+
+		users, err = bcuProcessGSheet(ds, inputFlgVal, rangeFlgVal)
 		if err != nil {
 			logger.Error(err)
 			return err
 		}
 	default:
-		return fmt.Errorf(gmess.ErrInvalidFileFormat, format)
+		return fmt.Errorf(gmess.ErrInvalidFileFormat, formatFlgVal)
 	}
+
+	err = bcuProcessObjects(ds, users)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+
 	logger.Debug("finished doBatchCrtUser()")
 	return nil
 }
@@ -298,7 +324,7 @@ func bcuFromJSONFactory(ds *admin.Service, jsonData string) (*admin.User, error)
 	return user, nil
 }
 
-func bcuProcessCSVFile(ds *admin.Service, filePath string) error {
+func bcuProcessCSVFile(ds *admin.Service, filePath string) ([]*admin.User, error) {
 	logger.Debugw("starting bcuProcessCSVFile()",
 		"filePath", filePath)
 
@@ -311,7 +337,7 @@ func bcuProcessCSVFile(ds *admin.Service, filePath string) error {
 	csvfile, err := os.Open(filePath)
 	if err != nil {
 		logger.Error(err)
-		return err
+		return nil, err
 	}
 	defer csvfile.Close()
 
@@ -325,7 +351,7 @@ func bcuProcessCSVFile(ds *admin.Service, filePath string) error {
 		}
 		if err != nil {
 			logger.Error(err)
-			return err
+			return nil, err
 		}
 
 		if count == 0 {
@@ -337,7 +363,7 @@ func bcuProcessCSVFile(ds *admin.Service, filePath string) error {
 			err = cmn.ValidateHeader(hdrMap, usrs.UserAttrMap)
 			if err != nil {
 				logger.Error(err)
-				return err
+				return nil, err
 			}
 			count = count + 1
 			continue
@@ -350,7 +376,7 @@ func bcuProcessCSVFile(ds *admin.Service, filePath string) error {
 		userVar, err := bcuFromFileFactory(hdrMap, iSlice)
 		if err != nil {
 			logger.Error(err)
-			return err
+			return nil, err
 		}
 
 		users = append(users, userVar)
@@ -358,51 +384,47 @@ func bcuProcessCSVFile(ds *admin.Service, filePath string) error {
 		count = count + 1
 	}
 
-	err = bcuProcessObjects(ds, users)
-	if err != nil {
-		logger.Error(err)
-		return err
-	}
 	logger.Debug("finished bcuProcessCSVFile()")
-	return nil
+	return users, nil
 }
 
-func bcuProcessGSheet(ds *admin.Service, sheetID string) error {
+func bcuProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]*admin.User, error) {
 	logger.Debugw("starting bcuProcessGSheet()",
-		"sheetID", sheetID)
+		"sheetID", sheetID,
+		"sheetrange", sheetrange)
 
 	var users []*admin.User
 
-	if sheetRange == "" {
+	if sheetrange == "" {
 		err := errors.New(gmess.ErrNoSheetRange)
 		logger.Error(err)
-		return err
+		return nil, err
 	}
 
 	ss, err := cmn.CreateSheetService(sheet.DriveReadonlyScope)
 	if err != nil {
 		logger.Error(err)
-		return err
+		return nil, err
 	}
 
-	ssvgc := ss.Spreadsheets.Values.Get(sheetID, sheetRange)
+	ssvgc := ss.Spreadsheets.Values.Get(sheetID, sheetrange)
 	sValRange, err := ssvgc.Do()
 	if err != nil {
 		logger.Error(err)
-		return err
+		return nil, err
 	}
 
 	if len(sValRange.Values) == 0 {
-		err = fmt.Errorf(gmess.ErrNoSheetDataFound, sheetID, sheetRange)
+		err = fmt.Errorf(gmess.ErrNoSheetDataFound, sheetID, sheetrange)
 		logger.Error(err)
-		return err
+		return nil, err
 	}
 
 	hdrMap := cmn.ProcessHeader(sValRange.Values[0])
 	err = cmn.ValidateHeader(hdrMap, usrs.UserAttrMap)
 	if err != nil {
 		logger.Error(err)
-		return err
+		return nil, err
 	}
 
 	for idx, row := range sValRange.Values {
@@ -413,22 +435,17 @@ func bcuProcessGSheet(ds *admin.Service, sheetID string) error {
 		userVar, err := bcuFromFileFactory(hdrMap, row)
 		if err != nil {
 			logger.Error(err)
-			return err
+			return nil, err
 		}
 
 		users = append(users, userVar)
 	}
 
-	err = bcuProcessObjects(ds, users)
-	if err != nil {
-		logger.Error(err)
-		return err
-	}
 	logger.Debug("finished bcuProcessGSheet()")
-	return nil
+	return users, nil
 }
 
-func bcuProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner) error {
+func bcuProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner) ([]*admin.User, error) {
 	logger.Debugw("starting bcuProcessJSON()",
 		"filePath", filePath)
 
@@ -438,7 +455,7 @@ func bcuProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner) 
 		file, err := os.Open(filePath)
 		if err != nil {
 			logger.Error(err)
-			return err
+			return nil, err
 		}
 		defer file.Close()
 
@@ -451,7 +468,7 @@ func bcuProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner) 
 		userVar, err := bcuFromJSONFactory(ds, jsonData)
 		if err != nil {
 			logger.Error(err)
-			return err
+			return nil, err
 		}
 
 		users = append(users, userVar)
@@ -459,16 +476,11 @@ func bcuProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner) 
 	err := scanner.Err()
 	if err != nil {
 		logger.Error(err)
-		return err
+		return nil, err
 	}
 
-	err = bcuProcessObjects(ds, users)
-	if err != nil {
-		logger.Error(err)
-		return err
-	}
 	logger.Debug("finished bcuProcessJSON()")
-	return nil
+	return users, nil
 }
 
 func bcuProcessObjects(ds *admin.Service, users []*admin.User) error {

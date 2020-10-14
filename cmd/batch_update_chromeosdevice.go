@@ -78,55 +78,81 @@ func doBatchUpdCrOSDev(cmd *cobra.Command, args []string) error {
 	logger.Debugw("starting doBatchUpdCrOSDev()",
 		"args", args)
 
+	var crosdevs []*admin.ChromeOsDevice
+
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryDeviceChromeosScope)
 	if err != nil {
 		logger.Error(err)
 		return err
 	}
 
-	scanner, err := cmn.InputFromStdIn(inputFile)
+	inputFlgVal, err := cmd.Flags().GetString("input-file")
 	if err != nil {
 		logger.Error(err)
 		return err
 	}
 
-	if inputFile == "" && scanner == nil {
+	scanner, err := cmn.InputFromStdIn(inputFlgVal)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+
+	if inputFlgVal == "" && scanner == nil {
 		err := errors.New(gmess.ErrNoInputFile)
 		logger.Error(err)
 		return err
 	}
 
-	lwrFmt := strings.ToLower(format)
+	formatFlgVal, err := cmd.Flags().GetString("format")
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	lwrFmt := strings.ToLower(formatFlgVal)
 
 	ok := cmn.SliceContainsStr(cmn.ValidFileFormats, lwrFmt)
 	if !ok {
-		err = fmt.Errorf(gmess.ErrInvalidFileFormat, format)
+		err = fmt.Errorf(gmess.ErrInvalidFileFormat, formatFlgVal)
 		logger.Error(err)
 		return err
 	}
 
 	switch {
 	case lwrFmt == "csv":
-		err := bucProcessCSVFile(ds, inputFile)
+		crosdevs, err = bucProcessCSVFile(ds, inputFlgVal)
 		if err != nil {
 			logger.Error(err)
 			return err
 		}
 	case lwrFmt == "json":
-		err := bucProcessJSON(ds, inputFile, scanner)
+		crosdevs, err = bucProcessJSON(ds, inputFlgVal, scanner)
 		if err != nil {
 			logger.Error(err)
 			return err
 		}
 	case lwrFmt == "gsheet":
-		err := bucProcessGSheet(ds, inputFile)
+		rangeFlgVal, err := cmd.Flags().GetString("sheet-range")
+		if err != nil {
+			logger.Error(err)
+			return err
+		}
+
+		crosdevs, err = bucProcessGSheet(ds, inputFlgVal, rangeFlgVal)
 		if err != nil {
 			logger.Error(err)
 			return err
 		}
 	default:
-		return fmt.Errorf(gmess.ErrInvalidFileFormat, format)
+		return fmt.Errorf(gmess.ErrInvalidFileFormat, formatFlgVal)
 	}
+
+	err = bucProcessObjects(ds, crosdevs)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+
 	logger.Debug("finished doBatchUpdCrOSDev()")
 	return nil
 }
@@ -225,7 +251,7 @@ func bucFromJSONFactory(ds *admin.Service, jsonData string) (*admin.ChromeOsDevi
 	return crosdev, nil
 }
 
-func bucProcessCSVFile(ds *admin.Service, filePath string) error {
+func bucProcessCSVFile(ds *admin.Service, filePath string) ([]*admin.ChromeOsDevice, error) {
 	logger.Debugw("starting bucProcessCSVFile()",
 		"filePath", filePath)
 
@@ -238,7 +264,7 @@ func bucProcessCSVFile(ds *admin.Service, filePath string) error {
 	csvfile, err := os.Open(filePath)
 	if err != nil {
 		logger.Error(err)
-		return err
+		return nil, err
 	}
 	defer csvfile.Close()
 
@@ -252,7 +278,7 @@ func bucProcessCSVFile(ds *admin.Service, filePath string) error {
 		}
 		if err != nil {
 			logger.Error(err)
-			return err
+			return nil, err
 		}
 
 		if count == 0 {
@@ -264,7 +290,7 @@ func bucProcessCSVFile(ds *admin.Service, filePath string) error {
 			err = cmn.ValidateHeader(hdrMap, cdevs.CrOSDevAttrMap)
 			if err != nil {
 				logger.Error(err)
-				return err
+				return nil, err
 			}
 			count = count + 1
 			continue
@@ -277,7 +303,7 @@ func bucProcessCSVFile(ds *admin.Service, filePath string) error {
 		cdevVar, err := bucFromFileFactory(hdrMap, iSlice)
 		if err != nil {
 			logger.Error(err)
-			return err
+			return nil, err
 		}
 
 		crosdevs = append(crosdevs, cdevVar)
@@ -285,50 +311,46 @@ func bucProcessCSVFile(ds *admin.Service, filePath string) error {
 		count = count + 1
 	}
 
-	err = bucProcessObjects(ds, crosdevs)
-	if err != nil {
-		logger.Error(err)
-		return err
-	}
 	logger.Debug("finished bucProcessCSVFile()")
-	return nil
+	return crosdevs, nil
 }
-func bucProcessGSheet(ds *admin.Service, sheetID string) error {
+func bucProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]*admin.ChromeOsDevice, error) {
 	logger.Debugw("starting bucProcessGSheet()",
-		"sheetID", sheetID)
+		"sheetID", sheetID,
+		"sheetrange", sheetrange)
 
 	var crosdevs []*admin.ChromeOsDevice
 
-	if sheetRange == "" {
+	if sheetrange == "" {
 		err := errors.New(gmess.ErrNoSheetRange)
 		logger.Error(err)
-		return err
+		return nil, err
 	}
 
 	ss, err := cmn.CreateSheetService(sheet.DriveReadonlyScope)
 	if err != nil {
 		logger.Error(err)
-		return err
+		return nil, err
 	}
 
-	ssvgc := ss.Spreadsheets.Values.Get(sheetID, sheetRange)
+	ssvgc := ss.Spreadsheets.Values.Get(sheetID, sheetrange)
 	sValRange, err := ssvgc.Do()
 	if err != nil {
 		logger.Error(err)
-		return err
+		return nil, err
 	}
 
 	if len(sValRange.Values) == 0 {
-		err = fmt.Errorf(gmess.ErrNoSheetDataFound, sheetID, sheetRange)
+		err = fmt.Errorf(gmess.ErrNoSheetDataFound, sheetID, sheetrange)
 		logger.Error(err)
-		return err
+		return nil, err
 	}
 
 	hdrMap := cmn.ProcessHeader(sValRange.Values[0])
 	err = cmn.ValidateHeader(hdrMap, cdevs.CrOSDevAttrMap)
 	if err != nil {
 		logger.Error(err)
-		return err
+		return nil, err
 	}
 
 	for idx, row := range sValRange.Values {
@@ -339,22 +361,17 @@ func bucProcessGSheet(ds *admin.Service, sheetID string) error {
 		cdevVar, err := bucFromFileFactory(hdrMap, row)
 		if err != nil {
 			logger.Error(err)
-			return err
+			return nil, err
 		}
 
 		crosdevs = append(crosdevs, cdevVar)
 	}
 
-	err = bucProcessObjects(ds, crosdevs)
-	if err != nil {
-		logger.Error(err)
-		return err
-	}
 	logger.Debug("finished bucProcessGSheet()")
-	return nil
+	return crosdevs, nil
 }
 
-func bucProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner) error {
+func bucProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner) ([]*admin.ChromeOsDevice, error) {
 	logger.Debugw("starting bucProcessJSON()",
 		"filePath", filePath)
 
@@ -364,7 +381,7 @@ func bucProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner) 
 		file, err := os.Open(filePath)
 		if err != nil {
 			logger.Error(err)
-			return err
+			return nil, err
 		}
 		defer file.Close()
 
@@ -377,7 +394,7 @@ func bucProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner) 
 		cdevVar, err := bucFromJSONFactory(ds, jsonData)
 		if err != nil {
 			logger.Error(err)
-			return err
+			return nil, err
 		}
 
 		crosdevs = append(crosdevs, cdevVar)
@@ -385,16 +402,11 @@ func bucProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner) 
 	err := scanner.Err()
 	if err != nil {
 		logger.Error(err)
-		return err
+		return nil, err
 	}
 
-	err = bucProcessObjects(ds, crosdevs)
-	if err != nil {
-		logger.Error(err)
-		return err
-	}
 	logger.Debug("finished bucProcessJSON()")
-	return nil
+	return crosdevs, nil
 }
 
 func bucProcessObjects(ds *admin.Service, crosdevs []*admin.ChromeOsDevice) error {
