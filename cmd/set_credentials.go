@@ -66,7 +66,7 @@ func askForCredentialsFile(nFiles int) int {
 
 	_, err := fmt.Scanln(&response)
 	if err != nil {
-		fmt.Println(gmess.ERR_FILENUMBERR_EQUIRED)
+		fmt.Println(gmess.ERR_FILENUMBERREQUIRED)
 		return askForCredentialsFile(nFiles)
 	}
 
