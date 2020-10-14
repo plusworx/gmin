@@ -38,8 +38,8 @@ var manageGroupSettingsCmd = &cobra.Command{
 	Use:     "group-settings <group email address>",
 	Aliases: []string{"grp-settings", "grp-set", "gsettings", "gset"},
 	Args:    cobra.ExactArgs(1),
-	Example: `gmin manage group-settings sales@mycompany.org
-gmin mng gset finance@mycompany.org`,
+	Example: `gmin manage group-settings sales@mycompany.org --collab-inbox --web-posting
+gmin mng gset finance@mycompany.org -c -w`,
 	Short: "Manages settings for a group",
 	Long:  `Manages settings for a group.`,
 	RunE:  doManageGroupSettings,
