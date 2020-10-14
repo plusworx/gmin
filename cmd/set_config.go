@@ -63,7 +63,7 @@ func doSetConfig(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return err
 		}
-		fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.InfoCustomerIDSet, adminEmail)))
+		fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.InfoAdminSet, adminEmail)))
 	}
 
 	if credentialPath != "" {
