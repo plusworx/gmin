@@ -52,7 +52,7 @@ func doManageMobDev(cmd *cobra.Command, args []string) error {
 
 	var devAction = admin.MobileDeviceAction{}
 
-	customerID, err := cfg.ReadConfigString("customerid")
+	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {
 		logger.Error(err)
 		return err

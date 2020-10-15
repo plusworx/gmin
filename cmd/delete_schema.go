@@ -53,7 +53,7 @@ func doDeleteSchema(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	customerID, err := cfg.ReadConfigString("customerid")
+	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {
 		logger.Error(err)
 		return err

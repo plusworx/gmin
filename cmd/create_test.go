@@ -75,8 +75,11 @@ func TestDoCreateUser(t *testing.T) {
 		password = c.password
 		recoveryPhone = c.recoveryPhone
 
-		initConfig()
-		createCmd.PersistentPreRunE(createUserCmd, c.args)
+		// rootCmd.AddCommand(createCmd)
+		// createCmd.Flags().BoolVar(&silent, flgnm.FLG_SILENT, false, "suppress console output")
+		// createCmd.Flags().StringVar(&logLevel, flgnm.FLG_LOGLEVEL, "info", "log level (debug, info, error, warn)")
+		// createCmd.PersistentPreRunE = preRun
+
 		got := doCreateUser(createUserCmd, c.args)
 
 		if got.Error() != c.expectedErr {

@@ -23,6 +23,7 @@ THE SOFTWARE.
 package cmd
 
 import (
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	"github.com/spf13/cobra"
 )
 
@@ -41,8 +42,8 @@ func doCreate(cmd *cobra.Command, args []string) {
 
 func init() {
 	rootCmd.AddCommand(createCmd)
-	createCmd.PersistentFlags().BoolVar(&silent, "silent", false, "suppress console output")
-	createCmd.PersistentFlags().StringVar(&logLevel, "log-level", "info", "log level (debug, info, error, warn)")
+	createCmd.PersistentFlags().BoolVar(&silent, flgnm.FLG_SILENT, false, "suppress console output")
+	createCmd.PersistentFlags().StringVar(&logLevel, flgnm.FLG_LOGLEVEL, "info", "log level (debug, info, error, warn)")
 
 	createCmd.PersistentPreRunE = preRun
 }

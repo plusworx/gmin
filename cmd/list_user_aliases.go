@@ -27,6 +27,7 @@ import (
 	"fmt"
 
 	cmn "github.com/plusworx/gmin/utils/common"
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gpars "github.com/plusworx/gmin/utils/gminparsers"
 	uas "github.com/plusworx/gmin/utils/useraliases"
 	"github.com/spf13/cobra"
@@ -58,8 +59,13 @@ func doListUserAliases(cmd *cobra.Command, args []string) error {
 
 	ualc := ds.Users.Aliases.List(args[0])
 
-	if attrs != "" {
-		listAttrs, err := gpars.ParseOutputAttrs(attrs, uas.UserAliasAttrMap)
+	flgAttrsVal, err := cmd.Flags().GetString(flgnm.FLG_ATTRIBUTES)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	if flgAttrsVal != "" {
+		listAttrs, err := gpars.ParseOutputAttrs(flgAttrsVal, uas.UserAliasAttrMap)
 		if err != nil {
 			logger.Error(err)
 			return err
@@ -90,5 +96,5 @@ func doListUserAliases(cmd *cobra.Command, args []string) error {
 func init() {
 	listCmd.AddCommand(listUserAliasesCmd)
 
-	listUserAliasesCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required user alias attributes (separated by ~)")
+	listUserAliasesCmd.Flags().StringVarP(&attrs, flgnm.FLG_ATTRIBUTES, "a", "", "required user alias attributes (separated by ~)")
 }

@@ -26,7 +26,9 @@ import (
 	"fmt"
 	"os"
 
+	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	"github.com/spf13/cobra"
 )
 
@@ -50,7 +52,7 @@ func doWhoami(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	fmt.Println("gmin: admin is " + email)
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_ADMINIS, email)))
 
 	return nil
 }

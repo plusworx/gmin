@@ -23,6 +23,7 @@ THE SOFTWARE.
 package cmd
 
 import (
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	"github.com/spf13/cobra"
 )
 
@@ -40,7 +41,7 @@ func doGet(cmd *cobra.Command, args []string) {
 
 func init() {
 	rootCmd.AddCommand(getCmd)
-	getCmd.PersistentFlags().StringVar(&logLevel, "log-level", "info", "log level (debug, info, error, warn)")
+	getCmd.PersistentFlags().StringVar(&logLevel, flgnm.FLG_LOGLEVEL, "info", "log level (debug, info, error, warn)")
 
 	getCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
 		zlog, err := setupLogging(logLevel)

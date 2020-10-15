@@ -30,6 +30,7 @@ import (
 	cdevs "github.com/plusworx/gmin/utils/chromeosdevices"
 	ca "github.com/plusworx/gmin/utils/commandaliases"
 	cmn "github.com/plusworx/gmin/utils/common"
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	grps "github.com/plusworx/gmin/utils/groups"
 	grpset "github.com/plusworx/gmin/utils/groupsettings"
@@ -67,44 +68,49 @@ func doShowFlagVals(cmd *cobra.Command, args []string) error {
 
 	object := strings.ToLower(args[0])
 
+	flgFilterVal, err := cmd.Flags().GetString(flgnm.FLG_FILTER)
+	if err != nil {
+		return err
+	}
+
 	switch {
 	case cmn.SliceContainsStr(ca.CDevAliases, object):
-		err := cdevs.ShowFlagValues(len(args), args, filter)
+		err := cdevs.ShowFlagValues(len(args), args, flgFilterVal)
 		if err != nil {
 			return err
 		}
 	case object == "global":
-		err := cmn.ShowGlobalFlagValues(len(args), args, filter)
+		err := cmn.ShowGlobalFlagValues(len(args), args, flgFilterVal)
 		if err != nil {
 			return err
 		}
 	case cmn.SliceContainsStr(ca.GroupAliases, object):
-		err := grps.ShowFlagValues(len(args), args, filter)
+		err := grps.ShowFlagValues(len(args), args, flgFilterVal)
 		if err != nil {
 			return err
 		}
 	case cmn.SliceContainsStr(ca.GMAliases, object):
-		err := gmems.ShowFlagValues(len(args), args, filter)
+		err := gmems.ShowFlagValues(len(args), args, flgFilterVal)
 		if err != nil {
 			return err
 		}
 	case cmn.SliceContainsStr(ca.GSAliases, object):
-		err := grpset.ShowFlagValues(len(args), args, filter)
+		err := grpset.ShowFlagValues(len(args), args, flgFilterVal)
 		if err != nil {
 			return err
 		}
 	case cmn.SliceContainsStr(ca.MDevAliases, object):
-		err := mdevs.ShowFlagValues(len(args), args, filter)
+		err := mdevs.ShowFlagValues(len(args), args, flgFilterVal)
 		if err != nil {
 			return err
 		}
 	case cmn.SliceContainsStr(ca.OUAliases, object):
-		err := ous.ShowFlagValues(len(args), args, filter)
+		err := ous.ShowFlagValues(len(args), args, flgFilterVal)
 		if err != nil {
 			return err
 		}
 	case cmn.SliceContainsStr(ca.UserAliases, object):
-		err := usrs.ShowFlagValues(len(args), args, filter)
+		err := usrs.ShowFlagValues(len(args), args, flgFilterVal)
 		if err != nil {
 			return err
 		}
@@ -116,5 +122,5 @@ func doShowFlagVals(cmd *cobra.Command, args []string) error {
 
 func init() {
 	showCmd.AddCommand(showFlagValsCmd)
-	showFlagValsCmd.Flags().StringVarP(&filter, "filter", "f", "", "string used to filter results")
+	showFlagValsCmd.Flags().StringVarP(&filter, flgnm.FLG_FILTER, "f", "", "string used to filter results")
 }

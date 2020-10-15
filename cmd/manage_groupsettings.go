@@ -27,6 +27,7 @@ import (
 
 	valid "github.com/asaskevich/govalidator"
 	cmn "github.com/plusworx/gmin/utils/common"
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	grpset "github.com/plusworx/gmin/utils/groupsettings"
 	"github.com/spf13/cobra"
@@ -90,202 +91,238 @@ func doManageGroupSettings(cmd *cobra.Command, args []string) error {
 func init() {
 	manageCmd.AddCommand(manageGroupSettingsCmd)
 
-	manageGroupSettingsCmd.Flags().StringVar(&approveMems, "approve-member", "", "who can approve members")
-	manageGroupSettingsCmd.Flags().BoolVarP(&isArchived, "archived", "r", false, "is archived")
-	manageGroupSettingsCmd.Flags().BoolVarP(&archiveOnly, "archive-only", "a", false, "archive only")
-	manageGroupSettingsCmd.Flags().StringVar(&assistContent, "assist-content", "", "who can moderate metadata")
-	manageGroupSettingsCmd.Flags().StringVar(&banUser, "ban-user", "", "who can ban user")
-	manageGroupSettingsCmd.Flags().BoolVarP(&collabInbox, "collab-inbox", "c", false, "enable collaborative inbox")
-	manageGroupSettingsCmd.Flags().StringVar(&contactOwner, "contact-owner", "", "who can contact owner")
-	manageGroupSettingsCmd.Flags().StringVar(&denyText, "deny-text", "", "default message deny notification text")
-	manageGroupSettingsCmd.Flags().StringVar(&discoverGroup, "discover-group", "", "who can discover group")
-	manageGroupSettingsCmd.Flags().BoolVarP(&extMems, "ext-member", "e", false, "allow external members")
-	manageGroupSettingsCmd.Flags().BoolVarP(&incFooter, "footer-on", "f", false, "include custom footer")
-	manageGroupSettingsCmd.Flags().StringVar(&footerText, "footer-text", "", "custom footer text")
-	manageGroupSettingsCmd.Flags().BoolVarP(&gal, "gal", "g", false, "include in Global Address List")
-	manageGroupSettingsCmd.Flags().StringVar(&join, "join", "", "who can join group")
-	manageGroupSettingsCmd.Flags().StringVar(&language, "language", "", "primary language")
-	manageGroupSettingsCmd.Flags().StringVar(&leave, "leave", "", "who can leave group")
-	manageGroupSettingsCmd.Flags().StringVar(&messageMod, "message-mod", "", "message moderation level")
-	manageGroupSettingsCmd.Flags().StringVar(&modContent, "mod-content", "", "who can moderate content")
-	manageGroupSettingsCmd.Flags().StringVar(&modMems, "mod-member", "", "who can moderate members")
-	manageGroupSettingsCmd.Flags().BoolVarP(&denyNotification, "notify-deny", "n", false, "send message deny notification")
-	manageGroupSettingsCmd.Flags().BoolVarP(&postAsGroup, "post-as-group", "p", false, "members can post as group")
-	manageGroupSettingsCmd.Flags().StringVar(&postMessage, "post-message", "", "who can post messages")
-	manageGroupSettingsCmd.Flags().BoolVarP(&repliesOnTop, "replies-on-top", "t", false, "favourite replies on top")
-	manageGroupSettingsCmd.Flags().StringVar(&replyEmail, "reply-email", "", "custom reply to email address")
-	manageGroupSettingsCmd.Flags().StringVar(&replyTo, "reply-to", "", "who receives the default reply")
-	manageGroupSettingsCmd.Flags().StringVar(&spamMod, "spam-mod", "", "spam moderation level")
-	manageGroupSettingsCmd.Flags().StringVar(&viewGroup, "view-group", "", "who can view group")
-	manageGroupSettingsCmd.Flags().StringVar(&viewMems, "view-membership", "", "who can view membership")
-	manageGroupSettingsCmd.Flags().BoolVarP(&webPosting, "web-posting", "w", false, "allow web posting")
+	manageGroupSettingsCmd.Flags().StringVar(&approveMems, flgnm.FLG_APPROVEMEM, "", "who can approve members")
+	manageGroupSettingsCmd.Flags().BoolVarP(&isArchived, flgnm.FLG_ARCHIVED, "r", false, "is archived")
+	manageGroupSettingsCmd.Flags().BoolVarP(&archiveOnly, flgnm.FLG_ARCHIVEONLY, "a", false, "archive only")
+	manageGroupSettingsCmd.Flags().StringVar(&assistContent, flgnm.FLG_ASSISTCONTENT, "", "who can moderate metadata")
+	manageGroupSettingsCmd.Flags().StringVar(&banUser, flgnm.FLG_BANUSER, "", "who can ban user")
+	manageGroupSettingsCmd.Flags().BoolVarP(&collabInbox, flgnm.FLG_COLLABINBOX, "c", false, "enable collaborative inbox")
+	manageGroupSettingsCmd.Flags().StringVar(&contactOwner, flgnm.FLG_CONTACTOWNER, "", "who can contact owner")
+	manageGroupSettingsCmd.Flags().StringVar(&denyText, flgnm.FLG_DENYTEXT, "", "default message deny notification text")
+	manageGroupSettingsCmd.Flags().StringVar(&discoverGroup, flgnm.FLG_DISCGROUP, "", "who can discover group")
+	manageGroupSettingsCmd.Flags().BoolVarP(&extMems, flgnm.FLG_EXTMEMBER, "e", false, "allow external members")
+	manageGroupSettingsCmd.Flags().BoolVarP(&incFooter, flgnm.FLG_FOOTERON, "f", false, "include custom footer")
+	manageGroupSettingsCmd.Flags().StringVar(&footerText, flgnm.FLG_FOOTERTEXT, "", "custom footer text")
+	manageGroupSettingsCmd.Flags().BoolVarP(&gal, flgnm.FLG_GAL, "g", false, "include in Global Address List")
+	manageGroupSettingsCmd.Flags().StringVar(&join, flgnm.FLG_JOIN, "", "who can join group")
+	manageGroupSettingsCmd.Flags().StringVar(&language, flgnm.FLG_LANGUAGE, "", "primary language")
+	manageGroupSettingsCmd.Flags().StringVar(&leave, flgnm.FLG_LEAVE, "", "who can leave group")
+	manageGroupSettingsCmd.Flags().StringVar(&messageMod, flgnm.FLG_MESSAGEMOD, "", "message moderation level")
+	manageGroupSettingsCmd.Flags().StringVar(&modContent, flgnm.FLG_MODCONTENT, "", "who can moderate content")
+	manageGroupSettingsCmd.Flags().StringVar(&modMems, flgnm.FLG_MODMEMBER, "", "who can moderate members")
+	manageGroupSettingsCmd.Flags().BoolVarP(&denyNotification, flgnm.FLG_NOTIFYDENY, "n", false, "send message deny notification")
+	manageGroupSettingsCmd.Flags().BoolVarP(&postAsGroup, flgnm.FLG_POSTASGROUP, "p", false, "members can post as group")
+	manageGroupSettingsCmd.Flags().StringVar(&postMessage, flgnm.FLG_POSTMESSAGE, "", "who can post messages")
+	manageGroupSettingsCmd.Flags().BoolVarP(&repliesOnTop, flgnm.FLG_REPLIESONTOP, "t", false, "favourite replies on top")
+	manageGroupSettingsCmd.Flags().StringVar(&replyEmail, flgnm.FLG_REPLYEMAIL, "", "custom reply to email address")
+	manageGroupSettingsCmd.Flags().StringVar(&replyTo, flgnm.FLG_REPLYTO, "", "who receives the default reply")
+	manageGroupSettingsCmd.Flags().StringVar(&spamMod, flgnm.FLG_SPAMMOD, "", "spam moderation level")
+	manageGroupSettingsCmd.Flags().StringVar(&viewGroup, flgnm.FLG_VIEWGROUP, "", "who can view group")
+	manageGroupSettingsCmd.Flags().StringVar(&viewMems, flgnm.FLG_VIEWMEMSHIP, "", "who can view membership")
+	manageGroupSettingsCmd.Flags().BoolVarP(&webPosting, flgnm.FLG_WEBPOSTING, "w", false, "allow web posting")
 }
 
 func processMngGrpSettingFlags(cmd *cobra.Command, grpSettings *gset.Groups, flagNames []string) error {
 	logger.Debugw("starting processMngGrpSettingFlags()",
 		"flagNames", flagNames)
+	var (
+		boolFlags = []string{
+			flgnm.FLG_ARCHIVED,
+			flgnm.FLG_ARCHIVEONLY,
+			flgnm.FLG_COLLABINBOX,
+			flgnm.FLG_EXTMEMBER,
+			flgnm.FLG_FOOTERON,
+			flgnm.FLG_GAL,
+			flgnm.FLG_NOTIFYDENY,
+			flgnm.FLG_POSTASGROUP,
+			flgnm.FLG_REPLIESONTOP,
+			flgnm.FLG_WEBPOSTING,
+		}
+		err     error
+		flgBVal bool
+		flgSVal string
+	)
+
 	for _, flName := range flagNames {
-		if flName == "approve-member" {
-			err := mgsApproveMemberFlag(grpSettings, "--"+flName)
+		ok := cmn.SliceContainsStr(boolFlags, flName)
+		if ok {
+			flgBVal, err = cmd.Flags().GetBool(flName)
+			if err != nil {
+				logger.Error(err)
+				return err
+			}
+		} else {
+			flgSVal, err = cmd.Flags().GetString(flName)
+			if err != nil {
+				logger.Error(err)
+				return err
+			}
+		}
+		if flName == flgnm.FLG_APPROVEMEM {
+			err = mgsApproveMemberFlag(grpSettings, "--"+flName, flgSVal)
 			if err != nil {
 				return err
 			}
 			return nil
 		}
-		if flName == "archived" {
-			mgsArchivedFlag(grpSettings)
+		if flName == flgnm.FLG_ARCHIVED {
+			mgsArchivedFlag(grpSettings, flgBVal)
 			return nil
 		}
-		if flName == "archive-only" {
-			mgsArchiveOnlyFlag(grpSettings)
+		if flName == flgnm.FLG_ARCHIVEONLY {
+			mgsArchiveOnlyFlag(grpSettings, flgBVal)
 			return nil
 		}
-		if flName == "assist-content" {
-			err := mgsAssistContentFlag(grpSettings, "--"+flName)
+		if flName == flgnm.FLG_ASSISTCONTENT {
+			err := mgsAssistContentFlag(grpSettings, "--"+flName, flgSVal)
 			if err != nil {
 				return err
 			}
 			return nil
 		}
-		if flName == "ban-user" {
-			err := mgsBanUserFlag(grpSettings, "--"+flName)
+		if flName == flgnm.FLG_BANUSER {
+			err := mgsBanUserFlag(grpSettings, "--"+flName, flgSVal)
 			if err != nil {
 				return err
 			}
 			return nil
 		}
-		if flName == "collab-inbox" {
-			mgsCollabInboxFlag(grpSettings)
+		if flName == flgnm.FLG_COLLABINBOX {
+			mgsCollabInboxFlag(grpSettings, flgBVal)
 			return nil
 		}
-		if flName == "contact-owner" {
-			err := mgsContactOwnerFlag(grpSettings, "--"+flName)
+		if flName == flgnm.FLG_CONTACTOWNER {
+			err := mgsContactOwnerFlag(grpSettings, "--"+flName, flgSVal)
 			if err != nil {
 				return err
 			}
 			return nil
 		}
-		if flName == "deny-text" {
-			mgsDenyTextFlag(grpSettings)
+		if flName == flgnm.FLG_DENYTEXT {
+			mgsDenyTextFlag(grpSettings, flgSVal)
 			return nil
 		}
-		if flName == "discover-group" {
-			err := mgsDiscoverGroupFlag(grpSettings, "--"+flName)
+		if flName == flgnm.FLG_DISCGROUP {
+			err := mgsDiscoverGroupFlag(grpSettings, "--"+flName, flgSVal)
 			if err != nil {
 				return err
 			}
 			return nil
 		}
-		if flName == "ext-member" {
-			mgsExtMemberFlag(grpSettings)
+		if flName == flgnm.FLG_EXTMEMBER {
+			mgsExtMemberFlag(grpSettings, flgBVal)
 			return nil
 		}
-		if flName == "footer-on" {
-			mgsFooterOnFlag(grpSettings)
+		if flName == flgnm.FLG_FOOTERON {
+			mgsFooterOnFlag(grpSettings, flgBVal)
 			return nil
 		}
-		if flName == "footer-text" {
-			mgsFooterTextFlag(grpSettings)
+		if flName == flgnm.FLG_FOOTERTEXT {
+			mgsFooterTextFlag(grpSettings, flgSVal)
 			return nil
 		}
-		if flName == "join" {
-			err := mgsJoinFlag(grpSettings, "--"+flName)
+		if flName == flgnm.FLG_GAL {
+			mgsGalFlag(grpSettings, flgBVal)
+			return nil
+		}
+		if flName == flgnm.FLG_JOIN {
+			err := mgsJoinFlag(grpSettings, "--"+flName, flgSVal)
 			if err != nil {
 				return err
 			}
 			return nil
 		}
-		if flName == "language" {
-			err := mgsLanguageFlag(grpSettings, "--"+flName)
+		if flName == flgnm.FLG_LANGUAGE {
+			err := mgsLanguageFlag(grpSettings, "--"+flName, flgSVal)
 			if err != nil {
 				return err
 			}
 			return nil
 		}
-		if flName == "leave" {
-			err := mgsLeaveFlag(grpSettings, "--"+flName)
+		if flName == flgnm.FLG_LEAVE {
+			err := mgsLeaveFlag(grpSettings, "--"+flName, flgSVal)
 			if err != nil {
 				return err
 			}
 			return nil
 		}
-		if flName == "message-mod" {
-			err := mgsMessageModFlag(grpSettings, "--"+flName)
+		if flName == flgnm.FLG_MESSAGEMOD {
+			err := mgsMessageModFlag(grpSettings, "--"+flName, flgSVal)
 			if err != nil {
 				return err
 			}
 			return nil
 		}
-		if flName == "mod-content" {
-			err := mgsModContentFlag(grpSettings, "--"+flName)
+		if flName == flgnm.FLG_MODCONTENT {
+			err := mgsModContentFlag(grpSettings, "--"+flName, flgSVal)
 			if err != nil {
 				return err
 			}
 			return nil
 		}
-		if flName == "mod-member" {
-			err := mgsModMemberFlag(grpSettings, "--"+flName)
+		if flName == flgnm.FLG_MODMEMBER {
+			err := mgsModMemberFlag(grpSettings, "--"+flName, flgSVal)
 			if err != nil {
 				return err
 			}
 			return nil
 		}
-		if flName == "notify-deny" {
-			mgsNotifyDenyFlag(grpSettings)
+		if flName == flgnm.FLG_NOTIFYDENY {
+			mgsNotifyDenyFlag(grpSettings, flgBVal)
 			return nil
 		}
-		if flName == "post-as-group" {
-			mgsPostAsGroupFlag(grpSettings)
+		if flName == flgnm.FLG_POSTASGROUP {
+			mgsPostAsGroupFlag(grpSettings, flgBVal)
 			return nil
 		}
-		if flName == "post-message" {
-			err := mgsPostMessageFlag(grpSettings, "--"+flName)
+		if flName == flgnm.FLG_POSTMESSAGE {
+			err := mgsPostMessageFlag(grpSettings, "--"+flName, flgSVal)
 			if err != nil {
 				return err
 			}
 			return nil
 		}
-		if flName == "replies-on-top" {
-			mgsRepliesOnTopFlag(grpSettings)
+		if flName == flgnm.FLG_REPLIESONTOP {
+			mgsRepliesOnTopFlag(grpSettings, flgBVal)
 			return nil
 		}
-		if flName == "reply-email" {
-			err := mgsReplyEmailFlag(grpSettings)
+		if flName == flgnm.FLG_REPLYEMAIL {
+			err := mgsReplyEmailFlag(grpSettings, flgSVal)
 			if err != nil {
 				return err
 			}
 			return nil
 		}
-		if flName == "reply-to" {
-			err := mgsReplyToFlag(grpSettings, "--"+flName)
+		if flName == flgnm.FLG_REPLYTO {
+			err := mgsReplyToFlag(grpSettings, "--"+flName, flgSVal)
 			if err != nil {
 				return err
 			}
 			return nil
 		}
-		if flName == "spam-mod" {
-			err := mgsSpamModFlag(grpSettings, "--"+flName)
+		if flName == flgnm.FLG_SPAMMOD {
+			err := mgsSpamModFlag(grpSettings, "--"+flName, flgSVal)
 			if err != nil {
 				return err
 			}
 			return nil
 		}
-		if flName == "view-group" {
-			err := mgsViewGroupFlag(grpSettings, "--"+flName)
+		if flName == flgnm.FLG_VIEWGROUP {
+			err := mgsViewGroupFlag(grpSettings, "--"+flName, flgSVal)
 			if err != nil {
 				return err
 			}
 			return nil
 		}
-		if flName == "view-membership" {
-			err := mgsViewMembershipFlag(grpSettings, "--"+flName)
+		if flName == flgnm.FLG_VIEWMEMSHIP {
+			err := mgsViewMembershipFlag(grpSettings, "--"+flName, flgSVal)
 			if err != nil {
 				return err
 			}
 			return nil
 		}
-		if flName == "web-posting" {
-			mgsWebPostingFlag(grpSettings)
+		if flName == flgnm.FLG_WEBPOSTING {
+			mgsWebPostingFlag(grpSettings, flgBVal)
 			return nil
 		}
 	}
@@ -295,9 +332,9 @@ func processMngGrpSettingFlags(cmd *cobra.Command, grpSettings *gset.Groups, fla
 
 // Process command flag input
 
-func mgsApproveMemberFlag(grpSettings *gset.Groups, flagName string) error {
+func mgsApproveMemberFlag(grpSettings *gset.Groups, flagName string, flagVal string) error {
 	logger.Debug("starting mgsApproveMemberFlag()")
-	validTxt, err := grpset.ValidateGroupSettingValue(grpset.ApproveMemberMap, flagName, approveMems)
+	validTxt, err := grpset.ValidateGroupSettingValue(grpset.ApproveMemberMap, flagName, flagVal)
 	if err != nil {
 		return err
 	}
@@ -306,9 +343,9 @@ func mgsApproveMemberFlag(grpSettings *gset.Groups, flagName string) error {
 	return nil
 }
 
-func mgsArchivedFlag(grpSettings *gset.Groups) {
+func mgsArchivedFlag(grpSettings *gset.Groups, flagVal bool) {
 	logger.Debug("starting mgsArchivedFlag()")
-	if isArchived {
+	if flagVal {
 		grpSettings.IsArchived = "true"
 	} else {
 		grpSettings.IsArchived = "false"
@@ -317,9 +354,9 @@ func mgsArchivedFlag(grpSettings *gset.Groups) {
 	logger.Debug("finished mgsArchivedFlag()")
 }
 
-func mgsArchiveOnlyFlag(grpSettings *gset.Groups) {
+func mgsArchiveOnlyFlag(grpSettings *gset.Groups, flagVal bool) {
 	logger.Debug("starting mgsArchiveOnlyFlag()")
-	if archiveOnly {
+	if flagVal {
 		grpSettings.ArchiveOnly = "true"
 	} else {
 		grpSettings.ArchiveOnly = "false"
@@ -328,9 +365,9 @@ func mgsArchiveOnlyFlag(grpSettings *gset.Groups) {
 	logger.Debug("finished mgsArchiveOnlyFlag()")
 }
 
-func mgsAssistContentFlag(grpSettings *gset.Groups, flagName string) error {
+func mgsAssistContentFlag(grpSettings *gset.Groups, flagName string, flagVal string) error {
 	logger.Debug("starting mgsAssistContentFlag()")
-	validTxt, err := grpset.ValidateGroupSettingValue(grpset.AssistContentMap, flagName, assistContent)
+	validTxt, err := grpset.ValidateGroupSettingValue(grpset.AssistContentMap, flagName, flagVal)
 	if err != nil {
 		return err
 	}
@@ -339,9 +376,9 @@ func mgsAssistContentFlag(grpSettings *gset.Groups, flagName string) error {
 	return nil
 }
 
-func mgsBanUserFlag(grpSettings *gset.Groups, flagName string) error {
+func mgsBanUserFlag(grpSettings *gset.Groups, flagName string, flagVal string) error {
 	logger.Debug("starting mgsBanUserFlag()")
-	validTxt, err := grpset.ValidateGroupSettingValue(grpset.BanUserMap, flagName, banUser)
+	validTxt, err := grpset.ValidateGroupSettingValue(grpset.BanUserMap, flagName, flagVal)
 	if err != nil {
 		return err
 	}
@@ -350,9 +387,9 @@ func mgsBanUserFlag(grpSettings *gset.Groups, flagName string) error {
 	return nil
 }
 
-func mgsCollabInboxFlag(grpSettings *gset.Groups) {
+func mgsCollabInboxFlag(grpSettings *gset.Groups, flagVal bool) {
 	logger.Debug("starting mgsCollabInboxFlag()")
-	if collabInbox {
+	if flagVal {
 		grpSettings.EnableCollaborativeInbox = "true"
 	} else {
 		grpSettings.EnableCollaborativeInbox = "false"
@@ -361,9 +398,9 @@ func mgsCollabInboxFlag(grpSettings *gset.Groups) {
 	logger.Debug("finished mgsCollabInboxFlag()")
 }
 
-func mgsContactOwnerFlag(grpSettings *gset.Groups, flagName string) error {
+func mgsContactOwnerFlag(grpSettings *gset.Groups, flagName string, flagVal string) error {
 	logger.Debug("starting mgsContactOwnerFlag()")
-	validTxt, err := grpset.ValidateGroupSettingValue(grpset.ContactOwnerMap, flagName, contactOwner)
+	validTxt, err := grpset.ValidateGroupSettingValue(grpset.ContactOwnerMap, flagName, flagVal)
 	if err != nil {
 		return err
 	}
@@ -372,18 +409,18 @@ func mgsContactOwnerFlag(grpSettings *gset.Groups, flagName string) error {
 	return nil
 }
 
-func mgsDenyTextFlag(grpSettings *gset.Groups) {
+func mgsDenyTextFlag(grpSettings *gset.Groups, flagVal string) {
 	logger.Debug("starting mgsDenyTextFlag()")
-	if denyText == "" {
+	if flagVal == "" {
 		grpSettings.ForceSendFields = append(grpSettings.ForceSendFields, "DefaultMessageDenyNotificationText")
 	}
-	grpSettings.DefaultMessageDenyNotificationText = denyText
+	grpSettings.DefaultMessageDenyNotificationText = flagVal
 	logger.Debug("finished mgsDenyTextFlag()")
 }
 
-func mgsDiscoverGroupFlag(grpSettings *gset.Groups, flagName string) error {
+func mgsDiscoverGroupFlag(grpSettings *gset.Groups, flagName string, flagVal string) error {
 	logger.Debug("starting mgsDiscoverGroupFlag()")
-	validTxt, err := grpset.ValidateGroupSettingValue(grpset.DiscoverGroupMap, flagName, discoverGroup)
+	validTxt, err := grpset.ValidateGroupSettingValue(grpset.DiscoverGroupMap, flagName, flagVal)
 	if err != nil {
 		return err
 	}
@@ -392,9 +429,9 @@ func mgsDiscoverGroupFlag(grpSettings *gset.Groups, flagName string) error {
 	return nil
 }
 
-func mgsExtMemberFlag(grpSettings *gset.Groups) {
+func mgsExtMemberFlag(grpSettings *gset.Groups, flagVal bool) {
 	logger.Debug("starting mgsExtMemberFlag()")
-	if extMems {
+	if flagVal {
 		grpSettings.AllowExternalMembers = "true"
 	} else {
 		grpSettings.AllowExternalMembers = "false"
@@ -403,9 +440,9 @@ func mgsExtMemberFlag(grpSettings *gset.Groups) {
 	logger.Debug("finished mgsExtMemberFlag()")
 }
 
-func mgsFooterOnFlag(grpSettings *gset.Groups) {
+func mgsFooterOnFlag(grpSettings *gset.Groups, flagVal bool) {
 	logger.Debug("starting mgsFooterOnFlag()")
-	if incFooter {
+	if flagVal {
 		grpSettings.IncludeCustomFooter = "true"
 	} else {
 		grpSettings.IncludeCustomFooter = "false"
@@ -414,18 +451,29 @@ func mgsFooterOnFlag(grpSettings *gset.Groups) {
 	logger.Debug("finished mgsFooterOnFlag()")
 }
 
-func mgsFooterTextFlag(grpSettings *gset.Groups) {
+func mgsFooterTextFlag(grpSettings *gset.Groups, flagVal string) {
 	logger.Debug("starting mgsFooterTextFlag()")
-	if footerText == "" {
+	if flagVal == "" {
 		grpSettings.ForceSendFields = append(grpSettings.ForceSendFields, "CustomFooterText")
 	}
-	grpSettings.CustomFooterText = footerText
+	grpSettings.CustomFooterText = flagVal
 	logger.Debug("finished mgsFooterTextFlag()")
 }
 
-func mgsJoinFlag(grpSettings *gset.Groups, flagName string) error {
+func mgsGalFlag(grpSettings *gset.Groups, flagVal bool) {
+	logger.Debug("starting mgsGroupDirFlag()")
+	if flagVal {
+		grpSettings.IncludeInGlobalAddressList = "true"
+	} else {
+		grpSettings.IncludeInGlobalAddressList = "false"
+		grpSettings.ForceSendFields = append(grpSettings.ForceSendFields, "IncludeInGlobalAddressList")
+	}
+	logger.Debug("finished mgsGroupDirFlag()")
+}
+
+func mgsJoinFlag(grpSettings *gset.Groups, flagName string, flagVal string) error {
 	logger.Debug("starting mgsJoinFlag()")
-	validTxt, err := grpset.ValidateGroupSettingValue(grpset.JoinMap, flagName, join)
+	validTxt, err := grpset.ValidateGroupSettingValue(grpset.JoinMap, flagName, flagVal)
 	if err != nil {
 		return err
 	}
@@ -434,9 +482,9 @@ func mgsJoinFlag(grpSettings *gset.Groups, flagName string) error {
 	return nil
 }
 
-func mgsLanguageFlag(grpSettings *gset.Groups, flagName string) error {
+func mgsLanguageFlag(grpSettings *gset.Groups, flagName string, flagVal string) error {
 	logger.Debug("starting mgsLanguageFlag()")
-	validTxt, err := grpset.ValidateGroupSettingValue(grpset.LanguageMap, flagName, language)
+	validTxt, err := grpset.ValidateGroupSettingValue(grpset.LanguageMap, flagName, flagVal)
 	if err != nil {
 		return err
 	}
@@ -445,9 +493,9 @@ func mgsLanguageFlag(grpSettings *gset.Groups, flagName string) error {
 	return nil
 }
 
-func mgsLeaveFlag(grpSettings *gset.Groups, flagName string) error {
+func mgsLeaveFlag(grpSettings *gset.Groups, flagName string, flagVal string) error {
 	logger.Debug("starting mgsLeaveFlag()")
-	validTxt, err := grpset.ValidateGroupSettingValue(grpset.LeaveMap, flagName, leave)
+	validTxt, err := grpset.ValidateGroupSettingValue(grpset.LeaveMap, flagName, flagVal)
 	if err != nil {
 		return err
 	}
@@ -456,9 +504,9 @@ func mgsLeaveFlag(grpSettings *gset.Groups, flagName string) error {
 	return nil
 }
 
-func mgsMessageModFlag(grpSettings *gset.Groups, flagName string) error {
+func mgsMessageModFlag(grpSettings *gset.Groups, flagName string, flagVal string) error {
 	logger.Debug("starting mgsMessageModFlag()")
-	validTxt, err := grpset.ValidateGroupSettingValue(grpset.MessageModMap, flagName, messageMod)
+	validTxt, err := grpset.ValidateGroupSettingValue(grpset.MessageModMap, flagName, flagVal)
 	if err != nil {
 		return err
 	}
@@ -467,9 +515,9 @@ func mgsMessageModFlag(grpSettings *gset.Groups, flagName string) error {
 	return nil
 }
 
-func mgsModContentFlag(grpSettings *gset.Groups, flagName string) error {
+func mgsModContentFlag(grpSettings *gset.Groups, flagName string, flagVal string) error {
 	logger.Debug("starting mgsModContentFlag()")
-	validTxt, err := grpset.ValidateGroupSettingValue(grpset.ModContentMap, flagName, modContent)
+	validTxt, err := grpset.ValidateGroupSettingValue(grpset.ModContentMap, flagName, flagVal)
 	if err != nil {
 		return err
 	}
@@ -478,9 +526,9 @@ func mgsModContentFlag(grpSettings *gset.Groups, flagName string) error {
 	return nil
 }
 
-func mgsModMemberFlag(grpSettings *gset.Groups, flagName string) error {
+func mgsModMemberFlag(grpSettings *gset.Groups, flagName string, flagVal string) error {
 	logger.Debug("starting mgsModMemberFlag()")
-	validTxt, err := grpset.ValidateGroupSettingValue(grpset.ModMemberMap, flagName, modMems)
+	validTxt, err := grpset.ValidateGroupSettingValue(grpset.ModMemberMap, flagName, flagVal)
 	if err != nil {
 		return err
 	}
@@ -489,9 +537,9 @@ func mgsModMemberFlag(grpSettings *gset.Groups, flagName string) error {
 	return nil
 }
 
-func mgsNotifyDenyFlag(grpSettings *gset.Groups) {
+func mgsNotifyDenyFlag(grpSettings *gset.Groups, flagVal bool) {
 	logger.Debug("starting mgsNotifyDenyFlag()")
-	if denyNotification {
+	if flagVal {
 		grpSettings.SendMessageDenyNotification = "true"
 	} else {
 		grpSettings.SendMessageDenyNotification = "false"
@@ -500,9 +548,9 @@ func mgsNotifyDenyFlag(grpSettings *gset.Groups) {
 	logger.Debug("finished mgsNotifyDenyFlag()")
 }
 
-func mgsPostAsGroupFlag(grpSettings *gset.Groups) {
+func mgsPostAsGroupFlag(grpSettings *gset.Groups, flagVal bool) {
 	logger.Debug("starting mgsPostAsGroupFlag()")
-	if postAsGroup {
+	if flagVal {
 		grpSettings.MembersCanPostAsTheGroup = "true"
 	} else {
 		grpSettings.MembersCanPostAsTheGroup = "false"
@@ -511,9 +559,9 @@ func mgsPostAsGroupFlag(grpSettings *gset.Groups) {
 	logger.Debug("finished mgsPostAsGroupFlag()")
 }
 
-func mgsPostMessageFlag(grpSettings *gset.Groups, flagName string) error {
+func mgsPostMessageFlag(grpSettings *gset.Groups, flagName string, flagVal string) error {
 	logger.Debug("starting mgsPostMessageFlag()")
-	validTxt, err := grpset.ValidateGroupSettingValue(grpset.PostMessageMap, flagName, postMessage)
+	validTxt, err := grpset.ValidateGroupSettingValue(grpset.PostMessageMap, flagName, flagVal)
 	if err != nil {
 		return err
 	}
@@ -522,9 +570,9 @@ func mgsPostMessageFlag(grpSettings *gset.Groups, flagName string) error {
 	return nil
 }
 
-func mgsRepliesOnTopFlag(grpSettings *gset.Groups) {
+func mgsRepliesOnTopFlag(grpSettings *gset.Groups, flagVal bool) {
 	logger.Debug("starting mgsRepliesOnTopFlag()")
-	if repliesOnTop {
+	if flagVal {
 		grpSettings.FavoriteRepliesOnTop = "true"
 	} else {
 		grpSettings.FavoriteRepliesOnTop = "false"
@@ -533,26 +581,26 @@ func mgsRepliesOnTopFlag(grpSettings *gset.Groups) {
 	logger.Debug("finished mgsRepliesOnTopFlag()")
 }
 
-func mgsReplyEmailFlag(grpSettings *gset.Groups) error {
+func mgsReplyEmailFlag(grpSettings *gset.Groups, flagVal string) error {
 	logger.Debug("starting mgsReplyEmailFlag()")
-	if replyEmail == "" {
+	if flagVal == "" {
 		grpSettings.CustomReplyTo = replyEmail
 		grpSettings.ForceSendFields = append(grpSettings.ForceSendFields, "CustomReplyTo")
 		return nil
 	}
-	ok := valid.IsEmail(replyEmail)
+	ok := valid.IsEmail(flagVal)
 	if !ok {
-		err := fmt.Errorf(gmess.ERR_INVALIDEMAILADDRESS, replyEmail)
+		err := fmt.Errorf(gmess.ERR_INVALIDEMAILADDRESS, flagVal)
 		return err
 	}
-	grpSettings.CustomReplyTo = replyEmail
+	grpSettings.CustomReplyTo = flagVal
 	logger.Debug("finished mgsReplyEmailFlag()")
 	return nil
 }
 
-func mgsReplyToFlag(grpSettings *gset.Groups, flagName string) error {
+func mgsReplyToFlag(grpSettings *gset.Groups, flagName string, flagVal string) error {
 	logger.Debug("starting mgsReplyToFlag()")
-	validTxt, err := grpset.ValidateGroupSettingValue(grpset.ReplyToMap, flagName, replyTo)
+	validTxt, err := grpset.ValidateGroupSettingValue(grpset.ReplyToMap, flagName, flagVal)
 	if err != nil {
 		return err
 	}
@@ -561,9 +609,9 @@ func mgsReplyToFlag(grpSettings *gset.Groups, flagName string) error {
 	return nil
 }
 
-func mgsSpamModFlag(grpSettings *gset.Groups, flagName string) error {
+func mgsSpamModFlag(grpSettings *gset.Groups, flagName string, flagVal string) error {
 	logger.Debug("starting mgsSpamModFlag()")
-	validTxt, err := grpset.ValidateGroupSettingValue(grpset.SpamModMap, flagName, spamMod)
+	validTxt, err := grpset.ValidateGroupSettingValue(grpset.SpamModMap, flagName, flagVal)
 	if err != nil {
 		return err
 	}
@@ -572,9 +620,9 @@ func mgsSpamModFlag(grpSettings *gset.Groups, flagName string) error {
 	return nil
 }
 
-func mgsViewGroupFlag(grpSettings *gset.Groups, flagName string) error {
+func mgsViewGroupFlag(grpSettings *gset.Groups, flagName string, flagVal string) error {
 	logger.Debug("starting mgsViewGroupFlag()")
-	validTxt, err := grpset.ValidateGroupSettingValue(grpset.ViewGroupMap, flagName, viewGroup)
+	validTxt, err := grpset.ValidateGroupSettingValue(grpset.ViewGroupMap, flagName, flagVal)
 	if err != nil {
 		return err
 	}
@@ -583,9 +631,9 @@ func mgsViewGroupFlag(grpSettings *gset.Groups, flagName string) error {
 	return nil
 }
 
-func mgsViewMembershipFlag(grpSettings *gset.Groups, flagName string) error {
+func mgsViewMembershipFlag(grpSettings *gset.Groups, flagName string, flagVal string) error {
 	logger.Debug("starting mgsViewMembershipFlag()")
-	validTxt, err := grpset.ValidateGroupSettingValue(grpset.ViewMembershipMap, flagName, viewMems)
+	validTxt, err := grpset.ValidateGroupSettingValue(grpset.ViewMembershipMap, flagName, flagVal)
 	if err != nil {
 		return err
 	}
@@ -594,9 +642,9 @@ func mgsViewMembershipFlag(grpSettings *gset.Groups, flagName string) error {
 	return nil
 }
 
-func mgsWebPostingFlag(grpSettings *gset.Groups) {
+func mgsWebPostingFlag(grpSettings *gset.Groups, flagVal bool) {
 	logger.Debug("starting mgsWebPostingFlag()")
-	if webPosting {
+	if flagVal {
 		grpSettings.AllowWebPosting = "true"
 	} else {
 		grpSettings.AllowWebPosting = "false"

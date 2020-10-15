@@ -29,6 +29,7 @@ import (
 
 	"github.com/imdario/mergo"
 	cmn "github.com/plusworx/gmin/utils/common"
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	usrs "github.com/plusworx/gmin/utils/users"
 	"github.com/spf13/cobra"
@@ -75,10 +76,15 @@ func doUpdateUser(cmd *cobra.Command, args []string) error {
 		user.Name = name
 	}
 
-	if attrs != "" {
+	flgAttrsVal, err := cmd.Flags().GetString(flgnm.FLG_ATTRIBUTES)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	if flgAttrsVal != "" {
 		attrUser := new(admin.User)
 		emptyVals := cmn.EmptyValues{}
-		jsonBytes := []byte(attrs)
+		jsonBytes := []byte(flgAttrsVal)
 		if !json.Valid(jsonBytes) {
 			err = errors.New(gmess.ERR_INVALIDJSONATTR)
 			logger.Error(err)
@@ -142,89 +148,145 @@ func doUpdateUser(cmd *cobra.Command, args []string) error {
 func init() {
 	updateCmd.AddCommand(updateUserCmd)
 
-	updateUserCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "user's attributes as a JSON string")
-	updateUserCmd.Flags().BoolVarP(&changePassword, "change-password", "c", false, "user must change password on next login")
-	updateUserCmd.Flags().StringVarP(&userEmail, "email", "e", "", "user's primary email address")
-	updateUserCmd.Flags().StringVarP(&firstName, "first-name", "f", "", "user's first name")
-	updateUserCmd.Flags().StringVar(&forceSend, "force", "", "field list for ForceSendFields separated by (~)")
-	updateUserCmd.Flags().BoolVarP(&gal, "gal", "g", false, "display user in Global Address List")
-	updateUserCmd.Flags().StringVarP(&lastName, "last-name", "l", "", "user's last name")
-	updateUserCmd.Flags().StringVarP(&orgUnit, "orgunit", "o", "", "user's orgunit")
-	updateUserCmd.Flags().StringVarP(&password, "password", "p", "", "user's password")
-	updateUserCmd.Flags().StringVarP(&recoveryEmail, "recovery-email", "z", "", "user's recovery email address")
-	updateUserCmd.Flags().StringVarP(&recoveryPhone, "recovery-phone", "k", "", "user's recovery phone")
-	updateUserCmd.Flags().BoolVarP(&suspended, "suspended", "s", false, "user is suspended")
+	updateUserCmd.Flags().StringVarP(&attrs, flgnm.FLG_ATTRIBUTES, "a", "", "user's attributes as a JSON string")
+	updateUserCmd.Flags().BoolVarP(&changePassword, flgnm.FLG_CHANGEPWD, "c", false, "user must change password on next login")
+	updateUserCmd.Flags().StringVarP(&userEmail, flgnm.FLG_EMAIL, "e", "", "user's primary email address")
+	updateUserCmd.Flags().StringVarP(&firstName, flgnm.FLG_FIRSTNAME, "f", "", "user's first name")
+	updateUserCmd.Flags().StringVar(&forceSend, flgnm.FLG_FORCE, "", "field list for ForceSendFields separated by (~)")
+	updateUserCmd.Flags().BoolVarP(&gal, flgnm.FLG_GAL, "g", false, "display user in Global Address List")
+	updateUserCmd.Flags().StringVarP(&lastName, flgnm.FLG_LASTNAME, "l", "", "user's last name")
+	updateUserCmd.Flags().StringVarP(&orgUnit, flgnm.FLG_ORGUNIT, "o", "", "user's orgunit")
+	updateUserCmd.Flags().StringVarP(&password, flgnm.FLG_PASSWORD, "p", "", "user's password")
+	updateUserCmd.Flags().StringVarP(&recoveryEmail, flgnm.FLG_RECEMAIL, "z", "", "user's recovery email address")
+	updateUserCmd.Flags().StringVarP(&recoveryPhone, flgnm.FLG_RECPHONE, "k", "", "user's recovery phone")
+	updateUserCmd.Flags().BoolVarP(&suspended, flgnm.FLG_SUSPENDED, "s", false, "user is suspended")
 }
 
 func processUpdUsrFlags(cmd *cobra.Command, user *admin.User, name *admin.UserName, flagNames []string) error {
 	logger.Debugw("starting processUpdUsrFlags()",
 		"flagNames", flagNames)
 	for _, flName := range flagNames {
-		if flName == "change-password" {
-			uuChangePasswordFlag(user)
+		if flName == flgnm.FLG_CHANGEPWD {
+			flgChangePwdVal, err := cmd.Flags().GetBool(flgnm.FLG_CHANGEPWD)
+			if err != nil {
+				logger.Error(err)
+				return err
+			}
+			uuChangePasswordFlag(user, flgChangePwdVal)
 		}
-		if flName == "email" {
-			err := uuEmailFlag(user, "--"+flName)
+		if flName == flgnm.FLG_EMAIL {
+			flgEmailVal, err := cmd.Flags().GetString(flgnm.FLG_EMAIL)
+			if err != nil {
+				logger.Error(err)
+				return err
+			}
+			err = uuEmailFlag(user, "--"+flName, flgEmailVal)
 			if err != nil {
 				return err
 			}
 		}
-		if flName == "first-name" {
-			err := uuFirstnameFlag(name, "--"+flName)
+		if flName == flgnm.FLG_FIRSTNAME {
+			flgFstNameVal, err := cmd.Flags().GetString(flgnm.FLG_FIRSTNAME)
+			if err != nil {
+				logger.Error(err)
+				return err
+			}
+			err = uuFirstnameFlag(name, "--"+flName, flgFstNameVal)
 			if err != nil {
 				return err
 			}
 		}
-		if flName == "force" {
-			err := uuForceFlag(user)
+		if flName == flgnm.FLG_FORCE {
+			flgForceVal, err := cmd.Flags().GetString(flgnm.FLG_FORCE)
+			if err != nil {
+				logger.Error(err)
+				return err
+			}
+			err = uuForceFlag(user, flgForceVal)
 			if err != nil {
 				return err
 			}
 		}
-		if flName == "gal" {
-			uuGalFlag(user)
+		if flName == flgnm.FLG_GAL {
+			flgGalVal, err := cmd.Flags().GetBool(flgnm.FLG_GAL)
+			if err != nil {
+				logger.Error(err)
+				return err
+			}
+			uuGalFlag(user, flgGalVal)
 		}
-		if flName == "last-name" {
-			err := uuLastnameFlag(name, "--"+flName)
+		if flName == flgnm.FLG_LASTNAME {
+			flgLstNameVal, err := cmd.Flags().GetString(flgnm.FLG_LASTNAME)
+			if err != nil {
+				logger.Error(err)
+				return err
+			}
+			err = uuLastnameFlag(name, "--"+flName, flgLstNameVal)
 			if err != nil {
 				return err
 			}
 		}
-		if flName == "orgunit" {
-			err := uuOrgunitFlag(user, "--"+flName)
+		if flName == flgnm.FLG_ORGUNIT {
+			flgOUVal, err := cmd.Flags().GetString(flgnm.FLG_ORGUNIT)
+			if err != nil {
+				logger.Error(err)
+				return err
+			}
+			err = uuOrgunitFlag(user, "--"+flName, flgOUVal)
 			if err != nil {
 				return err
 			}
 		}
-		if flName == "password" {
-			err := uuPasswordFlag(user, "--"+flName)
+		if flName == flgnm.FLG_PASSWORD {
+			flgPasswdVal, err := cmd.Flags().GetString(flgnm.FLG_PASSWORD)
+			if err != nil {
+				logger.Error(err)
+				return err
+			}
+			err = uuPasswordFlag(user, "--"+flName, flgPasswdVal)
 			if err != nil {
 				return err
 			}
 		}
-		if flName == "recovery-email" {
-			err := uuRecoveryEmailFlag(user, "--"+flName)
+		if flName == flgnm.FLG_RECEMAIL {
+			flgRecEmailVal, err := cmd.Flags().GetString(flgnm.FLG_RECEMAIL)
+			if err != nil {
+				logger.Error(err)
+				return err
+			}
+			err = uuRecoveryEmailFlag(user, "--"+flName, flgRecEmailVal)
 			if err != nil {
 				return err
 			}
 		}
-		if flName == "recovery-phone" {
-			err := uuRecoveryPhoneFlag(user, "--"+flName)
+		if flName == flgnm.FLG_RECPHONE {
+			flgRecPhoneVal, err := cmd.Flags().GetString(flgnm.FLG_RECPHONE)
+			if err != nil {
+				logger.Error(err)
+				return err
+			}
+			err = uuRecoveryPhoneFlag(user, "--"+flName, flgRecPhoneVal)
 			if err != nil {
 				return err
 			}
 		}
-		if flName == "suspended" {
-			uuSuspendedFlag(user)
+		if flName == flgnm.FLG_SUSPENDED {
+			flgSuspendedVal, err := cmd.Flags().GetBool(flgnm.FLG_SUSPENDED)
+			if err != nil {
+				logger.Error(err)
+				return err
+			}
+			uuSuspendedFlag(user, flgSuspendedVal)
 		}
 	}
 	logger.Debug("finished processUpdUsrFlags()")
 	return nil
 }
 
-func uuChangePasswordFlag(user *admin.User) {
-	logger.Debug("starting uuChangePasswordFlag()")
-	if changePassword {
+func uuChangePasswordFlag(user *admin.User, flgVal bool) {
+	logger.Debugw("starting uuChangePasswordFlag()",
+		"flgVal", flgVal)
+	if flgVal {
 		user.ChangePasswordAtNextLogin = true
 	} else {
 		user.ChangePasswordAtNextLogin = false
@@ -233,33 +295,36 @@ func uuChangePasswordFlag(user *admin.User) {
 	logger.Debug("finished uuChangePasswordFlag()")
 }
 
-func uuEmailFlag(user *admin.User, flagName string) error {
+func uuEmailFlag(user *admin.User, flagName string, flgVal string) error {
 	logger.Debugw("starting uuEmailFlag()",
-		"flagName", flagName)
-	if userEmail == "" {
+		"flagName", flagName,
+		"flgVal", flgVal)
+	if flgVal == "" {
 		err := fmt.Errorf(gmess.ERR_EMPTYSTRING, flagName)
 		return err
 	}
-	user.PrimaryEmail = userEmail
+	user.PrimaryEmail = flgVal
 	logger.Debug("finished uuEmailFlag()")
 	return nil
 }
 
-func uuFirstnameFlag(name *admin.UserName, flagName string) error {
+func uuFirstnameFlag(name *admin.UserName, flagName string, flgVal string) error {
 	logger.Debugw("starting uuFirstnameFlag()",
-		"flagName", flagName)
-	if firstName == "" {
+		"flagName", flagName,
+		"flgVal", flgVal)
+	if flgVal == "" {
 		err := fmt.Errorf(gmess.ERR_EMPTYSTRING, flagName)
 		return err
 	}
-	name.GivenName = firstName
+	name.GivenName = flgVal
 	logger.Debug("finished uuFirstnameFlag()")
 	return nil
 }
 
-func uuForceFlag(user *admin.User) error {
-	logger.Debug("starting uuForceFlag()")
-	fields, err := cmn.ParseForceSend(forceSend, usrs.UserAttrMap)
+func uuForceFlag(user *admin.User, flgVal string) error {
+	logger.Debugw("starting uuForceFlag()",
+		"flgVal", flgVal)
+	fields, err := cmn.ParseForceSend(flgVal, usrs.UserAttrMap)
 	if err != nil {
 		logger.Error(err)
 		return err
@@ -271,9 +336,10 @@ func uuForceFlag(user *admin.User) error {
 	return nil
 }
 
-func uuGalFlag(user *admin.User) {
-	logger.Debug("starting uuGalFlag()")
-	if gal {
+func uuGalFlag(user *admin.User, flgVal bool) {
+	logger.Debugw("starting uuGalFlag()",
+		"flgVal", flgVal)
+	if flgVal {
 		user.IncludeInGlobalAddressList = true
 	} else {
 		user.IncludeInGlobalAddressList = false
@@ -282,40 +348,43 @@ func uuGalFlag(user *admin.User) {
 	logger.Debug("finished uuGalFlag()")
 }
 
-func uuLastnameFlag(name *admin.UserName, flagName string) error {
+func uuLastnameFlag(name *admin.UserName, flagName string, flgVal string) error {
 	logger.Debugw("starting uuLastnameFlag()",
-		"flagName", flagName)
-	if lastName == "" {
+		"flagName", flagName,
+		"flgVal", flgVal)
+	if flgVal == "" {
 		err := fmt.Errorf(gmess.ERR_EMPTYSTRING, flagName)
 		return err
 	}
-	name.FamilyName = lastName
+	name.FamilyName = flgVal
 	logger.Debug("finished uuLastnameFlag()")
 	return nil
 }
 
-func uuOrgunitFlag(user *admin.User, flagName string) error {
+func uuOrgunitFlag(user *admin.User, flagName string, flgVal string) error {
 	logger.Debugw("starting uuOrgunitFlag()",
-		"flagName", flagName)
-	if orgUnit == "" {
+		"flagName", flagName,
+		"flgVal", flgVal)
+	if flgVal == "" {
 		err := fmt.Errorf(gmess.ERR_EMPTYSTRING, flagName)
 		if err != nil {
 			return err
 		}
 	}
-	user.OrgUnitPath = orgUnit
+	user.OrgUnitPath = flgVal
 	logger.Debug("finished uuOrgunitFlag()")
 	return nil
 }
 
-func uuPasswordFlag(user *admin.User, flagName string) error {
+func uuPasswordFlag(user *admin.User, flagName string, flgVal string) error {
 	logger.Debugw("starting uuPasswordFlag()",
-		"flagName", flagName)
-	if password == "" {
+		"flagName", flagName,
+		"flgVal", flgVal)
+	if flgVal == "" {
 		err := fmt.Errorf(gmess.ERR_EMPTYSTRING, flagName)
 		return err
 	}
-	pwd, err := cmn.HashPassword(password)
+	pwd, err := cmn.HashPassword(flgVal)
 	if err != nil {
 		return err
 	}
@@ -325,37 +394,39 @@ func uuPasswordFlag(user *admin.User, flagName string) error {
 	return nil
 }
 
-func uuRecoveryEmailFlag(user *admin.User, flagName string) error {
+func uuRecoveryEmailFlag(user *admin.User, flagName string, flgVal string) error {
 	logger.Debugw("starting uuRecoveryEmailFlag()",
-		"flagName", flagName)
-	if recoveryEmail == "" {
+		"flagName", flagName,
+		"flgVal", flgVal)
+	if flgVal == "" {
 		err := fmt.Errorf(gmess.ERR_EMPTYSTRING, flagName)
 		return err
 	}
-	user.RecoveryEmail = recoveryEmail
+	user.RecoveryEmail = flgVal
 	logger.Debug("finished uuRecoveryEmailFlag()")
 	return nil
 }
 
-func uuRecoveryPhoneFlag(user *admin.User, flagName string) error {
+func uuRecoveryPhoneFlag(user *admin.User, flagName string, flgVal string) error {
 	logger.Debugw("starting uuRecoveryPhoneFlag()",
-		"flagName", flagName)
-	if recoveryPhone == "" {
+		"flagName", flagName,
+		"flgVal", flgVal)
+	if flgVal == "" {
 		err := fmt.Errorf(gmess.ERR_EMPTYSTRING, flagName)
 		return err
 	}
 	if string(recoveryPhone[0]) != "+" {
-		err := fmt.Errorf(gmess.ERR_INVALIDRECOVERYPHONE, recoveryPhone)
+		err := fmt.Errorf(gmess.ERR_INVALIDRECOVERYPHONE, flgVal)
 		return err
 	}
-	user.RecoveryPhone = recoveryPhone
+	user.RecoveryPhone = flgVal
 	logger.Debug("finished uuRecoveryPhoneFlag()")
 	return nil
 }
 
-func uuSuspendedFlag(user *admin.User) {
+func uuSuspendedFlag(user *admin.User, flgVal bool) {
 	logger.Debug("starting uuSuspendedFlag()")
-	if suspended {
+	if flgVal {
 		user.Suspended = true
 	} else {
 		user.Suspended = false

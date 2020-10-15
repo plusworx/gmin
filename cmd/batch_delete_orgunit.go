@@ -34,6 +34,7 @@ import (
 	"github.com/cenkalti/backoff/v4"
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	ous "github.com/plusworx/gmin/utils/orgunits"
 	"github.com/spf13/cobra"
@@ -76,7 +77,7 @@ func doBatchDelOrgUnit(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	inputFlgVal, err := cmd.Flags().GetString("input-file")
+	inputFlgVal, err := cmd.Flags().GetString(flgnm.FLG_INPUTFILE)
 	if err != nil {
 		logger.Error(err)
 		return err
@@ -94,7 +95,7 @@ func doBatchDelOrgUnit(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	formatFlgVal, err := cmd.Flags().GetString("format")
+	formatFlgVal, err := cmd.Flags().GetString(flgnm.FLG_FORMAT)
 	if err != nil {
 		logger.Error(err)
 		return err
@@ -116,7 +117,7 @@ func doBatchDelOrgUnit(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	case lwrFmt == "gsheet":
-		rangeFlgVal, err := cmd.Flags().GetString("sheet-range")
+		rangeFlgVal, err := cmd.Flags().GetString(flgnm.FLG_SHEETRANGE)
 		if err != nil {
 			logger.Error(err)
 			return err
@@ -312,7 +313,7 @@ func bdoProcessTextFile(ds *admin.Service, filePath string, scanner *bufio.Scann
 func init() {
 	batchDelCmd.AddCommand(batchDelOrgUnitCmd)
 
-	batchDelOrgUnitCmd.Flags().StringVarP(&inputFile, "input-file", "i", "", "filepath to orgunit data text file")
-	batchDelOrgUnitCmd.Flags().StringVarP(&delFormat, "format", "f", "text", "orgunit data file format (text or gsheet)")
-	batchDelOrgUnitCmd.Flags().StringVarP(&sheetRange, "sheet-range", "s", "", "orgunit data gsheet range")
+	batchDelOrgUnitCmd.Flags().StringVarP(&inputFile, flgnm.FLG_INPUTFILE, "i", "", "filepath to orgunit data text file")
+	batchDelOrgUnitCmd.Flags().StringVarP(&delFormat, flgnm.FLG_FORMAT, "f", "text", "orgunit data file format (text or gsheet)")
+	batchDelOrgUnitCmd.Flags().StringVarP(&sheetRange, flgnm.FLG_SHEETRANGE, "s", "", "orgunit data gsheet range")
 }

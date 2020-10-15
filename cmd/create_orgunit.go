@@ -27,6 +27,7 @@ import (
 
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
@@ -53,16 +54,33 @@ func doCreateOU(cmd *cobra.Command, args []string) error {
 
 	orgunit.Name = args[0]
 
-	if blockInherit {
+	flgBlkInheritVal, err := cmd.Flags().GetBool(flgnm.FLG_BLOCKINHERIT)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+
+	if flgBlkInheritVal {
 		orgunit.BlockInheritance = true
 	}
 
-	if orgUnitDesc != "" {
-		orgunit.Description = orgUnitDesc
+	flgDescVal, err := cmd.Flags().GetString(flgnm.FLG_DESCRIPTION)
+	if err != nil {
+		logger.Error(err)
+		return err
 	}
 
-	if parentOUPath != "" {
-		orgunit.ParentOrgUnitPath = parentOUPath
+	if flgDescVal != "" {
+		orgunit.Description = flgDescVal
+	}
+
+	flgParPthVal, err := cmd.Flags().GetString(flgnm.FLG_PARENTPATH)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	if flgParPthVal != "" {
+		orgunit.ParentOrgUnitPath = flgParPthVal
 	} else {
 		orgunit.ParentOrgUnitPath = "/"
 	}
@@ -73,7 +91,7 @@ func doCreateOU(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	customerID, err := cfg.ReadConfigString("customerid")
+	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {
 		logger.Error(err)
 		return err
@@ -96,7 +114,7 @@ func doCreateOU(cmd *cobra.Command, args []string) error {
 func init() {
 	createCmd.AddCommand(createOUCmd)
 
-	createOUCmd.Flags().BoolVarP(&blockInherit, "block-inherit", "b", false, "block orgunit policy inheritance")
-	createOUCmd.Flags().StringVarP(&orgUnitDesc, "description", "d", "", "orgunit description")
-	createOUCmd.Flags().StringVarP(&parentOUPath, "parent-path", "p", "", "orgunit parent path")
+	createOUCmd.Flags().BoolVarP(&blockInherit, flgnm.FLG_BLOCKINHERIT, "b", false, "block orgunit policy inheritance")
+	createOUCmd.Flags().StringVarP(&orgUnitDesc, flgnm.FLG_DESCRIPTION, "d", "", "orgunit description")
+	createOUCmd.Flags().StringVarP(&parentOUPath, flgnm.FLG_PARENTPATH, "p", "", "orgunit parent path")
 }

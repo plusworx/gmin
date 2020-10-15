@@ -28,6 +28,7 @@ import (
 
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gpars "github.com/plusworx/gmin/utils/gminparsers"
 	scs "github.com/plusworx/gmin/utils/schemas"
 	"github.com/spf13/cobra"
@@ -60,7 +61,7 @@ func doListSchemas(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	customerID, err := cfg.ReadConfigString("customerid")
+	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {
 		logger.Error(err)
 		return err
@@ -68,8 +69,13 @@ func doListSchemas(cmd *cobra.Command, args []string) error {
 
 	sclc := ds.Schemas.List(customerID)
 
-	if attrs != "" {
-		listAttrs, err := gpars.ParseOutputAttrs(attrs, scs.SchemaAttrMap)
+	flgAttrsVal, err := cmd.Flags().GetString(flgnm.FLG_ATTRIBUTES)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	if flgAttrsVal != "" {
+		listAttrs, err := gpars.ParseOutputAttrs(flgAttrsVal, scs.SchemaAttrMap)
 		if err != nil {
 			logger.Error(err)
 			return err
@@ -92,7 +98,12 @@ func doListSchemas(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if count {
+	flgCountVal, err := cmd.Flags().GetBool(flgnm.FLG_COUNT)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	if flgCountVal {
 		fmt.Println(len(schemas.Schemas))
 	} else {
 		fmt.Println(string(jsonData))
@@ -105,6 +116,6 @@ func doListSchemas(cmd *cobra.Command, args []string) error {
 func init() {
 	listCmd.AddCommand(listSchemasCmd)
 
-	listSchemasCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required schema attributes separated by (~)")
-	listSchemasCmd.Flags().BoolVarP(&count, "count", "", false, "count number of entities returned")
+	listSchemasCmd.Flags().StringVarP(&attrs, flgnm.FLG_ATTRIBUTES, "a", "", "required schema attributes separated by (~)")
+	listSchemasCmd.Flags().BoolVarP(&count, flgnm.FLG_COUNT, "", false, "count number of entities returned")
 }

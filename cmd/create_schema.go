@@ -30,6 +30,7 @@ import (
 
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	scs "github.com/plusworx/gmin/utils/schemas"
 	"github.com/spf13/cobra"
@@ -100,13 +101,19 @@ func doCreateSchema(cmd *cobra.Command, args []string) error {
 
 	schema = new(admin.Schema)
 
-	if inputFile == "" {
+	flgInFileVal, err := cmd.Flags().GetString(flgnm.FLG_INPUTFILE)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+
+	if flgInFileVal == "" {
 		err := errors.New(gmess.ERR_NOINPUTFILE)
 		logger.Error(err)
 		return err
 	}
 
-	fileData, err := ioutil.ReadFile(inputFile)
+	fileData, err := ioutil.ReadFile(flgInFileVal)
 	if err != nil {
 		logger.Error(err)
 		return err
@@ -136,7 +143,7 @@ func doCreateSchema(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	customerID, err := cfg.ReadConfigString("customerid")
+	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {
 		logger.Error(err)
 		return err
@@ -165,6 +172,6 @@ func doCreateSchema(cmd *cobra.Command, args []string) error {
 func init() {
 	createCmd.AddCommand(createSchemaCmd)
 
-	createSchemaCmd.Flags().StringVarP(&inputFile, "input-file", "i", "", "filepath to schema data file")
-	createSchemaCmd.MarkFlagRequired("input-file")
+	createSchemaCmd.Flags().StringVarP(&inputFile, flgnm.FLG_INPUTFILE, "i", "", "filepath to schema data file")
+	createSchemaCmd.MarkFlagRequired(flgnm.FLG_INPUTFILE)
 }

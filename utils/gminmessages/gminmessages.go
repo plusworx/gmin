@@ -27,6 +27,7 @@ const (
 
 	ERR_ADMINEMAILREQUIRED       string = "an email address is required - try again"
 	ERR_ATTRNOTRECOGNIZED        string = "%v attribute is not recognized"
+	ERR_ATTRSHOULDBE             string = "%v should be %v in attribute string"
 	ERR_BATCHCHROMEOSDEVICE      string = "error - %s - ChromeOS device: %s"
 	ERR_BATCHGROUP               string = "error - %s - group: %s"
 	ERR_BATCHGROUPSETTINGS       string = "error - %s - group settings for group: %s"
@@ -64,6 +65,7 @@ const (
 	ERR_INVALIDSEARCHTYPE        string = "invalid search type: %v"
 	ERR_INVALIDSTRING            string = "invalid string for %v supplied: %v"
 	ERR_INVALIDVIEWTYPE          string = "invalid view type: %v"
+	ERR_JWTCONFIGFROMJSON        string = "error - JWTConfigFromJSON: %v"
 	ERR_MAX2ARGSEXCEEDED         string = "exceeded maximum 2 arguments"
 	ERR_MAX3ARGSEXCEEDED         string = "exceeded maximum 3 arguments"
 	ERR_MISSINGUSERDATA          string = "firstname, lastname and password must all be provided"
@@ -98,6 +100,7 @@ const (
 
 	// Infos
 
+	INFO_ADMINIS              string = "admin is %v"
 	INFO_ADMINSET             string = "administrator set to: %v"
 	INFO_CDEVACTIONPERFORMED  string = "%s successfully performed on ChromeOS device: %s"
 	INFO_CDEVMOVEPERFORMED    string = "ChromeOS device: %s moved to: %s"

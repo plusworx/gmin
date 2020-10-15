@@ -32,6 +32,7 @@ import (
 	cdevs "github.com/plusworx/gmin/utils/chromeosdevices"
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	gpars "github.com/plusworx/gmin/utils/gminparsers"
 	"github.com/spf13/cobra"
@@ -63,7 +64,7 @@ func doListCrOSDevs(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	customerID, err := cfg.ReadConfigString("customerid")
+	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {
 		logger.Error(err)
 		return err
@@ -71,8 +72,13 @@ func doListCrOSDevs(cmd *cobra.Command, args []string) error {
 
 	cdlc := ds.Chromeosdevices.List(customerID)
 
-	if attrs != "" {
-		listAttrs, err := gpars.ParseOutputAttrs(attrs, cdevs.CrOSDevAttrMap)
+	flgAttrsVal, err := cmd.Flags().GetString(flgnm.FLG_ATTRIBUTES)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	if flgAttrsVal != "" {
+		listAttrs, err := gpars.ParseOutputAttrs(flgAttrsVal, cdevs.CrOSDevAttrMap)
 		if err != nil {
 			logger.Error(err)
 			return err
@@ -82,11 +88,16 @@ func doListCrOSDevs(cmd *cobra.Command, args []string) error {
 		cdlc = listCall.(*admin.ChromeosdevicesListCall)
 	}
 
-	if orderBy != "" {
-		ob := strings.ToLower(orderBy)
+	flgOrderByVal, err := cmd.Flags().GetString(flgnm.FLG_ORDERBY)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	if flgOrderByVal != "" {
+		ob := strings.ToLower(flgOrderByVal)
 		ok := cmn.SliceContainsStr(cdevs.ValidOrderByStrs, ob)
 		if !ok {
-			err = fmt.Errorf(gmess.ERR_INVALIDORDERBY, orderBy)
+			err = fmt.Errorf(gmess.ERR_INVALIDORDERBY, flgOrderByVal)
 			logger.Error(err)
 			return err
 		}
@@ -99,8 +110,13 @@ func doListCrOSDevs(cmd *cobra.Command, args []string) error {
 
 		cdlc = cdevs.AddOrderBy(cdlc, validOrderBy)
 
-		if sortOrder != "" {
-			so := strings.ToLower(sortOrder)
+		flgSrtOrdVal, err := cmd.Flags().GetString(flgnm.FLG_SORTORDER)
+		if err != nil {
+			logger.Error(err)
+			return err
+		}
+		if flgSrtOrdVal != "" {
+			so := strings.ToLower(flgSrtOrdVal)
 			validSortOrder, err := cmn.IsValidAttr(so, cmn.ValidSortOrders)
 			if err != nil {
 				logger.Error(err)
@@ -111,15 +127,25 @@ func doListCrOSDevs(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	if orgUnit != "" {
-		cdlc = cdevs.AddQuery(cdlc, orgUnit)
+	flgOUVal, err := cmd.Flags().GetString(flgnm.FLG_ORGUNITPATH)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	if flgOUVal != "" {
+		cdlc = cdevs.AddQuery(cdlc, flgOUVal)
 	}
 
-	if projection != "" {
-		proj := strings.ToLower(projection)
+	flgProjectionVal, err := cmd.Flags().GetString(flgnm.FLG_PROJECTION)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	if flgProjectionVal != "" {
+		proj := strings.ToLower(flgProjectionVal)
 		ok := cmn.SliceContainsStr(cdevs.ValidProjections, proj)
 		if !ok {
-			err = fmt.Errorf(gmess.ERR_INVALIDPROJECTIONTYPE, projection)
+			err = fmt.Errorf(gmess.ERR_INVALIDPROJECTIONTYPE, flgProjectionVal)
 			logger.Error(err)
 			return err
 		}
@@ -128,8 +154,13 @@ func doListCrOSDevs(cmd *cobra.Command, args []string) error {
 		cdlc = listCall.(*admin.ChromeosdevicesListCall)
 	}
 
-	if query != "" {
-		formattedQuery, err := gpars.ParseQuery(query, cdevs.QueryAttrMap)
+	flgQueryVal, err := cmd.Flags().GetString(flgnm.FLG_QUERY)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	if flgQueryVal != "" {
+		formattedQuery, err := gpars.ParseQuery(flgQueryVal, cdevs.QueryAttrMap)
 		if err != nil {
 			logger.Error(err)
 			return err
@@ -138,7 +169,12 @@ func doListCrOSDevs(cmd *cobra.Command, args []string) error {
 		cdlc = cdevs.AddQuery(cdlc, formattedQuery)
 	}
 
-	cdlc = cdevs.AddMaxResults(cdlc, maxResults)
+	flgMaxResultsVal, err := cmd.Flags().GetInt64(flgnm.FLG_MAXRESULTS)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	cdlc = cdevs.AddMaxResults(cdlc, flgMaxResultsVal)
 
 	crosdevs, err = cdevs.DoList(cdlc)
 	if err != nil {
@@ -146,8 +182,13 @@ func doListCrOSDevs(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if pages != "" {
-		err = doCrOSDevPages(cdlc, crosdevs, pages)
+	flgPagesVal, err := cmd.Flags().GetString(flgnm.FLG_PAGES)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	if flgPagesVal != "" {
+		err = doCrOSDevPages(cdlc, crosdevs, flgPagesVal)
 		if err != nil {
 			logger.Error(err)
 			return err
@@ -160,7 +201,12 @@ func doListCrOSDevs(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if count {
+	flgCountVal, err := cmd.Flags().GetBool(flgnm.FLG_COUNT)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	if flgCountVal {
 		fmt.Println(len(crosdevs.Chromeosdevices))
 	} else {
 		fmt.Println(string(jsonData))
@@ -251,13 +297,13 @@ func doCrOSDevPages(cdlc *admin.ChromeosdevicesListCall, crosdevs *admin.ChromeO
 func init() {
 	listCmd.AddCommand(listCrOSDevsCmd)
 
-	listCrOSDevsCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required device attributes (separated by ~)")
-	listCrOSDevsCmd.Flags().BoolVarP(&count, "count", "", false, "count number of entities returned")
-	listCrOSDevsCmd.Flags().Int64VarP(&maxResults, "max-results", "m", 200, "maximum number of results to return per page")
-	listCrOSDevsCmd.Flags().StringVarP(&orderBy, "order-by", "o", "", "field by which results will be ordered")
-	listCrOSDevsCmd.Flags().StringVarP(&pages, "pages", "p", "", "number of pages of results to be returned ('all' or a number)")
-	listCrOSDevsCmd.Flags().StringVarP(&projection, "projection", "j", "", "type of projection")
-	listCrOSDevsCmd.Flags().StringVarP(&query, "query", "q", "", "selection criteria to get devices (separated by ~)")
-	listCrOSDevsCmd.Flags().StringVarP(&sortOrder, "sort-order", "s", "", "sort order of returned results")
-	listCrOSDevsCmd.Flags().StringVarP(&orgUnit, "orgunit-path", "t", "", "sets orgunit path that returned devices belong to")
+	listCrOSDevsCmd.Flags().StringVarP(&attrs, flgnm.FLG_ATTRIBUTES, "a", "", "required device attributes (separated by ~)")
+	listCrOSDevsCmd.Flags().BoolVarP(&count, flgnm.FLG_COUNT, "", false, "count number of entities returned")
+	listCrOSDevsCmd.Flags().Int64VarP(&maxResults, flgnm.FLG_MAXRESULTS, "m", 200, "maximum number of results to return per page")
+	listCrOSDevsCmd.Flags().StringVarP(&orderBy, flgnm.FLG_ORDERBY, "o", "", "field by which results will be ordered")
+	listCrOSDevsCmd.Flags().StringVarP(&pages, flgnm.FLG_PAGES, "p", "", "number of pages of results to be returned ('all' or a number)")
+	listCrOSDevsCmd.Flags().StringVarP(&projection, flgnm.FLG_PROJECTION, "j", "", "type of projection")
+	listCrOSDevsCmd.Flags().StringVarP(&query, flgnm.FLG_QUERY, "q", "", "selection criteria to get devices (separated by ~)")
+	listCrOSDevsCmd.Flags().StringVarP(&sortOrder, flgnm.FLG_SORTORDER, "s", "", "sort order of returned results")
+	listCrOSDevsCmd.Flags().StringVarP(&orgUnit, flgnm.FLG_ORGUNITPATH, "t", "", "sets orgunit path that returned devices belong to")
 }

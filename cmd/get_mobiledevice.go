@@ -29,6 +29,7 @@ import (
 
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	gpars "github.com/plusworx/gmin/utils/gminparsers"
 	mdevs "github.com/plusworx/gmin/utils/mobiledevices"
@@ -62,15 +63,20 @@ func doGetMobDev(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	customerID, err := cfg.ReadConfigString("customerid")
+	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {
 		logger.Error(err)
 		return err
 	}
 	mdgc := ds.Mobiledevices.Get(customerID, args[0])
 
-	if attrs != "" {
-		formattedAttrs, err := gpars.ParseOutputAttrs(attrs, mdevs.MobDevAttrMap)
+	flgAttrsVal, err := cmd.Flags().GetString(flgnm.FLG_ATTRIBUTES)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	if flgAttrsVal != "" {
+		formattedAttrs, err := gpars.ParseOutputAttrs(flgAttrsVal, mdevs.MobDevAttrMap)
 		if err != nil {
 			logger.Error(err)
 			return err
@@ -80,11 +86,16 @@ func doGetMobDev(cmd *cobra.Command, args []string) error {
 		mdgc = getCall.(*admin.MobiledevicesGetCall)
 	}
 
-	if projection != "" {
-		proj := strings.ToLower(projection)
+	flgProjectionVal, err := cmd.Flags().GetString(flgnm.FLG_PROJECTION)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	if flgProjectionVal != "" {
+		proj := strings.ToLower(flgProjectionVal)
 		ok := cmn.SliceContainsStr(mdevs.ValidProjections, proj)
 		if !ok {
-			err = fmt.Errorf(gmess.ERR_INVALIDPROJECTIONTYPE, projection)
+			err = fmt.Errorf(gmess.ERR_INVALIDPROJECTIONTYPE, flgProjectionVal)
 			logger.Error(err)
 			return err
 		}
@@ -114,6 +125,6 @@ func doGetMobDev(cmd *cobra.Command, args []string) error {
 func init() {
 	getCmd.AddCommand(getMobDevCmd)
 
-	getMobDevCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required device attributes (separated by ~)")
-	getMobDevCmd.Flags().StringVarP(&projection, "projection", "j", "", "type of projection")
+	getMobDevCmd.Flags().StringVarP(&attrs, flgnm.FLG_ATTRIBUTES, "a", "", "required device attributes (separated by ~)")
+	getMobDevCmd.Flags().StringVarP(&projection, flgnm.FLG_PROJECTION, "j", "", "type of projection")
 }

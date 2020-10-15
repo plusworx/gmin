@@ -38,6 +38,7 @@ import (
 	cdevs "github.com/plusworx/gmin/utils/chromeosdevices"
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
@@ -86,7 +87,7 @@ func doBatchUpdCrOSDev(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	inputFlgVal, err := cmd.Flags().GetString("input-file")
+	inputFlgVal, err := cmd.Flags().GetString(flgnm.FLG_INPUTFILE)
 	if err != nil {
 		logger.Error(err)
 		return err
@@ -104,7 +105,7 @@ func doBatchUpdCrOSDev(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	formatFlgVal, err := cmd.Flags().GetString("format")
+	formatFlgVal, err := cmd.Flags().GetString(flgnm.FLG_FORMAT)
 	if err != nil {
 		logger.Error(err)
 		return err
@@ -132,7 +133,7 @@ func doBatchUpdCrOSDev(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	case lwrFmt == "gsheet":
-		rangeFlgVal, err := cmd.Flags().GetString("sheet-range")
+		rangeFlgVal, err := cmd.Flags().GetString(flgnm.FLG_SHEETRANGE)
 		if err != nil {
 			logger.Error(err)
 			return err
@@ -468,7 +469,7 @@ func bucUpdate(crosdev *admin.ChromeOsDevice, wg *sync.WaitGroup, cduc *admin.Ch
 func init() {
 	batchUpdateCmd.AddCommand(batchUpdCrOSDevCmd)
 
-	batchUpdCrOSDevCmd.Flags().StringVarP(&inputFile, "input-file", "i", "", "filepath to device data file or sheet id")
-	batchUpdCrOSDevCmd.Flags().StringVarP(&format, "format", "f", "json", "user data file format")
-	batchUpdCrOSDevCmd.Flags().StringVarP(&sheetRange, "sheet-range", "s", "", "user data gsheet range")
+	batchUpdCrOSDevCmd.Flags().StringVarP(&inputFile, flgnm.FLG_INPUTFILE, "i", "", "filepath to device data file or sheet id")
+	batchUpdCrOSDevCmd.Flags().StringVarP(&format, flgnm.FLG_FORMAT, "f", "json", "user data file format")
+	batchUpdCrOSDevCmd.Flags().StringVarP(&sheetRange, flgnm.FLG_SHEETRANGE, "s", "", "user data gsheet range")
 }

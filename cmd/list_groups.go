@@ -31,6 +31,7 @@ import (
 
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	gpars "github.com/plusworx/gmin/utils/gminparsers"
 	grps "github.com/plusworx/gmin/utils/groups"
@@ -67,8 +68,13 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 
 	glc := ds.Groups.List()
 
-	if attrs != "" {
-		listAttrs, err := gpars.ParseOutputAttrs(attrs, grps.GroupAttrMap)
+	flgAttrsVal, err := cmd.Flags().GetString(flgnm.FLG_ATTRIBUTES)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	if flgAttrsVal != "" {
+		listAttrs, err := gpars.ParseOutputAttrs(flgAttrsVal, grps.GroupAttrMap)
 		if err != nil {
 			logger.Error(err)
 			return err
@@ -79,10 +85,15 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 		glc = listCall.(*admin.GroupsListCall)
 	}
 
-	if domain != "" {
-		glc = grps.AddDomain(glc, domain)
+	flgDomainVal, err := cmd.Flags().GetString(flgnm.FLG_DOMAIN)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	if flgDomainVal != "" {
+		glc = grps.AddDomain(glc, flgDomainVal)
 	} else {
-		customerID, err := cfg.ReadConfigString("customerid")
+		customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 		if err != nil {
 			logger.Error(err)
 			return err
@@ -90,8 +101,13 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 		glc = grps.AddCustomer(glc, customerID)
 	}
 
-	if query != "" {
-		formattedQuery, err := gpars.ParseQuery(query, grps.QueryAttrMap)
+	flgQueryVal, err := cmd.Flags().GetString(flgnm.FLG_QUERY)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	if flgQueryVal != "" {
+		formattedQuery, err := gpars.ParseQuery(flgQueryVal, grps.QueryAttrMap)
 		if err != nil {
 			logger.Error(err)
 			return err
@@ -100,11 +116,16 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 		glc = grps.AddQuery(glc, formattedQuery)
 	}
 
-	if orderBy != "" {
-		ob := strings.ToLower(orderBy)
+	flgOrderByVal, err := cmd.Flags().GetString(flgnm.FLG_ORDERBY)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	if flgOrderByVal != "" {
+		ob := strings.ToLower(flgOrderByVal)
 		ok := cmn.SliceContainsStr(grps.ValidOrderByStrs, ob)
 		if !ok {
-			err = fmt.Errorf(gmess.ERR_INVALIDORDERBY, orderBy)
+			err = fmt.Errorf(gmess.ERR_INVALIDORDERBY, flgOrderByVal)
 			logger.Error(err)
 			return err
 		}
@@ -117,8 +138,13 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 
 		glc = grps.AddOrderBy(glc, validOrderBy)
 
-		if sortOrder != "" {
-			so := strings.ToLower(sortOrder)
+		flgSrtOrdVal, err := cmd.Flags().GetString(flgnm.FLG_SORTORDER)
+		if err != nil {
+			logger.Error(err)
+			return err
+		}
+		if flgSrtOrdVal != "" {
+			so := strings.ToLower(flgSrtOrdVal)
 			validSortOrder, err := cmn.IsValidAttr(so, cmn.ValidSortOrders)
 			if err != nil {
 				logger.Error(err)
@@ -129,9 +155,14 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	if userKey != "" {
-		if domain != "" {
-			glc = grps.AddUserKey(glc, userKey)
+	flgUserKeyVal, err := cmd.Flags().GetString(flgnm.FLG_USERKEY)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	if flgUserKeyVal != "" {
+		if flgDomainVal != "" {
+			glc = grps.AddUserKey(glc, flgUserKeyVal)
 		} else {
 			err = errors.New(gmess.ERR_NODOMAINWITHUSERKEY)
 			logger.Error(err)
@@ -139,7 +170,12 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	glc = grps.AddMaxResults(glc, maxResults)
+	flgMaxResultsVal, err := cmd.Flags().GetInt64(flgnm.FLG_MAXRESULTS)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	glc = grps.AddMaxResults(glc, flgMaxResultsVal)
 
 	groups, err = grps.DoList(glc)
 	if err != nil {
@@ -147,8 +183,13 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if pages != "" {
-		err = doGrpPages(glc, groups, pages)
+	flgPagesVal, err := cmd.Flags().GetString(flgnm.FLG_PAGES)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	if flgPagesVal != "" {
+		err = doGrpPages(glc, groups, flgPagesVal)
 		if err != nil {
 			logger.Error(err)
 			return err
@@ -161,7 +202,12 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if count {
+	flgCountVal, err := cmd.Flags().GetBool(flgnm.FLG_COUNT)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	if flgCountVal {
 		fmt.Println(len(groups.Groups))
 	} else {
 		fmt.Println(string(jsonData))
@@ -252,13 +298,13 @@ func doGrpPages(glc *admin.GroupsListCall, groups *admin.Groups, pages string) e
 func init() {
 	listCmd.AddCommand(listGroupsCmd)
 
-	listGroupsCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required group attributes (separated by ~)")
-	listGroupsCmd.Flags().BoolVarP(&count, "count", "", false, "count number of entities returned")
-	listGroupsCmd.Flags().StringVarP(&domain, "domain", "d", "", "domain from which to get groups")
-	listGroupsCmd.Flags().Int64VarP(&maxResults, "max-results", "m", 200, "maximum number of results to return per page")
-	listGroupsCmd.Flags().StringVarP(&orderBy, "order-by", "o", "", "field by which results will be ordered")
-	listGroupsCmd.Flags().StringVarP(&pages, "pages", "p", "", "number of pages of results to be returned ('all' or a number)")
-	listGroupsCmd.Flags().StringVarP(&query, "query", "q", "", "selection criteria to get groups (separated by ~)")
-	listGroupsCmd.Flags().StringVarP(&sortOrder, "sort-order", "s", "", "sort order of returned results")
-	listGroupsCmd.Flags().StringVarP(&userKey, "user-key", "u", "", "email address or id of user who belongs to returned groups")
+	listGroupsCmd.Flags().StringVarP(&attrs, flgnm.FLG_ATTRIBUTES, "a", "", "required group attributes (separated by ~)")
+	listGroupsCmd.Flags().BoolVarP(&count, flgnm.FLG_COUNT, "", false, "count number of entities returned")
+	listGroupsCmd.Flags().StringVarP(&domain, flgnm.FLG_DOMAIN, "d", "", "domain from which to get groups")
+	listGroupsCmd.Flags().Int64VarP(&maxResults, flgnm.FLG_MAXRESULTS, "m", 200, "maximum number of results to return per page")
+	listGroupsCmd.Flags().StringVarP(&orderBy, flgnm.FLG_ORDERBY, "o", "", "field by which results will be ordered")
+	listGroupsCmd.Flags().StringVarP(&pages, flgnm.FLG_PAGES, "p", "", "number of pages of results to be returned ('all' or a number)")
+	listGroupsCmd.Flags().StringVarP(&query, flgnm.FLG_QUERY, "q", "", "selection criteria to get groups (separated by ~)")
+	listGroupsCmd.Flags().StringVarP(&sortOrder, flgnm.FLG_SORTORDER, "s", "", "sort order of returned results")
+	listGroupsCmd.Flags().StringVarP(&userKey, flgnm.FLG_USERKEY, "u", "", "email address or id of user who belongs to returned groups")
 }

@@ -28,6 +28,7 @@ import (
 
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gpars "github.com/plusworx/gmin/utils/gminparsers"
 	ous "github.com/plusworx/gmin/utils/orgunits"
 	"github.com/spf13/cobra"
@@ -60,7 +61,7 @@ func doGetOrgUnit(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	customerID, err := cfg.ReadConfigString("customerid")
+	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {
 		logger.Error(err)
 		return err
@@ -74,8 +75,13 @@ func doGetOrgUnit(cmd *cobra.Command, args []string) error {
 
 	ougc := ds.Orgunits.Get(customerID, args[0])
 
-	if attrs != "" {
-		formattedAttrs, err := gpars.ParseOutputAttrs(attrs, ous.OrgUnitAttrMap)
+	flgAttrsVal, err := cmd.Flags().GetString(flgnm.FLG_ATTRIBUTES)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	if flgAttrsVal != "" {
+		formattedAttrs, err := gpars.ParseOutputAttrs(flgAttrsVal, ous.OrgUnitAttrMap)
 		if err != nil {
 			logger.Error(err)
 			return err
@@ -105,5 +111,5 @@ func doGetOrgUnit(cmd *cobra.Command, args []string) error {
 func init() {
 	getCmd.AddCommand(getOrgUnitCmd)
 
-	getOrgUnitCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required orgunit attributes (separated by ~)")
+	getOrgUnitCmd.Flags().StringVarP(&attrs, flgnm.FLG_ATTRIBUTES, "a", "", "required orgunit attributes (separated by ~)")
 }

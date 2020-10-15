@@ -36,6 +36,7 @@ import (
 
 	"github.com/cenkalti/backoff/v4"
 	cmn "github.com/plusworx/gmin/utils/common"
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	grps "github.com/plusworx/gmin/utils/groups"
 	"github.com/spf13/cobra"
@@ -79,7 +80,7 @@ func doBatchCrtGroup(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	inputFlgVal, err := cmd.Flags().GetString("input-file")
+	inputFlgVal, err := cmd.Flags().GetString(flgnm.FLG_INPUTFILE)
 	if err != nil {
 		logger.Error(err)
 		return err
@@ -97,7 +98,7 @@ func doBatchCrtGroup(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	formatFlgVal, err := cmd.Flags().GetString("format")
+	formatFlgVal, err := cmd.Flags().GetString(flgnm.FLG_FORMAT)
 	if err != nil {
 		logger.Error(err)
 		return err
@@ -125,7 +126,7 @@ func doBatchCrtGroup(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	case lwrFmt == "gsheet":
-		rangeFlgVal, err := cmd.Flags().GetString("sheet-range")
+		rangeFlgVal, err := cmd.Flags().GetString(flgnm.FLG_SHEETRANGE)
 		if err != nil {
 			logger.Error(err)
 			return err
@@ -450,7 +451,7 @@ func bcgProcessObjects(ds *admin.Service, groups []*admin.Group) error {
 func init() {
 	batchCreateCmd.AddCommand(batchCrtGroupCmd)
 
-	batchCrtGroupCmd.Flags().StringVarP(&inputFile, "input-file", "i", "", "filepath to group data file or sheet id")
-	batchCrtGroupCmd.Flags().StringVarP(&format, "format", "f", "json", "user data file format")
-	batchCrtGroupCmd.Flags().StringVarP(&sheetRange, "sheet-range", "s", "", "user data gsheet range")
+	batchCrtGroupCmd.Flags().StringVarP(&inputFile, flgnm.FLG_INPUTFILE, "i", "", "filepath to group data file or sheet id")
+	batchCrtGroupCmd.Flags().StringVarP(&format, flgnm.FLG_FORMAT, "f", "json", "user data file format")
+	batchCrtGroupCmd.Flags().StringVarP(&sheetRange, flgnm.FLG_SHEETRANGE, "s", "", "user data gsheet range")
 }

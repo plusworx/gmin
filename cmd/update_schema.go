@@ -30,6 +30,7 @@ import (
 
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	scs "github.com/plusworx/gmin/utils/schemas"
 	"github.com/spf13/cobra"
@@ -136,7 +137,7 @@ func doUpdateSchema(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	customerID, err := cfg.ReadConfigString("customerid")
+	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {
 		logger.Error(err)
 		return err
@@ -165,6 +166,6 @@ func doUpdateSchema(cmd *cobra.Command, args []string) error {
 func init() {
 	updateCmd.AddCommand(updateSchemaCmd)
 
-	updateSchemaCmd.Flags().StringVarP(&inputFile, "input-file", "i", "", "filepath to schema data file")
-	updateSchemaCmd.MarkFlagRequired("input-file")
+	updateSchemaCmd.Flags().StringVarP(&inputFile, flgnm.FLG_INPUTFILE, "i", "", "filepath to schema data file")
+	updateSchemaCmd.MarkFlagRequired(flgnm.FLG_INPUTFILE)
 }

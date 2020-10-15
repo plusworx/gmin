@@ -30,6 +30,7 @@ import (
 	cdevs "github.com/plusworx/gmin/utils/chromeosdevices"
 	ca "github.com/plusworx/gmin/utils/commandaliases"
 	cmn "github.com/plusworx/gmin/utils/common"
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	gas "github.com/plusworx/gmin/utils/groupaliases"
 	grps "github.com/plusworx/gmin/utils/groups"
@@ -73,11 +74,25 @@ func doShowAttrs(cmd *cobra.Command, args []string) error {
 	lArgs := len(args)
 	object := strings.ToLower(args[0])
 
-	if queryable && lArgs > 1 {
+	flgFilterVal, err := cmd.Flags().GetString(flgnm.FLG_FILTER)
+	if err != nil {
+		return err
+	}
+	lowerFilter := strings.ToLower(flgFilterVal)
+
+	flgQueryableVal, err := cmd.Flags().GetBool(flgnm.FLG_QUERYABLE)
+	if err != nil {
+		return err
+	}
+	if flgQueryableVal && lArgs > 1 {
 		return errors.New(gmess.ERR_QUERYABLEFLAG1ARG)
 	}
 
-	if composite && queryable {
+	flgCompositeVal, err := cmd.Flags().GetBool(flgnm.FLG_COMPOSITE)
+	if err != nil {
+		return err
+	}
+	if flgCompositeVal && flgQueryableVal {
 		return errors.New(gmess.ERR_QUERYANDCOMPOSITEFLAGS)
 	}
 
@@ -87,70 +102,70 @@ func doShowAttrs(cmd *cobra.Command, args []string) error {
 	}
 
 	if cmn.SliceContainsStr(ca.CDevAliases, object) {
-		err := saChromeOSDev(args, lArgs, args[0])
+		err := saChromeOSDev(args, lArgs, args[0], lowerFilter, flgQueryableVal, flgCompositeVal)
 		if err != nil {
 			return err
 		}
 	}
 
 	if cmn.SliceContainsStr(ca.GroupAliases, object) {
-		err := saGroup(args, lArgs, args[0])
+		err := saGroup(args, lArgs, args[0], lowerFilter, flgQueryableVal, flgCompositeVal)
 		if err != nil {
 			return err
 		}
 	}
 
 	if cmn.SliceContainsStr(ca.GAAliases, object) {
-		err := saGroupAlias(args, lArgs, args[0])
+		err := saGroupAlias(args, lArgs, args[0], lowerFilter, flgQueryableVal, flgCompositeVal)
 		if err != nil {
 			return err
 		}
 	}
 
 	if cmn.SliceContainsStr(ca.GMAliases, object) {
-		err := saGroupMember(args, lArgs, args[0])
+		err := saGroupMember(args, lArgs, args[0], lowerFilter, flgQueryableVal, flgCompositeVal)
 		if err != nil {
 			return err
 		}
 	}
 
 	if cmn.SliceContainsStr(ca.GSAliases, object) {
-		err := saGroupSettings(args, lArgs, args[0])
+		err := saGroupSettings(args, lArgs, args[0], lowerFilter, flgQueryableVal, flgCompositeVal)
 		if err != nil {
 			return err
 		}
 	}
 
 	if cmn.SliceContainsStr(ca.MDevAliases, object) {
-		err := saMobileDev(args, lArgs, args[0])
+		err := saMobileDev(args, lArgs, args[0], lowerFilter, flgQueryableVal, flgCompositeVal)
 		if err != nil {
 			return err
 		}
 	}
 
 	if cmn.SliceContainsStr(ca.OUAliases, object) {
-		err := saOrgUnit(args, lArgs, args[0])
+		err := saOrgUnit(args, lArgs, args[0], lowerFilter, flgQueryableVal, flgCompositeVal)
 		if err != nil {
 			return err
 		}
 	}
 
 	if cmn.SliceContainsStr(ca.SCAliases, object) {
-		err := saSchema(args, lArgs, args[0])
+		err := saSchema(args, lArgs, args[0], lowerFilter, flgQueryableVal, flgCompositeVal)
 		if err != nil {
 			return err
 		}
 	}
 
 	if cmn.SliceContainsStr(ca.UserAliases, object) {
-		err := saUser(args, lArgs, args[0])
+		err := saUser(args, lArgs, args[0], lowerFilter, flgQueryableVal, flgCompositeVal)
 		if err != nil {
 			return err
 		}
 	}
 
 	if cmn.SliceContainsStr(ca.UAAliases, object) {
-		err := saUserAlias(args, lArgs, args[0])
+		err := saUserAlias(args, lArgs, args[0], lowerFilter, flgQueryableVal, flgCompositeVal)
 		if err != nil {
 			return err
 		}
@@ -163,29 +178,28 @@ func doShowAttrs(cmd *cobra.Command, args []string) error {
 func init() {
 	showCmd.AddCommand(showAttrsCmd)
 
-	showAttrsCmd.Flags().BoolVarP(&composite, "composite", "c", false, "show attributes that contain other attributes")
-	showAttrsCmd.Flags().StringVarP(&filter, "filter", "f", "", "string used to filter results")
-	showAttrsCmd.Flags().BoolVarP(&queryable, "queryable", "q", false, "show attributes that can be used in a query")
+	showAttrsCmd.Flags().BoolVarP(&composite, flgnm.FLG_COMPOSITE, "c", false, "show attributes that contain other attributes")
+	showAttrsCmd.Flags().StringVarP(&filter, flgnm.FLG_FILTER, "f", "", "string used to filter results")
+	showAttrsCmd.Flags().BoolVarP(&queryable, flgnm.FLG_QUERYABLE, "q", false, "show attributes that can be used in a query")
 }
 
-func saChromeOSDev(args []string, lArgs int, objectName string) error {
+func saChromeOSDev(args []string, lArgs int, objectName string, filter string, queryable bool, composite bool) error {
 	logger.Debugw("starting saChromeOSDev()",
 		"args", args,
 		"lArgs", lArgs,
 		"objectName", objectName)
 
-	lowerFilter := strings.ToLower(filter)
 	if queryable {
-		cmn.ShowQueryableAttrs(lowerFilter, cdevs.QueryAttrMap)
+		cmn.ShowQueryableAttrs(filter, cdevs.QueryAttrMap)
 		return nil
 	}
 
 	if lArgs == 1 {
 		if composite {
-			cdevs.ShowCompAttrs(lowerFilter)
+			cdevs.ShowCompAttrs(filter)
 			return nil
 		}
-		cdevs.ShowAttrs(lowerFilter)
+		cdevs.ShowAttrs(filter)
 		return nil
 	}
 
@@ -193,7 +207,7 @@ func saChromeOSDev(args []string, lArgs int, objectName string) error {
 		if composite {
 			return fmt.Errorf(gmess.ERR_NOCOMPOSITEATTRS, args[lArgs-1])
 		}
-		err := cdevs.ShowSubAttrs(args[lArgs-1], lowerFilter)
+		err := cdevs.ShowSubAttrs(args[lArgs-1], filter)
 		if err != nil {
 			return err
 		}
@@ -207,16 +221,14 @@ func saChromeOSDev(args []string, lArgs int, objectName string) error {
 	return nil
 }
 
-func saGroup(args []string, lArgs int, objectName string) error {
+func saGroup(args []string, lArgs int, objectName string, filter string, queryable bool, composite bool) error {
 	logger.Debugw("starting saGroup()",
 		"args", args,
 		"lArgs", lArgs,
 		"objectName", objectName)
 
-	lowerFilter := strings.ToLower(filter)
-
 	if queryable {
-		cmn.ShowQueryableAttrs(lowerFilter, grps.QueryAttrMap)
+		cmn.ShowQueryableAttrs(filter, grps.QueryAttrMap)
 		return nil
 	}
 
@@ -224,7 +236,7 @@ func saGroup(args []string, lArgs int, objectName string) error {
 		if composite {
 			return fmt.Errorf(gmess.ERR_NOCOMPOSITEATTRS, objectName)
 		}
-		grps.ShowAttrs(lowerFilter)
+		grps.ShowAttrs(filter)
 	}
 
 	if lArgs > 1 {
@@ -235,7 +247,7 @@ func saGroup(args []string, lArgs int, objectName string) error {
 	return nil
 }
 
-func saGroupAlias(args []string, lArgs int, objectName string) error {
+func saGroupAlias(args []string, lArgs int, objectName string, filter string, queryable bool, composite bool) error {
 	logger.Debugw("starting saGroupAlias()",
 		"args", args,
 		"lArgs", lArgs,
@@ -249,7 +261,7 @@ func saGroupAlias(args []string, lArgs int, objectName string) error {
 		if composite {
 			return fmt.Errorf(gmess.ERR_NOCOMPOSITEATTRS, objectName)
 		}
-		gas.ShowAttrs(strings.ToLower(filter))
+		gas.ShowAttrs(filter)
 	}
 
 	if lArgs > 1 {
@@ -260,7 +272,7 @@ func saGroupAlias(args []string, lArgs int, objectName string) error {
 	return nil
 }
 
-func saGroupMember(args []string, lArgs int, objectName string) error {
+func saGroupMember(args []string, lArgs int, objectName string, filter string, queryable bool, composite bool) error {
 	logger.Debugw("starting saGroupMember()",
 		"args", args,
 		"lArgs", lArgs,
@@ -274,7 +286,7 @@ func saGroupMember(args []string, lArgs int, objectName string) error {
 		if composite {
 			return fmt.Errorf(gmess.ERR_NOCOMPOSITEATTRS, objectName)
 		}
-		mems.ShowAttrs(strings.ToLower(filter))
+		mems.ShowAttrs(filter)
 	}
 
 	if lArgs > 1 {
@@ -285,7 +297,7 @@ func saGroupMember(args []string, lArgs int, objectName string) error {
 	return nil
 }
 
-func saGroupSettings(args []string, lArgs int, objectName string) error {
+func saGroupSettings(args []string, lArgs int, objectName string, filter string, queryable bool, composite bool) error {
 	logger.Debugw("starting saGroupSettings()",
 		"args", args,
 		"lArgs", lArgs,
@@ -299,7 +311,7 @@ func saGroupSettings(args []string, lArgs int, objectName string) error {
 		if composite {
 			return fmt.Errorf(gmess.ERR_NOCOMPOSITEATTRS, objectName)
 		}
-		grpset.ShowAttrs(strings.ToLower(filter))
+		grpset.ShowAttrs(filter)
 	}
 
 	if lArgs > 1 {
@@ -310,25 +322,23 @@ func saGroupSettings(args []string, lArgs int, objectName string) error {
 	return nil
 }
 
-func saMobileDev(args []string, lArgs int, objectName string) error {
+func saMobileDev(args []string, lArgs int, objectName string, filter string, queryable bool, composite bool) error {
 	logger.Debugw("starting saMobileDev()",
 		"args", args,
 		"lArgs", lArgs,
 		"objectName", objectName)
 
-	lowerFilter := strings.ToLower(filter)
-
 	if queryable {
-		cmn.ShowQueryableAttrs(lowerFilter, mdevs.QueryAttrMap)
+		cmn.ShowQueryableAttrs(filter, mdevs.QueryAttrMap)
 		return nil
 	}
 
 	if lArgs == 1 {
 		if composite {
-			mdevs.ShowCompAttrs(lowerFilter)
+			mdevs.ShowCompAttrs(filter)
 			return nil
 		}
-		mdevs.ShowAttrs(lowerFilter)
+		mdevs.ShowAttrs(filter)
 		return nil
 	}
 
@@ -336,7 +346,7 @@ func saMobileDev(args []string, lArgs int, objectName string) error {
 		if composite {
 			return fmt.Errorf(gmess.ERR_NOCOMPOSITEATTRS, args[lArgs-1])
 		}
-		err := mdevs.ShowSubAttrs(args[lArgs-1], lowerFilter)
+		err := mdevs.ShowSubAttrs(args[lArgs-1], filter)
 		if err != nil {
 			return err
 		}
@@ -350,7 +360,7 @@ func saMobileDev(args []string, lArgs int, objectName string) error {
 	return nil
 }
 
-func saOrgUnit(args []string, lArgs int, objectName string) error {
+func saOrgUnit(args []string, lArgs int, objectName string, filter string, queryable bool, composite bool) error {
 	logger.Debugw("starting saOrgUnit()",
 		"args", args,
 		"lArgs", lArgs,
@@ -364,7 +374,7 @@ func saOrgUnit(args []string, lArgs int, objectName string) error {
 		if composite {
 			return fmt.Errorf(gmess.ERR_NOCOMPOSITEATTRS, objectName)
 		}
-		ous.ShowAttrs(strings.ToLower(filter))
+		ous.ShowAttrs(filter)
 	}
 
 	if lArgs > 1 {
@@ -375,13 +385,11 @@ func saOrgUnit(args []string, lArgs int, objectName string) error {
 	return nil
 }
 
-func saSchema(args []string, lArgs int, objectName string) error {
+func saSchema(args []string, lArgs int, objectName string, filter string, queryable bool, composite bool) error {
 	logger.Debugw("starting saSchema()",
 		"args", args,
 		"lArgs", lArgs,
 		"objectName", objectName)
-
-	lowerFilter := strings.ToLower(filter)
 
 	if queryable {
 		return fmt.Errorf(gmess.ERR_NOQUERYABLEATTRS, objectName)
@@ -389,21 +397,21 @@ func saSchema(args []string, lArgs int, objectName string) error {
 
 	if lArgs == 1 {
 		if composite {
-			scs.ShowCompAttrs(lowerFilter)
+			scs.ShowCompAttrs(filter)
 			return nil
 		}
-		scs.ShowAttrs(lowerFilter)
+		scs.ShowAttrs(filter)
 	}
 
 	if lArgs == 2 {
 		if composite {
-			err := scs.ShowSubCompAttrs(args[lArgs-1], lowerFilter)
+			err := scs.ShowSubCompAttrs(args[lArgs-1], filter)
 			if err != nil {
 				return err
 			}
 			return nil
 		}
-		err := scs.ShowSubAttrs(args[lArgs-1], lowerFilter)
+		err := scs.ShowSubAttrs(args[lArgs-1], filter)
 		if err != nil {
 			return err
 		}
@@ -424,32 +432,30 @@ func saSchema(args []string, lArgs int, objectName string) error {
 	return nil
 }
 
-func saUser(args []string, lArgs int, objectName string) error {
+func saUser(args []string, lArgs int, objectName string, filter string, queryable bool, composite bool) error {
 	logger.Debugw("starting saUser()",
 		"args", args,
 		"lArgs", lArgs,
 		"objectName", objectName)
 
-	lowerFilter := strings.ToLower(filter)
-
 	if queryable {
-		cmn.ShowQueryableAttrs(lowerFilter, usrs.QueryAttrMap)
+		cmn.ShowQueryableAttrs(filter, usrs.QueryAttrMap)
 		return nil
 	}
 
 	if lArgs == 1 {
 		if composite {
-			usrs.ShowCompAttrs(lowerFilter)
+			usrs.ShowCompAttrs(filter)
 			return nil
 		}
-		usrs.ShowAttrs(lowerFilter)
+		usrs.ShowAttrs(filter)
 	}
 
 	if lArgs == 2 {
 		if composite {
 			return fmt.Errorf(gmess.ERR_NOCOMPOSITEATTRS, args[lArgs-1])
 		}
-		err := usrs.ShowSubAttrs(args[lArgs-1], lowerFilter)
+		err := usrs.ShowSubAttrs(args[lArgs-1], filter)
 		if err != nil {
 			return err
 		}
@@ -463,7 +469,7 @@ func saUser(args []string, lArgs int, objectName string) error {
 	return nil
 }
 
-func saUserAlias(args []string, lArgs int, objectName string) error {
+func saUserAlias(args []string, lArgs int, objectName string, filter string, queryable bool, composite bool) error {
 	logger.Debugw("starting saUserAlias()",
 		"args", args,
 		"lArgs", lArgs,
@@ -477,7 +483,7 @@ func saUserAlias(args []string, lArgs int, objectName string) error {
 		if composite {
 			return fmt.Errorf(gmess.ERR_NOCOMPOSITEATTRS, objectName)
 		}
-		uas.ShowAttrs(strings.ToLower(filter))
+		uas.ShowAttrs(filter)
 	}
 
 	if lArgs > 1 {

@@ -29,6 +29,7 @@ import (
 	"strconv"
 
 	cmn "github.com/plusworx/gmin/utils/common"
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	gpars "github.com/plusworx/gmin/utils/gminparsers"
 	mems "github.com/plusworx/gmin/utils/members"
@@ -64,8 +65,13 @@ func doListMembers(cmd *cobra.Command, args []string) error {
 
 	mlc := ds.Members.List(args[0])
 
-	if attrs != "" {
-		listAttrs, err := gpars.ParseOutputAttrs(attrs, mems.MemberAttrMap)
+	flgAttrsVal, err := cmd.Flags().GetString(flgnm.FLG_ATTRIBUTES)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	if flgAttrsVal != "" {
+		listAttrs, err := gpars.ParseOutputAttrs(flgAttrsVal, mems.MemberAttrMap)
 		if err != nil {
 			logger.Error(err)
 			return err
@@ -76,8 +82,13 @@ func doListMembers(cmd *cobra.Command, args []string) error {
 		mlc = listCall.(*admin.MembersListCall)
 	}
 
-	if role != "" {
-		formattedRoles, err := gpars.ParseOutputAttrs(role, mems.RoleMap)
+	flgRolesVal, err := cmd.Flags().GetString(flgnm.FLG_ROLES)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	if flgRolesVal != "" {
+		formattedRoles, err := gpars.ParseOutputAttrs(flgRolesVal, mems.RoleMap)
 		if err != nil {
 			logger.Error(err)
 			return err
@@ -85,7 +96,12 @@ func doListMembers(cmd *cobra.Command, args []string) error {
 		mlc = mems.AddRoles(mlc, formattedRoles)
 	}
 
-	mlc = mems.AddMaxResults(mlc, maxResults)
+	flgMaxResultsVal, err := cmd.Flags().GetInt64(flgnm.FLG_MAXRESULTS)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	mlc = mems.AddMaxResults(mlc, flgMaxResultsVal)
 
 	members, err = mems.DoList(mlc)
 	if err != nil {
@@ -93,8 +109,13 @@ func doListMembers(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if pages != "" {
-		err = doMemPages(mlc, members, pages)
+	flgPagesVal, err := cmd.Flags().GetString(flgnm.FLG_PAGES)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	if flgPagesVal != "" {
+		err = doMemPages(mlc, members, flgPagesVal)
 		if err != nil {
 			logger.Error(err)
 			return err
@@ -107,7 +128,12 @@ func doListMembers(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if count {
+	flgCountVal, err := cmd.Flags().GetBool(flgnm.FLG_COUNT)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	if flgCountVal {
 		fmt.Println(len(members.Members))
 	} else {
 		fmt.Println(string(jsonData))
@@ -198,9 +224,9 @@ func doMemPages(mlc *admin.MembersListCall, members *admin.Members, pages string
 func init() {
 	listCmd.AddCommand(listMembersCmd)
 
-	listMembersCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required member attributes (separated by ~)")
-	listMembersCmd.Flags().BoolVarP(&count, "count", "", false, "count number of entities returned")
-	listMembersCmd.Flags().Int64VarP(&maxResults, "max-results", "m", 200, "maximum number or results to return")
-	listMembersCmd.Flags().StringVarP(&pages, "pages", "p", "", "number of pages of results to be returned ('all' or a number)")
-	listMembersCmd.Flags().StringVarP(&role, "roles", "r", "", "roles to filter results by (separated by ~)")
+	listMembersCmd.Flags().StringVarP(&attrs, flgnm.FLG_ATTRIBUTES, "a", "", "required member attributes (separated by ~)")
+	listMembersCmd.Flags().BoolVarP(&count, flgnm.FLG_COUNT, "", false, "count number of entities returned")
+	listMembersCmd.Flags().Int64VarP(&maxResults, flgnm.FLG_MAXRESULTS, "m", 200, "maximum number or results to return")
+	listMembersCmd.Flags().StringVarP(&pages, flgnm.FLG_PAGES, "p", "", "number of pages of results to be returned ('all' or a number)")
+	listMembersCmd.Flags().StringVarP(&role, flgnm.FLG_ROLES, "r", "", "roles to filter results by (separated by ~)")
 }

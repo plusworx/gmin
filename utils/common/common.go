@@ -42,6 +42,7 @@ import (
 	"crypto/sha1"
 
 	cfg "github.com/plusworx/gmin/utils/config"
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
@@ -282,7 +283,7 @@ func IsValidAttr(attr string, attrMap map[string]string) (string, error) {
 
 	validAttr := attrMap[lowerAttr]
 	if validAttr == "" {
-		err := fmt.Errorf("gmin: error - attribute %v is unrecognized", attr)
+		err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, attr)
 		return "", err
 	}
 
@@ -290,12 +291,12 @@ func IsValidAttr(attr string, attrMap map[string]string) (string, error) {
 }
 
 func oauthSetup(scope []string) (context.Context, oauth2.TokenSource, error) {
-	adminEmail, err := cfg.ReadConfigString("administrator")
+	adminEmail, err := cfg.ReadConfigString(cfg.CONFIGADMIN)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	credentialPath, err := cfg.ReadConfigString("credentialpath")
+	credentialPath, err := cfg.ReadConfigString(cfg.CONFIGCREDPATH)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -311,7 +312,7 @@ func oauthSetup(scope []string) (context.Context, oauth2.TokenSource, error) {
 
 	config, err := google.JWTConfigFromJSON(jsonCredentials, scope...)
 	if err != nil {
-		return nil, nil, fmt.Errorf("gmin: error - JWTConfigFromJSON: %v", err)
+		return nil, nil, fmt.Errorf(gmess.ERR_JWTCONFIGFROMJSON, err)
 	}
 	config.Subject = adminEmail
 
@@ -472,10 +473,10 @@ func ShowGlobalFlagValues(lenArgs int, args []string, filter string) error {
 		flag := strings.ToLower(args[1])
 
 		switch {
-		case flag == "log-level":
+		case flag == flgnm.FLG_LOGLEVEL:
 			ShowFlagValues(validLogLevels, filter)
 		default:
-			return fmt.Errorf("gmin: error - %v flag not recognized", args[1])
+			return fmt.Errorf(gmess.ERR_FLAGNOTRECOGNIZED, args[1])
 		}
 	}
 
@@ -579,7 +580,7 @@ func ValidateInputAttrs(attrs []string, attrMap map[string]string) error {
 		}
 
 		if s != attrName {
-			return fmt.Errorf("gmin: error - %v should be %v in attribute string", attrName, s)
+			return fmt.Errorf(gmess.ERR_ATTRSHOULDBE, attrName, s)
 		}
 	}
 	return nil
@@ -588,7 +589,7 @@ func ValidateInputAttrs(attrs []string, attrMap map[string]string) error {
 // ValidateRecoveryPhone validates recovery phone number
 func ValidateRecoveryPhone(phoneNo string) error {
 	if string(phoneNo[0]) != "+" {
-		return fmt.Errorf("gmin: error - recovery phone number %v must start with '+' followed by country code", phoneNo)
+		return fmt.Errorf(gmess.ERR_INVALIDRECOVERYPHONE, phoneNo)
 	}
 	return nil
 }

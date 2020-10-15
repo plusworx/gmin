@@ -30,6 +30,7 @@ import (
 	cdevs "github.com/plusworx/gmin/utils/chromeosdevices"
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	"github.com/spf13/cobra"
 
@@ -53,7 +54,7 @@ func doManageCrOSDev(cmd *cobra.Command, args []string) error {
 
 	var devAction = admin.ChromeOsDeviceAction{}
 
-	customerID, err := cfg.ReadConfigString("customerid")
+	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {
 		logger.Error(err)
 		return err
@@ -69,12 +70,17 @@ func doManageCrOSDev(cmd *cobra.Command, args []string) error {
 
 	devAction.Action = action
 	if action == "deprovision" {
-		if reason == "" {
+		flgReasonVal, err := cmd.Flags().GetString(flgnm.FLG_REASON)
+		if err != nil {
+			logger.Error(err)
+			return err
+		}
+		if flgReasonVal == "" {
 			err = errors.New(gmess.ERR_NODEPROVISIONREASON)
 			logger.Error(err)
 			return err
 		}
-		devAction.DeprovisionReason = reason
+		devAction.DeprovisionReason = flgReasonVal
 	}
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryDeviceChromeosScope)
@@ -101,5 +107,5 @@ func doManageCrOSDev(cmd *cobra.Command, args []string) error {
 func init() {
 	manageCmd.AddCommand(manageCrOSDevCmd)
 
-	manageCrOSDevCmd.Flags().StringVarP(&reason, "reason", "r", "", "device deprovision reason")
+	manageCrOSDevCmd.Flags().StringVarP(&reason, flgnm.FLG_REASON, "r", "", "device deprovision reason")
 }

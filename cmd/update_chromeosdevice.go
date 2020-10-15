@@ -29,6 +29,7 @@ import (
 	cdevs "github.com/plusworx/gmin/utils/chromeosdevices"
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
@@ -57,39 +58,69 @@ func doUpdateCrOSDev(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	customerID, err := cfg.ReadConfigString("customerid")
+	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {
 		logger.Error(err)
 		return err
 	}
 
-	if assetID != "" {
-		crosdev.AnnotatedAssetId = assetID
+	flgAssetIDVal, err := cmd.Flags().GetString(flgnm.FLG_ASSETID)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	if flgAssetIDVal != "" {
+		crosdev.AnnotatedAssetId = flgAssetIDVal
 	}
 
-	if location != "" {
-		crosdev.AnnotatedLocation = location
+	flgLocationVal, err := cmd.Flags().GetString(flgnm.FLG_LOCATION)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	if flgLocationVal != "" {
+		crosdev.AnnotatedLocation = flgLocationVal
 	}
 
-	if notes != "" {
-		crosdev.Notes = notes
+	flgNotesVal, err := cmd.Flags().GetString(flgnm.FLG_NOTES)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	if flgNotesVal != "" {
+		crosdev.Notes = flgNotesVal
 	}
 
-	if orgUnit != "" {
-		crosdev.OrgUnitPath = orgUnit
+	flgOUVal, err := cmd.Flags().GetString(flgnm.FLG_ORGUNIT)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	if flgOUVal != "" {
+		crosdev.OrgUnitPath = flgOUVal
 	}
 
-	if userKey != "" {
-		crosdev.AnnotatedUser = userKey
+	flgUserKeyVal, err := cmd.Flags().GetString(flgnm.FLG_USERKEY)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	if flgUserKeyVal != "" {
+		crosdev.AnnotatedUser = flgUserKeyVal
 	}
 
 	cduc := ds.Chromeosdevices.Update(customerID, args[0], &crosdev)
 
-	if projection != "" {
-		proj := strings.ToLower(projection)
+	flgProjectionVal, err := cmd.Flags().GetString(flgnm.FLG_PROJECTION)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	if flgProjectionVal != "" {
+		proj := strings.ToLower(flgProjectionVal)
 		ok := cmn.SliceContainsStr(cdevs.ValidProjections, proj)
 		if !ok {
-			err = fmt.Errorf(gmess.ERR_INVALIDPROJECTIONTYPE, projection)
+			err = fmt.Errorf(gmess.ERR_INVALIDPROJECTIONTYPE, flgProjectionVal)
 			logger.Error(err)
 			return err
 		}
@@ -114,10 +145,10 @@ func doUpdateCrOSDev(cmd *cobra.Command, args []string) error {
 func init() {
 	updateCmd.AddCommand(updateCrOSDevCmd)
 
-	updateCrOSDevCmd.Flags().StringVarP(&assetID, "asset-id", "d", "", "device asset id")
-	updateCrOSDevCmd.Flags().StringVarP(&projection, "projection", "j", "", "type of projection")
-	updateCrOSDevCmd.Flags().StringVarP(&location, "location", "l", "", "device location")
-	updateCrOSDevCmd.Flags().StringVarP(&notes, "notes", "n", "", "notes about device")
-	updateCrOSDevCmd.Flags().StringVarP(&orgUnit, "orgunit-path", "t", "", "orgunit device belongs to")
-	updateCrOSDevCmd.Flags().StringVarP(&userKey, "user", "u", "", "device user")
+	updateCrOSDevCmd.Flags().StringVarP(&assetID, flgnm.FLG_ASSETID, "d", "", "device asset id")
+	updateCrOSDevCmd.Flags().StringVarP(&projection, flgnm.FLG_PROJECTION, "j", "", "type of projection")
+	updateCrOSDevCmd.Flags().StringVarP(&location, flgnm.FLG_LOCATION, "l", "", "device location")
+	updateCrOSDevCmd.Flags().StringVarP(&notes, flgnm.FLG_NOTES, "n", "", "notes about device")
+	updateCrOSDevCmd.Flags().StringVarP(&orgUnit, flgnm.FLG_ORGUNITPATH, "t", "", "orgunit device belongs to")
+	updateCrOSDevCmd.Flags().StringVarP(&userKey, flgnm.FLG_USERKEY, "u", "", "device user")
 }

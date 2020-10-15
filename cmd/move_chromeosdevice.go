@@ -50,7 +50,7 @@ func doMoveCrOSDev(cmd *cobra.Command, args []string) error {
 
 	var move = admin.ChromeOsMoveDevicesToOu{}
 
-	customerID, err := cfg.ReadConfigString("customerid")
+	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {
 		logger.Error(err)
 		return err

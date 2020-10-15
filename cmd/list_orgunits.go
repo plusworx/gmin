@@ -29,6 +29,7 @@ import (
 
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	gpars "github.com/plusworx/gmin/utils/gminparsers"
 	ous "github.com/plusworx/gmin/utils/orgunits"
@@ -62,7 +63,7 @@ func doListOUs(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	customerID, err := cfg.ReadConfigString("customerid")
+	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {
 		logger.Error(err)
 		return err
@@ -70,8 +71,13 @@ func doListOUs(cmd *cobra.Command, args []string) error {
 
 	oulc := ds.Orgunits.List(customerID)
 
-	if attrs != "" {
-		listAttrs, err := gpars.ParseOutputAttrs(attrs, ous.OrgUnitAttrMap)
+	flgAttrsVal, err := cmd.Flags().GetString(flgnm.FLG_ATTRIBUTES)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	if flgAttrsVal != "" {
+		listAttrs, err := gpars.ParseOutputAttrs(flgAttrsVal, ous.OrgUnitAttrMap)
 		if err != nil {
 			logger.Error(err)
 			return err
@@ -82,19 +88,29 @@ func doListOUs(cmd *cobra.Command, args []string) error {
 		oulc = listCall.(*admin.OrgunitsListCall)
 	}
 
-	if orgUnit != "" {
-		oulc = ous.AddOUPath(oulc, orgUnit)
-	}
-
-	searchType = strings.ToLower(searchType)
-
-	ok := cmn.SliceContainsStr(ous.ValidSearchTypes, searchType)
-	if !ok {
-		err := fmt.Errorf(gmess.ERR_INVALIDSEARCHTYPE, searchType)
+	flgOUPathVal, err := cmd.Flags().GetString(flgnm.FLG_ORGUNITPATH)
+	if err != nil {
 		logger.Error(err)
 		return err
 	}
-	oulc = ous.AddType(oulc, searchType)
+	if flgOUPathVal != "" {
+		oulc = ous.AddOUPath(oulc, flgOUPathVal)
+	}
+
+	flgSearchTypeVal, err := cmd.Flags().GetString(flgnm.FLG_SEARCHTYPE)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	lowerSearchType := strings.ToLower(flgSearchTypeVal)
+
+	ok := cmn.SliceContainsStr(ous.ValidSearchTypes, lowerSearchType)
+	if !ok {
+		err := fmt.Errorf(gmess.ERR_INVALIDSEARCHTYPE, flgSearchTypeVal)
+		logger.Error(err)
+		return err
+	}
+	oulc = ous.AddType(oulc, lowerSearchType)
 
 	orgUnits, err = ous.DoList(oulc)
 	if err != nil {
@@ -108,7 +124,12 @@ func doListOUs(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if count {
+	flgCountVal, err := cmd.Flags().GetBool(flgnm.FLG_COUNT)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	if flgCountVal {
 		fmt.Println(len(orgUnits.OrganizationUnits))
 	} else {
 		fmt.Println(string(jsonData))
@@ -121,8 +142,8 @@ func doListOUs(cmd *cobra.Command, args []string) error {
 func init() {
 	listCmd.AddCommand(listOUsCmd)
 
-	listOUsCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required orgunit attributes separated by (~)")
-	listOUsCmd.Flags().BoolVarP(&count, "count", "", false, "count number of entities returned")
-	listOUsCmd.Flags().StringVarP(&orgUnit, "orgunit-path", "o", "", "orgunitpath or id of starting orgunit")
-	listOUsCmd.Flags().StringVarP(&searchType, "type", "t", "children", "all sub-organizational units or only immediate children")
+	listOUsCmd.Flags().StringVarP(&attrs, flgnm.FLG_ATTRIBUTES, "a", "", "required orgunit attributes separated by (~)")
+	listOUsCmd.Flags().BoolVarP(&count, flgnm.FLG_COUNT, "", false, "count number of entities returned")
+	listOUsCmd.Flags().StringVarP(&orgUnit, flgnm.FLG_ORGUNITPATH, "o", "", "orgunitpath or id of starting orgunit")
+	listOUsCmd.Flags().StringVarP(&searchType, flgnm.FLG_SEARCHTYPE, "t", "children", "all sub-organizational units or only immediate children")
 }

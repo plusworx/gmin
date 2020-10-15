@@ -26,6 +26,7 @@ import (
 	"fmt"
 
 	cmn "github.com/plusworx/gmin/utils/common"
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
@@ -55,16 +56,31 @@ func doUpdateGroup(cmd *cobra.Command, args []string) error {
 	groupKey = args[0]
 	group = new(admin.Group)
 
-	if groupEmail != "" {
-		group.Email = groupEmail
+	flgEmailVal, err := cmd.Flags().GetString(flgnm.FLG_EMAIL)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	if flgEmailVal != "" {
+		group.Email = flgEmailVal
 	}
 
-	if groupDesc != "" {
-		group.Description = groupDesc
+	flgDescriptionVal, err := cmd.Flags().GetString(flgnm.FLG_DESCRIPTION)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	if flgDescriptionVal != "" {
+		group.Description = flgDescriptionVal
 	}
 
-	if groupName != "" {
-		group.Name = groupName
+	flgNameVal, err := cmd.Flags().GetString(flgnm.FLG_NAME)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	if flgNameVal != "" {
+		group.Name = flgNameVal
 	}
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupScope)
@@ -90,7 +106,7 @@ func doUpdateGroup(cmd *cobra.Command, args []string) error {
 func init() {
 	updateCmd.AddCommand(updateGroupCmd)
 
-	updateGroupCmd.Flags().StringVarP(&groupDesc, "description", "d", "", "group description")
-	updateGroupCmd.Flags().StringVarP(&groupEmail, "email", "e", "", "group email")
-	updateGroupCmd.Flags().StringVarP(&groupName, "name", "n", "", "group name")
+	updateGroupCmd.Flags().StringVarP(&groupDesc, flgnm.FLG_DESCRIPTION, "d", "", "group description")
+	updateGroupCmd.Flags().StringVarP(&groupEmail, flgnm.FLG_EMAIL, "e", "", "group email")
+	updateGroupCmd.Flags().StringVarP(&groupName, flgnm.FLG_NAME, "n", "", "group name")
 }

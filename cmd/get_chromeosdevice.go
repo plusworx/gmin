@@ -30,6 +30,7 @@ import (
 	cdevs "github.com/plusworx/gmin/utils/chromeosdevices"
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	gpars "github.com/plusworx/gmin/utils/gminparsers"
 	"github.com/spf13/cobra"
@@ -62,15 +63,20 @@ func doGetCrOSDev(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	customerID, err := cfg.ReadConfigString("customerid")
+	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {
 		logger.Error(err)
 		return err
 	}
 	cdgc := ds.Chromeosdevices.Get(customerID, args[0])
 
-	if attrs != "" {
-		formattedAttrs, err := gpars.ParseOutputAttrs(attrs, cdevs.CrOSDevAttrMap)
+	flgAttrsVal, err := cmd.Flags().GetString(flgnm.FLG_ATTRIBUTES)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	if flgAttrsVal != "" {
+		formattedAttrs, err := gpars.ParseOutputAttrs(flgAttrsVal, cdevs.CrOSDevAttrMap)
 		if err != nil {
 			logger.Error(err)
 			return err
@@ -80,11 +86,16 @@ func doGetCrOSDev(cmd *cobra.Command, args []string) error {
 		cdgc = getCall.(*admin.ChromeosdevicesGetCall)
 	}
 
-	if projection != "" {
-		proj := strings.ToLower(projection)
+	flgProjectionVal, err := cmd.Flags().GetString(flgnm.FLG_PROJECTION)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	if flgProjectionVal != "" {
+		proj := strings.ToLower(flgProjectionVal)
 		ok := cmn.SliceContainsStr(cdevs.ValidProjections, proj)
 		if !ok {
-			err = fmt.Errorf(gmess.ERR_INVALIDPROJECTIONTYPE, projection)
+			err = fmt.Errorf(gmess.ERR_INVALIDPROJECTIONTYPE, flgProjectionVal)
 			logger.Error(err)
 			return err
 		}
@@ -114,6 +125,6 @@ func doGetCrOSDev(cmd *cobra.Command, args []string) error {
 func init() {
 	getCmd.AddCommand(getCrOSDevCmd)
 
-	getCrOSDevCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required device attributes (separated by ~)")
-	getCrOSDevCmd.Flags().StringVarP(&projection, "projection", "j", "", "type of projection")
+	getCrOSDevCmd.Flags().StringVarP(&attrs, flgnm.FLG_ATTRIBUTES, "a", "", "required device attributes (separated by ~)")
+	getCrOSDevCmd.Flags().StringVarP(&projection, flgnm.FLG_PROJECTION, "j", "", "type of projection")
 }

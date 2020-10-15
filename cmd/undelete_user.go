@@ -26,6 +26,7 @@ import (
 	"fmt"
 
 	cmn "github.com/plusworx/gmin/utils/common"
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
@@ -50,10 +51,15 @@ func doUndeleteUser(cmd *cobra.Command, args []string) error {
 	var userUndelete *admin.UserUndelete
 	userUndelete = new(admin.UserUndelete)
 
-	if orgUnit == "" {
+	flgOUVal, err := cmd.Flags().GetString(flgnm.FLG_ORGUNIT)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	if flgOUVal == "" {
 		userUndelete.OrgUnitPath = "/"
 	} else {
-		userUndelete.OrgUnitPath = orgUnit
+		userUndelete.OrgUnitPath = flgOUVal
 	}
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserScope)
@@ -79,5 +85,5 @@ func doUndeleteUser(cmd *cobra.Command, args []string) error {
 
 func init() {
 	undeleteCmd.AddCommand(undeleteUserCmd)
-	undeleteUserCmd.Flags().StringVarP(&orgUnit, "orgunit", "o", "", "path of orgunit to restore user to")
+	undeleteUserCmd.Flags().StringVarP(&orgUnit, flgnm.FLG_ORGUNIT, "o", "", "path of orgunit to restore user to")
 }

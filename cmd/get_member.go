@@ -27,6 +27,7 @@ import (
 	"fmt"
 
 	cmn "github.com/plusworx/gmin/utils/common"
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gpars "github.com/plusworx/gmin/utils/gminparsers"
 	mems "github.com/plusworx/gmin/utils/members"
 	"github.com/spf13/cobra"
@@ -50,7 +51,13 @@ func doGetMember(cmd *cobra.Command, args []string) error {
 
 	var jsonData []byte
 
-	jsonData, err := processGroupMember(args[0], attrs, args[1])
+	flgAttrsVal, err := cmd.Flags().GetString(flgnm.FLG_ATTRIBUTES)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+
+	jsonData, err = processGroupMember(args[0], attrs, args[1], flgAttrsVal)
 	if err != nil {
 		logger.Error(err)
 		return err
@@ -64,12 +71,12 @@ func doGetMember(cmd *cobra.Command, args []string) error {
 
 func init() {
 	getCmd.AddCommand(getMemberCmd)
-	getMemberCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required group attributes (separated by ~)")
+	getMemberCmd.Flags().StringVarP(&attrs, flgnm.FLG_ATTRIBUTES, "a", "", "required group attributes (separated by ~)")
 }
 
-func processGroupMember(memID string, attrs string, groupEmail string) ([]byte, error) {
+func processGroupMember(memID string, attrs string, groupEmail string, flgAttrsVal string) ([]byte, error) {
 	logger.Debugw("starting processGroupMember()",
-		"attrs", attrs,
+		"flgAttrsVal", flgAttrsVal,
 		"groupEmail", groupEmail,
 		"memID", memID)
 
@@ -86,8 +93,8 @@ func processGroupMember(memID string, attrs string, groupEmail string) ([]byte, 
 
 	mgc := ds.Members.Get(groupEmail, memID)
 
-	if attrs != "" {
-		formattedAttrs, err := gpars.ParseOutputAttrs(attrs, mems.MemberAttrMap)
+	if flgAttrsVal != "" {
+		formattedAttrs, err := gpars.ParseOutputAttrs(flgAttrsVal, mems.MemberAttrMap)
 		if err != nil {
 			logger.Error(err)
 			return nil, err

@@ -26,6 +26,7 @@ import (
 	"fmt"
 
 	cmn "github.com/plusworx/gmin/utils/common"
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
@@ -52,12 +53,24 @@ func doCreateGroup(cmd *cobra.Command, args []string) error {
 
 	group.Email = args[0]
 
-	if groupDesc != "" {
-		group.Description = groupDesc
+	flgDescVal, err := cmd.Flags().GetString(flgnm.FLG_DESCRIPTION)
+	if err != nil {
+		logger.Error(err)
+		return err
 	}
 
-	if groupName != "" {
-		group.Name = groupName
+	if flgDescVal != "" {
+		group.Description = flgDescVal
+	}
+
+	flgNameVal, err := cmd.Flags().GetString(flgnm.FLG_NAME)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+
+	if flgNameVal != "" {
+		group.Name = flgNameVal
 	}
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupScope)
@@ -83,6 +96,6 @@ func doCreateGroup(cmd *cobra.Command, args []string) error {
 func init() {
 	createCmd.AddCommand(createGroupCmd)
 
-	createGroupCmd.Flags().StringVarP(&groupDesc, "description", "d", "", "group description")
-	createGroupCmd.Flags().StringVarP(&groupName, "name", "n", "", "group name")
+	createGroupCmd.Flags().StringVarP(&groupDesc, flgnm.FLG_DESCRIPTION, "d", "", "group description")
+	createGroupCmd.Flags().StringVarP(&groupName, flgnm.FLG_NAME, "n", "", "group name")
 }

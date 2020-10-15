@@ -27,6 +27,7 @@ import (
 
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -73,7 +74,7 @@ func doUpdateOU(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	customerID, err := cfg.ReadConfigString("customerid")
+	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {
 		logger.Error(err)
 		return err
@@ -96,30 +97,50 @@ func doUpdateOU(cmd *cobra.Command, args []string) error {
 func init() {
 	updateCmd.AddCommand(updateOUCmd)
 
-	updateOUCmd.Flags().BoolVarP(&blockInherit, "block-inherit", "b", false, "block orgunit policy inheritance")
-	updateOUCmd.Flags().StringVarP(&orgUnitDesc, "description", "d", "", "orgunit description")
-	updateOUCmd.Flags().StringVarP(&orgUnitName, "name", "n", "", "orgunit name")
-	updateOUCmd.Flags().StringVarP(&parentOUPath, "parent-path", "p", "", "orgunit parent path")
+	updateOUCmd.Flags().BoolVarP(&blockInherit, flgnm.FLG_BLOCKINHERIT, "b", false, "block orgunit policy inheritance")
+	updateOUCmd.Flags().StringVarP(&orgUnitDesc, flgnm.FLG_DESCRIPTION, "d", "", "orgunit description")
+	updateOUCmd.Flags().StringVarP(&orgUnitName, flgnm.FLG_NAME, "n", "", "orgunit name")
+	updateOUCmd.Flags().StringVarP(&parentOUPath, flgnm.FLG_PARENTPATH, "p", "", "orgunit parent path")
 }
 
 func processUpdOUFlags(cmd *cobra.Command, orgunit *admin.OrgUnit, flagNames []string) error {
 	logger.Debugw("starting processUpdOUFlags()",
 		"flagNames", flagNames)
 	for _, flName := range flagNames {
-		if flName == "block-inherit" {
-			uoBlockInheritFlag(orgunit)
+		if flName == flgnm.FLG_BLOCKINHERIT {
+			flgBlkInheritVal, err := cmd.Flags().GetBool(flgnm.FLG_BLOCKINHERIT)
+			if err != nil {
+				logger.Error(err)
+				return err
+			}
+			uoBlockInheritFlag(orgunit, flgBlkInheritVal)
 		}
-		if flName == "description" {
-			uoDescriptionFlag(orgunit)
+		if flName == flgnm.FLG_DESCRIPTION {
+			flgDescriptionVal, err := cmd.Flags().GetString(flgnm.FLG_DESCRIPTION)
+			if err != nil {
+				logger.Error(err)
+				return err
+			}
+			uoDescriptionFlag(orgunit, flgDescriptionVal)
 		}
-		if flName == "name" {
-			err := uoNameFlag(orgunit, "--"+flName)
+		if flName == flgnm.FLG_NAME {
+			flgNameVal, err := cmd.Flags().GetString(flgnm.FLG_NAME)
+			if err != nil {
+				logger.Error(err)
+				return err
+			}
+			err = uoNameFlag(orgunit, "--"+flName, flgNameVal)
 			if err != nil {
 				return err
 			}
 		}
-		if flName == "parent-path" {
-			err := uoParentPathFlag(orgunit, "--"+flName)
+		if flName == flgnm.FLG_PARENTPATH {
+			flgParentPathVal, err := cmd.Flags().GetString(flgnm.FLG_PARENTPATH)
+			if err != nil {
+				logger.Error(err)
+				return err
+			}
+			err = uoParentPathFlag(orgunit, "--"+flName, flgParentPathVal)
 			if err != nil {
 				return err
 			}
@@ -129,9 +150,10 @@ func processUpdOUFlags(cmd *cobra.Command, orgunit *admin.OrgUnit, flagNames []s
 	return nil
 }
 
-func uoBlockInheritFlag(orgunit *admin.OrgUnit) {
-	logger.Debug("starting uoBlockInheritFlag()")
-	if blockInherit {
+func uoBlockInheritFlag(orgunit *admin.OrgUnit, flgVal bool) {
+	logger.Debugw("starting uoBlockInheritFlag()",
+		"flgVal", flgVal)
+	if flgVal {
 		orgunit.BlockInheritance = true
 	} else {
 		orgunit.BlockInheritance = false
@@ -140,39 +162,42 @@ func uoBlockInheritFlag(orgunit *admin.OrgUnit) {
 	logger.Debug("finished uoBlockInheritFlag()")
 }
 
-func uoDescriptionFlag(orgunit *admin.OrgUnit) {
-	logger.Debug("starting uoDescriptionFlag()")
-	if orgUnitDesc == "" {
+func uoDescriptionFlag(orgunit *admin.OrgUnit, flgVal string) {
+	logger.Debugw("starting uoDescriptionFlag()",
+		"flgVal", flgVal)
+	if flgVal == "" {
 		orgunit.ForceSendFields = append(orgunit.ForceSendFields, "Description")
 	}
-	orgunit.Description = orgUnitDesc
+	orgunit.Description = flgVal
 	logger.Debug("finished uoDescriptionFlag()")
 }
 
-func uoNameFlag(orgunit *admin.OrgUnit, flagName string) error {
+func uoNameFlag(orgunit *admin.OrgUnit, flagName string, flgVal string) error {
 	logger.Debugw("starting uoNameFlag()",
-		"flagName", flagName)
-	if orgUnitName == "" {
+		"flagName", flagName,
+		"flgVal", flgVal)
+	if flgVal == "" {
 		err := fmt.Errorf(gmess.ERR_EMPTYSTRING, flagName)
 		if err != nil {
 			return err
 		}
 	}
-	orgunit.Name = orgUnitName
+	orgunit.Name = flgVal
 	logger.Debug("finished uoNameFlag()")
 	return nil
 }
 
-func uoParentPathFlag(orgunit *admin.OrgUnit, flagName string) error {
+func uoParentPathFlag(orgunit *admin.OrgUnit, flagName string, flgVal string) error {
 	logger.Debugw("starting uoParentPathFlag()",
-		"flagName", flagName)
-	if parentOUPath == "" {
+		"flagName", flagName,
+		"flgVal", flgVal)
+	if flgVal == "" {
 		err := fmt.Errorf(gmess.ERR_EMPTYSTRING, flagName)
 		if err != nil {
 			return err
 		}
 	}
-	orgunit.ParentOrgUnitPath = parentOUPath
+	orgunit.ParentOrgUnitPath = flgVal
 	logger.Debug("finished uoParentPathFlag()")
 	return nil
 }

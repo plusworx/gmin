@@ -33,6 +33,7 @@ import (
 
 	"github.com/cenkalti/backoff/v4"
 	cmn "github.com/plusworx/gmin/utils/common"
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	grps "github.com/plusworx/gmin/utils/groups"
 	"github.com/spf13/cobra"
@@ -75,7 +76,7 @@ func doBatchDelGroup(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	inputFlgVal, err := cmd.Flags().GetString("input-file")
+	inputFlgVal, err := cmd.Flags().GetString(flgnm.FLG_INPUTFILE)
 	if err != nil {
 		logger.Error(err)
 		return err
@@ -93,7 +94,7 @@ func doBatchDelGroup(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	formatFlgVal, err := cmd.Flags().GetString("format")
+	formatFlgVal, err := cmd.Flags().GetString(flgnm.FLG_FORMAT)
 	if err != nil {
 		logger.Error(err)
 		return err
@@ -115,7 +116,7 @@ func doBatchDelGroup(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	case lwrFmt == "gsheet":
-		rangeFlgVal, err := cmd.Flags().GetString("sheet-range")
+		rangeFlgVal, err := cmd.Flags().GetString(flgnm.FLG_SHEETRANGE)
 		if err != nil {
 			logger.Error(err)
 			return err
@@ -297,7 +298,7 @@ func bdgProcessTextFile(ds *admin.Service, filePath string, scanner *bufio.Scann
 func init() {
 	batchDelCmd.AddCommand(batchDelGroupCmd)
 
-	batchDelGroupCmd.Flags().StringVarP(&inputFile, "input-file", "i", "", "filepath to group data text file")
-	batchDelGroupCmd.Flags().StringVarP(&delFormat, "format", "f", "text", "group data file format (text or gsheet)")
-	batchDelGroupCmd.Flags().StringVarP(&sheetRange, "sheet-range", "s", "", "group data gsheet range")
+	batchDelGroupCmd.Flags().StringVarP(&inputFile, flgnm.FLG_INPUTFILE, "i", "", "filepath to group data text file")
+	batchDelGroupCmd.Flags().StringVarP(&delFormat, flgnm.FLG_FORMAT, "f", "text", "group data file format (text or gsheet)")
+	batchDelGroupCmd.Flags().StringVarP(&sheetRange, flgnm.FLG_SHEETRANGE, "s", "", "group data gsheet range")
 }

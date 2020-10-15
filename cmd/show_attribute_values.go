@@ -30,6 +30,7 @@ import (
 	cdevs "github.com/plusworx/gmin/utils/chromeosdevices"
 	ca "github.com/plusworx/gmin/utils/commandaliases"
 	cmn "github.com/plusworx/gmin/utils/common"
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	grpset "github.com/plusworx/gmin/utils/groupsettings"
 	gmems "github.com/plusworx/gmin/utils/members"
@@ -58,7 +59,12 @@ user, usr`,
 
 func doShowAttrVals(cmd *cobra.Command, args []string) error {
 	lArgs := len(args)
-	lowerFilter := strings.ToLower(filter)
+
+	flgFilterVal, err := cmd.Flags().GetString(flgnm.FLG_FILTER)
+	if err != nil {
+		return err
+	}
+	lowerFilter := strings.ToLower(flgFilterVal)
 
 	if lArgs > 3 {
 		return errors.New(gmess.ERR_MAX3ARGSEXCEEDED)
@@ -100,5 +106,5 @@ func doShowAttrVals(cmd *cobra.Command, args []string) error {
 
 func init() {
 	showCmd.AddCommand(showAttrValsCmd)
-	showAttrValsCmd.Flags().StringVarP(&filter, "filter", "f", "", "string used to filter results")
+	showAttrValsCmd.Flags().StringVarP(&filter, flgnm.FLG_FILTER, "f", "", "string used to filter results")
 }

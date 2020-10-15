@@ -33,6 +33,7 @@ import (
 	"github.com/mitchellh/go-homedir"
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -160,7 +161,7 @@ func formatError(errStr string) string {
 func init() {
 	cobra.OnInitialize(initConfig)
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.gmin.yaml)")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, flgnm.FLG_CONFIG, "", "config file (default is $HOME/.gmin.yaml)")
 }
 
 func initConfig() {
@@ -184,7 +185,7 @@ func initConfig() {
 
 func preRun(cmd *cobra.Command, args []string) error {
 	// Set loglevel
-	logFlgVal, err := cmd.Flags().GetString("log-level")
+	logFlgVal, err := cmd.Flags().GetString(flgnm.FLG_LOGLEVEL)
 	if err != nil {
 		return err
 	}
@@ -194,7 +195,7 @@ func preRun(cmd *cobra.Command, args []string) error {
 	}
 	logger = zlog.Sugar()
 	// Suppress console output according to silent flag
-	silentFlgVal, err := cmd.Flags().GetBool("silent")
+	silentFlgVal, err := cmd.Flags().GetBool(flgnm.FLG_SILENT)
 	if err != nil {
 		return err
 	}
@@ -203,7 +204,7 @@ func preRun(cmd *cobra.Command, args []string) error {
 		os.Stderr = nil
 	}
 	// Get gmin admin email address
-	admAddr, err := cfg.ReadConfigString("administrator")
+	admAddr, err := cfg.ReadConfigString(cfg.CONFIGADMIN)
 	if err != nil {
 		return err
 	}
@@ -240,7 +241,7 @@ func setupLogging(loglevel string) (*zap.Logger, error) {
 	zconf.EncoderConfig.EncodeTime = zapcore.TimeEncoder(func(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
 		enc.AppendString(t.Local().Format("2006-01-02T15:04:05Z0700"))
 	})
-	logpath, err := cfg.ReadConfigString("logpath")
+	logpath, err := cfg.ReadConfigString(cfg.CONFIGLOGPATH)
 	if err != nil {
 		return nil, err
 	}

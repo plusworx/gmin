@@ -29,6 +29,7 @@ import (
 	"strings"
 
 	cmn "github.com/plusworx/gmin/utils/common"
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	gpars "github.com/plusworx/gmin/utils/gminparsers"
 	usrs "github.com/plusworx/gmin/utils/users"
@@ -64,8 +65,13 @@ func doGetUser(cmd *cobra.Command, args []string) error {
 
 	ugc := ds.Users.Get(args[0])
 
-	if attrs != "" {
-		formattedAttrs, err := gpars.ParseOutputAttrs(attrs, usrs.UserAttrMap)
+	flgAttrsVal, err := cmd.Flags().GetString(flgnm.FLG_ATTRIBUTES)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	if flgAttrsVal != "" {
+		formattedAttrs, err := gpars.ParseOutputAttrs(flgAttrsVal, usrs.UserAttrMap)
 		if err != nil {
 			logger.Error(err)
 			return err
@@ -75,11 +81,16 @@ func doGetUser(cmd *cobra.Command, args []string) error {
 		ugc = getCall.(*admin.UsersGetCall)
 	}
 
-	if projection != "" {
-		proj := strings.ToLower(projection)
+	flgProjectionVal, err := cmd.Flags().GetString(flgnm.FLG_PROJECTION)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	if flgProjectionVal != "" {
+		proj := strings.ToLower(flgProjectionVal)
 		ok := cmn.SliceContainsStr(usrs.ValidProjections, proj)
 		if !ok {
-			err = fmt.Errorf(gmess.ERR_INVALIDPROJECTIONTYPE, projection)
+			err = fmt.Errorf(gmess.ERR_INVALIDPROJECTIONTYPE, flgProjectionVal)
 			logger.Error(err)
 			return err
 		}
@@ -101,11 +112,16 @@ func doGetUser(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	if viewType != "" {
-		vt := strings.ToLower(viewType)
+	flgViewTypeVal, err := cmd.Flags().GetString(flgnm.FLG_VIEWTYPE)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	if flgViewTypeVal != "" {
+		vt := strings.ToLower(flgViewTypeVal)
 		ok := cmn.SliceContainsStr(usrs.ValidViewTypes, vt)
 		if !ok {
-			err = fmt.Errorf(gmess.ERR_INVALIDVIEWTYPE, viewType)
+			err = fmt.Errorf(gmess.ERR_INVALIDVIEWTYPE, flgViewTypeVal)
 			logger.Error(err)
 			return err
 		}
@@ -135,8 +151,8 @@ func doGetUser(cmd *cobra.Command, args []string) error {
 func init() {
 	getCmd.AddCommand(getUserCmd)
 
-	getUserCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required user attributes (separated by ~)")
-	getUserCmd.Flags().StringVarP(&customField, "custom-field-mask", "c", "", "custom field mask schemas (separated by ~)")
-	getUserCmd.Flags().StringVarP(&projection, "projection", "j", "", "type of projection")
-	getUserCmd.Flags().StringVarP(&viewType, "view-type", "v", "", "data view type")
+	getUserCmd.Flags().StringVarP(&attrs, flgnm.FLG_ATTRIBUTES, "a", "", "required user attributes (separated by ~)")
+	getUserCmd.Flags().StringVarP(&customField, flgnm.FLG_CUSTFLDMASK, "c", "", "custom field mask schemas (separated by ~)")
+	getUserCmd.Flags().StringVarP(&projection, flgnm.FLG_PROJECTION, "j", "", "type of projection")
+	getUserCmd.Flags().StringVarP(&viewType, flgnm.FLG_VIEWTYPE, "v", "", "data view type")
 }

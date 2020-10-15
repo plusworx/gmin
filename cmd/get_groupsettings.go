@@ -27,6 +27,7 @@ import (
 	"fmt"
 
 	cmn "github.com/plusworx/gmin/utils/common"
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gpars "github.com/plusworx/gmin/utils/gminparsers"
 	grpset "github.com/plusworx/gmin/utils/groupsettings"
 	"github.com/spf13/cobra"
@@ -61,8 +62,13 @@ func doGetGroupSettings(cmd *cobra.Command, args []string) error {
 
 	gsgc := gss.Groups.Get(args[0])
 
-	if attrs != "" {
-		formattedAttrs, err := gpars.ParseOutputAttrs(attrs, grpset.GroupSettingsAttrMap)
+	flgAttrsVal, err := cmd.Flags().GetString(flgnm.FLG_ATTRIBUTES)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	if flgAttrsVal != "" {
+		formattedAttrs, err := gpars.ParseOutputAttrs(flgAttrsVal, grpset.GroupSettingsAttrMap)
 		if err != nil {
 			logger.Error(err)
 			return err
@@ -93,5 +99,5 @@ func doGetGroupSettings(cmd *cobra.Command, args []string) error {
 func init() {
 	getCmd.AddCommand(getGroupSettingsCmd)
 
-	getGroupSettingsCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required group attributes (separated by ~)")
+	getGroupSettingsCmd.Flags().StringVarP(&attrs, flgnm.FLG_ATTRIBUTES, "a", "", "required group attributes (separated by ~)")
 }

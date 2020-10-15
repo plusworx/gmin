@@ -27,6 +27,7 @@ import (
 	"fmt"
 
 	cmn "github.com/plusworx/gmin/utils/common"
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gpars "github.com/plusworx/gmin/utils/gminparsers"
 	gas "github.com/plusworx/gmin/utils/groupaliases"
 	"github.com/spf13/cobra"
@@ -58,8 +59,13 @@ func doListGroupAliases(cmd *cobra.Command, args []string) error {
 
 	galc := ds.Groups.Aliases.List(args[0])
 
-	if attrs != "" {
-		listAttrs, err := gpars.ParseOutputAttrs(attrs, gas.GroupAliasAttrMap)
+	flgAttrsVal, err := cmd.Flags().GetString(flgnm.FLG_ATTRIBUTES)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	if flgAttrsVal != "" {
+		listAttrs, err := gpars.ParseOutputAttrs(flgAttrsVal, gas.GroupAliasAttrMap)
 		if err != nil {
 			logger.Error(err)
 			return err
@@ -90,5 +96,5 @@ func doListGroupAliases(cmd *cobra.Command, args []string) error {
 func init() {
 	listCmd.AddCommand(listGroupAliasesCmd)
 
-	listGroupAliasesCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required group alias attributes (separated by ~)")
+	listGroupAliasesCmd.Flags().StringVarP(&attrs, flgnm.FLG_ATTRIBUTES, "a", "", "required group alias attributes (separated by ~)")
 }

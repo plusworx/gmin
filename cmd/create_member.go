@@ -26,6 +26,7 @@ import (
 	"fmt"
 
 	cmn "github.com/plusworx/gmin/utils/common"
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	mems "github.com/plusworx/gmin/utils/members"
 	"github.com/spf13/cobra"
@@ -53,8 +54,14 @@ func doCreateMember(cmd *cobra.Command, args []string) error {
 
 	member.Email = args[0]
 
-	if deliverySetting != "" {
-		validDS, err := mems.ValidateDeliverySetting(deliverySetting)
+	flgDelSetVal, err := cmd.Flags().GetString(flgnm.FLG_DELIVERYSETTING)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+
+	if flgDelSetVal != "" {
+		validDS, err := mems.ValidateDeliverySetting(flgDelSetVal)
 		if err != nil {
 			logger.Error(err)
 			return err
@@ -62,8 +69,14 @@ func doCreateMember(cmd *cobra.Command, args []string) error {
 		member.DeliverySettings = validDS
 	}
 
-	if role != "" {
-		validRole, err := mems.ValidateRole(role)
+	flgRoleVal, err := cmd.Flags().GetString(flgnm.FLG_ROLE)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+
+	if flgRoleVal != "" {
+		validRole, err := mems.ValidateRole(flgRoleVal)
 		if err != nil {
 			logger.Error(err)
 			return err
@@ -94,6 +107,6 @@ func doCreateMember(cmd *cobra.Command, args []string) error {
 func init() {
 	createCmd.AddCommand(createMemberCmd)
 
-	createMemberCmd.Flags().StringVarP(&deliverySetting, "delivery-setting", "d", "", "member delivery setting")
-	createMemberCmd.Flags().StringVarP(&role, "role", "r", "", "member role")
+	createMemberCmd.Flags().StringVarP(&deliverySetting, flgnm.FLG_DELIVERYSETTING, "d", "", "member delivery setting")
+	createMemberCmd.Flags().StringVarP(&role, flgnm.FLG_ROLE, "r", "", "member role")
 }
