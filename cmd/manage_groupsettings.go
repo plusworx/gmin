@@ -30,6 +30,7 @@ import (
 	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	grpset "github.com/plusworx/gmin/utils/groupsettings"
+	lg "github.com/plusworx/gmin/utils/logging"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	gset "google.golang.org/api/groupssettings/v1"
@@ -47,7 +48,7 @@ gmin mng gset finance@mycompany.org -c -w`,
 }
 
 func doManageGroupSettings(cmd *cobra.Command, args []string) error {
-	logger.Debugw("starting doManageGroupSettings()",
+	lg.Debugw("starting doManageGroupSettings()",
 		"args", args)
 
 	var flagsPassed []string
@@ -62,7 +63,7 @@ func doManageGroupSettings(cmd *cobra.Command, args []string) error {
 	// Process command flags
 	err := processMngGrpSettingFlags(cmd, grpSettings, flagsPassed)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
@@ -70,21 +71,21 @@ func doManageGroupSettings(cmd *cobra.Command, args []string) error {
 
 	gss, err := cmn.CreateGroupSettingService(gset.AppsGroupsSettingsScope)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	gsuc := gss.Groups.Update(args[0], grpSettings)
 	newSettings, err := gsuc.Do()
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
-	logger.Infof(gmess.INFO_GROUPSETTINGSCHANGED, newSettings.Email)
+	lg.Infof(gmess.INFO_GROUPSETTINGSCHANGED, newSettings.Email)
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_GROUPSETTINGSCHANGED, newSettings.Email)))
 
-	logger.Debug("finished doManageGroupSettings()")
+	lg.Debug("finished doManageGroupSettings()")
 	return nil
 }
 
@@ -123,7 +124,7 @@ func init() {
 }
 
 func processMngGrpSettingFlags(cmd *cobra.Command, grpSettings *gset.Groups, flagNames []string) error {
-	logger.Debugw("starting processMngGrpSettingFlags()",
+	lg.Debugw("starting processMngGrpSettingFlags()",
 		"flagNames", flagNames)
 	var (
 		boolFlags = []string{
@@ -148,13 +149,13 @@ func processMngGrpSettingFlags(cmd *cobra.Command, grpSettings *gset.Groups, fla
 		if ok {
 			flgBVal, err = cmd.Flags().GetBool(flName)
 			if err != nil {
-				logger.Error(err)
+				lg.Error(err)
 				return err
 			}
 		} else {
 			flgSVal, err = cmd.Flags().GetString(flName)
 			if err != nil {
-				logger.Error(err)
+				lg.Error(err)
 				return err
 			}
 		}
@@ -326,263 +327,263 @@ func processMngGrpSettingFlags(cmd *cobra.Command, grpSettings *gset.Groups, fla
 			return nil
 		}
 	}
-	logger.Debug("finished processMngGrpSettingFlags()")
+	lg.Debug("finished processMngGrpSettingFlags()")
 	return nil
 }
 
 // Process command flag input
 
 func mgsApproveMemberFlag(grpSettings *gset.Groups, flagName string, flagVal string) error {
-	logger.Debug("starting mgsApproveMemberFlag()")
+	lg.Debug("starting mgsApproveMemberFlag()")
 	validTxt, err := grpset.ValidateGroupSettingValue(grpset.ApproveMemberMap, flagName, flagVal)
 	if err != nil {
 		return err
 	}
 	grpSettings.WhoCanApproveMembers = validTxt
-	logger.Debug("finished mgsApproveMemberFlag()")
+	lg.Debug("finished mgsApproveMemberFlag()")
 	return nil
 }
 
 func mgsArchivedFlag(grpSettings *gset.Groups, flagVal bool) {
-	logger.Debug("starting mgsArchivedFlag()")
+	lg.Debug("starting mgsArchivedFlag()")
 	if flagVal {
 		grpSettings.IsArchived = "true"
 	} else {
 		grpSettings.IsArchived = "false"
 		grpSettings.ForceSendFields = append(grpSettings.ForceSendFields, "IsArchived")
 	}
-	logger.Debug("finished mgsArchivedFlag()")
+	lg.Debug("finished mgsArchivedFlag()")
 }
 
 func mgsArchiveOnlyFlag(grpSettings *gset.Groups, flagVal bool) {
-	logger.Debug("starting mgsArchiveOnlyFlag()")
+	lg.Debug("starting mgsArchiveOnlyFlag()")
 	if flagVal {
 		grpSettings.ArchiveOnly = "true"
 	} else {
 		grpSettings.ArchiveOnly = "false"
 		grpSettings.ForceSendFields = append(grpSettings.ForceSendFields, "ArchiveOnly")
 	}
-	logger.Debug("finished mgsArchiveOnlyFlag()")
+	lg.Debug("finished mgsArchiveOnlyFlag()")
 }
 
 func mgsAssistContentFlag(grpSettings *gset.Groups, flagName string, flagVal string) error {
-	logger.Debug("starting mgsAssistContentFlag()")
+	lg.Debug("starting mgsAssistContentFlag()")
 	validTxt, err := grpset.ValidateGroupSettingValue(grpset.AssistContentMap, flagName, flagVal)
 	if err != nil {
 		return err
 	}
 	grpSettings.WhoCanAssistContent = validTxt
-	logger.Debug("finished mgsAssistContentFlag()")
+	lg.Debug("finished mgsAssistContentFlag()")
 	return nil
 }
 
 func mgsBanUserFlag(grpSettings *gset.Groups, flagName string, flagVal string) error {
-	logger.Debug("starting mgsBanUserFlag()")
+	lg.Debug("starting mgsBanUserFlag()")
 	validTxt, err := grpset.ValidateGroupSettingValue(grpset.BanUserMap, flagName, flagVal)
 	if err != nil {
 		return err
 	}
 	grpSettings.WhoCanBanUsers = validTxt
-	logger.Debug("finished mgsBanUserFlag()")
+	lg.Debug("finished mgsBanUserFlag()")
 	return nil
 }
 
 func mgsCollabInboxFlag(grpSettings *gset.Groups, flagVal bool) {
-	logger.Debug("starting mgsCollabInboxFlag()")
+	lg.Debug("starting mgsCollabInboxFlag()")
 	if flagVal {
 		grpSettings.EnableCollaborativeInbox = "true"
 	} else {
 		grpSettings.EnableCollaborativeInbox = "false"
 		grpSettings.ForceSendFields = append(grpSettings.ForceSendFields, "EnableCollaborativeInbox")
 	}
-	logger.Debug("finished mgsCollabInboxFlag()")
+	lg.Debug("finished mgsCollabInboxFlag()")
 }
 
 func mgsContactOwnerFlag(grpSettings *gset.Groups, flagName string, flagVal string) error {
-	logger.Debug("starting mgsContactOwnerFlag()")
+	lg.Debug("starting mgsContactOwnerFlag()")
 	validTxt, err := grpset.ValidateGroupSettingValue(grpset.ContactOwnerMap, flagName, flagVal)
 	if err != nil {
 		return err
 	}
 	grpSettings.WhoCanContactOwner = validTxt
-	logger.Debug("finished mgsContactOwnerFlag()")
+	lg.Debug("finished mgsContactOwnerFlag()")
 	return nil
 }
 
 func mgsDenyTextFlag(grpSettings *gset.Groups, flagVal string) {
-	logger.Debug("starting mgsDenyTextFlag()")
+	lg.Debug("starting mgsDenyTextFlag()")
 	if flagVal == "" {
 		grpSettings.ForceSendFields = append(grpSettings.ForceSendFields, "DefaultMessageDenyNotificationText")
 	}
 	grpSettings.DefaultMessageDenyNotificationText = flagVal
-	logger.Debug("finished mgsDenyTextFlag()")
+	lg.Debug("finished mgsDenyTextFlag()")
 }
 
 func mgsDiscoverGroupFlag(grpSettings *gset.Groups, flagName string, flagVal string) error {
-	logger.Debug("starting mgsDiscoverGroupFlag()")
+	lg.Debug("starting mgsDiscoverGroupFlag()")
 	validTxt, err := grpset.ValidateGroupSettingValue(grpset.DiscoverGroupMap, flagName, flagVal)
 	if err != nil {
 		return err
 	}
 	grpSettings.WhoCanDiscoverGroup = validTxt
-	logger.Debug("finished mgsDiscoverGroupFlag()")
+	lg.Debug("finished mgsDiscoverGroupFlag()")
 	return nil
 }
 
 func mgsExtMemberFlag(grpSettings *gset.Groups, flagVal bool) {
-	logger.Debug("starting mgsExtMemberFlag()")
+	lg.Debug("starting mgsExtMemberFlag()")
 	if flagVal {
 		grpSettings.AllowExternalMembers = "true"
 	} else {
 		grpSettings.AllowExternalMembers = "false"
 		grpSettings.ForceSendFields = append(grpSettings.ForceSendFields, "AllowExternalMembers")
 	}
-	logger.Debug("finished mgsExtMemberFlag()")
+	lg.Debug("finished mgsExtMemberFlag()")
 }
 
 func mgsFooterOnFlag(grpSettings *gset.Groups, flagVal bool) {
-	logger.Debug("starting mgsFooterOnFlag()")
+	lg.Debug("starting mgsFooterOnFlag()")
 	if flagVal {
 		grpSettings.IncludeCustomFooter = "true"
 	} else {
 		grpSettings.IncludeCustomFooter = "false"
 		grpSettings.ForceSendFields = append(grpSettings.ForceSendFields, "IncludeCustomFooter")
 	}
-	logger.Debug("finished mgsFooterOnFlag()")
+	lg.Debug("finished mgsFooterOnFlag()")
 }
 
 func mgsFooterTextFlag(grpSettings *gset.Groups, flagVal string) {
-	logger.Debug("starting mgsFooterTextFlag()")
+	lg.Debug("starting mgsFooterTextFlag()")
 	if flagVal == "" {
 		grpSettings.ForceSendFields = append(grpSettings.ForceSendFields, "CustomFooterText")
 	}
 	grpSettings.CustomFooterText = flagVal
-	logger.Debug("finished mgsFooterTextFlag()")
+	lg.Debug("finished mgsFooterTextFlag()")
 }
 
 func mgsGalFlag(grpSettings *gset.Groups, flagVal bool) {
-	logger.Debug("starting mgsGroupDirFlag()")
+	lg.Debug("starting mgsGroupDirFlag()")
 	if flagVal {
 		grpSettings.IncludeInGlobalAddressList = "true"
 	} else {
 		grpSettings.IncludeInGlobalAddressList = "false"
 		grpSettings.ForceSendFields = append(grpSettings.ForceSendFields, "IncludeInGlobalAddressList")
 	}
-	logger.Debug("finished mgsGroupDirFlag()")
+	lg.Debug("finished mgsGroupDirFlag()")
 }
 
 func mgsJoinFlag(grpSettings *gset.Groups, flagName string, flagVal string) error {
-	logger.Debug("starting mgsJoinFlag()")
+	lg.Debug("starting mgsJoinFlag()")
 	validTxt, err := grpset.ValidateGroupSettingValue(grpset.JoinMap, flagName, flagVal)
 	if err != nil {
 		return err
 	}
 	grpSettings.WhoCanJoin = validTxt
-	logger.Debug("finished mgsJoinFlag()")
+	lg.Debug("finished mgsJoinFlag()")
 	return nil
 }
 
 func mgsLanguageFlag(grpSettings *gset.Groups, flagName string, flagVal string) error {
-	logger.Debug("starting mgsLanguageFlag()")
+	lg.Debug("starting mgsLanguageFlag()")
 	validTxt, err := grpset.ValidateGroupSettingValue(grpset.LanguageMap, flagName, flagVal)
 	if err != nil {
 		return err
 	}
 	grpSettings.PrimaryLanguage = validTxt
-	logger.Debug("finished mgsLanguageFlag()")
+	lg.Debug("finished mgsLanguageFlag()")
 	return nil
 }
 
 func mgsLeaveFlag(grpSettings *gset.Groups, flagName string, flagVal string) error {
-	logger.Debug("starting mgsLeaveFlag()")
+	lg.Debug("starting mgsLeaveFlag()")
 	validTxt, err := grpset.ValidateGroupSettingValue(grpset.LeaveMap, flagName, flagVal)
 	if err != nil {
 		return err
 	}
 	grpSettings.WhoCanLeaveGroup = validTxt
-	logger.Debug("finished mgsLeaveFlag()")
+	lg.Debug("finished mgsLeaveFlag()")
 	return nil
 }
 
 func mgsMessageModFlag(grpSettings *gset.Groups, flagName string, flagVal string) error {
-	logger.Debug("starting mgsMessageModFlag()")
+	lg.Debug("starting mgsMessageModFlag()")
 	validTxt, err := grpset.ValidateGroupSettingValue(grpset.MessageModMap, flagName, flagVal)
 	if err != nil {
 		return err
 	}
 	grpSettings.MessageModerationLevel = validTxt
-	logger.Debug("finished mgsMessageModFlag()")
+	lg.Debug("finished mgsMessageModFlag()")
 	return nil
 }
 
 func mgsModContentFlag(grpSettings *gset.Groups, flagName string, flagVal string) error {
-	logger.Debug("starting mgsModContentFlag()")
+	lg.Debug("starting mgsModContentFlag()")
 	validTxt, err := grpset.ValidateGroupSettingValue(grpset.ModContentMap, flagName, flagVal)
 	if err != nil {
 		return err
 	}
 	grpSettings.WhoCanModerateContent = validTxt
-	logger.Debug("finished mgsModContentFlag()")
+	lg.Debug("finished mgsModContentFlag()")
 	return nil
 }
 
 func mgsModMemberFlag(grpSettings *gset.Groups, flagName string, flagVal string) error {
-	logger.Debug("starting mgsModMemberFlag()")
+	lg.Debug("starting mgsModMemberFlag()")
 	validTxt, err := grpset.ValidateGroupSettingValue(grpset.ModMemberMap, flagName, flagVal)
 	if err != nil {
 		return err
 	}
 	grpSettings.WhoCanModerateMembers = validTxt
-	logger.Debug("finished mgsModMemberFlag()")
+	lg.Debug("finished mgsModMemberFlag()")
 	return nil
 }
 
 func mgsNotifyDenyFlag(grpSettings *gset.Groups, flagVal bool) {
-	logger.Debug("starting mgsNotifyDenyFlag()")
+	lg.Debug("starting mgsNotifyDenyFlag()")
 	if flagVal {
 		grpSettings.SendMessageDenyNotification = "true"
 	} else {
 		grpSettings.SendMessageDenyNotification = "false"
 		grpSettings.ForceSendFields = append(grpSettings.ForceSendFields, "SendMessageDenyNotification")
 	}
-	logger.Debug("finished mgsNotifyDenyFlag()")
+	lg.Debug("finished mgsNotifyDenyFlag()")
 }
 
 func mgsPostAsGroupFlag(grpSettings *gset.Groups, flagVal bool) {
-	logger.Debug("starting mgsPostAsGroupFlag()")
+	lg.Debug("starting mgsPostAsGroupFlag()")
 	if flagVal {
 		grpSettings.MembersCanPostAsTheGroup = "true"
 	} else {
 		grpSettings.MembersCanPostAsTheGroup = "false"
 		grpSettings.ForceSendFields = append(grpSettings.ForceSendFields, "MembersCanPostAsTheGroup")
 	}
-	logger.Debug("finished mgsPostAsGroupFlag()")
+	lg.Debug("finished mgsPostAsGroupFlag()")
 }
 
 func mgsPostMessageFlag(grpSettings *gset.Groups, flagName string, flagVal string) error {
-	logger.Debug("starting mgsPostMessageFlag()")
+	lg.Debug("starting mgsPostMessageFlag()")
 	validTxt, err := grpset.ValidateGroupSettingValue(grpset.PostMessageMap, flagName, flagVal)
 	if err != nil {
 		return err
 	}
 	grpSettings.WhoCanPostMessage = validTxt
-	logger.Debug("finished mgsPostMessageFlag()")
+	lg.Debug("finished mgsPostMessageFlag()")
 	return nil
 }
 
 func mgsRepliesOnTopFlag(grpSettings *gset.Groups, flagVal bool) {
-	logger.Debug("starting mgsRepliesOnTopFlag()")
+	lg.Debug("starting mgsRepliesOnTopFlag()")
 	if flagVal {
 		grpSettings.FavoriteRepliesOnTop = "true"
 	} else {
 		grpSettings.FavoriteRepliesOnTop = "false"
 		grpSettings.ForceSendFields = append(grpSettings.ForceSendFields, "FavoriteRepliesOnTop")
 	}
-	logger.Debug("finished mgsRepliesOnTopFlag()")
+	lg.Debug("finished mgsRepliesOnTopFlag()")
 }
 
 func mgsReplyEmailFlag(grpSettings *gset.Groups, flagVal string) error {
-	logger.Debug("starting mgsReplyEmailFlag()")
+	lg.Debug("starting mgsReplyEmailFlag()")
 	if flagVal == "" {
 		grpSettings.CustomReplyTo = replyEmail
 		grpSettings.ForceSendFields = append(grpSettings.ForceSendFields, "CustomReplyTo")
@@ -594,61 +595,61 @@ func mgsReplyEmailFlag(grpSettings *gset.Groups, flagVal string) error {
 		return err
 	}
 	grpSettings.CustomReplyTo = flagVal
-	logger.Debug("finished mgsReplyEmailFlag()")
+	lg.Debug("finished mgsReplyEmailFlag()")
 	return nil
 }
 
 func mgsReplyToFlag(grpSettings *gset.Groups, flagName string, flagVal string) error {
-	logger.Debug("starting mgsReplyToFlag()")
+	lg.Debug("starting mgsReplyToFlag()")
 	validTxt, err := grpset.ValidateGroupSettingValue(grpset.ReplyToMap, flagName, flagVal)
 	if err != nil {
 		return err
 	}
 	grpSettings.ReplyTo = validTxt
-	logger.Debug("finished mgsReplyToFlag()")
+	lg.Debug("finished mgsReplyToFlag()")
 	return nil
 }
 
 func mgsSpamModFlag(grpSettings *gset.Groups, flagName string, flagVal string) error {
-	logger.Debug("starting mgsSpamModFlag()")
+	lg.Debug("starting mgsSpamModFlag()")
 	validTxt, err := grpset.ValidateGroupSettingValue(grpset.SpamModMap, flagName, flagVal)
 	if err != nil {
 		return err
 	}
 	grpSettings.SpamModerationLevel = validTxt
-	logger.Debug("finished mgsSpamModFlag()")
+	lg.Debug("finished mgsSpamModFlag()")
 	return nil
 }
 
 func mgsViewGroupFlag(grpSettings *gset.Groups, flagName string, flagVal string) error {
-	logger.Debug("starting mgsViewGroupFlag()")
+	lg.Debug("starting mgsViewGroupFlag()")
 	validTxt, err := grpset.ValidateGroupSettingValue(grpset.ViewGroupMap, flagName, flagVal)
 	if err != nil {
 		return err
 	}
 	grpSettings.WhoCanViewGroup = validTxt
-	logger.Debug("finished mgsViewGroupFlag()")
+	lg.Debug("finished mgsViewGroupFlag()")
 	return nil
 }
 
 func mgsViewMembershipFlag(grpSettings *gset.Groups, flagName string, flagVal string) error {
-	logger.Debug("starting mgsViewMembershipFlag()")
+	lg.Debug("starting mgsViewMembershipFlag()")
 	validTxt, err := grpset.ValidateGroupSettingValue(grpset.ViewMembershipMap, flagName, flagVal)
 	if err != nil {
 		return err
 	}
 	grpSettings.WhoCanViewMembership = validTxt
-	logger.Debug("finished mgsViewMembershipFlag()")
+	lg.Debug("finished mgsViewMembershipFlag()")
 	return nil
 }
 
 func mgsWebPostingFlag(grpSettings *gset.Groups, flagVal bool) {
-	logger.Debug("starting mgsWebPostingFlag()")
+	lg.Debug("starting mgsWebPostingFlag()")
 	if flagVal {
 		grpSettings.AllowWebPosting = "true"
 	} else {
 		grpSettings.AllowWebPosting = "false"
 		grpSettings.ForceSendFields = append(grpSettings.ForceSendFields, "AllowWebPosting")
 	}
-	logger.Debug("finished mgsWebPostingFlag()")
+	lg.Debug("finished mgsWebPostingFlag()")
 }

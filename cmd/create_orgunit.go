@@ -29,6 +29,7 @@ import (
 	cfg "github.com/plusworx/gmin/utils/config"
 	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	lg "github.com/plusworx/gmin/utils/logging"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 )
@@ -45,7 +46,7 @@ gmin crt ou Finance -d "Finance Department"`,
 }
 
 func doCreateOU(cmd *cobra.Command, args []string) error {
-	logger.Debugw("starting doCreateOU()",
+	lg.Debugw("starting doCreateOU()",
 		"args", args)
 
 	var orgunit *admin.OrgUnit
@@ -56,7 +57,7 @@ func doCreateOU(cmd *cobra.Command, args []string) error {
 
 	flgBlkInheritVal, err := cmd.Flags().GetBool(flgnm.FLG_BLOCKINHERIT)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
@@ -66,7 +67,7 @@ func doCreateOU(cmd *cobra.Command, args []string) error {
 
 	flgDescVal, err := cmd.Flags().GetString(flgnm.FLG_DESCRIPTION)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
@@ -76,7 +77,7 @@ func doCreateOU(cmd *cobra.Command, args []string) error {
 
 	flgParPthVal, err := cmd.Flags().GetString(flgnm.FLG_PARENTPATH)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	if flgParPthVal != "" {
@@ -87,27 +88,27 @@ func doCreateOU(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryOrgunitScope)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	ouic := ds.Orgunits.Insert(customerID, orgunit)
 	newOrgUnit, err := ouic.Do()
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
-	logger.Infof(gmess.INFO_OUCREATED, newOrgUnit.OrgUnitPath)
+	lg.Infof(gmess.INFO_OUCREATED, newOrgUnit.OrgUnitPath)
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_OUCREATED, newOrgUnit.OrgUnitPath)))
 
-	logger.Debug("finished doCreateOU()")
+	lg.Debug("finished doCreateOU()")
 	return nil
 }
 

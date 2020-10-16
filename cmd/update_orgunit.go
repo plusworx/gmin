@@ -29,6 +29,7 @@ import (
 	cfg "github.com/plusworx/gmin/utils/config"
 	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	lg "github.com/plusworx/gmin/utils/logging"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	admin "google.golang.org/api/admin/directory/v1"
@@ -46,7 +47,7 @@ gmin upd ou Engineering/Aerodynamics -p Engineering/Aeronautics`,
 }
 
 func doUpdateOU(cmd *cobra.Command, args []string) error {
-	logger.Debugw("starting doUpdateOU()",
+	lg.Debugw("starting doUpdateOU()",
 		"args", args)
 
 	var (
@@ -64,33 +65,33 @@ func doUpdateOU(cmd *cobra.Command, args []string) error {
 	// Process command flags
 	err := processUpdOUFlags(cmd, orgunit, flagsPassed)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryOrgunitScope)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	ouuc := ds.Orgunits.Update(customerID, args[0], orgunit)
 	_, err = ouuc.Do()
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
-	logger.Infof(gmess.INFO_OUUPDATED, args[0])
+	lg.Infof(gmess.INFO_OUUPDATED, args[0])
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_OUUPDATED, args[0])))
 
-	logger.Debug("finished doUpdateOU()")
+	lg.Debug("finished doUpdateOU()")
 	return nil
 }
 
@@ -104,13 +105,13 @@ func init() {
 }
 
 func processUpdOUFlags(cmd *cobra.Command, orgunit *admin.OrgUnit, flagNames []string) error {
-	logger.Debugw("starting processUpdOUFlags()",
+	lg.Debugw("starting processUpdOUFlags()",
 		"flagNames", flagNames)
 	for _, flName := range flagNames {
 		if flName == flgnm.FLG_BLOCKINHERIT {
 			flgBlkInheritVal, err := cmd.Flags().GetBool(flgnm.FLG_BLOCKINHERIT)
 			if err != nil {
-				logger.Error(err)
+				lg.Error(err)
 				return err
 			}
 			uoBlockInheritFlag(orgunit, flgBlkInheritVal)
@@ -118,7 +119,7 @@ func processUpdOUFlags(cmd *cobra.Command, orgunit *admin.OrgUnit, flagNames []s
 		if flName == flgnm.FLG_DESCRIPTION {
 			flgDescriptionVal, err := cmd.Flags().GetString(flgnm.FLG_DESCRIPTION)
 			if err != nil {
-				logger.Error(err)
+				lg.Error(err)
 				return err
 			}
 			uoDescriptionFlag(orgunit, flgDescriptionVal)
@@ -126,7 +127,7 @@ func processUpdOUFlags(cmd *cobra.Command, orgunit *admin.OrgUnit, flagNames []s
 		if flName == flgnm.FLG_NAME {
 			flgNameVal, err := cmd.Flags().GetString(flgnm.FLG_NAME)
 			if err != nil {
-				logger.Error(err)
+				lg.Error(err)
 				return err
 			}
 			err = uoNameFlag(orgunit, "--"+flName, flgNameVal)
@@ -137,7 +138,7 @@ func processUpdOUFlags(cmd *cobra.Command, orgunit *admin.OrgUnit, flagNames []s
 		if flName == flgnm.FLG_PARENTPATH {
 			flgParentPathVal, err := cmd.Flags().GetString(flgnm.FLG_PARENTPATH)
 			if err != nil {
-				logger.Error(err)
+				lg.Error(err)
 				return err
 			}
 			err = uoParentPathFlag(orgunit, "--"+flName, flgParentPathVal)
@@ -146,12 +147,12 @@ func processUpdOUFlags(cmd *cobra.Command, orgunit *admin.OrgUnit, flagNames []s
 			}
 		}
 	}
-	logger.Debug("finished processUpdOUFlags()")
+	lg.Debug("finished processUpdOUFlags()")
 	return nil
 }
 
 func uoBlockInheritFlag(orgunit *admin.OrgUnit, flgVal bool) {
-	logger.Debugw("starting uoBlockInheritFlag()",
+	lg.Debugw("starting uoBlockInheritFlag()",
 		"flgVal", flgVal)
 	if flgVal {
 		orgunit.BlockInheritance = true
@@ -159,21 +160,21 @@ func uoBlockInheritFlag(orgunit *admin.OrgUnit, flgVal bool) {
 		orgunit.BlockInheritance = false
 		orgunit.ForceSendFields = append(orgunit.ForceSendFields, "BlockInheritance")
 	}
-	logger.Debug("finished uoBlockInheritFlag()")
+	lg.Debug("finished uoBlockInheritFlag()")
 }
 
 func uoDescriptionFlag(orgunit *admin.OrgUnit, flgVal string) {
-	logger.Debugw("starting uoDescriptionFlag()",
+	lg.Debugw("starting uoDescriptionFlag()",
 		"flgVal", flgVal)
 	if flgVal == "" {
 		orgunit.ForceSendFields = append(orgunit.ForceSendFields, "Description")
 	}
 	orgunit.Description = flgVal
-	logger.Debug("finished uoDescriptionFlag()")
+	lg.Debug("finished uoDescriptionFlag()")
 }
 
 func uoNameFlag(orgunit *admin.OrgUnit, flagName string, flgVal string) error {
-	logger.Debugw("starting uoNameFlag()",
+	lg.Debugw("starting uoNameFlag()",
 		"flagName", flagName,
 		"flgVal", flgVal)
 	if flgVal == "" {
@@ -183,12 +184,12 @@ func uoNameFlag(orgunit *admin.OrgUnit, flagName string, flgVal string) error {
 		}
 	}
 	orgunit.Name = flgVal
-	logger.Debug("finished uoNameFlag()")
+	lg.Debug("finished uoNameFlag()")
 	return nil
 }
 
 func uoParentPathFlag(orgunit *admin.OrgUnit, flagName string, flgVal string) error {
-	logger.Debugw("starting uoParentPathFlag()",
+	lg.Debugw("starting uoParentPathFlag()",
 		"flagName", flagName,
 		"flgVal", flgVal)
 	if flgVal == "" {
@@ -198,6 +199,6 @@ func uoParentPathFlag(orgunit *admin.OrgUnit, flagName string, flgVal string) er
 		}
 	}
 	orgunit.ParentOrgUnitPath = flgVal
-	logger.Debug("finished uoParentPathFlag()")
+	lg.Debug("finished uoParentPathFlag()")
 	return nil
 }

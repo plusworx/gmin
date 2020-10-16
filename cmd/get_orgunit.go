@@ -30,6 +30,7 @@ import (
 	cfg "github.com/plusworx/gmin/utils/config"
 	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gpars "github.com/plusworx/gmin/utils/gminparsers"
+	lg "github.com/plusworx/gmin/utils/logging"
 	ous "github.com/plusworx/gmin/utils/orgunits"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
@@ -47,7 +48,7 @@ gmin get ou Marketing -a name~orgUnitId`,
 }
 
 func doGetOrgUnit(cmd *cobra.Command, args []string) error {
-	logger.Debugw("starting doGetOrgUnit()",
+	lg.Debugw("starting doGetOrgUnit()",
 		"args", args)
 
 	var (
@@ -57,13 +58,13 @@ func doGetOrgUnit(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryOrgunitReadonlyScope)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
@@ -77,13 +78,13 @@ func doGetOrgUnit(cmd *cobra.Command, args []string) error {
 
 	flgAttrsVal, err := cmd.Flags().GetString(flgnm.FLG_ATTRIBUTES)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	if flgAttrsVal != "" {
 		formattedAttrs, err := gpars.ParseOutputAttrs(flgAttrsVal, ous.OrgUnitAttrMap)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 		getCall := ous.AddFields(ougc, formattedAttrs)
@@ -92,19 +93,19 @@ func doGetOrgUnit(cmd *cobra.Command, args []string) error {
 
 	orgUnit, err = ous.DoGet(ougc)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	jsonData, err = json.MarshalIndent(orgUnit, "", "    ")
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	fmt.Println(string(jsonData))
 
-	logger.Debug("finished doGetOrgUnit()")
+	lg.Debug("finished doGetOrgUnit()")
 	return nil
 }
 

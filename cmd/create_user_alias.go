@@ -27,6 +27,7 @@ import (
 
 	cmn "github.com/plusworx/gmin/utils/common"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	lg "github.com/plusworx/gmin/utils/logging"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 )
@@ -43,7 +44,7 @@ gmin crt ua my.alias@mycompany.com brian.cox@mycompany.com`,
 }
 
 func doCreateUserAlias(cmd *cobra.Command, args []string) error {
-	logger.Debugw("starting doCreateUserAlias()",
+	lg.Debugw("starting doCreateUserAlias()",
 		"args", args)
 
 	var alias *admin.Alias
@@ -54,21 +55,21 @@ func doCreateUserAlias(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserAliasScope)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	uaic := ds.Users.Aliases.Insert(args[1], alias)
 	newAlias, err := uaic.Do()
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
-	logger.Infof(gmess.INFO_USERALIASCREATED, newAlias.Alias, args[1])
+	lg.Infof(gmess.INFO_USERALIASCREATED, newAlias.Alias, args[1])
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_USERALIASCREATED, newAlias.Alias, args[1])))
 
-	logger.Debug("finished doCreateUserAlias()")
+	lg.Debug("finished doCreateUserAlias()")
 	return nil
 }
 

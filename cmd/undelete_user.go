@@ -28,6 +28,7 @@ import (
 	cmn "github.com/plusworx/gmin/utils/common"
 	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	lg "github.com/plusworx/gmin/utils/logging"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 )
@@ -45,7 +46,7 @@ N.B. Must use id and not email address.`,
 }
 
 func doUndeleteUser(cmd *cobra.Command, args []string) error {
-	logger.Debugw("starting doUndeleteUser()",
+	lg.Debugw("starting doUndeleteUser()",
 		"args", args)
 
 	var userUndelete *admin.UserUndelete
@@ -53,7 +54,7 @@ func doUndeleteUser(cmd *cobra.Command, args []string) error {
 
 	flgOUVal, err := cmd.Flags().GetString(flgnm.FLG_ORGUNIT)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	if flgOUVal == "" {
@@ -64,7 +65,7 @@ func doUndeleteUser(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserScope)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
@@ -72,14 +73,14 @@ func doUndeleteUser(cmd *cobra.Command, args []string) error {
 
 	err = uuc.Do()
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
-	logger.Infof(gmess.INFO_USERUNDELETED, args[0])
+	lg.Infof(gmess.INFO_USERUNDELETED, args[0])
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_USERUNDELETED, args[0])))
 
-	logger.Debug("finished doUndeleteUser()")
+	lg.Debug("finished doUndeleteUser()")
 	return nil
 }
 

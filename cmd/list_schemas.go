@@ -30,6 +30,7 @@ import (
 	cfg "github.com/plusworx/gmin/utils/config"
 	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gpars "github.com/plusworx/gmin/utils/gminparsers"
+	lg "github.com/plusworx/gmin/utils/logging"
 	scs "github.com/plusworx/gmin/utils/schemas"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
@@ -47,7 +48,7 @@ gmin ls scs`,
 }
 
 func doListSchemas(cmd *cobra.Command, args []string) error {
-	logger.Debugw("starting doListSchemas()",
+	lg.Debugw("starting doListSchemas()",
 		"args", args)
 
 	var (
@@ -57,13 +58,13 @@ func doListSchemas(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserschemaReadonlyScope)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
@@ -71,13 +72,13 @@ func doListSchemas(cmd *cobra.Command, args []string) error {
 
 	flgAttrsVal, err := cmd.Flags().GetString(flgnm.FLG_ATTRIBUTES)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	if flgAttrsVal != "" {
 		listAttrs, err := gpars.ParseOutputAttrs(flgAttrsVal, scs.SchemaAttrMap)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 		formattedAttrs := scs.STARTSCHEMASFIELD + listAttrs + scs.ENDFIELD
@@ -88,19 +89,19 @@ func doListSchemas(cmd *cobra.Command, args []string) error {
 
 	schemas, err = scs.DoList(sclc)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	jsonData, err = json.MarshalIndent(schemas, "", "    ")
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	flgCountVal, err := cmd.Flags().GetBool(flgnm.FLG_COUNT)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	if flgCountVal {
@@ -109,7 +110,7 @@ func doListSchemas(cmd *cobra.Command, args []string) error {
 		fmt.Println(string(jsonData))
 	}
 
-	logger.Debug("finished doListSchemas()")
+	lg.Debug("finished doListSchemas()")
 	return nil
 }
 

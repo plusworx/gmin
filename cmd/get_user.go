@@ -32,6 +32,7 @@ import (
 	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	gpars "github.com/plusworx/gmin/utils/gminparsers"
+	lg "github.com/plusworx/gmin/utils/logging"
 	usrs "github.com/plusworx/gmin/utils/users"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
@@ -49,7 +50,7 @@ gmin get user 114361578941906491576 -a primaryEmail~name`,
 }
 
 func doGetUser(cmd *cobra.Command, args []string) error {
-	logger.Debugw("starting doGetUser()",
+	lg.Debugw("starting doGetUser()",
 		"args", args)
 
 	var (
@@ -59,7 +60,7 @@ func doGetUser(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserReadonlyScope)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
@@ -67,13 +68,13 @@ func doGetUser(cmd *cobra.Command, args []string) error {
 
 	flgAttrsVal, err := cmd.Flags().GetString(flgnm.FLG_ATTRIBUTES)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	if flgAttrsVal != "" {
 		formattedAttrs, err := gpars.ParseOutputAttrs(flgAttrsVal, usrs.UserAttrMap)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 
@@ -83,7 +84,7 @@ func doGetUser(cmd *cobra.Command, args []string) error {
 
 	flgProjectionVal, err := cmd.Flags().GetString(flgnm.FLG_PROJECTION)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	if flgProjectionVal != "" {
@@ -91,7 +92,7 @@ func doGetUser(cmd *cobra.Command, args []string) error {
 		ok := cmn.SliceContainsStr(usrs.ValidProjections, proj)
 		if !ok {
 			err = fmt.Errorf(gmess.ERR_INVALIDPROJECTIONTYPE, flgProjectionVal)
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 
@@ -106,7 +107,7 @@ func doGetUser(cmd *cobra.Command, args []string) error {
 				ugc = getCall.(*admin.UsersGetCall)
 			} else {
 				err = errors.New(gmess.ERR_NOCUSTOMFIELDMASK)
-				logger.Error(err)
+				lg.Error(err)
 				return err
 			}
 		}
@@ -114,7 +115,7 @@ func doGetUser(cmd *cobra.Command, args []string) error {
 
 	flgViewTypeVal, err := cmd.Flags().GetString(flgnm.FLG_VIEWTYPE)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	if flgViewTypeVal != "" {
@@ -122,7 +123,7 @@ func doGetUser(cmd *cobra.Command, args []string) error {
 		ok := cmn.SliceContainsStr(usrs.ValidViewTypes, vt)
 		if !ok {
 			err = fmt.Errorf(gmess.ERR_INVALIDVIEWTYPE, flgViewTypeVal)
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 
@@ -132,19 +133,19 @@ func doGetUser(cmd *cobra.Command, args []string) error {
 
 	user, err = usrs.DoGet(ugc)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	jsonData, err = json.MarshalIndent(user, "", "    ")
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	fmt.Println(string(jsonData))
 
-	logger.Debug("finished doGetUser()")
+	lg.Debug("finished doGetUser()")
 	return nil
 }
 

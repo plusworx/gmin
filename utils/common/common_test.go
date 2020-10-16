@@ -54,7 +54,7 @@ func TestIsValidAttr(t *testing.T) {
 		{
 			attr:          "nonexistent",
 			attrMap:       tsts.TestGroupAttrMap,
-			expectedErr:   "gmin: error - attribute nonexistent is unrecognized",
+			expectedErr:   "nonexistent attribute is not recognized",
 			expectedValue: "",
 		},
 	}

@@ -27,6 +27,8 @@ import (
 	"io/ioutil"
 	"os"
 
+	lg "github.com/plusworx/gmin/utils/logging"
+
 	cfg "github.com/plusworx/gmin/utils/config"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	"github.com/spf13/cobra"
@@ -44,7 +46,7 @@ var showConfigCmd = &cobra.Command{
 }
 
 func doShowConfig(cmd *cobra.Command, args []string) error {
-	logger.Debug("starting doShowConfig()")
+	lg.Debug("starting doShowConfig()")
 
 	fmt.Println("gmin Configuration Information")
 	fmt.Println("==============================")
@@ -84,7 +86,7 @@ func doShowConfig(cmd *cobra.Command, args []string) error {
 
 	fmt.Println(string(yamlFile))
 
-	logger.Debug("finished doShowConfig()")
+	lg.Debug("finished doShowConfig()")
 	return nil
 }
 

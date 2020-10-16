@@ -30,6 +30,7 @@ import (
 	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gpars "github.com/plusworx/gmin/utils/gminparsers"
 	grps "github.com/plusworx/gmin/utils/groups"
+	lg "github.com/plusworx/gmin/utils/logging"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 )
@@ -46,7 +47,7 @@ gmin get grp 042yioqz3p5ulpk -a email`,
 }
 
 func doGetGroup(cmd *cobra.Command, args []string) error {
-	logger.Debugw("starting doGetGroup()",
+	lg.Debugw("starting doGetGroup()",
 		"args", args)
 
 	var (
@@ -56,7 +57,7 @@ func doGetGroup(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupReadonlyScope)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
@@ -64,13 +65,13 @@ func doGetGroup(cmd *cobra.Command, args []string) error {
 
 	flgAttrsVal, err := cmd.Flags().GetString(flgnm.FLG_ATTRIBUTES)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	if flgAttrsVal != "" {
 		formattedAttrs, err := gpars.ParseOutputAttrs(flgAttrsVal, grps.GroupAttrMap)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 
@@ -80,19 +81,19 @@ func doGetGroup(cmd *cobra.Command, args []string) error {
 
 	group, err = grps.DoGet(ggc)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	jsonData, err = json.MarshalIndent(group, "", "    ")
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	fmt.Println(string(jsonData))
 
-	logger.Debug("finished doGetGroup()")
+	lg.Debug("finished doGetGroup()")
 	return nil
 }
 

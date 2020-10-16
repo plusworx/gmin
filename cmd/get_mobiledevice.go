@@ -32,6 +32,7 @@ import (
 	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	gpars "github.com/plusworx/gmin/utils/gminparsers"
+	lg "github.com/plusworx/gmin/utils/logging"
 	mdevs "github.com/plusworx/gmin/utils/mobiledevices"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
@@ -49,7 +50,7 @@ gmin get mdev AFiQxQ83IZT4llDfTWPZt69JvwSJU0YECe1TVyVZC4x -a serialnumber`,
 }
 
 func doGetMobDev(cmd *cobra.Command, args []string) error {
-	logger.Debugw("starting doGetMobDev()",
+	lg.Debugw("starting doGetMobDev()",
 		"args", args)
 
 	var (
@@ -59,26 +60,26 @@ func doGetMobDev(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryDeviceMobileReadonlyScope)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	mdgc := ds.Mobiledevices.Get(customerID, args[0])
 
 	flgAttrsVal, err := cmd.Flags().GetString(flgnm.FLG_ATTRIBUTES)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	if flgAttrsVal != "" {
 		formattedAttrs, err := gpars.ParseOutputAttrs(flgAttrsVal, mdevs.MobDevAttrMap)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 
@@ -88,7 +89,7 @@ func doGetMobDev(cmd *cobra.Command, args []string) error {
 
 	flgProjectionVal, err := cmd.Flags().GetString(flgnm.FLG_PROJECTION)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	if flgProjectionVal != "" {
@@ -96,7 +97,7 @@ func doGetMobDev(cmd *cobra.Command, args []string) error {
 		ok := cmn.SliceContainsStr(mdevs.ValidProjections, proj)
 		if !ok {
 			err = fmt.Errorf(gmess.ERR_INVALIDPROJECTIONTYPE, flgProjectionVal)
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 
@@ -106,19 +107,19 @@ func doGetMobDev(cmd *cobra.Command, args []string) error {
 
 	mobdev, err = mdevs.DoGet(mdgc)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	jsonData, err = json.MarshalIndent(mobdev, "", "    ")
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	fmt.Println(string(jsonData))
 
-	logger.Debug("finished doGetMobDev()")
+	lg.Debug("finished doGetMobDev()")
 	return nil
 }
 

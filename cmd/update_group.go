@@ -28,6 +28,7 @@ import (
 	cmn "github.com/plusworx/gmin/utils/common"
 	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	lg "github.com/plusworx/gmin/utils/logging"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 )
@@ -45,7 +46,7 @@ gmin upd grp 02502m921to3a9m -e newfinance@mycompany.com -n "New Finance" -d "Ne
 }
 
 func doUpdateGroup(cmd *cobra.Command, args []string) error {
-	logger.Debugw("starting doUpdateGroup()",
+	lg.Debugw("starting doUpdateGroup()",
 		"args", args)
 
 	var (
@@ -58,7 +59,7 @@ func doUpdateGroup(cmd *cobra.Command, args []string) error {
 
 	flgEmailVal, err := cmd.Flags().GetString(flgnm.FLG_EMAIL)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	if flgEmailVal != "" {
@@ -67,7 +68,7 @@ func doUpdateGroup(cmd *cobra.Command, args []string) error {
 
 	flgDescriptionVal, err := cmd.Flags().GetString(flgnm.FLG_DESCRIPTION)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	if flgDescriptionVal != "" {
@@ -76,7 +77,7 @@ func doUpdateGroup(cmd *cobra.Command, args []string) error {
 
 	flgNameVal, err := cmd.Flags().GetString(flgnm.FLG_NAME)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	if flgNameVal != "" {
@@ -85,21 +86,21 @@ func doUpdateGroup(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupScope)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	guc := ds.Groups.Update(groupKey, group)
 	_, err = guc.Do()
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
-	logger.Infof(gmess.INFO_GROUPUPDATED, groupKey)
+	lg.Infof(gmess.INFO_GROUPUPDATED, groupKey)
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_GROUPUPDATED, groupKey)))
 
-	logger.Debug("finished doUpdateGroup()")
+	lg.Debug("finished doUpdateGroup()")
 	return nil
 }
 

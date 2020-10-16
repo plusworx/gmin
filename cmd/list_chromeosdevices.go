@@ -35,6 +35,7 @@ import (
 	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	gpars "github.com/plusworx/gmin/utils/gminparsers"
+	lg "github.com/plusworx/gmin/utils/logging"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 )
@@ -51,7 +52,7 @@ gmin ls cdevs --pages all`,
 }
 
 func doListCrOSDevs(cmd *cobra.Command, args []string) error {
-	logger.Debugw("starting doListCrOSDevs()",
+	lg.Debugw("starting doListCrOSDevs()",
 		"args", args)
 
 	var (
@@ -60,13 +61,13 @@ func doListCrOSDevs(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryDeviceChromeosReadonlyScope)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
@@ -74,13 +75,13 @@ func doListCrOSDevs(cmd *cobra.Command, args []string) error {
 
 	flgAttrsVal, err := cmd.Flags().GetString(flgnm.FLG_ATTRIBUTES)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	if flgAttrsVal != "" {
 		listAttrs, err := gpars.ParseOutputAttrs(flgAttrsVal, cdevs.CrOSDevAttrMap)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 		formattedAttrs := cdevs.STARTCHROMEDEVICESFIELD + listAttrs + cdevs.ENDFIELD
@@ -90,7 +91,7 @@ func doListCrOSDevs(cmd *cobra.Command, args []string) error {
 
 	flgOrderByVal, err := cmd.Flags().GetString(flgnm.FLG_ORDERBY)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	if flgOrderByVal != "" {
@@ -98,13 +99,13 @@ func doListCrOSDevs(cmd *cobra.Command, args []string) error {
 		ok := cmn.SliceContainsStr(cdevs.ValidOrderByStrs, ob)
 		if !ok {
 			err = fmt.Errorf(gmess.ERR_INVALIDORDERBY, flgOrderByVal)
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 
 		validOrderBy, err := cmn.IsValidAttr(ob, cdevs.CrOSDevAttrMap)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 
@@ -112,14 +113,14 @@ func doListCrOSDevs(cmd *cobra.Command, args []string) error {
 
 		flgSrtOrdVal, err := cmd.Flags().GetString(flgnm.FLG_SORTORDER)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 		if flgSrtOrdVal != "" {
 			so := strings.ToLower(flgSrtOrdVal)
 			validSortOrder, err := cmn.IsValidAttr(so, cmn.ValidSortOrders)
 			if err != nil {
-				logger.Error(err)
+				lg.Error(err)
 				return err
 			}
 
@@ -129,7 +130,7 @@ func doListCrOSDevs(cmd *cobra.Command, args []string) error {
 
 	flgOUVal, err := cmd.Flags().GetString(flgnm.FLG_ORGUNITPATH)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	if flgOUVal != "" {
@@ -138,7 +139,7 @@ func doListCrOSDevs(cmd *cobra.Command, args []string) error {
 
 	flgProjectionVal, err := cmd.Flags().GetString(flgnm.FLG_PROJECTION)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	if flgProjectionVal != "" {
@@ -146,7 +147,7 @@ func doListCrOSDevs(cmd *cobra.Command, args []string) error {
 		ok := cmn.SliceContainsStr(cdevs.ValidProjections, proj)
 		if !ok {
 			err = fmt.Errorf(gmess.ERR_INVALIDPROJECTIONTYPE, flgProjectionVal)
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 
@@ -156,13 +157,13 @@ func doListCrOSDevs(cmd *cobra.Command, args []string) error {
 
 	flgQueryVal, err := cmd.Flags().GetString(flgnm.FLG_QUERY)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	if flgQueryVal != "" {
 		formattedQuery, err := gpars.ParseQuery(flgQueryVal, cdevs.QueryAttrMap)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 
@@ -171,39 +172,39 @@ func doListCrOSDevs(cmd *cobra.Command, args []string) error {
 
 	flgMaxResultsVal, err := cmd.Flags().GetInt64(flgnm.FLG_MAXRESULTS)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	cdlc = cdevs.AddMaxResults(cdlc, flgMaxResultsVal)
 
 	crosdevs, err = cdevs.DoList(cdlc)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	flgPagesVal, err := cmd.Flags().GetString(flgnm.FLG_PAGES)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	if flgPagesVal != "" {
 		err = doCrOSDevPages(cdlc, crosdevs, flgPagesVal)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 	}
 
 	jsonData, err := json.MarshalIndent(crosdevs, "", "    ")
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	flgCountVal, err := cmd.Flags().GetBool(flgnm.FLG_COUNT)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	if flgCountVal {
@@ -212,18 +213,18 @@ func doListCrOSDevs(cmd *cobra.Command, args []string) error {
 		fmt.Println(string(jsonData))
 	}
 
-	logger.Debug("finished doListCrOSDevs()")
+	lg.Debug("finished doListCrOSDevs()")
 	return nil
 }
 
 func doCrOSDevAllPages(cdlc *admin.ChromeosdevicesListCall, crosdevs *admin.ChromeOsDevices) error {
-	logger.Debug("starting doCrOSDevAllPages()")
+	lg.Debug("starting doCrOSDevAllPages()")
 
 	if crosdevs.NextPageToken != "" {
 		cdlc = cdevs.AddPageToken(cdlc, crosdevs.NextPageToken)
 		nxtCrOSDevs, err := cdevs.DoList(cdlc)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 		crosdevs.Chromeosdevices = append(crosdevs.Chromeosdevices, nxtCrOSDevs.Chromeosdevices...)
@@ -235,19 +236,19 @@ func doCrOSDevAllPages(cdlc *admin.ChromeosdevicesListCall, crosdevs *admin.Chro
 		}
 	}
 
-	logger.Debug("finished doCrOSDevAllPages()")
+	lg.Debug("finished doCrOSDevAllPages()")
 	return nil
 }
 
 func doCrOSDevNumPages(cdlc *admin.ChromeosdevicesListCall, crosdevs *admin.ChromeOsDevices, numPages int) error {
-	logger.Debugw("starting doCrOSDevNumPages()",
+	lg.Debugw("starting doCrOSDevNumPages()",
 		"numPages", numPages)
 
 	if crosdevs.NextPageToken != "" && numPages > 0 {
 		cdlc = cdevs.AddPageToken(cdlc, crosdevs.NextPageToken)
 		nxtCrOSDevs, err := cdevs.DoList(cdlc)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 		crosdevs.Chromeosdevices = append(crosdevs.Chromeosdevices, nxtCrOSDevs.Chromeosdevices...)
@@ -259,38 +260,38 @@ func doCrOSDevNumPages(cdlc *admin.ChromeosdevicesListCall, crosdevs *admin.Chro
 		}
 	}
 
-	logger.Debug("finished doCrOSDevNumPages()")
+	lg.Debug("finished doCrOSDevNumPages()")
 	return nil
 }
 
 func doCrOSDevPages(cdlc *admin.ChromeosdevicesListCall, crosdevs *admin.ChromeOsDevices, pages string) error {
-	logger.Debugw("starting doCrOSDevPages()",
+	lg.Debugw("starting doCrOSDevPages()",
 		"pages", pages)
 
 	if pages == "all" {
 		err := doCrOSDevAllPages(cdlc, crosdevs)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 	} else {
 		numPages, err := strconv.Atoi(pages)
 		if err != nil {
 			err = errors.New(gmess.ERR_INVALIDPAGESARGUMENT)
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 
 		if numPages > 1 {
 			err = doCrOSDevNumPages(cdlc, crosdevs, numPages-1)
 			if err != nil {
-				logger.Error(err)
+				lg.Error(err)
 				return err
 			}
 		}
 	}
 
-	logger.Debug("finished doCrOSDevPages()")
+	lg.Debug("finished doCrOSDevPages()")
 	return nil
 }
 

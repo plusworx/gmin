@@ -27,6 +27,7 @@ import (
 
 	cmn "github.com/plusworx/gmin/utils/common"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	lg "github.com/plusworx/gmin/utils/logging"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 )
@@ -43,12 +44,12 @@ gmin del gmem mymember@mycompany.org mygroup@mycompany.org`,
 }
 
 func doDeleteMember(cmd *cobra.Command, args []string) error {
-	logger.Debugw("starting doDeleteMember()",
+	lg.Debugw("starting doDeleteMember()",
 		"args", args)
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupMemberScope)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
@@ -56,14 +57,14 @@ func doDeleteMember(cmd *cobra.Command, args []string) error {
 
 	err = mdc.Do()
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
-	logger.Infof(gmess.INFO_MEMBERDELETED, args[0], args[1])
+	lg.Infof(gmess.INFO_MEMBERDELETED, args[0], args[1])
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_MEMBERDELETED, args[0], args[1])))
 
-	logger.Debug("finished doDeleteMember()")
+	lg.Debug("finished doDeleteMember()")
 	return nil
 }
 

@@ -29,6 +29,7 @@ import (
 	cmn "github.com/plusworx/gmin/utils/common"
 	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gpars "github.com/plusworx/gmin/utils/gminparsers"
+	lg "github.com/plusworx/gmin/utils/logging"
 	mems "github.com/plusworx/gmin/utils/members"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
@@ -46,26 +47,26 @@ gmin get gmem jack.black@mydomain.org mygroup@mydomain.org -a email`,
 }
 
 func doGetMember(cmd *cobra.Command, args []string) error {
-	logger.Debugw("starting doGetMember()",
+	lg.Debugw("starting doGetMember()",
 		"args", args)
 
 	var jsonData []byte
 
 	flgAttrsVal, err := cmd.Flags().GetString(flgnm.FLG_ATTRIBUTES)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	jsonData, err = processGroupMember(args[0], attrs, args[1], flgAttrsVal)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	fmt.Println(string(jsonData))
 
-	logger.Debug("finished doGetMember()")
+	lg.Debug("finished doGetMember()")
 	return nil
 }
 
@@ -75,7 +76,7 @@ func init() {
 }
 
 func processGroupMember(memID string, attrs string, groupEmail string, flgAttrsVal string) ([]byte, error) {
-	logger.Debugw("starting processGroupMember()",
+	lg.Debugw("starting processGroupMember()",
 		"flgAttrsVal", flgAttrsVal,
 		"groupEmail", groupEmail,
 		"memID", memID)
@@ -87,7 +88,7 @@ func processGroupMember(memID string, attrs string, groupEmail string, flgAttrsV
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupMemberReadonlyScope)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return nil, err
 	}
 
@@ -96,7 +97,7 @@ func processGroupMember(memID string, attrs string, groupEmail string, flgAttrsV
 	if flgAttrsVal != "" {
 		formattedAttrs, err := gpars.ParseOutputAttrs(flgAttrsVal, mems.MemberAttrMap)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return nil, err
 		}
 
@@ -106,16 +107,16 @@ func processGroupMember(memID string, attrs string, groupEmail string, flgAttrsV
 
 	member, err = mems.DoGet(mgc)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return nil, err
 	}
 
 	jsonData, err = json.MarshalIndent(member, "", "    ")
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return nil, err
 	}
 
-	logger.Debug("finished processGroupMember()")
+	lg.Debug("finished processGroupMember()")
 	return jsonData, nil
 }

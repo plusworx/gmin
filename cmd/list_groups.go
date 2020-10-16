@@ -35,6 +35,7 @@ import (
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	gpars "github.com/plusworx/gmin/utils/gminparsers"
 	grps "github.com/plusworx/gmin/utils/groups"
+	lg "github.com/plusworx/gmin/utils/logging"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 )
@@ -51,7 +52,7 @@ gmin ls grp -q email=mygroup@domain.com`,
 }
 
 func doListGroups(cmd *cobra.Command, args []string) error {
-	logger.Debugw("starting doListGroups()",
+	lg.Debugw("starting doListGroups()",
 		"args", args)
 
 	var (
@@ -62,7 +63,7 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupReadonlyScope)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
@@ -70,13 +71,13 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 
 	flgAttrsVal, err := cmd.Flags().GetString(flgnm.FLG_ATTRIBUTES)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	if flgAttrsVal != "" {
 		listAttrs, err := gpars.ParseOutputAttrs(flgAttrsVal, grps.GroupAttrMap)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 		formattedAttrs := grps.STARTGROUPSFIELD + listAttrs + grps.ENDFIELD
@@ -87,7 +88,7 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 
 	flgDomainVal, err := cmd.Flags().GetString(flgnm.FLG_DOMAIN)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	if flgDomainVal != "" {
@@ -95,7 +96,7 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 	} else {
 		customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 		glc = grps.AddCustomer(glc, customerID)
@@ -103,13 +104,13 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 
 	flgQueryVal, err := cmd.Flags().GetString(flgnm.FLG_QUERY)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	if flgQueryVal != "" {
 		formattedQuery, err := gpars.ParseQuery(flgQueryVal, grps.QueryAttrMap)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 
@@ -118,7 +119,7 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 
 	flgOrderByVal, err := cmd.Flags().GetString(flgnm.FLG_ORDERBY)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	if flgOrderByVal != "" {
@@ -126,13 +127,13 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 		ok := cmn.SliceContainsStr(grps.ValidOrderByStrs, ob)
 		if !ok {
 			err = fmt.Errorf(gmess.ERR_INVALIDORDERBY, flgOrderByVal)
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 
 		validOrderBy, err = cmn.IsValidAttr(ob, grps.GroupAttrMap)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 
@@ -140,14 +141,14 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 
 		flgSrtOrdVal, err := cmd.Flags().GetString(flgnm.FLG_SORTORDER)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 		if flgSrtOrdVal != "" {
 			so := strings.ToLower(flgSrtOrdVal)
 			validSortOrder, err := cmn.IsValidAttr(so, cmn.ValidSortOrders)
 			if err != nil {
-				logger.Error(err)
+				lg.Error(err)
 				return err
 			}
 
@@ -157,7 +158,7 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 
 	flgUserKeyVal, err := cmd.Flags().GetString(flgnm.FLG_USERKEY)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	if flgUserKeyVal != "" {
@@ -165,46 +166,46 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 			glc = grps.AddUserKey(glc, flgUserKeyVal)
 		} else {
 			err = errors.New(gmess.ERR_NODOMAINWITHUSERKEY)
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 	}
 
 	flgMaxResultsVal, err := cmd.Flags().GetInt64(flgnm.FLG_MAXRESULTS)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	glc = grps.AddMaxResults(glc, flgMaxResultsVal)
 
 	groups, err = grps.DoList(glc)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	flgPagesVal, err := cmd.Flags().GetString(flgnm.FLG_PAGES)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	if flgPagesVal != "" {
 		err = doGrpPages(glc, groups, flgPagesVal)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 	}
 
 	jsonData, err = json.MarshalIndent(groups, "", "    ")
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	flgCountVal, err := cmd.Flags().GetBool(flgnm.FLG_COUNT)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	if flgCountVal {
@@ -213,18 +214,18 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 		fmt.Println(string(jsonData))
 	}
 
-	logger.Debug("finished doListGroups()")
+	lg.Debug("finished doListGroups()")
 	return nil
 }
 
 func doGrpAllPages(glc *admin.GroupsListCall, groups *admin.Groups) error {
-	logger.Debug("starting doGrpAllPages()")
+	lg.Debug("starting doGrpAllPages()")
 
 	if groups.NextPageToken != "" {
 		glc = grps.AddPageToken(glc, groups.NextPageToken)
 		nxtGroups, err := grps.DoList(glc)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 		groups.Groups = append(groups.Groups, nxtGroups.Groups...)
@@ -236,19 +237,19 @@ func doGrpAllPages(glc *admin.GroupsListCall, groups *admin.Groups) error {
 		}
 	}
 
-	logger.Debug("finished doGrpAllPages()")
+	lg.Debug("finished doGrpAllPages()")
 	return nil
 }
 
 func doGrpNumPages(glc *admin.GroupsListCall, groups *admin.Groups, numPages int) error {
-	logger.Debugw("starting doGrpNumPages()",
+	lg.Debugw("starting doGrpNumPages()",
 		"numPages", numPages)
 
 	if groups.NextPageToken != "" && numPages > 0 {
 		glc = grps.AddPageToken(glc, groups.NextPageToken)
 		nxtGroups, err := grps.DoList(glc)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 		groups.Groups = append(groups.Groups, nxtGroups.Groups...)
@@ -260,38 +261,38 @@ func doGrpNumPages(glc *admin.GroupsListCall, groups *admin.Groups, numPages int
 		}
 	}
 
-	logger.Debug("finished doGrpNumPages()")
+	lg.Debug("finished doGrpNumPages()")
 	return nil
 }
 
 func doGrpPages(glc *admin.GroupsListCall, groups *admin.Groups, pages string) error {
-	logger.Debugw("starting doGrpPages()",
+	lg.Debugw("starting doGrpPages()",
 		"pages", pages)
 
 	if pages == "all" {
 		err := doGrpAllPages(glc, groups)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 	} else {
 		numPages, err := strconv.Atoi(pages)
 		if err != nil {
 			err = errors.New(gmess.ERR_INVALIDPAGESARGUMENT)
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 
 		if numPages > 1 {
 			err = doGrpNumPages(glc, groups, numPages-1)
 			if err != nil {
-				logger.Error(err)
+				lg.Error(err)
 				return err
 			}
 		}
 	}
 
-	logger.Debug("finished doGrpPages()")
+	lg.Debug("finished doGrpPages()")
 	return nil
 }
 

@@ -30,6 +30,7 @@ import (
 	cmn "github.com/plusworx/gmin/utils/common"
 	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	lg "github.com/plusworx/gmin/utils/logging"
 	usrs "github.com/plusworx/gmin/utils/users"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -51,7 +52,7 @@ gmin crt user finance.person@mycompany.com -f Finance -l Person -p greatpassword
 }
 
 func doCreateUser(cmd *cobra.Command, args []string) error {
-	logger.Debugw("starting doCreateUser()",
+	lg.Debugw("starting doCreateUser()",
 		"args", args)
 
 	var flagsPassed []string
@@ -62,7 +63,7 @@ func doCreateUser(cmd *cobra.Command, args []string) error {
 	ok := valid.IsEmail(args[0])
 	if !ok {
 		err := fmt.Errorf(gmess.ERR_INVALIDEMAILADDRESS, args[0])
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
@@ -76,7 +77,7 @@ func doCreateUser(cmd *cobra.Command, args []string) error {
 	// Process command flags
 	err := processCrtUsrFlags(cmd, user, name, flagsPassed)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
@@ -84,7 +85,7 @@ func doCreateUser(cmd *cobra.Command, args []string) error {
 
 	flgAttrsVal, err := cmd.Flags().GetString(flgnm.FLG_ATTRIBUTES)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
@@ -94,31 +95,31 @@ func doCreateUser(cmd *cobra.Command, args []string) error {
 		jsonBytes := []byte(flgAttrsVal)
 		if !json.Valid(jsonBytes) {
 			err = errors.New(gmess.ERR_INVALIDJSONATTR)
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 
 		outStr, err := cmn.ParseInputAttrs(jsonBytes)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 
 		err = cmn.ValidateInputAttrs(outStr, usrs.UserAttrMap)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 
 		err = json.Unmarshal(jsonBytes, &attrUser)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 
 		err = json.Unmarshal(jsonBytes, &emptyVals)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 		if len(emptyVals.ForceSendFields) > 0 {
@@ -128,7 +129,7 @@ func doCreateUser(cmd *cobra.Command, args []string) error {
 		if user.Password == "" && attrUser.Password != "" {
 			pwd, err := cmn.HashPassword(attrUser.Password)
 			if err != nil {
-				logger.Error(err)
+				lg.Error(err)
 				return err
 			}
 			attrUser.Password = pwd
@@ -137,34 +138,34 @@ func doCreateUser(cmd *cobra.Command, args []string) error {
 
 		err = mergo.Merge(user, attrUser)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 	}
 
 	if user.Name.GivenName == "" || user.Name.FamilyName == "" || user.Password == "" {
 		err = errors.New(gmess.ERR_MISSINGUSERDATA)
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserScope)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	uic := ds.Users.Insert(user)
 	newUser, err := uic.Do()
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
-	logger.Infof(gmess.INFO_USERCREATED, newUser.PrimaryEmail)
+	lg.Infof(gmess.INFO_USERCREATED, newUser.PrimaryEmail)
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_USERCREATED, newUser.PrimaryEmail)))
 
-	logger.Debug("finished doCreateUser()")
+	lg.Debug("finished doCreateUser()")
 	return nil
 }
 
@@ -189,32 +190,32 @@ func init() {
 }
 
 func cuFirstnameFlag(name *admin.UserName, flagName string, flgVal string) error {
-	logger.Debugw("starting cuFirstnameFlag()",
+	lg.Debugw("starting cuFirstnameFlag()",
 		"flagName", flagName)
 	if flgVal == "" {
 		err := fmt.Errorf(gmess.ERR_EMPTYSTRING, flagName)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 	}
 	name.GivenName = flgVal
-	logger.Debug("finished cuFirstnameFlag()")
+	lg.Debug("finished cuFirstnameFlag()")
 	return nil
 }
 
 func cuForceFlag(forceSend string, user *admin.User) error {
-	logger.Debugw("starting cuForceFlag()",
+	lg.Debugw("starting cuForceFlag()",
 		"forceSend", forceSend)
 	fields, err := cmn.ParseForceSend(forceSend, usrs.UserAttrMap)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	for _, fld := range fields {
 		user.ForceSendFields = append(user.ForceSendFields, fld)
 	}
-	logger.Debug("finished cuForceFlag()")
+	lg.Debug("finished cuForceFlag()")
 	return nil
 }
 
@@ -226,99 +227,99 @@ func cuGalFlag(user *admin.User, flgVal bool) {
 }
 
 func cuLastnameFlag(name *admin.UserName, flagName string, flgVal string) error {
-	logger.Debugw("starting cuLastnameFlag()",
+	lg.Debugw("starting cuLastnameFlag()",
 		"flagName", flagName)
 	if flgVal == "" {
 		err := fmt.Errorf(gmess.ERR_EMPTYSTRING, flagName)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 	}
 	name.FamilyName = flgVal
-	logger.Debug("finished cuLastnameFlag()")
+	lg.Debug("finished cuLastnameFlag()")
 	return nil
 }
 
 func cuOrgunitFlag(user *admin.User, flagName string, flgVal string) error {
-	logger.Debugw("starting cuOrgunitFlag()",
+	lg.Debugw("starting cuOrgunitFlag()",
 		"flagName", flagName)
 	if flgVal == "" {
 		err := fmt.Errorf(gmess.ERR_EMPTYSTRING, flagName)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 	}
 	user.OrgUnitPath = flgVal
-	logger.Debug("finished cuOrgunitFlag()")
+	lg.Debug("finished cuOrgunitFlag()")
 	return nil
 }
 
 func cuPasswordFlag(user *admin.User, flagName string, flgVal string) error {
-	logger.Debugw("starting cuPasswordFlag()",
+	lg.Debugw("starting cuPasswordFlag()",
 		"flagName", flagName)
 	if flgVal == "" {
 		err := fmt.Errorf(gmess.ERR_EMPTYSTRING, flagName)
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	pwd, err := cmn.HashPassword(flgVal)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	user.Password = pwd
 	user.HashFunction = cmn.HASHFUNCTION
-	logger.Debug("finished cuPasswordFlag()")
+	lg.Debug("finished cuPasswordFlag()")
 	return nil
 }
 
 func cuRecoveryEmailFlag(user *admin.User, flagName string, flgVal string) error {
-	logger.Debugw("starting cuRecoveryEmailFlag()",
+	lg.Debugw("starting cuRecoveryEmailFlag()",
 		"flagName", flagName)
 	if flgVal == "" {
 		err := fmt.Errorf(gmess.ERR_EMPTYSTRING, flagName)
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	ok := valid.IsEmail(flgVal)
 	if !ok {
 		err := fmt.Errorf(gmess.ERR_INVALIDEMAILADDRESS, flgVal)
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	user.RecoveryEmail = flgVal
-	logger.Debug("finished cuRecoveryEmailFlag()")
+	lg.Debug("finished cuRecoveryEmailFlag()")
 	return nil
 }
 
 func cuRecoveryPhoneFlag(user *admin.User, flagName string, flgVal string) error {
-	logger.Debugw("starting cuRecoveryPhoneFlag()",
+	lg.Debugw("starting cuRecoveryPhoneFlag()",
 		"flagName", flagName)
 	if flgVal == "" {
 		err := fmt.Errorf(gmess.ERR_EMPTYSTRING, flagName)
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	if string(recoveryPhone[0]) != "+" {
 		err := fmt.Errorf(gmess.ERR_INVALIDRECOVERYPHONE, flgVal)
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	user.RecoveryPhone = flgVal
-	logger.Debug("finished cuRecoveryPhoneFlag()")
+	lg.Debug("finished cuRecoveryPhoneFlag()")
 	return nil
 }
 
 func processCrtUsrFlags(cmd *cobra.Command, user *admin.User, name *admin.UserName, flagNames []string) error {
-	logger.Debugw("starting processCrtUsrFlags()",
+	lg.Debugw("starting processCrtUsrFlags()",
 		"flagNames", flagNames)
 	for _, flName := range flagNames {
 		if flName == flgnm.FLG_CHANGEPWD {
 			flgChgPwdVal, err := cmd.Flags().GetBool(flName)
 			if err != nil {
-				logger.Error(err)
+				lg.Error(err)
 				return err
 			}
 			if flgChgPwdVal {
@@ -328,7 +329,7 @@ func processCrtUsrFlags(cmd *cobra.Command, user *admin.User, name *admin.UserNa
 		if flName == flgnm.FLG_FIRSTNAME {
 			flgFstNameVal, err := cmd.Flags().GetString(flName)
 			if err != nil {
-				logger.Error(err)
+				lg.Error(err)
 				return err
 			}
 
@@ -340,7 +341,7 @@ func processCrtUsrFlags(cmd *cobra.Command, user *admin.User, name *admin.UserNa
 		if flName == flgnm.FLG_FORCE {
 			flgForceVal, err := cmd.Flags().GetString(flName)
 			if err != nil {
-				logger.Error(err)
+				lg.Error(err)
 				return err
 			}
 
@@ -352,7 +353,7 @@ func processCrtUsrFlags(cmd *cobra.Command, user *admin.User, name *admin.UserNa
 		if flName == flgnm.FLG_GAL {
 			flgGalVal, err := cmd.Flags().GetBool(flName)
 			if err != nil {
-				logger.Error(err)
+				lg.Error(err)
 				return err
 			}
 			cuGalFlag(user, flgGalVal)
@@ -360,7 +361,7 @@ func processCrtUsrFlags(cmd *cobra.Command, user *admin.User, name *admin.UserNa
 		if flName == flgnm.FLG_LASTNAME {
 			flgLstNameVal, err := cmd.Flags().GetString(flName)
 			if err != nil {
-				logger.Error(err)
+				lg.Error(err)
 				return err
 			}
 
@@ -372,7 +373,7 @@ func processCrtUsrFlags(cmd *cobra.Command, user *admin.User, name *admin.UserNa
 		if flName == flgnm.FLG_ORGUNIT {
 			flgOUVal, err := cmd.Flags().GetString(flName)
 			if err != nil {
-				logger.Error(err)
+				lg.Error(err)
 				return err
 			}
 
@@ -384,7 +385,7 @@ func processCrtUsrFlags(cmd *cobra.Command, user *admin.User, name *admin.UserNa
 		if flName == flgnm.FLG_PASSWORD {
 			flgPwdVal, err := cmd.Flags().GetString(flName)
 			if err != nil {
-				logger.Error(err)
+				lg.Error(err)
 				return err
 			}
 
@@ -396,7 +397,7 @@ func processCrtUsrFlags(cmd *cobra.Command, user *admin.User, name *admin.UserNa
 		if flName == flgnm.FLG_RECEMAIL {
 			flgRecEmailVal, err := cmd.Flags().GetString(flName)
 			if err != nil {
-				logger.Error(err)
+				lg.Error(err)
 				return err
 			}
 
@@ -408,7 +409,7 @@ func processCrtUsrFlags(cmd *cobra.Command, user *admin.User, name *admin.UserNa
 		if flName == flgnm.FLG_RECPHONE {
 			flgRecPhoneVal, err := cmd.Flags().GetString(flName)
 			if err != nil {
-				logger.Error(err)
+				lg.Error(err)
 				return err
 			}
 
@@ -420,7 +421,7 @@ func processCrtUsrFlags(cmd *cobra.Command, user *admin.User, name *admin.UserNa
 		if flName == flgnm.FLG_SUSPENDED {
 			flgSuspVal, err := cmd.Flags().GetBool(flName)
 			if err != nil {
-				logger.Error(err)
+				lg.Error(err)
 				return err
 			}
 			if flgSuspVal {
@@ -428,6 +429,6 @@ func processCrtUsrFlags(cmd *cobra.Command, user *admin.User, name *admin.UserNa
 			}
 		}
 	}
-	logger.Debug("finished processCrtUsrFlags()")
+	lg.Debug("finished processCrtUsrFlags()")
 	return nil
 }

@@ -34,6 +34,7 @@ import (
 	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	gpars "github.com/plusworx/gmin/utils/gminparsers"
+	lg "github.com/plusworx/gmin/utils/logging"
 	mdevs "github.com/plusworx/gmin/utils/mobiledevices"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
@@ -51,7 +52,7 @@ gmin ls mdevs --pages all`,
 }
 
 func doListMobDevs(cmd *cobra.Command, args []string) error {
-	logger.Debugw("starting doListMobDevs()",
+	lg.Debugw("starting doListMobDevs()",
 		"args", args)
 
 	var (
@@ -60,13 +61,13 @@ func doListMobDevs(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryDeviceMobileReadonlyScope)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
@@ -74,13 +75,13 @@ func doListMobDevs(cmd *cobra.Command, args []string) error {
 
 	flgAttrsVal, err := cmd.Flags().GetString(flgnm.FLG_ATTRIBUTES)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	if flgAttrsVal != "" {
 		listAttrs, err := gpars.ParseOutputAttrs(flgAttrsVal, mdevs.MobDevAttrMap)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 		formattedAttrs := mdevs.STARTMOBDEVICESFIELD + listAttrs + mdevs.ENDFIELD
@@ -90,7 +91,7 @@ func doListMobDevs(cmd *cobra.Command, args []string) error {
 
 	flgOrderByVal, err := cmd.Flags().GetString(flgnm.FLG_ORDERBY)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	if flgOrderByVal != "" {
@@ -98,13 +99,13 @@ func doListMobDevs(cmd *cobra.Command, args []string) error {
 		ok := cmn.SliceContainsStr(mdevs.ValidOrderByStrs, ob)
 		if !ok {
 			err = fmt.Errorf(gmess.ERR_INVALIDORDERBY, flgOrderByVal)
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 
 		validOrderBy, err := cmn.IsValidAttr(ob, mdevs.MobDevAttrMap)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 
@@ -112,14 +113,14 @@ func doListMobDevs(cmd *cobra.Command, args []string) error {
 
 		flgSrtOrdVal, err := cmd.Flags().GetString(flgnm.FLG_SORTORDER)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 		if flgSrtOrdVal != "" {
 			so := strings.ToLower(flgSrtOrdVal)
 			validSortOrder, err := cmn.IsValidAttr(so, cmn.ValidSortOrders)
 			if err != nil {
-				logger.Error(err)
+				lg.Error(err)
 				return err
 			}
 
@@ -129,7 +130,7 @@ func doListMobDevs(cmd *cobra.Command, args []string) error {
 
 	flgProjectionVal, err := cmd.Flags().GetString(flgnm.FLG_PROJECTION)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	if flgProjectionVal != "" {
@@ -137,7 +138,7 @@ func doListMobDevs(cmd *cobra.Command, args []string) error {
 		ok := cmn.SliceContainsStr(mdevs.ValidProjections, proj)
 		if !ok {
 			err = fmt.Errorf(gmess.ERR_INVALIDPROJECTIONTYPE, flgProjectionVal)
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 
@@ -147,13 +148,13 @@ func doListMobDevs(cmd *cobra.Command, args []string) error {
 
 	flgQueryVal, err := cmd.Flags().GetString(flgnm.FLG_QUERY)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	if flgQueryVal != "" {
 		formattedQuery, err := gpars.ParseQuery(flgQueryVal, mdevs.QueryAttrMap)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 
@@ -162,39 +163,39 @@ func doListMobDevs(cmd *cobra.Command, args []string) error {
 
 	flgMaxResultsVal, err := cmd.Flags().GetInt64(flgnm.FLG_MAXRESULTS)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	mdlc = mdevs.AddMaxResults(mdlc, flgMaxResultsVal)
 
 	mobdevs, err = mdevs.DoList(mdlc)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	flgPagesVal, err := cmd.Flags().GetString(flgnm.FLG_PAGES)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	if flgPagesVal != "" {
 		err = doMobDevPages(mdlc, mobdevs, flgPagesVal)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 	}
 
 	jsonData, err := json.MarshalIndent(mobdevs, "", "    ")
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	flgCountVal, err := cmd.Flags().GetBool(flgnm.FLG_COUNT)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	if flgCountVal {
@@ -203,18 +204,18 @@ func doListMobDevs(cmd *cobra.Command, args []string) error {
 		fmt.Println(string(jsonData))
 	}
 
-	logger.Debug("finished doListMobDevs()")
+	lg.Debug("finished doListMobDevs()")
 	return nil
 }
 
 func doMobDevAllPages(mdlc *admin.MobiledevicesListCall, mobdevs *admin.MobileDevices) error {
-	logger.Debug("starting doMobDevAllPages()")
+	lg.Debug("starting doMobDevAllPages()")
 
 	if mobdevs.NextPageToken != "" {
 		mdlc = mdevs.AddPageToken(mdlc, mobdevs.NextPageToken)
 		nxtMobDevs, err := mdevs.DoList(mdlc)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 		mobdevs.Mobiledevices = append(mobdevs.Mobiledevices, nxtMobDevs.Mobiledevices...)
@@ -226,19 +227,19 @@ func doMobDevAllPages(mdlc *admin.MobiledevicesListCall, mobdevs *admin.MobileDe
 		}
 	}
 
-	logger.Debug("finished doMobDevAllPages()")
+	lg.Debug("finished doMobDevAllPages()")
 	return nil
 }
 
 func doMobDevNumPages(mdlc *admin.MobiledevicesListCall, mobdevs *admin.MobileDevices, numPages int) error {
-	logger.Debugw("starting doMobDevNumPages()",
+	lg.Debugw("starting doMobDevNumPages()",
 		"numPages", numPages)
 
 	if mobdevs.NextPageToken != "" && numPages > 0 {
 		mdlc = mdevs.AddPageToken(mdlc, mobdevs.NextPageToken)
 		nxtMobDevs, err := mdevs.DoList(mdlc)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 		mobdevs.Mobiledevices = append(mobdevs.Mobiledevices, nxtMobDevs.Mobiledevices...)
@@ -250,38 +251,38 @@ func doMobDevNumPages(mdlc *admin.MobiledevicesListCall, mobdevs *admin.MobileDe
 		}
 	}
 
-	logger.Debug("finished doMobDevNumPages()")
+	lg.Debug("finished doMobDevNumPages()")
 	return nil
 }
 
 func doMobDevPages(mdlc *admin.MobiledevicesListCall, mobdevs *admin.MobileDevices, pages string) error {
-	logger.Debugw("starting doMobDevPages()",
+	lg.Debugw("starting doMobDevPages()",
 		"pages", pages)
 
 	if pages == "all" {
 		err := doMobDevAllPages(mdlc, mobdevs)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 	} else {
 		numPages, err := strconv.Atoi(pages)
 		if err != nil {
 			err = errors.New(gmess.ERR_INVALIDPAGESARGUMENT)
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 
 		if numPages > 1 {
 			err = doMobDevNumPages(mdlc, mobdevs, numPages-1)
 			if err != nil {
-				logger.Error(err)
+				lg.Error(err)
 				return err
 			}
 		}
 	}
 
-	logger.Debug("finished doMobDevPages()")
+	lg.Debug("finished doMobDevPages()")
 	return nil
 }
 

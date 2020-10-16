@@ -28,6 +28,7 @@ import (
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	lg "github.com/plusworx/gmin/utils/logging"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 )
@@ -44,32 +45,32 @@ gmin del mdev AFiQxQ83IZT4llDfTWPZt69JvwSJU0YECe1TVyVZC4x`,
 }
 
 func doDeleteMobDev(cmd *cobra.Command, args []string) error {
-	logger.Debugw("starting doDeleteMobDev()",
+	lg.Debugw("starting doDeleteMobDev()",
 		"args", args)
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryDeviceMobileScope)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	mdc := ds.Mobiledevices.Delete(customerID, args[0])
 
 	err = mdc.Do()
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
-	logger.Infof(gmess.INFO_MDEVDELETED, args[0])
+	lg.Infof(gmess.INFO_MDEVDELETED, args[0])
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_MDEVDELETED, args[0])))
 
-	logger.Debug("finished doDeleteMobDev()")
+	lg.Debug("finished doDeleteMobDev()")
 	return nil
 }
 

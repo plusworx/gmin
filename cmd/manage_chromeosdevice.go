@@ -32,6 +32,7 @@ import (
 	cfg "github.com/plusworx/gmin/utils/config"
 	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	lg "github.com/plusworx/gmin/utils/logging"
 	"github.com/spf13/cobra"
 
 	admin "google.golang.org/api/admin/directory/v1"
@@ -49,14 +50,14 @@ gmin mng cdev 4cx07eba348f09b3 reenable`,
 }
 
 func doManageCrOSDev(cmd *cobra.Command, args []string) error {
-	logger.Debugw("starting doManageCrOSDev()",
+	lg.Debugw("starting doManageCrOSDev()",
 		"args", args)
 
 	var devAction = admin.ChromeOsDeviceAction{}
 
 	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
@@ -64,7 +65,7 @@ func doManageCrOSDev(cmd *cobra.Command, args []string) error {
 	ok := cmn.SliceContainsStr(cdevs.ValidActions, action)
 	if !ok {
 		err = fmt.Errorf(gmess.ERR_INVALIDACTIONTYPE, args[1])
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
@@ -72,12 +73,12 @@ func doManageCrOSDev(cmd *cobra.Command, args []string) error {
 	if action == "deprovision" {
 		flgReasonVal, err := cmd.Flags().GetString(flgnm.FLG_REASON)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 		if flgReasonVal == "" {
 			err = errors.New(gmess.ERR_NODEPROVISIONREASON)
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 		devAction.DeprovisionReason = flgReasonVal
@@ -85,7 +86,7 @@ func doManageCrOSDev(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryDeviceChromeosScope)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
@@ -93,14 +94,14 @@ func doManageCrOSDev(cmd *cobra.Command, args []string) error {
 
 	err = cdac.Do()
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
-	logger.Infof(gmess.INFO_CDEVACTIONPERFORMED, args[1], args[0])
+	lg.Infof(gmess.INFO_CDEVACTIONPERFORMED, args[1], args[0])
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_CDEVACTIONPERFORMED, args[1], args[0])))
 
-	logger.Debug("finished doManageCrOSDev()")
+	lg.Debug("finished doManageCrOSDev()")
 	return nil
 }
 

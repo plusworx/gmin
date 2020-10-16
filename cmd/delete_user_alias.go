@@ -27,6 +27,7 @@ import (
 
 	cmn "github.com/plusworx/gmin/utils/common"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	lg "github.com/plusworx/gmin/utils/logging"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 )
@@ -43,12 +44,12 @@ gmin del ua myalias@mycompany.com myuser@mycompany.com`,
 }
 
 func doDeleteUserAlias(cmd *cobra.Command, args []string) error {
-	logger.Debugw("starting doDeleteUserAlias()",
+	lg.Debugw("starting doDeleteUserAlias()",
 		"args", args)
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserAliasScope)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
@@ -56,14 +57,14 @@ func doDeleteUserAlias(cmd *cobra.Command, args []string) error {
 
 	err = uadc.Do()
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
-	logger.Infof(gmess.INFO_USERALIASDELETED, args[0], args[1])
+	lg.Infof(gmess.INFO_USERALIASDELETED, args[0], args[1])
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_USERALIASDELETED, args[0], args[1])))
 
-	logger.Debug("finished doDeleteUserAlias()")
+	lg.Debug("finished doDeleteUserAlias()")
 	return nil
 }
 

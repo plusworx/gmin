@@ -31,6 +31,7 @@ import (
 	cfg "github.com/plusworx/gmin/utils/config"
 	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	lg "github.com/plusworx/gmin/utils/logging"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 )
@@ -47,26 +48,26 @@ gmin upd cdev 4cx07eba348f09b3 -u "Mark Zuckerberg"`,
 }
 
 func doUpdateCrOSDev(cmd *cobra.Command, args []string) error {
-	logger.Debugw("starting doUpdateCrOSDev()",
+	lg.Debugw("starting doUpdateCrOSDev()",
 		"args", args)
 
 	var crosdev = admin.ChromeOsDevice{}
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryDeviceChromeosScope)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	flgAssetIDVal, err := cmd.Flags().GetString(flgnm.FLG_ASSETID)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	if flgAssetIDVal != "" {
@@ -75,7 +76,7 @@ func doUpdateCrOSDev(cmd *cobra.Command, args []string) error {
 
 	flgLocationVal, err := cmd.Flags().GetString(flgnm.FLG_LOCATION)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	if flgLocationVal != "" {
@@ -84,25 +85,25 @@ func doUpdateCrOSDev(cmd *cobra.Command, args []string) error {
 
 	flgNotesVal, err := cmd.Flags().GetString(flgnm.FLG_NOTES)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	if flgNotesVal != "" {
 		crosdev.Notes = flgNotesVal
 	}
 
-	flgOUVal, err := cmd.Flags().GetString(flgnm.FLG_ORGUNIT)
+	flgOUPathVal, err := cmd.Flags().GetString(flgnm.FLG_ORGUNITPATH)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
-	if flgOUVal != "" {
-		crosdev.OrgUnitPath = flgOUVal
+	if flgOUPathVal != "" {
+		crosdev.OrgUnitPath = flgOUPathVal
 	}
 
 	flgUserKeyVal, err := cmd.Flags().GetString(flgnm.FLG_USERKEY)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	if flgUserKeyVal != "" {
@@ -113,7 +114,7 @@ func doUpdateCrOSDev(cmd *cobra.Command, args []string) error {
 
 	flgProjectionVal, err := cmd.Flags().GetString(flgnm.FLG_PROJECTION)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	if flgProjectionVal != "" {
@@ -121,7 +122,7 @@ func doUpdateCrOSDev(cmd *cobra.Command, args []string) error {
 		ok := cmn.SliceContainsStr(cdevs.ValidProjections, proj)
 		if !ok {
 			err = fmt.Errorf(gmess.ERR_INVALIDPROJECTIONTYPE, flgProjectionVal)
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 
@@ -131,14 +132,14 @@ func doUpdateCrOSDev(cmd *cobra.Command, args []string) error {
 
 	updCrOSDev, err := cduc.Do()
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
-	logger.Infof(gmess.INFO_CDEVUPDATED, updCrOSDev.DeviceId)
+	lg.Infof(gmess.INFO_CDEVUPDATED, updCrOSDev.DeviceId)
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_CDEVUPDATED, updCrOSDev.DeviceId)))
 
-	logger.Debug("finished doUpdateCrOSDev()")
+	lg.Debug("finished doUpdateCrOSDev()")
 	return nil
 }
 

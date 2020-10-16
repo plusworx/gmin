@@ -30,6 +30,7 @@ import (
 	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gpars "github.com/plusworx/gmin/utils/gminparsers"
 	gas "github.com/plusworx/gmin/utils/groupaliases"
+	lg "github.com/plusworx/gmin/utils/logging"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 )
@@ -46,14 +47,14 @@ gmin ls gas mygroup@mycompany.com`,
 }
 
 func doListGroupAliases(cmd *cobra.Command, args []string) error {
-	logger.Debugw("starting doListGroupAliases()",
+	lg.Debugw("starting doListGroupAliases()",
 		"args", args)
 
 	var aliases *admin.Aliases
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupReadonlyScope)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
@@ -61,13 +62,13 @@ func doListGroupAliases(cmd *cobra.Command, args []string) error {
 
 	flgAttrsVal, err := cmd.Flags().GetString(flgnm.FLG_ATTRIBUTES)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	if flgAttrsVal != "" {
 		listAttrs, err := gpars.ParseOutputAttrs(flgAttrsVal, gas.GroupAliasAttrMap)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 		formattedAttrs := gas.STARTALIASESFIELD + listAttrs + gas.ENDFIELD
@@ -77,19 +78,19 @@ func doListGroupAliases(cmd *cobra.Command, args []string) error {
 
 	aliases, err = gas.DoList(galc)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	jsonData, err := json.MarshalIndent(aliases, "", "    ")
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	fmt.Println(string(jsonData))
 
-	logger.Debug("finished doListGroupAliases()")
+	lg.Debug("finished doListGroupAliases()")
 	return nil
 }
 

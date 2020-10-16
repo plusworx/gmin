@@ -29,6 +29,7 @@ import (
 	cmn "github.com/plusworx/gmin/utils/common"
 	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gpars "github.com/plusworx/gmin/utils/gminparsers"
+	lg "github.com/plusworx/gmin/utils/logging"
 	uas "github.com/plusworx/gmin/utils/useraliases"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
@@ -46,14 +47,14 @@ gmin ls uas myuser@mycompany.com`,
 }
 
 func doListUserAliases(cmd *cobra.Command, args []string) error {
-	logger.Debugw("starting doListUserAliases()",
+	lg.Debugw("starting doListUserAliases()",
 		"args", args)
 
 	var aliases *admin.Aliases
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserAliasReadonlyScope)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
@@ -61,13 +62,13 @@ func doListUserAliases(cmd *cobra.Command, args []string) error {
 
 	flgAttrsVal, err := cmd.Flags().GetString(flgnm.FLG_ATTRIBUTES)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	if flgAttrsVal != "" {
 		listAttrs, err := gpars.ParseOutputAttrs(flgAttrsVal, uas.UserAliasAttrMap)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 		formattedAttrs := uas.STARTALIASESFIELD + listAttrs + uas.ENDFIELD
@@ -77,19 +78,19 @@ func doListUserAliases(cmd *cobra.Command, args []string) error {
 
 	aliases, err = uas.DoList(ualc)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	jsonData, err := json.MarshalIndent(aliases, "", "    ")
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	fmt.Println(string(jsonData))
 
-	logger.Debug("finished doListUserAliases()")
+	lg.Debug("finished doListUserAliases()")
 	return nil
 }
 

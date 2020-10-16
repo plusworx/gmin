@@ -28,6 +28,7 @@ import (
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	lg "github.com/plusworx/gmin/utils/logging"
 	"github.com/spf13/cobra"
 
 	admin "google.golang.org/api/admin/directory/v1"
@@ -45,14 +46,14 @@ gmin mv cdev 4cx07eba348f09b3 /IT`,
 }
 
 func doMoveCrOSDev(cmd *cobra.Command, args []string) error {
-	logger.Debugw("starting doMoveCrOSDev()",
+	lg.Debugw("starting doMoveCrOSDev()",
 		"args", args)
 
 	var move = admin.ChromeOsMoveDevicesToOu{}
 
 	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
@@ -60,7 +61,7 @@ func doMoveCrOSDev(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryDeviceChromeosScope)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
@@ -68,14 +69,14 @@ func doMoveCrOSDev(cmd *cobra.Command, args []string) error {
 
 	err = cdmc.Do()
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
-	logger.Infof(gmess.INFO_CDEVMOVEPERFORMED, args[0], args[1])
+	lg.Infof(gmess.INFO_CDEVMOVEPERFORMED, args[0], args[1])
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_CDEVMOVEPERFORMED, args[0], args[1])))
 
-	logger.Debug("finished doMoveCrOSDev()")
+	lg.Debug("finished doMoveCrOSDev()")
 	return nil
 }
 

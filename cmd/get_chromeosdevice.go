@@ -33,6 +33,7 @@ import (
 	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	gpars "github.com/plusworx/gmin/utils/gminparsers"
+	lg "github.com/plusworx/gmin/utils/logging"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 )
@@ -49,7 +50,7 @@ gmin get cdev 5ad9ae43-5996-394e-9c39-12d45a8f10e8 -a serialnumber`,
 }
 
 func doGetCrOSDev(cmd *cobra.Command, args []string) error {
-	logger.Debugw("starting doGetCrOSDev()",
+	lg.Debugw("starting doGetCrOSDev()",
 		"args", args)
 
 	var (
@@ -59,26 +60,26 @@ func doGetCrOSDev(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryDeviceChromeosReadonlyScope)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	cdgc := ds.Chromeosdevices.Get(customerID, args[0])
 
 	flgAttrsVal, err := cmd.Flags().GetString(flgnm.FLG_ATTRIBUTES)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	if flgAttrsVal != "" {
 		formattedAttrs, err := gpars.ParseOutputAttrs(flgAttrsVal, cdevs.CrOSDevAttrMap)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 
@@ -88,7 +89,7 @@ func doGetCrOSDev(cmd *cobra.Command, args []string) error {
 
 	flgProjectionVal, err := cmd.Flags().GetString(flgnm.FLG_PROJECTION)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	if flgProjectionVal != "" {
@@ -96,7 +97,7 @@ func doGetCrOSDev(cmd *cobra.Command, args []string) error {
 		ok := cmn.SliceContainsStr(cdevs.ValidProjections, proj)
 		if !ok {
 			err = fmt.Errorf(gmess.ERR_INVALIDPROJECTIONTYPE, flgProjectionVal)
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 
@@ -106,19 +107,19 @@ func doGetCrOSDev(cmd *cobra.Command, args []string) error {
 
 	crosdev, err = cdevs.DoGet(cdgc)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	jsonData, err = json.MarshalIndent(crosdev, "", "    ")
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	fmt.Println(string(jsonData))
 
-	logger.Debug("finished doGetCrOSDev()")
+	lg.Debug("finished doGetCrOSDev()")
 	return nil
 }
 

@@ -35,6 +35,7 @@ import (
 	gas "github.com/plusworx/gmin/utils/groupaliases"
 	grps "github.com/plusworx/gmin/utils/groups"
 	grpset "github.com/plusworx/gmin/utils/groupsettings"
+	lg "github.com/plusworx/gmin/utils/logging"
 	mems "github.com/plusworx/gmin/utils/members"
 	mdevs "github.com/plusworx/gmin/utils/mobiledevices"
 	ous "github.com/plusworx/gmin/utils/orgunits"
@@ -68,7 +69,7 @@ user-alias, ualias, ua`,
 }
 
 func doShowAttrs(cmd *cobra.Command, args []string) error {
-	logger.Debugw("starting doShowAttrs()",
+	lg.Debugw("starting doShowAttrs()",
 		"args", args)
 
 	lArgs := len(args)
@@ -171,7 +172,7 @@ func doShowAttrs(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	logger.Debug("finished doShowAttrs()")
+	lg.Debug("finished doShowAttrs()")
 	return nil
 }
 
@@ -184,7 +185,7 @@ func init() {
 }
 
 func saChromeOSDev(args []string, lArgs int, objectName string, filter string, queryable bool, composite bool) error {
-	logger.Debugw("starting saChromeOSDev()",
+	lg.Debugw("starting saChromeOSDev()",
 		"args", args,
 		"lArgs", lArgs,
 		"objectName", objectName)
@@ -217,12 +218,12 @@ func saChromeOSDev(args []string, lArgs int, objectName string, filter string, q
 		return fmt.Errorf(gmess.ERR_NOCOMPOSITEATTRS, args[2])
 	}
 
-	logger.Debug("finished saChromeOSDev()")
+	lg.Debug("finished saChromeOSDev()")
 	return nil
 }
 
 func saGroup(args []string, lArgs int, objectName string, filter string, queryable bool, composite bool) error {
-	logger.Debugw("starting saGroup()",
+	lg.Debugw("starting saGroup()",
 		"args", args,
 		"lArgs", lArgs,
 		"objectName", objectName)
@@ -243,12 +244,12 @@ func saGroup(args []string, lArgs int, objectName string, filter string, queryab
 		return fmt.Errorf(gmess.ERR_NOCOMPOSITEATTRS, objectName)
 	}
 
-	logger.Debug("finished saGroup()")
+	lg.Debug("finished saGroup()")
 	return nil
 }
 
 func saGroupAlias(args []string, lArgs int, objectName string, filter string, queryable bool, composite bool) error {
-	logger.Debugw("starting saGroupAlias()",
+	lg.Debugw("starting saGroupAlias()",
 		"args", args,
 		"lArgs", lArgs,
 		"objectName", objectName)
@@ -268,12 +269,12 @@ func saGroupAlias(args []string, lArgs int, objectName string, filter string, qu
 		return fmt.Errorf(gmess.ERR_NOCOMPOSITEATTRS, objectName)
 	}
 
-	logger.Debug("finished saGroupAlias()")
+	lg.Debug("finished saGroupAlias()")
 	return nil
 }
 
 func saGroupMember(args []string, lArgs int, objectName string, filter string, queryable bool, composite bool) error {
-	logger.Debugw("starting saGroupMember()",
+	lg.Debugw("starting saGroupMember()",
 		"args", args,
 		"lArgs", lArgs,
 		"objectName", objectName)
@@ -293,12 +294,12 @@ func saGroupMember(args []string, lArgs int, objectName string, filter string, q
 		return fmt.Errorf(gmess.ERR_NOCOMPOSITEATTRS, objectName)
 	}
 
-	logger.Debug("finished saGroupMember()")
+	lg.Debug("finished saGroupMember()")
 	return nil
 }
 
 func saGroupSettings(args []string, lArgs int, objectName string, filter string, queryable bool, composite bool) error {
-	logger.Debugw("starting saGroupSettings()",
+	lg.Debugw("starting saGroupSettings()",
 		"args", args,
 		"lArgs", lArgs,
 		"objectName", objectName)
@@ -318,12 +319,12 @@ func saGroupSettings(args []string, lArgs int, objectName string, filter string,
 		return fmt.Errorf(gmess.ERR_NOCOMPOSITEATTRS, objectName)
 	}
 
-	logger.Debug("finished saGroupSettings()")
+	lg.Debug("finished saGroupSettings()")
 	return nil
 }
 
 func saMobileDev(args []string, lArgs int, objectName string, filter string, queryable bool, composite bool) error {
-	logger.Debugw("starting saMobileDev()",
+	lg.Debugw("starting saMobileDev()",
 		"args", args,
 		"lArgs", lArgs,
 		"objectName", objectName)
@@ -356,12 +357,12 @@ func saMobileDev(args []string, lArgs int, objectName string, filter string, que
 		return fmt.Errorf(gmess.ERR_NOCOMPOSITEATTRS, args[2])
 	}
 
-	logger.Debug("finished saMobileDev()")
+	lg.Debug("finished saMobileDev()")
 	return nil
 }
 
 func saOrgUnit(args []string, lArgs int, objectName string, filter string, queryable bool, composite bool) error {
-	logger.Debugw("starting saOrgUnit()",
+	lg.Debugw("starting saOrgUnit()",
 		"args", args,
 		"lArgs", lArgs,
 		"objectName", objectName)
@@ -381,12 +382,12 @@ func saOrgUnit(args []string, lArgs int, objectName string, filter string, query
 		return fmt.Errorf(gmess.ERR_NOCOMPOSITEATTRS, objectName)
 	}
 
-	logger.Debug("finished saOrgUnit()")
+	lg.Debug("finished saOrgUnit()")
 	return nil
 }
 
 func saSchema(args []string, lArgs int, objectName string, filter string, queryable bool, composite bool) error {
-	logger.Debugw("starting saSchema()",
+	lg.Debugw("starting saSchema()",
 		"args", args,
 		"lArgs", lArgs,
 		"objectName", objectName)
@@ -428,12 +429,12 @@ func saSchema(args []string, lArgs int, objectName string, filter string, querya
 		}
 	}
 
-	logger.Debug("finished saSchema()")
+	lg.Debug("finished saSchema()")
 	return nil
 }
 
 func saUser(args []string, lArgs int, objectName string, filter string, queryable bool, composite bool) error {
-	logger.Debugw("starting saUser()",
+	lg.Debugw("starting saUser()",
 		"args", args,
 		"lArgs", lArgs,
 		"objectName", objectName)
@@ -465,12 +466,12 @@ func saUser(args []string, lArgs int, objectName string, filter string, queryabl
 		return fmt.Errorf(gmess.ERR_NOCOMPOSITEATTRS, args[2])
 	}
 
-	logger.Debug("finished saUser()")
+	lg.Debug("finished saUser()")
 	return nil
 }
 
 func saUserAlias(args []string, lArgs int, objectName string, filter string, queryable bool, composite bool) error {
-	logger.Debugw("starting saUserAlias()",
+	lg.Debugw("starting saUserAlias()",
 		"args", args,
 		"lArgs", lArgs,
 		"objectName", objectName)
@@ -490,6 +491,6 @@ func saUserAlias(args []string, lArgs int, objectName string, filter string, que
 		return fmt.Errorf(gmess.ERR_NOCOMPOSITEATTRS, objectName)
 	}
 
-	logger.Debug("finished saUserAlias()")
+	lg.Debug("finished saUserAlias()")
 	return nil
 }

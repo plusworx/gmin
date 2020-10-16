@@ -28,17 +28,13 @@ import (
 	"os"
 	"strings"
 
-	"time"
-
 	"github.com/mitchellh/go-homedir"
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
 	flgnm "github.com/plusworx/gmin/utils/flagnames"
-	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	lg "github.com/plusworx/gmin/utils/logging"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 )
 
 var (
@@ -86,7 +82,6 @@ var (
 	lastName         string
 	leave            string
 	location         string
-	logger           *zap.SugaredLogger
 	logLevel         string
 	logPath          string
 	maxResults       int64
@@ -158,6 +153,14 @@ func formatError(errStr string) string {
 	return retStr
 }
 
+func getLogLevel(cmd *cobra.Command) (string, error) {
+	logFlgVal, err := cmd.Flags().GetString(flgnm.FLG_LOGLEVEL)
+	if err != nil {
+		return "", err
+	}
+	return logFlgVal, nil
+}
+
 func init() {
 	cobra.OnInitialize(initConfig)
 
@@ -184,16 +187,12 @@ func initConfig() {
 }
 
 func preRun(cmd *cobra.Command, args []string) error {
-	// Set loglevel
-	logFlgVal, err := cmd.Flags().GetString(flgnm.FLG_LOGLEVEL)
+	// Set up logging
+	err := setupLogging(cmd)
 	if err != nil {
 		return err
 	}
-	zlog, err := setupLogging(logFlgVal)
-	if err != nil {
-		return err
-	}
-	logger = zlog.Sugar()
+
 	// Suppress console output according to silent flag
 	silentFlgVal, err := cmd.Flags().GetBool(flgnm.FLG_SILENT)
 	if err != nil {
@@ -209,7 +208,7 @@ func preRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	// Log current user
-	logger.Infow("User Information",
+	lg.Infow("User Information",
 		"gmin admin", admAddr,
 		"Username", cmn.Username(),
 		"Hostname", cmn.Hostname(),
@@ -217,41 +216,25 @@ func preRun(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func setupLogging(loglevel string) (*zap.Logger, error) {
-	var (
-		err  error
-		zlog *zap.Logger
-	)
-
-	zconf := zap.NewProductionConfig()
-
-	switch loglevel {
-	case "debug":
-		zconf.Level.SetLevel(zapcore.DebugLevel)
-	case "info":
-		zconf.Level.SetLevel(zapcore.InfoLevel)
-	case "error":
-		zconf.Level.SetLevel(zapcore.ErrorLevel)
-	case "warn":
-		zconf.Level.SetLevel(zapcore.WarnLevel)
-	default:
-		return nil, fmt.Errorf(gmess.ERR_INVALIDLOGLEVEL, loglevel)
-	}
-
-	zconf.EncoderConfig.EncodeTime = zapcore.TimeEncoder(func(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
-		enc.AppendString(t.Local().Format("2006-01-02T15:04:05Z0700"))
-	})
-	logpath, err := cfg.ReadConfigString(cfg.CONFIGLOGPATH)
+func preRunForDisplayCmds(cmd *cobra.Command, args []string) error {
+	// Set up logging
+	err := setupLogging(cmd)
 	if err != nil {
-		return nil, err
+		return err
 	}
+	return nil
+}
 
-	lpaths := cmn.ParseTildeField(logpath)
-	zconf.OutputPaths = lpaths
-
-	zlog, err = zconf.Build()
+func setupLogging(cmd *cobra.Command) error {
+	// Set up logging
+	logFlgVal, err := getLogLevel(cmd)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return zlog, nil
+
+	err = lg.InitLogging(logFlgVal)
+	if err != nil {
+		return err
+	}
+	return nil
 }

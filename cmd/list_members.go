@@ -32,6 +32,7 @@ import (
 	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	gpars "github.com/plusworx/gmin/utils/gminparsers"
+	lg "github.com/plusworx/gmin/utils/logging"
 	mems "github.com/plusworx/gmin/utils/members"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
@@ -49,7 +50,7 @@ gmin ls gmems mygroup@mycompany.com -a email`,
 }
 
 func doListMembers(cmd *cobra.Command, args []string) error {
-	logger.Debugw("starting doListMembers()",
+	lg.Debugw("starting doListMembers()",
 		"args", args)
 
 	var (
@@ -59,7 +60,7 @@ func doListMembers(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupMemberReadonlyScope)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
@@ -67,13 +68,13 @@ func doListMembers(cmd *cobra.Command, args []string) error {
 
 	flgAttrsVal, err := cmd.Flags().GetString(flgnm.FLG_ATTRIBUTES)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	if flgAttrsVal != "" {
 		listAttrs, err := gpars.ParseOutputAttrs(flgAttrsVal, mems.MemberAttrMap)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 		formattedAttrs := mems.STARTMEMBERSFIELD + listAttrs + mems.ENDFIELD
@@ -84,13 +85,13 @@ func doListMembers(cmd *cobra.Command, args []string) error {
 
 	flgRolesVal, err := cmd.Flags().GetString(flgnm.FLG_ROLES)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	if flgRolesVal != "" {
 		formattedRoles, err := gpars.ParseOutputAttrs(flgRolesVal, mems.RoleMap)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 		mlc = mems.AddRoles(mlc, formattedRoles)
@@ -98,39 +99,39 @@ func doListMembers(cmd *cobra.Command, args []string) error {
 
 	flgMaxResultsVal, err := cmd.Flags().GetInt64(flgnm.FLG_MAXRESULTS)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	mlc = mems.AddMaxResults(mlc, flgMaxResultsVal)
 
 	members, err = mems.DoList(mlc)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	flgPagesVal, err := cmd.Flags().GetString(flgnm.FLG_PAGES)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	if flgPagesVal != "" {
 		err = doMemPages(mlc, members, flgPagesVal)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 	}
 
 	jsonData, err = json.MarshalIndent(members, "", "    ")
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	flgCountVal, err := cmd.Flags().GetBool(flgnm.FLG_COUNT)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	if flgCountVal {
@@ -139,18 +140,18 @@ func doListMembers(cmd *cobra.Command, args []string) error {
 		fmt.Println(string(jsonData))
 	}
 
-	logger.Debug("finished doListMembers()")
+	lg.Debug("finished doListMembers()")
 	return nil
 }
 
 func doMemAllPages(mlc *admin.MembersListCall, members *admin.Members) error {
-	logger.Debug("starting doMemAllPages()")
+	lg.Debug("starting doMemAllPages()")
 
 	if members.NextPageToken != "" {
 		mlc = mems.AddPageToken(mlc, members.NextPageToken)
 		nxtMems, err := mems.DoList(mlc)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 		members.Members = append(members.Members, nxtMems.Members...)
@@ -162,19 +163,19 @@ func doMemAllPages(mlc *admin.MembersListCall, members *admin.Members) error {
 		}
 	}
 
-	logger.Debug("finished doMemAllPages()")
+	lg.Debug("finished doMemAllPages()")
 	return nil
 }
 
 func doMemNumPages(mlc *admin.MembersListCall, members *admin.Members, numPages int) error {
-	logger.Debugw("starting doMemNumPages()",
+	lg.Debugw("starting doMemNumPages()",
 		"numPages", numPages)
 
 	if members.NextPageToken != "" && numPages > 0 {
 		mlc = mems.AddPageToken(mlc, members.NextPageToken)
 		nxtMems, err := mems.DoList(mlc)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 		members.Members = append(members.Members, nxtMems.Members...)
@@ -186,38 +187,38 @@ func doMemNumPages(mlc *admin.MembersListCall, members *admin.Members, numPages 
 		}
 	}
 
-	logger.Debug("finished doMemNumPages()")
+	lg.Debug("finished doMemNumPages()")
 	return nil
 }
 
 func doMemPages(mlc *admin.MembersListCall, members *admin.Members, pages string) error {
-	logger.Debugw("starting doMemPages()",
+	lg.Debugw("starting doMemPages()",
 		"pages", pages)
 
 	if pages == "all" {
 		err := doMemAllPages(mlc, members)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 	} else {
 		numPages, err := strconv.Atoi(pages)
 		if err != nil {
 			err = errors.New(gmess.ERR_INVALIDPAGESARGUMENT)
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 
 		if numPages > 1 {
 			err = doMemNumPages(mlc, members, numPages-1)
 			if err != nil {
-				logger.Error(err)
+				lg.Error(err)
 				return err
 			}
 		}
 	}
 
-	logger.Debug("finished doMemPages()")
+	lg.Debug("finished doMemPages()")
 	return nil
 }
 

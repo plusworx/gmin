@@ -28,6 +28,7 @@ import (
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	lg "github.com/plusworx/gmin/utils/logging"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 )
@@ -44,18 +45,18 @@ gmin del sc TestSchema`,
 }
 
 func doDeleteSchema(cmd *cobra.Command, args []string) error {
-	logger.Debugw("starting doDeleteSchema()",
+	lg.Debugw("starting doDeleteSchema()",
 		"args", args)
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserschemaScope)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
@@ -63,14 +64,14 @@ func doDeleteSchema(cmd *cobra.Command, args []string) error {
 
 	err = scdc.Do()
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
-	logger.Infof(gmess.INFO_SCHEMADELETED, args[0])
+	lg.Infof(gmess.INFO_SCHEMADELETED, args[0])
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_SCHEMADELETED, args[0])))
 
-	logger.Debug("finished doDeleteSchema()")
+	lg.Debug("finished doDeleteSchema()")
 	return nil
 }
 

@@ -36,6 +36,7 @@ import (
 	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	grps "github.com/plusworx/gmin/utils/groups"
+	lg "github.com/plusworx/gmin/utils/logging"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 	sheet "google.golang.org/api/sheets/v4"
@@ -65,38 +66,38 @@ The column name is case insensitive.`,
 }
 
 func doBatchDelGroup(cmd *cobra.Command, args []string) error {
-	logger.Debugw("starting doBatchDelGroup()",
+	lg.Debugw("starting doBatchDelGroup()",
 		"args", args)
 
 	var groups []string
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupScope)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	inputFlgVal, err := cmd.Flags().GetString(flgnm.FLG_INPUTFILE)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	scanner, err := cmn.InputFromStdIn(inputFlgVal)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	if inputFlgVal == "" && scanner == nil {
 		err := errors.New(gmess.ERR_NOINPUTFILE)
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	formatFlgVal, err := cmd.Flags().GetString(flgnm.FLG_FORMAT)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	lwrFmt := strings.ToLower(formatFlgVal)
@@ -104,7 +105,7 @@ func doBatchDelGroup(cmd *cobra.Command, args []string) error {
 	ok := cmn.SliceContainsStr(cmn.ValidFileFormats, lwrFmt)
 	if !ok {
 		err = fmt.Errorf(gmess.ERR_INVALIDFILEFORMAT, formatFlgVal)
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
@@ -112,19 +113,19 @@ func doBatchDelGroup(cmd *cobra.Command, args []string) error {
 	case lwrFmt == "text":
 		groups, err = bdgProcessTextFile(ds, inputFlgVal, scanner)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 	case lwrFmt == "gsheet":
 		rangeFlgVal, err := cmd.Flags().GetString(flgnm.FLG_SHEETRANGE)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 
 		groups, err = bdgProcessGSheet(ds, inputFlgVal, rangeFlgVal)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 	default:
@@ -133,16 +134,16 @@ func doBatchDelGroup(cmd *cobra.Command, args []string) error {
 
 	err = bdgProcessDeletion(ds, groups)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
-	logger.Debug("finished doBatchDelGroup()")
+	lg.Debug("finished doBatchDelGroup()")
 	return nil
 }
 
 func bdgDelete(wg *sync.WaitGroup, gdc *admin.GroupsDeleteCall, group string) {
-	logger.Debugw("starting bdgDelete()",
+	lg.Debugw("starting bdgDelete()",
 		"group", group)
 
 	defer wg.Done()
@@ -155,7 +156,7 @@ func bdgDelete(wg *sync.WaitGroup, gdc *admin.GroupsDeleteCall, group string) {
 
 		err = gdc.Do()
 		if err == nil {
-			logger.Infof(gmess.INFO_GROUPDELETED, group)
+			lg.Infof(gmess.INFO_GROUPDELETED, group)
 			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_GROUPDELETED, group)))
 			return err
 		}
@@ -163,21 +164,21 @@ func bdgDelete(wg *sync.WaitGroup, gdc *admin.GroupsDeleteCall, group string) {
 			return backoff.Permanent(fmt.Errorf(gmess.ERR_BATCHGROUP, err.Error(), group))
 		}
 		// Log the retries
-		logger.Warnw(err.Error(),
+		lg.Warnw(err.Error(),
 			"retrying", b.GetElapsedTime().String(),
 			"group", group)
 		return fmt.Errorf(gmess.ERR_BATCHGROUP, err.Error(), group)
 	}, b)
 	if err != nil {
 		// Log final error
-		logger.Error(err)
+		lg.Error(err)
 		fmt.Println(cmn.GminMessage(err.Error()))
 	}
-	logger.Debug("finished bdgDelete()")
+	lg.Debug("finished bdgDelete()")
 }
 
 func bdgFromFileFactory(hdrMap map[int]string, groupData []interface{}) (string, error) {
-	logger.Debugw("starting bdgFromFileFactory()",
+	lg.Debugw("starting bdgFromFileFactory()",
 		"hdrMap", hdrMap)
 
 	var group string
@@ -190,12 +191,12 @@ func bdgFromFileFactory(hdrMap map[int]string, groupData []interface{}) (string,
 			group = attrVal
 		}
 	}
-	logger.Debug("finished bdgFromFileFactory()")
+	lg.Debug("finished bdgFromFileFactory()")
 	return group, nil
 }
 
 func bdgProcessDeletion(ds *admin.Service, groups []string) error {
-	logger.Debug("starting bdgProcessDeletion()")
+	lg.Debug("starting bdgProcessDeletion()")
 
 	wg := new(sync.WaitGroup)
 
@@ -209,12 +210,12 @@ func bdgProcessDeletion(ds *admin.Service, groups []string) error {
 
 	wg.Wait()
 
-	logger.Debug("finished bdgProcessDeletion()")
+	lg.Debug("finished bdgProcessDeletion()")
 	return nil
 }
 
 func bdgProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]string, error) {
-	logger.Debugw("starting bdgProcessGSheet()",
+	lg.Debugw("starting bdgProcessGSheet()",
 		"sheetID", sheetID,
 		"sheetrange", sheetrange)
 
@@ -222,33 +223,33 @@ func bdgProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]s
 
 	if sheetrange == "" {
 		err := errors.New(gmess.ERR_NOSHEETRANGE)
-		logger.Error(err)
+		lg.Error(err)
 		return nil, err
 	}
 
 	ss, err := cmn.CreateSheetService(sheet.DriveReadonlyScope)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return nil, err
 	}
 
 	ssvgc := ss.Spreadsheets.Values.Get(sheetID, sheetrange)
 	sValRange, err := ssvgc.Do()
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return nil, err
 	}
 
 	if len(sValRange.Values) == 0 {
 		err = fmt.Errorf(gmess.ERR_NOSHEETDATAFOUND, sheetID, sheetrange)
-		logger.Error(err)
+		lg.Error(err)
 		return nil, err
 	}
 
 	hdrMap := cmn.ProcessHeader(sValRange.Values[0])
 	err = cmn.ValidateHeader(hdrMap, grps.GroupAttrMap)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return nil, err
 	}
 
@@ -259,19 +260,19 @@ func bdgProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]s
 
 		grpVar, err := bdgFromFileFactory(hdrMap, row)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return nil, err
 		}
 
 		groups = append(groups, grpVar)
 	}
 
-	logger.Debug("finished bdgProcessGSheet()")
+	lg.Debug("finished bdgProcessGSheet()")
 	return groups, nil
 }
 
 func bdgProcessTextFile(ds *admin.Service, filePath string, scanner *bufio.Scanner) ([]string, error) {
-	logger.Debugw("starting bdgProcessTextFile()",
+	lg.Debugw("starting bdgProcessTextFile()",
 		"filePath", filePath)
 
 	var groups []string
@@ -279,7 +280,7 @@ func bdgProcessTextFile(ds *admin.Service, filePath string, scanner *bufio.Scann
 	if filePath != "" {
 		file, err := os.Open(filePath)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return nil, err
 		}
 		defer file.Close()
@@ -291,7 +292,7 @@ func bdgProcessTextFile(ds *admin.Service, filePath string, scanner *bufio.Scann
 		groups = append(groups, group)
 	}
 
-	logger.Debug("finished bdgProcessTextFile()")
+	lg.Debug("finished bdgProcessTextFile()")
 	return groups, nil
 }
 

@@ -36,6 +36,7 @@ import (
 	cfg "github.com/plusworx/gmin/utils/config"
 	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	lg "github.com/plusworx/gmin/utils/logging"
 	ous "github.com/plusworx/gmin/utils/orgunits"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
@@ -66,38 +67,38 @@ The column name is case insensitive.`,
 }
 
 func doBatchDelOrgUnit(cmd *cobra.Command, args []string) error {
-	logger.Debugw("starting doBatchDelOrgUnit()",
+	lg.Debugw("starting doBatchDelOrgUnit()",
 		"args", args)
 
 	var orgunits []string
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryOrgunitScope)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	inputFlgVal, err := cmd.Flags().GetString(flgnm.FLG_INPUTFILE)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	scanner, err := cmn.InputFromStdIn(inputFlgVal)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	if inputFlgVal == "" && scanner == nil {
 		err := errors.New(gmess.ERR_NOINPUTFILE)
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	formatFlgVal, err := cmd.Flags().GetString(flgnm.FLG_FORMAT)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	lwrFmt := strings.ToLower(formatFlgVal)
@@ -105,7 +106,7 @@ func doBatchDelOrgUnit(cmd *cobra.Command, args []string) error {
 	ok := cmn.SliceContainsStr(cmn.ValidFileFormats, lwrFmt)
 	if !ok {
 		err = fmt.Errorf(gmess.ERR_INVALIDFILEFORMAT, formatFlgVal)
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
@@ -113,19 +114,19 @@ func doBatchDelOrgUnit(cmd *cobra.Command, args []string) error {
 	case lwrFmt == "text":
 		orgunits, err = bdoProcessTextFile(ds, inputFlgVal, scanner)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 	case lwrFmt == "gsheet":
 		rangeFlgVal, err := cmd.Flags().GetString(flgnm.FLG_SHEETRANGE)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 
 		orgunits, err = bdoProcessGSheet(ds, inputFlgVal, rangeFlgVal)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 	default:
@@ -134,16 +135,16 @@ func doBatchDelOrgUnit(cmd *cobra.Command, args []string) error {
 
 	err = bdoProcessDeletion(ds, orgunits)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
-	logger.Debug("finished doBatchDelOrgUnit()")
+	lg.Debug("finished doBatchDelOrgUnit()")
 	return nil
 }
 
 func bdoDelete(wg *sync.WaitGroup, oudc *admin.OrgunitsDeleteCall, ouPath string) {
-	logger.Debugw("starting bdoDelete()",
+	lg.Debugw("starting bdoDelete()",
 		"ouPath", ouPath)
 
 	defer wg.Done()
@@ -156,7 +157,7 @@ func bdoDelete(wg *sync.WaitGroup, oudc *admin.OrgunitsDeleteCall, ouPath string
 
 		err = oudc.Do()
 		if err == nil {
-			logger.Infof(gmess.INFO_OUDELETED, ouPath)
+			lg.Infof(gmess.INFO_OUDELETED, ouPath)
 			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_OUDELETED, ouPath)))
 			return err
 		}
@@ -164,21 +165,21 @@ func bdoDelete(wg *sync.WaitGroup, oudc *admin.OrgunitsDeleteCall, ouPath string
 			return backoff.Permanent(fmt.Errorf(gmess.ERR_BATCHOU, err.Error(), ouPath))
 		}
 		// Log the retries
-		logger.Warnw(err.Error(),
+		lg.Warnw(err.Error(),
 			"retrying", b.GetElapsedTime().String(),
 			"orgunit", ouPath)
 		return fmt.Errorf(gmess.ERR_BATCHOU, err.Error(), ouPath)
 	}, b)
 	if err != nil {
 		// Log final error
-		logger.Error(err)
+		lg.Error(err)
 		fmt.Println(cmn.GminMessage(err.Error()))
 	}
-	logger.Debug("finished bdoDelete()")
+	lg.Debug("finished bdoDelete()")
 }
 
 func bdoFromFileFactory(hdrMap map[int]string, ouData []interface{}) (string, error) {
-	logger.Debugw("starting bdoFromFileFactory()",
+	lg.Debugw("starting bdoFromFileFactory()",
 		"hdrMap", hdrMap)
 
 	var orgunit string
@@ -191,16 +192,16 @@ func bdoFromFileFactory(hdrMap map[int]string, ouData []interface{}) (string, er
 			orgunit = attrVal
 		}
 	}
-	logger.Debug("finished bdoFromFileFactory()")
+	lg.Debug("finished bdoFromFileFactory()")
 	return orgunit, nil
 }
 
 func bdoProcessDeletion(ds *admin.Service, orgunits []string) error {
-	logger.Debug("starting bdoProcessDeletion()")
+	lg.Debug("starting bdoProcessDeletion()")
 
 	customerID, err := cfg.ReadConfigString("customerid")
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
@@ -224,12 +225,12 @@ func bdoProcessDeletion(ds *admin.Service, orgunits []string) error {
 
 	wg.Wait()
 
-	logger.Debug("finished bdoProcessDeletion()")
+	lg.Debug("finished bdoProcessDeletion()")
 	return nil
 }
 
 func bdoProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]string, error) {
-	logger.Debugw("starting bdoProcessGSheet()",
+	lg.Debugw("starting bdoProcessGSheet()",
 		"sheetID", sheetID,
 		"sheetrange", sheetrange)
 
@@ -237,33 +238,33 @@ func bdoProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]s
 
 	if sheetrange == "" {
 		err := errors.New(gmess.ERR_NOSHEETRANGE)
-		logger.Error(err)
+		lg.Error(err)
 		return nil, err
 	}
 
 	ss, err := cmn.CreateSheetService(sheet.DriveReadonlyScope)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return nil, err
 	}
 
 	ssvgc := ss.Spreadsheets.Values.Get(sheetID, sheetrange)
 	sValRange, err := ssvgc.Do()
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return nil, err
 	}
 
 	if len(sValRange.Values) == 0 {
 		err = fmt.Errorf(gmess.ERR_NOSHEETDATAFOUND, sheetID, sheetrange)
-		logger.Error(err)
+		lg.Error(err)
 		return nil, err
 	}
 
 	hdrMap := cmn.ProcessHeader(sValRange.Values[0])
 	err = cmn.ValidateHeader(hdrMap, ous.OrgUnitAttrMap)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return nil, err
 	}
 
@@ -274,19 +275,19 @@ func bdoProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]s
 
 		ouVar, err := bdoFromFileFactory(hdrMap, row)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return nil, err
 		}
 
 		orgunits = append(orgunits, ouVar)
 	}
 
-	logger.Debug("finished bdoProcessGSheet()")
+	lg.Debug("finished bdoProcessGSheet()")
 	return orgunits, nil
 }
 
 func bdoProcessTextFile(ds *admin.Service, filePath string, scanner *bufio.Scanner) ([]string, error) {
-	logger.Debugw("starting bdoProcessTextFile()",
+	lg.Debugw("starting bdoProcessTextFile()",
 		"filePath", filePath)
 
 	var orgunits []string
@@ -294,7 +295,7 @@ func bdoProcessTextFile(ds *admin.Service, filePath string, scanner *bufio.Scann
 	if filePath != "" {
 		file, err := os.Open(filePath)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return nil, err
 		}
 		defer file.Close()
@@ -306,7 +307,7 @@ func bdoProcessTextFile(ds *admin.Service, filePath string, scanner *bufio.Scann
 		orgunits = append(orgunits, orgunit)
 	}
 
-	logger.Debug("finished bdoProcessTextFile()")
+	lg.Debug("finished bdoProcessTextFile()")
 	return orgunits, nil
 }
 

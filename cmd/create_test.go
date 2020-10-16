@@ -24,6 +24,8 @@ package cmd
 
 import (
 	"testing"
+
+	lg "github.com/plusworx/gmin/utils/logging"
 )
 
 func TestDoCreateUser(t *testing.T) {
@@ -75,10 +77,9 @@ func TestDoCreateUser(t *testing.T) {
 		password = c.password
 		recoveryPhone = c.recoveryPhone
 
-		// rootCmd.AddCommand(createCmd)
-		// createCmd.Flags().BoolVar(&silent, flgnm.FLG_SILENT, false, "suppress console output")
-		// createCmd.Flags().StringVar(&logLevel, flgnm.FLG_LOGLEVEL, "info", "log level (debug, info, error, warn)")
-		// createCmd.PersistentPreRunE = preRun
+		initConfig()
+
+		lg.InitLogging("info")
 
 		got := doCreateUser(createUserCmd, c.args)
 

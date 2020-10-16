@@ -30,6 +30,7 @@ import (
 	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gpars "github.com/plusworx/gmin/utils/gminparsers"
 	grpset "github.com/plusworx/gmin/utils/groupsettings"
+	lg "github.com/plusworx/gmin/utils/logging"
 	"github.com/spf13/cobra"
 	gset "google.golang.org/api/groupssettings/v1"
 )
@@ -46,7 +47,7 @@ gmin get gset 042yioqz3p5ulpk -a email`,
 }
 
 func doGetGroupSettings(cmd *cobra.Command, args []string) error {
-	logger.Debugw("starting doGetGroupSettings()",
+	lg.Debugw("starting doGetGroupSettings()",
 		"args", args)
 
 	var (
@@ -56,7 +57,7 @@ func doGetGroupSettings(cmd *cobra.Command, args []string) error {
 
 	gss, err := cmn.CreateGroupSettingService(gset.AppsGroupsSettingsScope)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
@@ -64,13 +65,13 @@ func doGetGroupSettings(cmd *cobra.Command, args []string) error {
 
 	flgAttrsVal, err := cmd.Flags().GetString(flgnm.FLG_ATTRIBUTES)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	if flgAttrsVal != "" {
 		formattedAttrs, err := gpars.ParseOutputAttrs(flgAttrsVal, grpset.GroupSettingsAttrMap)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 
@@ -80,19 +81,19 @@ func doGetGroupSettings(cmd *cobra.Command, args []string) error {
 
 	group, err = grpset.DoGet(gsgc)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	jsonData, err = json.MarshalIndent(group, "", "    ")
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	fmt.Println(string(jsonData))
 
-	logger.Debug("finished doGetGroupSettings()")
+	lg.Debug("finished doGetGroupSettings()")
 	return nil
 }
 

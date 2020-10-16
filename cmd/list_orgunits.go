@@ -32,6 +32,7 @@ import (
 	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	gpars "github.com/plusworx/gmin/utils/gminparsers"
+	lg "github.com/plusworx/gmin/utils/logging"
 	ous "github.com/plusworx/gmin/utils/orgunits"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
@@ -49,7 +50,7 @@ gmin ls ous -t all`,
 }
 
 func doListOUs(cmd *cobra.Command, args []string) error {
-	logger.Debugw("starting doListOUs()",
+	lg.Debugw("starting doListOUs()",
 		"args", args)
 
 	var (
@@ -59,13 +60,13 @@ func doListOUs(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryOrgunitReadonlyScope)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
@@ -73,13 +74,13 @@ func doListOUs(cmd *cobra.Command, args []string) error {
 
 	flgAttrsVal, err := cmd.Flags().GetString(flgnm.FLG_ATTRIBUTES)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	if flgAttrsVal != "" {
 		listAttrs, err := gpars.ParseOutputAttrs(flgAttrsVal, ous.OrgUnitAttrMap)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 		formattedAttrs := ous.STARTORGUNITSFIELD + listAttrs + ous.ENDFIELD
@@ -90,7 +91,7 @@ func doListOUs(cmd *cobra.Command, args []string) error {
 
 	flgOUPathVal, err := cmd.Flags().GetString(flgnm.FLG_ORGUNITPATH)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	if flgOUPathVal != "" {
@@ -99,7 +100,7 @@ func doListOUs(cmd *cobra.Command, args []string) error {
 
 	flgSearchTypeVal, err := cmd.Flags().GetString(flgnm.FLG_SEARCHTYPE)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	lowerSearchType := strings.ToLower(flgSearchTypeVal)
@@ -107,26 +108,26 @@ func doListOUs(cmd *cobra.Command, args []string) error {
 	ok := cmn.SliceContainsStr(ous.ValidSearchTypes, lowerSearchType)
 	if !ok {
 		err := fmt.Errorf(gmess.ERR_INVALIDSEARCHTYPE, flgSearchTypeVal)
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	oulc = ous.AddType(oulc, lowerSearchType)
 
 	orgUnits, err = ous.DoList(oulc)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	jsonData, err = json.MarshalIndent(orgUnits, "", "    ")
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	flgCountVal, err := cmd.Flags().GetBool(flgnm.FLG_COUNT)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	if flgCountVal {
@@ -135,7 +136,7 @@ func doListOUs(cmd *cobra.Command, args []string) error {
 		fmt.Println(string(jsonData))
 	}
 
-	logger.Debug("finished doListOUs()")
+	lg.Debug("finished doListOUs()")
 	return nil
 }
 

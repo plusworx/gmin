@@ -28,6 +28,7 @@ import (
 	cmn "github.com/plusworx/gmin/utils/common"
 	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	lg "github.com/plusworx/gmin/utils/logging"
 	mems "github.com/plusworx/gmin/utils/members"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
@@ -45,7 +46,7 @@ gmin crt gmem finance.person@mycompany.com finance@mycompany.com -r MEMBER`,
 }
 
 func doCreateMember(cmd *cobra.Command, args []string) error {
-	logger.Debugw("starting doCreateMember()",
+	lg.Debugw("starting doCreateMember()",
 		"args", args)
 
 	var member *admin.Member
@@ -56,14 +57,14 @@ func doCreateMember(cmd *cobra.Command, args []string) error {
 
 	flgDelSetVal, err := cmd.Flags().GetString(flgnm.FLG_DELIVERYSETTING)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	if flgDelSetVal != "" {
 		validDS, err := mems.ValidateDeliverySetting(flgDelSetVal)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 		member.DeliverySettings = validDS
@@ -71,14 +72,14 @@ func doCreateMember(cmd *cobra.Command, args []string) error {
 
 	flgRoleVal, err := cmd.Flags().GetString(flgnm.FLG_ROLE)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	if flgRoleVal != "" {
 		validRole, err := mems.ValidateRole(flgRoleVal)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 		member.Role = validRole
@@ -86,21 +87,21 @@ func doCreateMember(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupMemberScope)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	mic := ds.Members.Insert(args[1], member)
 	newMember, err := mic.Do()
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
-	logger.Infof(gmess.INFO_MEMBERCREATED, newMember.Email, args[1])
+	lg.Infof(gmess.INFO_MEMBERCREATED, newMember.Email, args[1])
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_MEMBERCREATED, newMember.Email, args[1])))
 
-	logger.Debug("finished doCreateMember()")
+	lg.Debug("finished doCreateMember()")
 	return nil
 }
 

@@ -27,6 +27,7 @@ import (
 
 	cmn "github.com/plusworx/gmin/utils/common"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	lg "github.com/plusworx/gmin/utils/logging"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 )
@@ -43,12 +44,12 @@ gmin del ga my.alias@mycompany.com mygroup@mycompany.com`,
 }
 
 func doDeleteGroupAlias(cmd *cobra.Command, args []string) error {
-	logger.Debugw("starting doDeleteGroupAlias()",
+	lg.Debugw("starting doDeleteGroupAlias()",
 		"args", args)
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupScope)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
@@ -56,14 +57,14 @@ func doDeleteGroupAlias(cmd *cobra.Command, args []string) error {
 
 	err = gadc.Do()
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
-	logger.Infof(gmess.INFO_GROUPALIASDELETED, args[0], args[1])
+	lg.Infof(gmess.INFO_GROUPALIASDELETED, args[0], args[1])
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_GROUPALIASDELETED, args[0], args[1])))
 
-	logger.Debug("finished doDeleteGroupAlias()")
+	lg.Debug("finished doDeleteGroupAlias()")
 	return nil
 }
 

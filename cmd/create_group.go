@@ -28,6 +28,7 @@ import (
 	cmn "github.com/plusworx/gmin/utils/common"
 	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	lg "github.com/plusworx/gmin/utils/logging"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 )
@@ -44,7 +45,7 @@ gmin crt grp finance@mycompany.com -n Finance -d "Finance Department Group"`,
 }
 
 func doCreateGroup(cmd *cobra.Command, args []string) error {
-	logger.Debugw("starting doCreateGroup()",
+	lg.Debugw("starting doCreateGroup()",
 		"args", args)
 
 	var group *admin.Group
@@ -55,7 +56,7 @@ func doCreateGroup(cmd *cobra.Command, args []string) error {
 
 	flgDescVal, err := cmd.Flags().GetString(flgnm.FLG_DESCRIPTION)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
@@ -65,7 +66,7 @@ func doCreateGroup(cmd *cobra.Command, args []string) error {
 
 	flgNameVal, err := cmd.Flags().GetString(flgnm.FLG_NAME)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
@@ -75,21 +76,21 @@ func doCreateGroup(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupScope)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	gic := ds.Groups.Insert(group)
 	newGroup, err := gic.Do()
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
-	logger.Infof(gmess.INFO_GROUPCREATED, newGroup.Email)
+	lg.Infof(gmess.INFO_GROUPCREATED, newGroup.Email)
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_GROUPCREATED, newGroup.Email)))
 
-	logger.Debug("finished doCreateGroup()")
+	lg.Debug("finished doCreateGroup()")
 	return nil
 }
 

@@ -28,6 +28,7 @@ import (
 	cmn "github.com/plusworx/gmin/utils/common"
 	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	lg "github.com/plusworx/gmin/utils/logging"
 	mems "github.com/plusworx/gmin/utils/members"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
@@ -45,7 +46,7 @@ gmin upd gmem finance.person@mycompany.com finance@mycompany.com -r MEMBER`,
 }
 
 func doUpdateMember(cmd *cobra.Command, args []string) error {
-	logger.Debugw("starting doUpdateMember()",
+	lg.Debugw("starting doUpdateMember()",
 		"args", args)
 
 	var (
@@ -58,13 +59,13 @@ func doUpdateMember(cmd *cobra.Command, args []string) error {
 
 	flgDelSettingVal, err := cmd.Flags().GetString(flgnm.FLG_DELIVERYSETTING)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	if flgDelSettingVal != "" {
 		validDS, err := mems.ValidateDeliverySetting(flgDelSettingVal)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 		member.DeliverySettings = validDS
@@ -72,13 +73,13 @@ func doUpdateMember(cmd *cobra.Command, args []string) error {
 
 	flgRoleVal, err := cmd.Flags().GetString(flgnm.FLG_ROLE)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	if flgRoleVal != "" {
 		validRole, err := mems.ValidateRole(flgRoleVal)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 		member.Role = validRole
@@ -86,21 +87,21 @@ func doUpdateMember(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupMemberScope, admin.AdminDirectoryGroupScope)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	muc := ds.Members.Update(args[1], memberKey, member)
 	_, err = muc.Do()
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
-	logger.Infof(gmess.INFO_MEMBERUPDATED, memberKey, args[1])
+	lg.Infof(gmess.INFO_MEMBERUPDATED, memberKey, args[1])
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_MEMBERUPDATED, memberKey, args[1])))
 
-	logger.Debug("finished doUpdateMember()")
+	lg.Debug("finished doUpdateMember()")
 	return nil
 }
 

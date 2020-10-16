@@ -34,6 +34,7 @@ import (
 	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	gpars "github.com/plusworx/gmin/utils/gminparsers"
+	lg "github.com/plusworx/gmin/utils/logging"
 	usrs "github.com/plusworx/gmin/utils/users"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
@@ -51,7 +52,7 @@ gmin ls user -q name:Fred`,
 }
 
 func doListUsers(cmd *cobra.Command, args []string) error {
-	logger.Debugw("starting doListUsers()",
+	lg.Debugw("starting doListUsers()",
 		"args", args)
 
 	var (
@@ -62,47 +63,47 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 
 	flgCustFldMaskVal, err := cmd.Flags().GetString(flgnm.FLG_CUSTFLDMASK)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	flgProjectionVal, err := cmd.Flags().GetString(flgnm.FLG_PROJECTION)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	if strings.ToLower(flgProjectionVal) == "custom" && flgCustFldMaskVal == "" {
 		err := errors.New(gmess.ERR_NOCUSTOMFIELDMASK)
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	if flgCustFldMaskVal != "" && strings.ToLower(flgProjectionVal) != "custom" {
 		err := errors.New(gmess.ERR_PROJECTIONFLAGNOTCUSTOM)
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	flgDeletedVal, err := cmd.Flags().GetBool(flgnm.FLG_DELETED)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	flgQueryVal, err := cmd.Flags().GetString(flgnm.FLG_QUERY)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	if flgQueryVal != "" && flgDeletedVal {
 		err := errors.New(gmess.ERR_QUERYANDDELETEDFLAGS)
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserReadonlyScope)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
@@ -110,13 +111,13 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 
 	flgAttrsVal, err := cmd.Flags().GetString(flgnm.FLG_ATTRIBUTES)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	if flgAttrsVal != "" {
 		listAttrs, err := gpars.ParseOutputAttrs(flgAttrsVal, usrs.UserAttrMap)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 		formattedAttrs := usrs.STARTUSERSFIELD + listAttrs + usrs.ENDFIELD
@@ -131,7 +132,7 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 
 	flgDomainVal, err := cmd.Flags().GetString(flgnm.FLG_DOMAIN)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	if flgDomainVal != "" {
@@ -139,7 +140,7 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 	} else {
 		customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 		ulc = usrs.AddCustomer(ulc, customerID)
@@ -150,7 +151,7 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 		ok := cmn.SliceContainsStr(usrs.ValidProjections, proj)
 		if !ok {
 			err = fmt.Errorf(gmess.ERR_INVALIDPROJECTIONTYPE, flgProjectionVal)
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 
@@ -165,7 +166,7 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 				ulc = listCall.(*admin.UsersListCall)
 			} else {
 				err = errors.New(gmess.ERR_NOCUSTOMFIELDMASK)
-				logger.Error(err)
+				lg.Error(err)
 				return err
 			}
 		}
@@ -174,7 +175,7 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 	if flgQueryVal != "" {
 		formattedQuery, err := gpars.ParseQuery(flgQueryVal, usrs.QueryAttrMap)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 
@@ -183,7 +184,7 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 
 	flgOrderByVal, err := cmd.Flags().GetString(flgnm.FLG_ORDERBY)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	if flgOrderByVal != "" {
@@ -191,7 +192,7 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 		ok := cmn.SliceContainsStr(usrs.ValidOrderByStrs, ob)
 		if !ok {
 			err = fmt.Errorf(gmess.ERR_INVALIDORDERBY, flgOrderByVal)
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 
@@ -200,7 +201,7 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 		if ob != "email" {
 			validOrderBy, err = cmn.IsValidAttr(ob, usrs.UserAttrMap)
 			if err != nil {
-				logger.Error(err)
+				lg.Error(err)
 				return err
 			}
 		}
@@ -209,14 +210,14 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 
 		flgSrtOrdByVal, err := cmd.Flags().GetString(flgnm.FLG_SORTORDER)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 		if flgSrtOrdByVal != "" {
 			so := strings.ToLower(flgSrtOrdByVal)
 			validSortOrder, err := cmn.IsValidAttr(so, cmn.ValidSortOrders)
 			if err != nil {
-				logger.Error(err)
+				lg.Error(err)
 				return err
 			}
 
@@ -226,7 +227,7 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 
 	flgViewTypeVal, err := cmd.Flags().GetString(flgnm.FLG_VIEWTYPE)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	if flgViewTypeVal != "" {
@@ -234,7 +235,7 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 		ok := cmn.SliceContainsStr(usrs.ValidViewTypes, vt)
 		if !ok {
 			err = fmt.Errorf(gmess.ERR_INVALIDVIEWTYPE, flgViewTypeVal)
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 
@@ -244,39 +245,39 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 
 	flgMaxResultsVal, err := cmd.Flags().GetInt64(flgnm.FLG_MAXRESULTS)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	ulc = usrs.AddMaxResults(ulc, flgMaxResultsVal)
 
 	users, err = usrs.DoList(ulc)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	flgPagesVal, err := cmd.Flags().GetString(flgnm.FLG_PAGES)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	if flgPagesVal != "" {
 		err = doUserPages(ulc, users, flgPagesVal)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 	}
 
 	jsonData, err = json.MarshalIndent(users, "", "    ")
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	flgCountVal, err := cmd.Flags().GetBool(flgnm.FLG_COUNT)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	if flgCountVal {
@@ -285,18 +286,18 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 		fmt.Println(string(jsonData))
 	}
 
-	logger.Debug("finished doListUsers()")
+	lg.Debug("finished doListUsers()")
 	return nil
 }
 
 func doUserAllPages(ulc *admin.UsersListCall, users *admin.Users) error {
-	logger.Debug("starting doUserAllPages()")
+	lg.Debug("starting doUserAllPages()")
 
 	if users.NextPageToken != "" {
 		ulc = usrs.AddPageToken(ulc, users.NextPageToken)
 		nxtUsers, err := usrs.DoList(ulc)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 		users.Users = append(users.Users, nxtUsers.Users...)
@@ -308,19 +309,19 @@ func doUserAllPages(ulc *admin.UsersListCall, users *admin.Users) error {
 		}
 	}
 
-	logger.Debug("finished doUserAllPages()")
+	lg.Debug("finished doUserAllPages()")
 	return nil
 }
 
 func doUserNumPages(ulc *admin.UsersListCall, users *admin.Users, numPages int) error {
-	logger.Debugw("starting doUserNumPages()",
+	lg.Debugw("starting doUserNumPages()",
 		"numPages", numPages)
 
 	if users.NextPageToken != "" && numPages > 0 {
 		ulc = usrs.AddPageToken(ulc, users.NextPageToken)
 		nxtUsers, err := usrs.DoList(ulc)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 		users.Users = append(users.Users, nxtUsers.Users...)
@@ -332,38 +333,38 @@ func doUserNumPages(ulc *admin.UsersListCall, users *admin.Users, numPages int) 
 		}
 	}
 
-	logger.Debug("finished doUserNumPages()")
+	lg.Debug("finished doUserNumPages()")
 	return nil
 }
 
 func doUserPages(ulc *admin.UsersListCall, users *admin.Users, pages string) error {
-	logger.Debugw("starting doUserPages()",
+	lg.Debugw("starting doUserPages()",
 		"pages", pages)
 
 	if pages == "all" {
 		err := doUserAllPages(ulc, users)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 	} else {
 		numPages, err := strconv.Atoi(pages)
 		if err != nil {
 			err = errors.New(gmess.ERR_INVALIDPAGESARGUMENT)
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 
 		if numPages > 1 {
 			err = doUserNumPages(ulc, users, numPages-1)
 			if err != nil {
-				logger.Error(err)
+				lg.Error(err)
 				return err
 			}
 		}
 	}
 
-	logger.Debug("finished doUserPages()")
+	lg.Debug("finished doUserPages()")
 	return nil
 }
 

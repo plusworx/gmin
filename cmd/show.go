@@ -43,12 +43,5 @@ func init() {
 	rootCmd.AddCommand(showCmd)
 	showCmd.PersistentFlags().StringVar(&logLevel, flgnm.FLG_LOGLEVEL, "info", "log level (debug, info, error, warn)")
 
-	showCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
-		zlog, err := setupLogging(logLevel)
-		if err != nil {
-			return err
-		}
-		logger = zlog.Sugar()
-		return nil
-	}
+	showCmd.PersistentPreRunE = preRunForDisplayCmds
 }

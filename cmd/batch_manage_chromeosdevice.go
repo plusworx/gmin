@@ -40,6 +40,7 @@ import (
 	cfg "github.com/plusworx/gmin/utils/config"
 	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	lg "github.com/plusworx/gmin/utils/logging"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 	sheet "google.golang.org/api/sheets/v4"
@@ -84,38 +85,38 @@ upgrade_transfer`,
 }
 
 func doBatchMngCrOSDev(cmd *cobra.Command, args []string) error {
-	logger.Debugw("starting doBatchMngCrOSDev()",
+	lg.Debugw("starting doBatchMngCrOSDev()",
 		"args", args)
 
 	var managedDevs []cdevs.ManagedDevice
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryDeviceChromeosScope)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	inputFlgVal, err := cmd.Flags().GetString(flgnm.FLG_INPUTFILE)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	scanner, err := cmn.InputFromStdIn(inputFlgVal)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	if inputFlgVal == "" && scanner == nil {
 		err := errors.New(gmess.ERR_NOINPUTFILE)
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	formatFlgVal, err := cmd.Flags().GetString(flgnm.FLG_FORMAT)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	lwrFmt := strings.ToLower(formatFlgVal)
@@ -123,7 +124,7 @@ func doBatchMngCrOSDev(cmd *cobra.Command, args []string) error {
 	ok := cmn.SliceContainsStr(cmn.ValidFileFormats, lwrFmt)
 	if !ok {
 		err = fmt.Errorf(gmess.ERR_INVALIDFILEFORMAT, formatFlgVal)
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
@@ -131,25 +132,25 @@ func doBatchMngCrOSDev(cmd *cobra.Command, args []string) error {
 	case lwrFmt == "csv":
 		managedDevs, err = bmngcProcessCSVFile(ds, inputFlgVal)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 	case lwrFmt == "json":
 		managedDevs, err = bmngcProcessJSON(ds, inputFlgVal, scanner)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 	case lwrFmt == "gsheet":
 		rangeFlgVal, err := cmd.Flags().GetString(flgnm.FLG_SHEETRANGE)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 
 		managedDevs, err = bmngcProcessGSheet(ds, inputFlgVal, rangeFlgVal)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 	default:
@@ -158,16 +159,16 @@ func doBatchMngCrOSDev(cmd *cobra.Command, args []string) error {
 
 	err = bmngcProcessObjects(ds, managedDevs)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
-	logger.Debug("finished doBatchMngCrOSDev()")
+	lg.Debug("finished doBatchMngCrOSDev()")
 	return nil
 }
 
 func bmngcFromFileFactory(hdrMap map[int]string, cdevData []interface{}) (cdevs.ManagedDevice, error) {
-	logger.Debugw("starting bmngcFromFileFactory()",
+	lg.Debugw("starting bmngcFromFileFactory()",
 		"hdrMap", hdrMap)
 
 	managedDev := cdevs.ManagedDevice{}
@@ -182,7 +183,7 @@ func bmngcFromFileFactory(hdrMap map[int]string, cdevData []interface{}) (cdevs.
 			ok := cmn.SliceContainsStr(cdevs.ValidActions, lowerAttrVal)
 			if !ok {
 				err := fmt.Errorf(gmess.ERR_INVALIDACTIONTYPE, attrVal)
-				logger.Error(err)
+				lg.Error(err)
 				return managedDev, err
 			}
 			managedDev.Action = lowerAttrVal
@@ -193,7 +194,7 @@ func bmngcFromFileFactory(hdrMap map[int]string, cdevData []interface{}) (cdevs.
 				ok := cmn.SliceContainsStr(cdevs.ValidDeprovisionReasons, lowerAttrVal)
 				if !ok {
 					err := fmt.Errorf(gmess.ERR_INVALIDDEPROVISIONREASON, attrVal)
-					logger.Error(err)
+					lg.Error(err)
 					return managedDev, err
 				}
 				managedDev.DeprovisionReason = lowerAttrVal
@@ -203,49 +204,49 @@ func bmngcFromFileFactory(hdrMap map[int]string, cdevData []interface{}) (cdevs.
 
 	if managedDev.Action == "deprovision" && managedDev.DeprovisionReason == "" {
 		err := errors.New(gmess.ERR_NODEPROVISIONREASON)
-		logger.Error(err)
+		lg.Error(err)
 		return managedDev, err
 	}
-	logger.Debug("finished bmngcFromFileFactory()")
+	lg.Debug("finished bmngcFromFileFactory()")
 	return managedDev, nil
 }
 
 func bmngcFromJSONFactory(ds *admin.Service, jsonData string) (cdevs.ManagedDevice, error) {
-	logger.Debugw("starting bmngcFromJSONFactory()",
+	lg.Debugw("starting bmngcFromJSONFactory()",
 		"jsonData", jsonData)
 
 	managedDev := cdevs.ManagedDevice{}
 	jsonBytes := []byte(jsonData)
 
 	if !json.Valid(jsonBytes) {
-		logger.Error(gmess.ERR_INVALIDJSONATTR)
+		lg.Error(gmess.ERR_INVALIDJSONATTR)
 		return managedDev, errors.New(gmess.ERR_INVALIDJSONATTR)
 	}
 
 	outStr, err := cmn.ParseInputAttrs(jsonBytes)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return managedDev, err
 	}
 
 	err = cmn.ValidateInputAttrs(outStr, cdevs.CrOSDevAttrMap)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return managedDev, err
 	}
 
 	err = json.Unmarshal(jsonBytes, &managedDev)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return managedDev, err
 	}
 
-	logger.Debug("finished bmngcFromJSONFactory()")
+	lg.Debug("finished bmngcFromJSONFactory()")
 	return managedDev, nil
 }
 
 func bmngcPerformAction(deviceID string, action string, wg *sync.WaitGroup, cdac *admin.ChromeosdevicesActionCall) {
-	logger.Debugw("starting bmngcPerformAction()",
+	lg.Debugw("starting bmngcPerformAction()",
 		"action", action,
 		"deviceID", deviceID)
 
@@ -258,7 +259,7 @@ func bmngcPerformAction(deviceID string, action string, wg *sync.WaitGroup, cdac
 		var err error
 		err = cdac.Do()
 		if err == nil {
-			logger.Infof(gmess.INFO_CDEVACTIONPERFORMED, action, deviceID)
+			lg.Infof(gmess.INFO_CDEVACTIONPERFORMED, action, deviceID)
 			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_CDEVACTIONPERFORMED, action, deviceID)))
 			return err
 		}
@@ -266,21 +267,21 @@ func bmngcPerformAction(deviceID string, action string, wg *sync.WaitGroup, cdac
 			return backoff.Permanent(fmt.Errorf(gmess.ERR_BATCHCHROMEOSDEVICE, err.Error(), deviceID))
 		}
 		// Log the retries
-		logger.Warnw(err.Error(),
+		lg.Warnw(err.Error(),
 			"retrying", b.GetElapsedTime().String(),
 			"ChromeOS device", deviceID)
 		return fmt.Errorf(gmess.ERR_BATCHCHROMEOSDEVICE, err.Error(), deviceID)
 	}, b)
 	if err != nil {
 		// Log final error
-		logger.Error(err)
+		lg.Error(err)
 		fmt.Println(cmn.GminMessage(err.Error()))
 	}
-	logger.Debug("finished bmngcPerformAction()")
+	lg.Debug("finished bmngcPerformAction()")
 }
 
 func bmngcProcessCSVFile(ds *admin.Service, filePath string) ([]cdevs.ManagedDevice, error) {
-	logger.Debugw("starting bmngcProcessCSVFile()",
+	lg.Debugw("starting bmngcProcessCSVFile()",
 		"filePath", filePath)
 
 	var (
@@ -291,7 +292,7 @@ func bmngcProcessCSVFile(ds *admin.Service, filePath string) ([]cdevs.ManagedDev
 
 	csvfile, err := os.Open(filePath)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return nil, err
 	}
 	defer csvfile.Close()
@@ -305,7 +306,7 @@ func bmngcProcessCSVFile(ds *admin.Service, filePath string) ([]cdevs.ManagedDev
 			break
 		}
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return nil, err
 		}
 
@@ -317,7 +318,7 @@ func bmngcProcessCSVFile(ds *admin.Service, filePath string) ([]cdevs.ManagedDev
 			hdrMap = cmn.ProcessHeader(iSlice)
 			err = cmn.ValidateHeader(hdrMap, cdevs.CrOSDevAttrMap)
 			if err != nil {
-				logger.Error(err)
+				lg.Error(err)
 				return nil, err
 			}
 			count = count + 1
@@ -330,7 +331,7 @@ func bmngcProcessCSVFile(ds *admin.Service, filePath string) ([]cdevs.ManagedDev
 
 		mngCdevVar, err := bmngcFromFileFactory(hdrMap, iSlice)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return nil, err
 		}
 
@@ -339,12 +340,12 @@ func bmngcProcessCSVFile(ds *admin.Service, filePath string) ([]cdevs.ManagedDev
 		count = count + 1
 	}
 
-	logger.Debug("finished bmngcProcessCSVFile()")
+	lg.Debug("finished bmngcProcessCSVFile()")
 	return managedDevs, nil
 }
 
 func bmngcProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]cdevs.ManagedDevice, error) {
-	logger.Debugw("starting bmngcProcessGSheet()",
+	lg.Debugw("starting bmngcProcessGSheet()",
 		"sheetID", sheetID,
 		"sheetrange", sheetrange)
 
@@ -352,33 +353,33 @@ func bmngcProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([
 
 	if sheetrange == "" {
 		err := errors.New(gmess.ERR_NOSHEETRANGE)
-		logger.Error(err)
+		lg.Error(err)
 		return nil, err
 	}
 
 	ss, err := cmn.CreateSheetService(sheet.DriveReadonlyScope)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return nil, err
 	}
 
 	ssvgc := ss.Spreadsheets.Values.Get(sheetID, sheetrange)
 	sValRange, err := ssvgc.Do()
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return nil, err
 	}
 
 	if len(sValRange.Values) == 0 {
 		err = fmt.Errorf(gmess.ERR_NOSHEETDATAFOUND, sheetID, sheetrange)
-		logger.Error(err)
+		lg.Error(err)
 		return nil, err
 	}
 
 	hdrMap := cmn.ProcessHeader(sValRange.Values[0])
 	err = cmn.ValidateHeader(hdrMap, cdevs.CrOSDevAttrMap)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return nil, err
 	}
 
@@ -389,19 +390,19 @@ func bmngcProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([
 
 		mngCdevVar, err := bmngcFromFileFactory(hdrMap, row)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return nil, err
 		}
 
 		managedDevs = append(managedDevs, mngCdevVar)
 	}
 
-	logger.Debug("finished bmngcProcessGSheet()")
+	lg.Debug("finished bmngcProcessGSheet()")
 	return managedDevs, nil
 }
 
 func bmngcProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner) ([]cdevs.ManagedDevice, error) {
-	logger.Debugw("starting bmngcProcessJSON()",
+	lg.Debugw("starting bmngcProcessJSON()",
 		"filePath", filePath)
 
 	var managedDevs []cdevs.ManagedDevice
@@ -409,7 +410,7 @@ func bmngcProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner
 	if filePath != "" {
 		file, err := os.Open(filePath)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return nil, err
 		}
 		defer file.Close()
@@ -422,7 +423,7 @@ func bmngcProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner
 
 		mngCdevVar, err := bmngcFromJSONFactory(ds, jsonData)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return nil, err
 		}
 
@@ -430,20 +431,20 @@ func bmngcProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner
 	}
 	err := scanner.Err()
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return nil, err
 	}
 
-	logger.Debug("finished bmngcProcessJSON()")
+	lg.Debug("finished bmngcProcessJSON()")
 	return managedDevs, nil
 }
 
 func bmngcProcessObjects(ds *admin.Service, managedDevs []cdevs.ManagedDevice) error {
-	logger.Debug("starting bmngcProcessObjects()")
+	lg.Debug("starting bmngcProcessObjects()")
 
 	customerID, err := cfg.ReadConfigString("customerid")
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
@@ -464,7 +465,7 @@ func bmngcProcessObjects(ds *admin.Service, managedDevs []cdevs.ManagedDevice) e
 
 	wg.Wait()
 
-	logger.Debug("finished bmngcProcessObjects()")
+	lg.Debug("finished bmngcProcessObjects()")
 	return nil
 }
 

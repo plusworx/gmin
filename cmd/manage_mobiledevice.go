@@ -29,6 +29,7 @@ import (
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	lg "github.com/plusworx/gmin/utils/logging"
 	mdevs "github.com/plusworx/gmin/utils/mobiledevices"
 	"github.com/spf13/cobra"
 
@@ -47,14 +48,14 @@ gmin mng mdev 4cx07eba348f09b3 admin_remote_wipe`,
 }
 
 func doManageMobDev(cmd *cobra.Command, args []string) error {
-	logger.Debugw("starting doManageMobDev()",
+	lg.Debugw("starting doManageMobDev()",
 		"args", args)
 
 	var devAction = admin.MobileDeviceAction{}
 
 	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
@@ -62,7 +63,7 @@ func doManageMobDev(cmd *cobra.Command, args []string) error {
 	ok := cmn.SliceContainsStr(mdevs.ValidActions, action)
 	if !ok {
 		err = fmt.Errorf(gmess.ERR_INVALIDACTIONTYPE, args[1])
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
@@ -70,7 +71,7 @@ func doManageMobDev(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryDeviceMobileActionScope)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
@@ -78,14 +79,14 @@ func doManageMobDev(cmd *cobra.Command, args []string) error {
 
 	err = mdac.Do()
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
-	logger.Infof(gmess.INFO_MDEVACTIONPERFORMED, args[1], args[0])
+	lg.Infof(gmess.INFO_MDEVACTIONPERFORMED, args[1], args[0])
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_MDEVACTIONPERFORMED, args[1], args[0])))
 
-	logger.Debug("finished doManageMobDev()")
+	lg.Debug("finished doManageMobDev()")
 	return nil
 }
 

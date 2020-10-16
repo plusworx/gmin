@@ -38,6 +38,7 @@ import (
 	cmn "github.com/plusworx/gmin/utils/common"
 	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	lg "github.com/plusworx/gmin/utils/logging"
 	mems "github.com/plusworx/gmin/utils/members"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
@@ -71,38 +72,38 @@ The column names are case insensitive and can be in any order.`,
 }
 
 func doBatchCrtMember(cmd *cobra.Command, args []string) error {
-	logger.Debugw("starting doBatchCrtMember()",
+	lg.Debugw("starting doBatchCrtMember()",
 		"args", args)
 
 	var members []*admin.Member
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupMemberScope)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	inputFlgVal, err := cmd.Flags().GetString(flgnm.FLG_INPUTFILE)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	scanner, err := cmn.InputFromStdIn(inputFlgVal)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	if inputFlgVal == "" && scanner == nil {
 		err := errors.New(gmess.ERR_NOINPUTFILE)
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	formatFlgVal, err := cmd.Flags().GetString(flgnm.FLG_FORMAT)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 	lwrFmt := strings.ToLower(formatFlgVal)
@@ -110,7 +111,7 @@ func doBatchCrtMember(cmd *cobra.Command, args []string) error {
 	ok := cmn.SliceContainsStr(cmn.ValidFileFormats, lwrFmt)
 	if !ok {
 		err = fmt.Errorf(gmess.ERR_INVALIDFILEFORMAT, formatFlgVal)
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
@@ -120,25 +121,25 @@ func doBatchCrtMember(cmd *cobra.Command, args []string) error {
 	case lwrFmt == "csv":
 		members, err = bcmProcessCSVFile(ds, inputFlgVal)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 	case lwrFmt == "json":
 		members, err = bcmProcessJSON(ds, inputFlgVal, scanner)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 	case lwrFmt == "gsheet":
 		rangeFlgVal, err := cmd.Flags().GetString(flgnm.FLG_SHEETRANGE)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 
 		members, err = bcmProcessGSheet(ds, inputFlgVal, rangeFlgVal)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 	default:
@@ -147,16 +148,16 @@ func doBatchCrtMember(cmd *cobra.Command, args []string) error {
 
 	err = bcmProcessObjects(ds, groupKey, members)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
-	logger.Debug("finished doBatchCrtMember()")
+	lg.Debug("finished doBatchCrtMember()")
 	return nil
 }
 
 func bcmCreate(member *admin.Member, groupKey string, wg *sync.WaitGroup, mic *admin.MembersInsertCall) {
-	logger.Debugw("starting bcmCreate()",
+	lg.Debugw("starting bcmCreate()",
 		"groupKey", groupKey)
 
 	defer wg.Done()
@@ -168,7 +169,7 @@ func bcmCreate(member *admin.Member, groupKey string, wg *sync.WaitGroup, mic *a
 		var err error
 		newMember, err := mic.Do()
 		if err == nil {
-			logger.Infof(gmess.INFO_MEMBERCREATED, newMember.Email, groupKey)
+			lg.Infof(gmess.INFO_MEMBERCREATED, newMember.Email, groupKey)
 			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_MEMBERCREATED, newMember.Email, groupKey)))
 			return err
 		}
@@ -176,7 +177,7 @@ func bcmCreate(member *admin.Member, groupKey string, wg *sync.WaitGroup, mic *a
 			return backoff.Permanent(fmt.Errorf(gmess.ERR_BATCHMEMBER, err.Error(), member.Email, groupKey))
 		}
 		// Log the retries
-		logger.Warnw(err.Error(),
+		lg.Warnw(err.Error(),
 			"retrying", b.GetElapsedTime().String(),
 			"group", groupKey,
 			"member", member.Email)
@@ -184,14 +185,14 @@ func bcmCreate(member *admin.Member, groupKey string, wg *sync.WaitGroup, mic *a
 	}, b)
 	if err != nil {
 		// Log final error
-		logger.Error(err)
+		lg.Error(err)
 		fmt.Println(cmn.GminMessage(err.Error()))
 	}
-	logger.Debug("finished bcmCreate()")
+	lg.Debug("finished bcmCreate()")
 }
 
 func bcmFromFileFactory(hdrMap map[int]string, grpData []interface{}) (*admin.Member, error) {
-	logger.Debugw("starting bcmFromFileFactory()",
+	lg.Debugw("starting bcmFromFileFactory()",
 		"hdrMap", hdrMap)
 
 	var member *admin.Member
@@ -206,7 +207,7 @@ func bcmFromFileFactory(hdrMap map[int]string, grpData []interface{}) (*admin.Me
 		case attrName == "delivery_settings":
 			validDS, err := mems.ValidateDeliverySetting(attrVal)
 			if err != nil {
-				logger.Error(err)
+				lg.Error(err)
 				return nil, err
 			}
 			member.DeliverySettings = validDS
@@ -219,18 +220,18 @@ func bcmFromFileFactory(hdrMap map[int]string, grpData []interface{}) (*admin.Me
 		case attrName == "role":
 			validRole, err := mems.ValidateRole(attrVal)
 			if err != nil {
-				logger.Error(err)
+				lg.Error(err)
 				return nil, err
 			}
 			member.Role = validRole
 		}
 	}
-	logger.Debug("finished bcmFromFileFactory()")
+	lg.Debug("finished bcmFromFileFactory()")
 	return member, nil
 }
 
 func bcmFromJSONFactory(ds *admin.Service, jsonData string) (*admin.Member, error) {
-	logger.Debugw("starting bcmFromJSONFactory()",
+	lg.Debugw("starting bcmFromJSONFactory()",
 		"jsonData", jsonData)
 
 	var (
@@ -242,42 +243,42 @@ func bcmFromJSONFactory(ds *admin.Service, jsonData string) (*admin.Member, erro
 	jsonBytes := []byte(jsonData)
 
 	if !json.Valid(jsonBytes) {
-		logger.Error(gmess.ERR_INVALIDJSONATTR)
+		lg.Error(gmess.ERR_INVALIDJSONATTR)
 		return nil, errors.New(gmess.ERR_INVALIDJSONATTR)
 	}
 
 	outStr, err := cmn.ParseInputAttrs(jsonBytes)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return nil, err
 	}
 
 	err = cmn.ValidateInputAttrs(outStr, mems.MemberAttrMap)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return nil, err
 	}
 
 	err = json.Unmarshal(jsonBytes, &member)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return nil, err
 	}
 
 	err = json.Unmarshal(jsonBytes, &emptyVals)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return nil, err
 	}
 	if len(emptyVals.ForceSendFields) > 0 {
 		member.ForceSendFields = emptyVals.ForceSendFields
 	}
-	logger.Debug("finished bcmFromJSONFactory()")
+	lg.Debug("finished bcmFromJSONFactory()")
 	return member, nil
 }
 
 func bcmProcessCSVFile(ds *admin.Service, filePath string) ([]*admin.Member, error) {
-	logger.Debugw("starting bcmProcessCSVFile()",
+	lg.Debugw("starting bcmProcessCSVFile()",
 		"filePath", filePath)
 
 	var (
@@ -301,7 +302,7 @@ func bcmProcessCSVFile(ds *admin.Service, filePath string) ([]*admin.Member, err
 			break
 		}
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return nil, err
 		}
 
@@ -313,7 +314,7 @@ func bcmProcessCSVFile(ds *admin.Service, filePath string) ([]*admin.Member, err
 			hdrMap = cmn.ProcessHeader(iSlice)
 			err = cmn.ValidateHeader(hdrMap, mems.MemberAttrMap)
 			if err != nil {
-				logger.Error(err)
+				lg.Error(err)
 				return nil, err
 			}
 			count = count + 1
@@ -326,7 +327,7 @@ func bcmProcessCSVFile(ds *admin.Service, filePath string) ([]*admin.Member, err
 
 		memVar, err := bcmFromFileFactory(hdrMap, iSlice)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return nil, err
 		}
 
@@ -335,12 +336,12 @@ func bcmProcessCSVFile(ds *admin.Service, filePath string) ([]*admin.Member, err
 		count = count + 1
 	}
 
-	logger.Debug("finished bcmProcessCSVFile")
+	lg.Debug("finished bcmProcessCSVFile")
 	return members, nil
 }
 
 func bcmProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]*admin.Member, error) {
-	logger.Debugw("starting bcmProcessGSheet()",
+	lg.Debugw("starting bcmProcessGSheet()",
 		"sheetID", sheetID,
 		"sheetrange", sheetrange)
 
@@ -348,33 +349,33 @@ func bcmProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]*
 
 	if sheetrange == "" {
 		err := errors.New(gmess.ERR_NOSHEETRANGE)
-		logger.Error(err)
+		lg.Error(err)
 		return nil, err
 	}
 
 	ss, err := cmn.CreateSheetService(sheet.DriveReadonlyScope)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return nil, err
 	}
 
 	ssvgc := ss.Spreadsheets.Values.Get(sheetID, sheetrange)
 	sValRange, err := ssvgc.Do()
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return nil, err
 	}
 
 	if len(sValRange.Values) == 0 {
 		err = fmt.Errorf(gmess.ERR_NOSHEETDATAFOUND, sheetID, sheetrange)
-		logger.Error(err)
+		lg.Error(err)
 		return nil, err
 	}
 
 	hdrMap := cmn.ProcessHeader(sValRange.Values[0])
 	err = cmn.ValidateHeader(hdrMap, mems.MemberAttrMap)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return nil, err
 	}
 
@@ -385,19 +386,19 @@ func bcmProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]*
 
 		memVar, err := bcmFromFileFactory(hdrMap, row)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return nil, err
 		}
 
 		members = append(members, memVar)
 	}
 
-	logger.Debug("finished bcmProcessGSheet()")
+	lg.Debug("finished bcmProcessGSheet()")
 	return members, nil
 }
 
 func bcmProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner) ([]*admin.Member, error) {
-	logger.Debugw("starting bcmProcessJSON()",
+	lg.Debugw("starting bcmProcessJSON()",
 		"filePath", filePath)
 
 	var members []*admin.Member
@@ -405,7 +406,7 @@ func bcmProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner) 
 	if filePath != "" {
 		file, err := os.Open(filePath)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return nil, err
 		}
 		defer file.Close()
@@ -418,7 +419,7 @@ func bcmProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner) 
 
 		memVar, err := bcmFromJSONFactory(ds, jsonData)
 		if err != nil {
-			logger.Error(err)
+			lg.Error(err)
 			return nil, err
 		}
 
@@ -426,16 +427,16 @@ func bcmProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner) 
 	}
 	err := scanner.Err()
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return nil, err
 	}
 
-	logger.Debug("finished bcmProcessJSON()")
+	lg.Debug("finished bcmProcessJSON()")
 	return members, nil
 }
 
 func bcmProcessObjects(ds *admin.Service, groupKey string, members []*admin.Member) error {
-	logger.Debugw("starting bcmProcessObjects()",
+	lg.Debugw("starting bcmProcessObjects()",
 		"groupKey", groupKey)
 
 	wg := new(sync.WaitGroup)
@@ -443,7 +444,7 @@ func bcmProcessObjects(ds *admin.Service, groupKey string, members []*admin.Memb
 	for _, m := range members {
 		if m.Email == "" {
 			err := errors.New(gmess.ERR_NOMEMBEREMAILADDRESS)
-			logger.Error(err)
+			lg.Error(err)
 			return err
 		}
 
@@ -456,7 +457,7 @@ func bcmProcessObjects(ds *admin.Service, groupKey string, members []*admin.Memb
 
 	wg.Wait()
 
-	logger.Debug("finished bcmProcessObjects()")
+	lg.Debug("finished bcmProcessObjects()")
 	return nil
 }
 

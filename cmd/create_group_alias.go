@@ -27,6 +27,7 @@ import (
 
 	cmn "github.com/plusworx/gmin/utils/common"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	lg "github.com/plusworx/gmin/utils/logging"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 )
@@ -43,7 +44,7 @@ gmin crt ga group.alias@mycompany.com sales@mycompany.com`,
 }
 
 func doCreateGroupAlias(cmd *cobra.Command, args []string) error {
-	logger.Debugw("starting doCreateGroupAlias()",
+	lg.Debugw("starting doCreateGroupAlias()",
 		"args", args)
 
 	var alias *admin.Alias
@@ -54,21 +55,21 @@ func doCreateGroupAlias(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupScope)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	gaic := ds.Groups.Aliases.Insert(args[1], alias)
 	newAlias, err := gaic.Do()
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
-	logger.Infof(gmess.INFO_GROUPALIASCREATED, newAlias.Alias, args[1])
+	lg.Infof(gmess.INFO_GROUPALIASCREATED, newAlias.Alias, args[1])
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_GROUPALIASCREATED, newAlias.Alias, args[1])))
 
-	logger.Debug("finished doCreateGroupAlias()")
+	lg.Debug("finished doCreateGroupAlias()")
 	return nil
 }
 

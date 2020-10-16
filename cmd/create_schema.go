@@ -32,6 +32,7 @@ import (
 	cfg "github.com/plusworx/gmin/utils/config"
 	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	lg "github.com/plusworx/gmin/utils/logging"
 	scs "github.com/plusworx/gmin/utils/schemas"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
@@ -94,7 +95,7 @@ The contents of the JSON file should look something like this:
 }
 
 func doCreateSchema(cmd *cobra.Command, args []string) error {
-	logger.Debugw("starting doCreateSchema()",
+	lg.Debugw("starting doCreateSchema()",
 		"args", args)
 
 	var schema *admin.Schema
@@ -103,69 +104,69 @@ func doCreateSchema(cmd *cobra.Command, args []string) error {
 
 	flgInFileVal, err := cmd.Flags().GetString(flgnm.FLG_INPUTFILE)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	if flgInFileVal == "" {
 		err := errors.New(gmess.ERR_NOINPUTFILE)
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	fileData, err := ioutil.ReadFile(flgInFileVal)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	if !json.Valid(fileData) {
 		err = errors.New(gmess.ERR_INVALIDJSONFILE)
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	outStr, err := cmn.ParseInputAttrs(fileData)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	err = cmn.ValidateInputAttrs(outStr, scs.SchemaAttrMap)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	err = json.Unmarshal(fileData, &schema)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserschemaScope)
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
 	scic := ds.Schemas.Insert(customerID, schema)
 	newSchema, err := scic.Do()
 	if err != nil {
-		logger.Error(err)
+		lg.Error(err)
 		return err
 	}
 
-	logger.Infof(gmess.INFO_SCHEMACREATED, newSchema.SchemaName)
+	lg.Infof(gmess.INFO_SCHEMACREATED, newSchema.SchemaName)
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_SCHEMACREATED, newSchema.SchemaName)))
 
-	logger.Debug("finished doCreateSchema()")
+	lg.Debug("finished doCreateSchema()")
 	return nil
 }
 
