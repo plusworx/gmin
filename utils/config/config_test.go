@@ -27,7 +27,7 @@ import (
 )
 
 func TestReadConfigString(t *testing.T) {
-	expectedErr := "gmin: error - test not found in config file"
+	expectedErr := "test not found in config file"
 	_, err := ReadConfigString("test")
 
 	if err.Error() != expectedErr {
