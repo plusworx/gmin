@@ -29,6 +29,7 @@ import (
 
 	cmn "github.com/plusworx/gmin/utils/common"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	lg "github.com/plusworx/gmin/utils/logging"
 	admin "google.golang.org/api/admin/directory/v1"
 	"google.golang.org/api/googleapi"
 )
@@ -424,6 +425,7 @@ func AddSortOrder(cdlc *admin.ChromeosdevicesListCall, sortorder string) *admin.
 func DoGet(cdgc *admin.ChromeosdevicesGetCall) (*admin.ChromeOsDevice, error) {
 	crosdev, err := cdgc.Do()
 	if err != nil {
+		lg.Error(err)
 		return nil, err
 	}
 
@@ -434,6 +436,7 @@ func DoGet(cdgc *admin.ChromeosdevicesGetCall) (*admin.ChromeOsDevice, error) {
 func DoList(cdlc *admin.ChromeosdevicesListCall) (*admin.ChromeOsDevices, error) {
 	crosdevs, err := cdlc.Do()
 	if err != nil {
+		lg.Error(err)
 		return nil, err
 	}
 
@@ -481,7 +484,9 @@ func ShowAttrValues(lenArgs int, args []string, filter string) error {
 		if attr == "action" {
 			cmn.ShowAttrVals(ValidActions, filter)
 		} else {
-			return fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[1])
+			err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[1])
+			lg.Error(err)
+			return err
 		}
 	}
 
@@ -541,7 +546,9 @@ func ShowFlagValues(lenArgs int, args []string, filter string) error {
 			uniqueSlice := cmn.UniqueStrSlice(valSlice)
 			cmn.ShowFlagValues(uniqueSlice, filter)
 		default:
-			return fmt.Errorf(gmess.ERR_FLAGNOTRECOGNIZED, args[1])
+			err := fmt.Errorf(gmess.ERR_FLAGNOTRECOGNIZED, args[1])
+			lg.Error(err)
+			return err
 		}
 	}
 
@@ -569,7 +576,9 @@ func ShowSubAttrs(compAttr string, filter string) error {
 	case "tpmversioninfo":
 		cmn.ShowAttrs(crOsDevTpmVersionInfoAttrs, CrOSDevAttrMap, filter)
 	default:
-		return fmt.Errorf(gmess.ERR_NOTCOMPOSITEATTR, compAttr)
+		err := fmt.Errorf(gmess.ERR_NOTCOMPOSITEATTR, compAttr)
+		lg.Error(err)
+		return err
 	}
 
 	return nil

@@ -25,6 +25,7 @@ package config
 import (
 	"fmt"
 
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	"github.com/spf13/viper"
 )
 
@@ -68,12 +69,12 @@ type File struct {
 }
 
 // ReadConfigString gets a string item from config file
-func ReadConfigString(s string) (string, error) {
+func ReadConfigString(key string) (string, error) {
 	var err error
 
-	str := viper.GetString(s)
+	str := viper.GetString(key)
 	if str == "" {
-		err = fmt.Errorf("gmin: error - %v not found in config file", s)
+		err = fmt.Errorf(gmess.ERR_NOTFOUNDINCONFIG, key)
 	}
 
 	return str, err
