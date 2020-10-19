@@ -161,8 +161,8 @@ func bcgCreate(group *admin.Group, wg *sync.WaitGroup, gic *admin.GroupsInsertCa
 		var err error
 		newGroup, err := gic.Do()
 		if err == nil {
-			lg.Infof(gmess.INFO_GROUPCREATED, newGroup.Email)
 			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_GROUPCREATED, newGroup.Email)))
+			lg.Infof(gmess.INFO_GROUPCREATED, newGroup.Email)
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {

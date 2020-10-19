@@ -61,8 +61,8 @@ func doDeleteUserAlias(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	lg.Infof(gmess.INFO_USERALIASDELETED, args[0], args[1])
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_USERALIASDELETED, args[0], args[1])))
+	lg.Infof(gmess.INFO_USERALIASDELETED, args[0], args[1])
 
 	return nil
 }

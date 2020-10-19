@@ -51,6 +51,7 @@ gmin upd user finance.person@mycompany.com -l Newlastname`,
 func doUpdateUser(cmd *cobra.Command, args []string) error {
 	lg.Debugw("starting doUpdateUser()",
 		"args", args)
+	defer lg.Debug("finished doUpdateUser()")
 
 	var (
 		flagsPassed []string
@@ -139,10 +140,9 @@ func doUpdateUser(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	lg.Infof(gmess.INFO_USERUPDATED, userKey)
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_USERUPDATED, userKey)))
+	lg.Infof(gmess.INFO_USERUPDATED, userKey)
 
-	lg.Debug("finished doUpdateUser()")
 	return nil
 }
 

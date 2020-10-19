@@ -96,8 +96,8 @@ func doCreateMember(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	lg.Infof(gmess.INFO_MEMBERCREATED, newMember.Email, args[1])
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_MEMBERCREATED, newMember.Email, args[1])))
+	lg.Infof(gmess.INFO_MEMBERCREATED, newMember.Email, args[1])
 
 	return nil
 }

@@ -234,8 +234,8 @@ func bmngmPerformAction(resourceID string, action string, wg *sync.WaitGroup, md
 		var err error
 		err = mdac.Do()
 		if err == nil {
-			lg.Infof(gmess.INFO_MDEVACTIONPERFORMED, action, resourceID)
 			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_MDEVACTIONPERFORMED, action, resourceID)))
+			lg.Infof(gmess.INFO_MDEVACTIONPERFORMED, action, resourceID)
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {

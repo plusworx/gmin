@@ -153,8 +153,8 @@ func bdmdDelete(wg *sync.WaitGroup, mdc *admin.MobiledevicesDeleteCall, resource
 		var err error
 		err = mdc.Do()
 		if err == nil {
-			lg.Infof(gmess.INFO_MDEVDELETED, resourceID)
 			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_MDEVDELETED, resourceID)))
+			lg.Infof(gmess.INFO_MDEVDELETED, resourceID)
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {

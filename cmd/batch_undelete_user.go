@@ -396,8 +396,8 @@ func bunduUndelete(userKey string, wg *sync.WaitGroup, uuc *admin.UsersUndeleteC
 		var err error
 		err = uuc.Do()
 		if err == nil {
-			lg.Infof(gmess.INFO_USERUNDELETED, userKey)
 			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_USERUNDELETED, userKey)))
+			lg.Infof(gmess.INFO_USERUNDELETED, userKey)
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {

@@ -437,8 +437,8 @@ func bucUpdate(crosdev *admin.ChromeOsDevice, wg *sync.WaitGroup, cduc *admin.Ch
 		var err error
 		_, err = cduc.Do()
 		if err == nil {
-			lg.Infof(gmess.INFO_CDEVUPDATED, crosdev.DeviceId)
 			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_CDEVUPDATED, crosdev.DeviceId)))
+			lg.Infof(gmess.INFO_CDEVUPDATED, crosdev.DeviceId)
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {

@@ -163,8 +163,8 @@ func doSetCredentials(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	lg.Infof(gmess.INFO_CREDENTIALSSET, usedName)
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_CREDENTIALSSET, usedName)))
+	lg.Infof(gmess.INFO_CREDENTIALSSET, usedName)
 	return nil
 }
 

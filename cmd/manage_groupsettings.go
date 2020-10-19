@@ -82,8 +82,8 @@ func doManageGroupSettings(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	lg.Infof(gmess.INFO_GROUPSETTINGSCHANGED, newSettings.Email)
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_GROUPSETTINGSCHANGED, newSettings.Email)))
+	lg.Infof(gmess.INFO_GROUPSETTINGSCHANGED, newSettings.Email)
 
 	lg.Debug("finished doManageGroupSettings()")
 	return nil

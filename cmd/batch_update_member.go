@@ -446,8 +446,8 @@ func bumUpdate(member *admin.Member, groupKey string, wg *sync.WaitGroup, muc *a
 		var err error
 		_, err = muc.Do()
 		if err == nil {
-			lg.Infof(gmess.INFO_MEMBERUPDATED, memKey, groupKey)
 			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_MEMBERUPDATED, memKey, groupKey)))
+			lg.Infof(gmess.INFO_MEMBERUPDATED, memKey, groupKey)
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {

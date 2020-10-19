@@ -169,8 +169,8 @@ func bcuCreate(user *admin.User, wg *sync.WaitGroup, uic *admin.UsersInsertCall)
 		var err error
 		newUser, err := uic.Do()
 		if err == nil {
-			lg.Infof(gmess.INFO_USERCREATED, newUser.PrimaryEmail)
 			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_USERCREATED, newUser.PrimaryEmail)))
+			lg.Infof(gmess.INFO_USERCREATED, newUser.PrimaryEmail)
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {

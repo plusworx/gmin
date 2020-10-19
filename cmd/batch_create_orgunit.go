@@ -163,8 +163,8 @@ func bcoCreate(orgunit *admin.OrgUnit, wg *sync.WaitGroup, ouic *admin.OrgunitsI
 		var err error
 		newOrgUnit, err := ouic.Do()
 		if err == nil {
-			lg.Infof(gmess.INFO_OUCREATED, newOrgUnit.OrgUnitPath)
 			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_OUCREATED, newOrgUnit.OrgUnitPath)))
+			lg.Infof(gmess.INFO_OUCREATED, newOrgUnit.OrgUnitPath)
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {

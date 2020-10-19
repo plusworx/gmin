@@ -154,8 +154,8 @@ func bdoDelete(wg *sync.WaitGroup, oudc *admin.OrgunitsDeleteCall, ouPath string
 
 		err = oudc.Do()
 		if err == nil {
-			lg.Infof(gmess.INFO_OUDELETED, ouPath)
 			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_OUDELETED, ouPath)))
+			lg.Infof(gmess.INFO_OUDELETED, ouPath)
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {

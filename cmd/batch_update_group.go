@@ -459,8 +459,8 @@ func bugUpdate(group *admin.Group, wg *sync.WaitGroup, guc *admin.GroupsUpdateCa
 		var err error
 		_, err = guc.Do()
 		if err == nil {
-			lg.Infof(gmess.INFO_GROUPUPDATED, groupKey)
 			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_GROUPUPDATED, groupKey)))
+			lg.Infof(gmess.INFO_GROUPUPDATED, groupKey)
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {

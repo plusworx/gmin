@@ -554,8 +554,8 @@ func bupduUpdate(user *admin.User, wg *sync.WaitGroup, uuc *admin.UsersUpdateCal
 		var err error
 		_, err = uuc.Do()
 		if err == nil {
-			lg.Infof(gmess.INFO_USERUPDATED, userKey)
 			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_USERUPDATED, userKey)))
+			lg.Infof(gmess.INFO_USERUPDATED, userKey)
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {

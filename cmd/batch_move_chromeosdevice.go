@@ -225,8 +225,8 @@ func bmvcPerformMove(deviceID string, ouPath string, wg *sync.WaitGroup, cdmc *a
 		var err error
 		err = cdmc.Do()
 		if err == nil {
-			lg.Infof(gmess.INFO_CDEVMOVEPERFORMED, deviceID, ouPath)
 			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_CDEVMOVEPERFORMED, deviceID, ouPath)))
+			lg.Infof(gmess.INFO_CDEVMOVEPERFORMED, deviceID, ouPath)
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {

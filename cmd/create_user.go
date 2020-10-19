@@ -162,8 +162,8 @@ func doCreateUser(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	lg.Infof(gmess.INFO_USERCREATED, newUser.PrimaryEmail)
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_USERCREATED, newUser.PrimaryEmail)))
+	lg.Infof(gmess.INFO_USERCREATED, newUser.PrimaryEmail)
 
 	lg.Debug("finished doCreateUser()")
 	return nil

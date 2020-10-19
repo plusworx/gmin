@@ -49,6 +49,7 @@ gmin upd ou Engineering/Aerodynamics -p Engineering/Aeronautics`,
 func doUpdateOU(cmd *cobra.Command, args []string) error {
 	lg.Debugw("starting doUpdateOU()",
 		"args", args)
+	defer lg.Debug("finished doUpdateOU()")
 
 	var (
 		flagsPassed []string
@@ -88,10 +89,9 @@ func doUpdateOU(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	lg.Infof(gmess.INFO_OUUPDATED, args[0])
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_OUUPDATED, args[0])))
+	lg.Infof(gmess.INFO_OUUPDATED, args[0])
 
-	lg.Debug("finished doUpdateOU()")
 	return nil
 }
 

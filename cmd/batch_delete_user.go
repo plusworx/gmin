@@ -153,8 +153,8 @@ func bduDelete(wg *sync.WaitGroup, udc *admin.UsersDeleteCall, user string) {
 
 		err = udc.Do()
 		if err == nil {
-			lg.Infof(gmess.INFO_USERDELETED, user)
 			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_USERDELETED, user)))
+			lg.Infof(gmess.INFO_USERDELETED, user)
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {

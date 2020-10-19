@@ -82,8 +82,8 @@ func doManageMobDev(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	lg.Infof(gmess.INFO_MDEVACTIONPERFORMED, args[1], args[0])
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_MDEVACTIONPERFORMED, args[1], args[0])))
+	lg.Infof(gmess.INFO_MDEVACTIONPERFORMED, args[1], args[0])
 
 	return nil
 }

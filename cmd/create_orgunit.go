@@ -104,8 +104,8 @@ func doCreateOU(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	lg.Infof(gmess.INFO_OUCREATED, newOrgUnit.OrgUnitPath)
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_OUCREATED, newOrgUnit.OrgUnitPath)))
+	lg.Infof(gmess.INFO_OUCREATED, newOrgUnit.OrgUnitPath)
 
 	return nil
 }

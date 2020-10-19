@@ -153,8 +153,8 @@ func bdgDelete(wg *sync.WaitGroup, gdc *admin.GroupsDeleteCall, group string) {
 
 		err = gdc.Do()
 		if err == nil {
-			lg.Infof(gmess.INFO_GROUPDELETED, group)
 			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_GROUPDELETED, group)))
+			lg.Infof(gmess.INFO_GROUPDELETED, group)
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {

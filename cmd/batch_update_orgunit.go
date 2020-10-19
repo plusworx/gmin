@@ -479,8 +479,8 @@ func buoUpdate(orgunit *admin.OrgUnit, wg *sync.WaitGroup, ouuc *admin.OrgunitsU
 		var err error
 		_, err = ouuc.Do()
 		if err == nil {
-			lg.Infof(gmess.INFO_OUUPDATED, ouKey)
 			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_OUUPDATED, ouKey)))
+			lg.Infof(gmess.INFO_OUUPDATED, ouKey)
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {

@@ -591,8 +591,8 @@ func bmnggPerformUpdate(grpSetting *gset.Groups, groupKey string, wg *sync.WaitG
 		var err error
 		_, err = gsuc.Do()
 		if err == nil {
-			lg.Infof(gmess.INFO_GROUPSETTINGSCHANGED, groupKey)
 			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_GROUPSETTINGSCHANGED, groupKey)))
+			lg.Infof(gmess.INFO_GROUPSETTINGSCHANGED, groupKey)
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {

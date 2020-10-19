@@ -160,8 +160,8 @@ func doCreateSchema(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	lg.Infof(gmess.INFO_SCHEMACREATED, newSchema.SchemaName)
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_SCHEMACREATED, newSchema.SchemaName)))
+	lg.Infof(gmess.INFO_SCHEMACREATED, newSchema.SchemaName)
 
 	return nil
 }

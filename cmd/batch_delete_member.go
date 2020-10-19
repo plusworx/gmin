@@ -156,8 +156,8 @@ func bdmDelete(wg *sync.WaitGroup, mdc *admin.MembersDeleteCall, member string, 
 		var err error
 		err = mdc.Do()
 		if err == nil {
-			lg.Infof(gmess.INFO_MEMBERDELETED, member, group)
 			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_MEMBERDELETED, member, group)))
+			lg.Infof(gmess.INFO_MEMBERDELETED, member, group)
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {

@@ -66,8 +66,8 @@ func doCreateUserAlias(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	lg.Infof(gmess.INFO_USERALIASCREATED, newAlias.Alias, args[1])
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_USERALIASCREATED, newAlias.Alias, args[1])))
+	lg.Infof(gmess.INFO_USERALIASCREATED, newAlias.Alias, args[1])
 
 	return nil
 }

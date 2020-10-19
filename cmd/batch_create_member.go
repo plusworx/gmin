@@ -165,8 +165,8 @@ func bcmCreate(member *admin.Member, groupKey string, wg *sync.WaitGroup, mic *a
 		var err error
 		newMember, err := mic.Do()
 		if err == nil {
-			lg.Infof(gmess.INFO_MEMBERCREATED, newMember.Email, groupKey)
 			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_MEMBERCREATED, newMember.Email, groupKey)))
+			lg.Infof(gmess.INFO_MEMBERCREATED, newMember.Email, groupKey)
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {

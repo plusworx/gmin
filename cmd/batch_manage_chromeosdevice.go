@@ -253,8 +253,8 @@ func bmngcPerformAction(deviceID string, action string, wg *sync.WaitGroup, cdac
 		var err error
 		err = cdac.Do()
 		if err == nil {
-			lg.Infof(gmess.INFO_CDEVACTIONPERFORMED, action, deviceID)
 			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_CDEVACTIONPERFORMED, action, deviceID)))
+			lg.Infof(gmess.INFO_CDEVACTIONPERFORMED, action, deviceID)
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {

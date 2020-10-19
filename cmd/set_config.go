@@ -64,8 +64,8 @@ func doSetConfig(cmd *cobra.Command, args []string) error {
 			lg.Error(err)
 			return err
 		}
-		lg.Infof(gmess.INFO_CUSTOMERIDSET, flgCustIDVal)
 		fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_CUSTOMERIDSET, flgCustIDVal)))
+		lg.Infof(gmess.INFO_CUSTOMERIDSET, flgCustIDVal)
 	}
 
 	flgAdminVal, err := cmd.Flags().GetString(flgnm.FLG_ADMIN)
@@ -86,8 +86,8 @@ func doSetConfig(cmd *cobra.Command, args []string) error {
 			lg.Error(err)
 			return err
 		}
-		lg.Infof(gmess.INFO_ADMINSET, flgAdminVal)
 		fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_ADMINSET, flgAdminVal)))
+		lg.Infof(gmess.INFO_ADMINSET, flgAdminVal)
 	}
 
 	flgCredPathVal, err := cmd.Flags().GetString(flgnm.FLG_CREDPATH)
@@ -102,8 +102,8 @@ func doSetConfig(cmd *cobra.Command, args []string) error {
 			lg.Error(err)
 			return err
 		}
-		lg.Infof(gmess.INFO_CREDENTIALPATHSET, flgCredPathVal)
 		fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_CREDENTIALPATHSET, flgCredPathVal)))
+		lg.Infof(gmess.INFO_CREDENTIALPATHSET, flgCredPathVal)
 	}
 
 	flgLogPathVal, err := cmd.Flags().GetString(flgnm.FLG_LOGPATH)
@@ -118,8 +118,8 @@ func doSetConfig(cmd *cobra.Command, args []string) error {
 			lg.Error(err)
 			return err
 		}
-		lg.Infof(gmess.INFO_LOGPATHSET, flgLogPathVal)
 		fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_LOGPATHSET, flgLogPathVal)))
+		lg.Infof(gmess.INFO_LOGPATHSET, flgLogPathVal)
 	}
 
 	if flgAdminVal == "" && flgCustIDVal == "" && flgCredPathVal == "" && flgLogPathVal == "" {

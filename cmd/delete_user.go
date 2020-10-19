@@ -61,8 +61,8 @@ func doDeleteUser(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	lg.Infof(gmess.INFO_USERDELETED, args[0])
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_USERDELETED, args[0])))
+	lg.Infof(gmess.INFO_USERDELETED, args[0])
 
 	return nil
 }
