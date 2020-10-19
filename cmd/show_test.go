@@ -27,6 +27,7 @@ import (
 	"testing"
 
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	lg "github.com/plusworx/gmin/utils/logging"
 )
 
 func TestDoShowAttrs(t *testing.T) {
@@ -81,7 +82,9 @@ func TestDoShowAttrs(t *testing.T) {
 		},
 	}
 
-	showCmd.AddCommand(showAttrsCmd)
+	initConfig()
+
+	lg.InitLogging("info")
 
 	for _, c := range cases {
 		composite = c.composite

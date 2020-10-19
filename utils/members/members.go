@@ -29,6 +29,7 @@ import (
 
 	cmn "github.com/plusworx/gmin/utils/common"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	lg "github.com/plusworx/gmin/utils/logging"
 	admin "google.golang.org/api/admin/directory/v1"
 	"google.golang.org/api/googleapi"
 )
@@ -85,6 +86,10 @@ type Key struct {
 
 // AddFields adds fields to be returned to admin calls
 func AddFields(callObj interface{}, attrs string) interface{} {
+	lg.Debugw("starting AddFields()",
+		"attrs", attrs)
+	defer lg.Debug("finished AddFields()")
+
 	var fields googleapi.Field = googleapi.Field(attrs)
 
 	switch callObj.(type) {
@@ -107,6 +112,10 @@ func AddFields(callObj interface{}, attrs string) interface{} {
 
 // AddMaxResults adds MaxResults to admin calls
 func AddMaxResults(mlc *admin.MembersListCall, maxResults int64) *admin.MembersListCall {
+	lg.Debugw("starting AddMaxResults()",
+		"maxResults", maxResults)
+	defer lg.Debug("finished AddMaxResults()")
+
 	var newMLC *admin.MembersListCall
 
 	newMLC = mlc.MaxResults(maxResults)
@@ -116,6 +125,10 @@ func AddMaxResults(mlc *admin.MembersListCall, maxResults int64) *admin.MembersL
 
 // AddPageToken adds PageToken to admin calls
 func AddPageToken(mlc *admin.MembersListCall, token string) *admin.MembersListCall {
+	lg.Debugw("starting AddPageToken()",
+		"token", token)
+	defer lg.Debug("finished AddPageToken()")
+
 	var newMLC *admin.MembersListCall
 
 	newMLC = mlc.PageToken(token)
@@ -125,6 +138,10 @@ func AddPageToken(mlc *admin.MembersListCall, token string) *admin.MembersListCa
 
 // AddRoles adds Roles to admin calls
 func AddRoles(mlc *admin.MembersListCall, roles string) *admin.MembersListCall {
+	lg.Debugw("starting AddRoles()",
+		"roles", roles)
+	defer lg.Debug("finished AddRoles()")
+
 	var newMLC *admin.MembersListCall
 
 	newMLC = mlc.Roles(roles)
@@ -134,8 +151,12 @@ func AddRoles(mlc *admin.MembersListCall, roles string) *admin.MembersListCall {
 
 // DoGet calls the .Do() function on the admin.MembersGetCall
 func DoGet(mgc *admin.MembersGetCall) (*admin.Member, error) {
+	lg.Debug("starting DoGet()")
+	defer lg.Debug("finished DoGet()")
+
 	member, err := mgc.Do()
 	if err != nil {
+		lg.Error(err)
 		return nil, err
 	}
 
@@ -144,8 +165,12 @@ func DoGet(mgc *admin.MembersGetCall) (*admin.Member, error) {
 
 // DoList calls the .Do() function on the admin.MembersListCall
 func DoList(mlc *admin.MembersListCall) (*admin.Members, error) {
+	lg.Debug("starting DoList()")
+	defer lg.Debug("finished DoList()")
+
 	members, err := mlc.Do()
 	if err != nil {
+		lg.Error(err)
 		return nil, err
 	}
 
@@ -154,6 +179,10 @@ func DoList(mlc *admin.MembersListCall) (*admin.Members, error) {
 
 // ShowAttrs displays requested group member attributes
 func ShowAttrs(filter string) {
+	lg.Debugw("starting ShowAttrs()",
+		"filter", filter)
+	defer lg.Debug("finished ShowAttrs()")
+
 	keys := make([]string, 0, len(MemberAttrMap))
 	for k := range MemberAttrMap {
 		keys = append(keys, k)
@@ -175,8 +204,16 @@ func ShowAttrs(filter string) {
 
 // ShowAttrValues displays enumerated attribute values
 func ShowAttrValues(lenArgs int, args []string, filter string) error {
+	lg.Debugw("starting ShowAttrValues()",
+		"lenArgs", lenArgs,
+		"args", args,
+		"filter", filter)
+	defer lg.Debug("finished ShowAttrValues()")
+
 	if lenArgs > 2 {
-		return fmt.Errorf(gmess.ERR_TOOMANYARGSMAX1, args[0])
+		err := fmt.Errorf(gmess.ERR_TOOMANYARGSMAX1, args[0])
+		lg.Error(err)
+		return err
 	}
 
 	if lenArgs == 1 {
@@ -197,7 +234,9 @@ func ShowAttrValues(lenArgs int, args []string, filter string) error {
 				values = append(values, val)
 			}
 		default:
-			return fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[1])
+			err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[1])
+			lg.Error(err)
+			return err
 		}
 
 		sort.Strings(values)
@@ -209,6 +248,12 @@ func ShowAttrValues(lenArgs int, args []string, filter string) error {
 
 // ShowFlagValues displays enumerated flag values
 func ShowFlagValues(lenArgs int, args []string, filter string) error {
+	lg.Debugw("starting ShowFlagValues()",
+		"lenArgs", lenArgs,
+		"args", args,
+		"filter", filter)
+	defer lg.Debug("finished ShowFlagValues()")
+
 	values := []string{}
 
 	if lenArgs == 1 {
@@ -225,7 +270,9 @@ func ShowFlagValues(lenArgs int, args []string, filter string) error {
 			sort.Strings(values)
 			cmn.ShowFlagValues(values, filter)
 		} else {
-			return fmt.Errorf(gmess.ERR_FLAGNOTRECOGNIZED, args[1])
+			err := fmt.Errorf(gmess.ERR_FLAGNOTRECOGNIZED, args[1])
+			lg.Error(err)
+			return err
 		}
 	}
 
@@ -234,11 +281,17 @@ func ShowFlagValues(lenArgs int, args []string, filter string) error {
 
 // ValidateDeliverySetting checks that a valid delivery setting has been provided
 func ValidateDeliverySetting(ds string) (string, error) {
+	lg.Debugw("starting ValidateDeliverySetting()",
+		"ds", ds)
+	defer lg.Debug("finished ValidateDeliverySetting()")
+
 	lowerDS := strings.ToLower(ds)
 
 	validSetting := deliverySettingMap[lowerDS]
 	if validSetting == "" {
-		return "", fmt.Errorf(gmess.ERR_INVALIDDELIVERYSETTING, ds)
+		err := fmt.Errorf(gmess.ERR_INVALIDDELIVERYSETTING, ds)
+		lg.Error(err)
+		return "", err
 	}
 
 	return validSetting, nil
@@ -246,6 +299,10 @@ func ValidateDeliverySetting(ds string) (string, error) {
 
 // ValidateRole checks that a valid role has been provided
 func ValidateRole(role string) (string, error) {
+	lg.Debugw("starting ValidateRole()",
+		"role", role)
+	defer lg.Debug("finished ValidateRole()")
+
 	lowerRole := strings.ToLower(role)
 
 	validRole := RoleMap[lowerRole]

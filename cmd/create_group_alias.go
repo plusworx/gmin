@@ -46,6 +46,7 @@ gmin crt ga group.alias@mycompany.com sales@mycompany.com`,
 func doCreateGroupAlias(cmd *cobra.Command, args []string) error {
 	lg.Debugw("starting doCreateGroupAlias()",
 		"args", args)
+	defer lg.Debug("finished doCreateGroupAlias()")
 
 	var alias *admin.Alias
 
@@ -55,7 +56,6 @@ func doCreateGroupAlias(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupScope)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
@@ -69,7 +69,6 @@ func doCreateGroupAlias(cmd *cobra.Command, args []string) error {
 	lg.Infof(gmess.INFO_GROUPALIASCREATED, newAlias.Alias, args[1])
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_GROUPALIASCREATED, newAlias.Alias, args[1])))
 
-	lg.Debug("finished doCreateGroupAlias()")
 	return nil
 }
 

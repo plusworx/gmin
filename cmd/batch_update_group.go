@@ -76,6 +76,7 @@ The column names are case insensitive and can be in any order.`,
 func doBatchUpdGrp(cmd *cobra.Command, args []string) error {
 	lg.Debugw("starting doBatchUpdGrp()",
 		"args", args)
+	defer lg.Debug("finished doBatchUpdGrp()")
 
 	var (
 		groupKeys []string
@@ -84,7 +85,6 @@ func doBatchUpdGrp(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupScope)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
@@ -96,7 +96,6 @@ func doBatchUpdGrp(cmd *cobra.Command, args []string) error {
 
 	scanner, err := cmn.InputFromStdIn(inputFlgVal)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
@@ -124,13 +123,11 @@ func doBatchUpdGrp(cmd *cobra.Command, args []string) error {
 	case lwrFmt == "csv":
 		groupKeys, groups, err = bugProcessCSVFile(ds, inputFlgVal)
 		if err != nil {
-			lg.Error(err)
 			return err
 		}
 	case lwrFmt == "json":
 		groupKeys, groups, err = bugProcessJSON(ds, inputFlgVal, scanner)
 		if err != nil {
-			lg.Error(err)
 			return err
 		}
 	case lwrFmt == "gsheet":
@@ -142,26 +139,26 @@ func doBatchUpdGrp(cmd *cobra.Command, args []string) error {
 
 		groupKeys, groups, err = bugProcessGSheet(ds, inputFlgVal, rangeFlgVal)
 		if err != nil {
-			lg.Error(err)
 			return err
 		}
 	default:
-		return fmt.Errorf(gmess.ERR_INVALIDFILEFORMAT, formatFlgVal)
-	}
-
-	err = bugProcessObjects(ds, groups, groupKeys)
-	if err != nil {
+		err = fmt.Errorf(gmess.ERR_INVALIDFILEFORMAT, formatFlgVal)
 		lg.Error(err)
 		return err
 	}
 
-	lg.Debug("finished doBatchUpdGrp()")
+	err = bugProcessObjects(ds, groups, groupKeys)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
 func bugFromFileFactory(hdrMap map[int]string, grpData []interface{}) (*admin.Group, string, error) {
 	lg.Debugw("starting bugFromFileFactory()",
 		"hdrMap", hdrMap)
+	defer lg.Debug("finished bugFromFileFactory()")
 
 	var (
 		group    *admin.Group
@@ -183,30 +180,33 @@ func bugFromFileFactory(hdrMap map[int]string, grpData []interface{}) (*admin.Gr
 		case attrName == "email":
 			if attrVal == "" {
 				err := fmt.Errorf(gmess.ERR_EMPTYSTRING, attrName)
+				lg.Error(err)
 				return nil, "", err
 			}
 			group.Email = attrVal
 		case attrName == "name":
 			if attrVal == "" {
 				err := fmt.Errorf(gmess.ERR_EMPTYSTRING, attrName)
+				lg.Error(err)
 				return nil, "", err
 			}
 			group.Name = attrVal
 		case attrName == "groupKey":
 			if attrVal == "" {
 				err := fmt.Errorf(gmess.ERR_EMPTYSTRING, attrName)
+				lg.Error(err)
 				return nil, "", err
 			}
 			groupKey = attrVal
 		}
 	}
-	lg.Debug("finished bugFromFileFactory()")
 	return group, groupKey, nil
 }
 
 func bugFromJSONFactory(ds *admin.Service, jsonData string) (*admin.Group, string, error) {
 	lg.Debugw("starting bugFromJSONFactory()",
 		"jsonData", jsonData)
+	defer lg.Debug("finished bugFromJSONFactory()")
 
 	var (
 		emptyVals = cmn.EmptyValues{}
@@ -218,19 +218,18 @@ func bugFromJSONFactory(ds *admin.Service, jsonData string) (*admin.Group, strin
 	jsonBytes := []byte(jsonData)
 
 	if !json.Valid(jsonBytes) {
-		lg.Error(gmess.ERR_INVALIDJSONATTR)
-		return nil, "", errors.New(gmess.ERR_INVALIDJSONATTR)
+		err := errors.New(gmess.ERR_INVALIDJSONATTR)
+		lg.Error(err)
+		return nil, "", err
 	}
 
 	outStr, err := cmn.ParseInputAttrs(jsonBytes)
 	if err != nil {
-		lg.Error(err)
 		return nil, "", err
 	}
 
 	err = cmn.ValidateInputAttrs(outStr, grps.GroupAttrMap)
 	if err != nil {
-		lg.Error(err)
 		return nil, "", err
 	}
 
@@ -260,13 +259,13 @@ func bugFromJSONFactory(ds *admin.Service, jsonData string) (*admin.Group, strin
 	if len(emptyVals.ForceSendFields) > 0 {
 		group.ForceSendFields = emptyVals.ForceSendFields
 	}
-	lg.Debug("finished bugFromJSONFactory()")
 	return group, grpKey.GroupKey, nil
 }
 
 func bugProcessCSVFile(ds *admin.Service, filePath string) ([]string, []*admin.Group, error) {
 	lg.Debugw("starting bugProcessCSVFile()",
 		"filePath", filePath)
+	defer lg.Debug("finished bugProcessCSVFile()")
 
 	var (
 		iSlice    []interface{}
@@ -303,7 +302,6 @@ func bugProcessCSVFile(ds *admin.Service, filePath string) ([]string, []*admin.G
 			hdrMap = cmn.ProcessHeader(iSlice)
 			err = cmn.ValidateHeader(hdrMap, grps.GroupAttrMap)
 			if err != nil {
-				lg.Error(err)
 				return nil, nil, err
 			}
 			count = count + 1
@@ -316,7 +314,6 @@ func bugProcessCSVFile(ds *admin.Service, filePath string) ([]string, []*admin.G
 
 		grpVar, groupKey, err := bugFromFileFactory(hdrMap, iSlice)
 		if err != nil {
-			lg.Error(err)
 			return nil, nil, err
 		}
 
@@ -326,7 +323,6 @@ func bugProcessCSVFile(ds *admin.Service, filePath string) ([]string, []*admin.G
 		count = count + 1
 	}
 
-	lg.Debug("finished bugProcessCSVFile()")
 	return groupKeys, groups, nil
 }
 
@@ -334,6 +330,7 @@ func bugProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]s
 	lg.Debugw("starting bugProcessGSheet()",
 		"sheetID", sheetID,
 		"sheetrange", sheetrange)
+	defer lg.Debug("finished bugProcessGSheet()")
 
 	var (
 		groupKeys []string
@@ -348,7 +345,6 @@ func bugProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]s
 
 	ss, err := cmn.CreateSheetService(sheet.DriveReadonlyScope)
 	if err != nil {
-		lg.Error(err)
 		return nil, nil, err
 	}
 
@@ -368,7 +364,6 @@ func bugProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]s
 	hdrMap := cmn.ProcessHeader(sValRange.Values[0])
 	err = cmn.ValidateHeader(hdrMap, grps.GroupAttrMap)
 	if err != nil {
-		lg.Error(err)
 		return nil, nil, err
 	}
 
@@ -379,7 +374,6 @@ func bugProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]s
 
 		grpVar, groupKey, err := bugFromFileFactory(hdrMap, row)
 		if err != nil {
-			lg.Error(err)
 			return nil, nil, err
 		}
 
@@ -387,13 +381,13 @@ func bugProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]s
 		groups = append(groups, grpVar)
 	}
 
-	lg.Debug("finished bugProcessGSheet()")
 	return groupKeys, groups, nil
 }
 
 func bugProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner) ([]string, []*admin.Group, error) {
 	lg.Debugw("starting bugProcessJSON()",
 		"filePath", filePath)
+	defer lg.Debug("finished bugProcessJSON()")
 
 	var (
 		groupKeys []string
@@ -416,7 +410,6 @@ func bugProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner) 
 
 		grpVar, groupKey, err := bugFromJSONFactory(ds, jsonData)
 		if err != nil {
-			lg.Error(err)
 			return nil, nil, err
 		}
 
@@ -429,13 +422,13 @@ func bugProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner) 
 		return nil, nil, err
 	}
 
-	lg.Debug("finished bugProcessJSON()")
 	return groupKeys, groups, nil
 }
 
 func bugProcessObjects(ds *admin.Service, groups []*admin.Group, groupKeys []string) error {
 	lg.Debugw("starting bugProcessObjects()",
 		"groupKeys", groupKeys)
+	defer lg.Debug("finished bugProcessObjects()")
 
 	wg := new(sync.WaitGroup)
 
@@ -449,13 +442,13 @@ func bugProcessObjects(ds *admin.Service, groups []*admin.Group, groupKeys []str
 
 	wg.Wait()
 
-	lg.Debug("finished bugProcessObjects()")
 	return nil
 }
 
 func bugUpdate(group *admin.Group, wg *sync.WaitGroup, guc *admin.GroupsUpdateCall, groupKey string) {
 	lg.Debugw("starting bugUpdate()",
 		"groupKey", groupKey)
+	defer lg.Debug("finished bugUpdate()")
 
 	defer wg.Done()
 
@@ -484,7 +477,6 @@ func bugUpdate(group *admin.Group, wg *sync.WaitGroup, guc *admin.GroupsUpdateCa
 		lg.Error(err)
 		fmt.Println(cmn.GminMessage(err.Error()))
 	}
-	lg.Debug("finished bugUpdate()")
 }
 
 func init() {

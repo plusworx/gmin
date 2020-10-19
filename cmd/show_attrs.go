@@ -71,35 +71,43 @@ user-alias, ualias, ua`,
 func doShowAttrs(cmd *cobra.Command, args []string) error {
 	lg.Debugw("starting doShowAttrs()",
 		"args", args)
+	defer lg.Debug("finished doShowAttrs()")
 
 	lArgs := len(args)
 	object := strings.ToLower(args[0])
 
 	flgFilterVal, err := cmd.Flags().GetString(flgnm.FLG_FILTER)
 	if err != nil {
+		lg.Error(err)
 		return err
 	}
 	lowerFilter := strings.ToLower(flgFilterVal)
 
 	flgQueryableVal, err := cmd.Flags().GetBool(flgnm.FLG_QUERYABLE)
 	if err != nil {
+		lg.Error(err)
 		return err
 	}
 	if flgQueryableVal && lArgs > 1 {
-		return errors.New(gmess.ERR_QUERYABLEFLAG1ARG)
+		err = errors.New(gmess.ERR_QUERYABLEFLAG1ARG)
+		lg.Error(err)
+		return err
 	}
 
 	flgCompositeVal, err := cmd.Flags().GetBool(flgnm.FLG_COMPOSITE)
 	if err != nil {
+		lg.Error(err)
 		return err
 	}
 	if flgCompositeVal && flgQueryableVal {
-		return errors.New(gmess.ERR_QUERYANDCOMPOSITEFLAGS)
+		err = errors.New(gmess.ERR_QUERYANDCOMPOSITEFLAGS)
+		return err
 	}
 
 	ok := cmn.SliceContainsStr(cmn.ValidPrimaryShowArgs, object)
 	if !ok {
-		return fmt.Errorf(gmess.ERR_OBJECTNOTFOUND, args[0])
+		err = fmt.Errorf(gmess.ERR_OBJECTNOTFOUND, args[0])
+		return err
 	}
 
 	if cmn.SliceContainsStr(ca.CDevAliases, object) {
@@ -172,7 +180,6 @@ func doShowAttrs(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	lg.Debug("finished doShowAttrs()")
 	return nil
 }
 
@@ -189,6 +196,7 @@ func saChromeOSDev(args []string, lArgs int, objectName string, filter string, q
 		"args", args,
 		"lArgs", lArgs,
 		"objectName", objectName)
+	defer lg.Debug("finished saChromeOSDev()")
 
 	if queryable {
 		cmn.ShowQueryableAttrs(filter, cdevs.QueryAttrMap)
@@ -218,7 +226,6 @@ func saChromeOSDev(args []string, lArgs int, objectName string, filter string, q
 		return fmt.Errorf(gmess.ERR_NOCOMPOSITEATTRS, args[2])
 	}
 
-	lg.Debug("finished saChromeOSDev()")
 	return nil
 }
 
@@ -227,6 +234,7 @@ func saGroup(args []string, lArgs int, objectName string, filter string, queryab
 		"args", args,
 		"lArgs", lArgs,
 		"objectName", objectName)
+	defer lg.Debug("finished saGroup()")
 
 	if queryable {
 		cmn.ShowQueryableAttrs(filter, grps.QueryAttrMap)
@@ -244,7 +252,6 @@ func saGroup(args []string, lArgs int, objectName string, filter string, queryab
 		return fmt.Errorf(gmess.ERR_NOCOMPOSITEATTRS, objectName)
 	}
 
-	lg.Debug("finished saGroup()")
 	return nil
 }
 
@@ -253,6 +260,7 @@ func saGroupAlias(args []string, lArgs int, objectName string, filter string, qu
 		"args", args,
 		"lArgs", lArgs,
 		"objectName", objectName)
+	defer lg.Debug("finished saGroupAlias()")
 
 	if queryable {
 		return fmt.Errorf(gmess.ERR_NOQUERYABLEATTRS, objectName)
@@ -269,7 +277,6 @@ func saGroupAlias(args []string, lArgs int, objectName string, filter string, qu
 		return fmt.Errorf(gmess.ERR_NOCOMPOSITEATTRS, objectName)
 	}
 
-	lg.Debug("finished saGroupAlias()")
 	return nil
 }
 
@@ -278,6 +285,7 @@ func saGroupMember(args []string, lArgs int, objectName string, filter string, q
 		"args", args,
 		"lArgs", lArgs,
 		"objectName", objectName)
+	defer lg.Debug("finished saGroupMember()")
 
 	if queryable {
 		return fmt.Errorf(gmess.ERR_NOQUERYABLEATTRS, objectName)
@@ -294,7 +302,6 @@ func saGroupMember(args []string, lArgs int, objectName string, filter string, q
 		return fmt.Errorf(gmess.ERR_NOCOMPOSITEATTRS, objectName)
 	}
 
-	lg.Debug("finished saGroupMember()")
 	return nil
 }
 
@@ -303,6 +310,7 @@ func saGroupSettings(args []string, lArgs int, objectName string, filter string,
 		"args", args,
 		"lArgs", lArgs,
 		"objectName", objectName)
+	defer lg.Debug("finished saGroupSettings()")
 
 	if queryable {
 		return fmt.Errorf(gmess.ERR_NOQUERYABLEATTRS, objectName)
@@ -319,7 +327,6 @@ func saGroupSettings(args []string, lArgs int, objectName string, filter string,
 		return fmt.Errorf(gmess.ERR_NOCOMPOSITEATTRS, objectName)
 	}
 
-	lg.Debug("finished saGroupSettings()")
 	return nil
 }
 
@@ -328,6 +335,7 @@ func saMobileDev(args []string, lArgs int, objectName string, filter string, que
 		"args", args,
 		"lArgs", lArgs,
 		"objectName", objectName)
+	defer lg.Debug("finished saMobileDev()")
 
 	if queryable {
 		cmn.ShowQueryableAttrs(filter, mdevs.QueryAttrMap)
@@ -357,7 +365,6 @@ func saMobileDev(args []string, lArgs int, objectName string, filter string, que
 		return fmt.Errorf(gmess.ERR_NOCOMPOSITEATTRS, args[2])
 	}
 
-	lg.Debug("finished saMobileDev()")
 	return nil
 }
 
@@ -366,6 +373,7 @@ func saOrgUnit(args []string, lArgs int, objectName string, filter string, query
 		"args", args,
 		"lArgs", lArgs,
 		"objectName", objectName)
+	defer lg.Debug("finished saOrgUnit()")
 
 	if queryable {
 		return fmt.Errorf(gmess.ERR_NOQUERYABLEATTRS, objectName)
@@ -382,7 +390,6 @@ func saOrgUnit(args []string, lArgs int, objectName string, filter string, query
 		return fmt.Errorf(gmess.ERR_NOCOMPOSITEATTRS, objectName)
 	}
 
-	lg.Debug("finished saOrgUnit()")
 	return nil
 }
 
@@ -391,6 +398,7 @@ func saSchema(args []string, lArgs int, objectName string, filter string, querya
 		"args", args,
 		"lArgs", lArgs,
 		"objectName", objectName)
+	defer lg.Debug("finished saSchema()")
 
 	if queryable {
 		return fmt.Errorf(gmess.ERR_NOQUERYABLEATTRS, objectName)
@@ -429,7 +437,6 @@ func saSchema(args []string, lArgs int, objectName string, filter string, querya
 		}
 	}
 
-	lg.Debug("finished saSchema()")
 	return nil
 }
 
@@ -438,6 +445,7 @@ func saUser(args []string, lArgs int, objectName string, filter string, queryabl
 		"args", args,
 		"lArgs", lArgs,
 		"objectName", objectName)
+	defer lg.Debug("finished saUser()")
 
 	if queryable {
 		cmn.ShowQueryableAttrs(filter, usrs.QueryAttrMap)
@@ -466,7 +474,6 @@ func saUser(args []string, lArgs int, objectName string, filter string, queryabl
 		return fmt.Errorf(gmess.ERR_NOCOMPOSITEATTRS, args[2])
 	}
 
-	lg.Debug("finished saUser()")
 	return nil
 }
 
@@ -475,6 +482,7 @@ func saUserAlias(args []string, lArgs int, objectName string, filter string, que
 		"args", args,
 		"lArgs", lArgs,
 		"objectName", objectName)
+	defer lg.Debug("finished saUserAlias()")
 
 	if queryable {
 		return fmt.Errorf(gmess.ERR_NOQUERYABLEATTRS, objectName)
@@ -491,6 +499,5 @@ func saUserAlias(args []string, lArgs int, objectName string, filter string, que
 		return fmt.Errorf(gmess.ERR_NOCOMPOSITEATTRS, objectName)
 	}
 
-	lg.Debug("finished saUserAlias()")
 	return nil
 }

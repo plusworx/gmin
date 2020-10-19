@@ -48,12 +48,12 @@ gmin mv cdev 4cx07eba348f09b3 /IT`,
 func doMoveCrOSDev(cmd *cobra.Command, args []string) error {
 	lg.Debugw("starting doMoveCrOSDev()",
 		"args", args)
+	defer lg.Debug("finished doMoveCrOSDev()")
 
 	var move = admin.ChromeOsMoveDevicesToOu{}
 
 	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
@@ -61,7 +61,6 @@ func doMoveCrOSDev(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryDeviceChromeosScope)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
@@ -76,7 +75,6 @@ func doMoveCrOSDev(cmd *cobra.Command, args []string) error {
 	lg.Infof(gmess.INFO_CDEVMOVEPERFORMED, args[0], args[1])
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_CDEVMOVEPERFORMED, args[0], args[1])))
 
-	lg.Debug("finished doMoveCrOSDev()")
 	return nil
 }
 

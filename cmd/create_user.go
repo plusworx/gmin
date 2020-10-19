@@ -127,13 +127,13 @@ func doCreateUser(cmd *cobra.Command, args []string) error {
 		}
 
 		if user.Password == "" && attrUser.Password != "" {
-			pwd, err := cmn.HashPassword(attrUser.Password)
+			pwd, err := usrs.HashPassword(attrUser.Password)
 			if err != nil {
 				lg.Error(err)
 				return err
 			}
 			attrUser.Password = pwd
-			attrUser.HashFunction = cmn.HASHFUNCTION
+			attrUser.HashFunction = usrs.HASHFUNCTION
 		}
 
 		err = mergo.Merge(user, attrUser)
@@ -264,13 +264,13 @@ func cuPasswordFlag(user *admin.User, flagName string, flgVal string) error {
 		lg.Error(err)
 		return err
 	}
-	pwd, err := cmn.HashPassword(flgVal)
+	pwd, err := usrs.HashPassword(flgVal)
 	if err != nil {
 		lg.Error(err)
 		return err
 	}
 	user.Password = pwd
-	user.HashFunction = cmn.HASHFUNCTION
+	user.HashFunction = usrs.HASHFUNCTION
 	lg.Debug("finished cuPasswordFlag()")
 	return nil
 }

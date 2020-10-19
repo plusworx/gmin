@@ -79,12 +79,12 @@ The column names are case insensitive and can be in any order.`,
 func doBatchUpdCrOSDev(cmd *cobra.Command, args []string) error {
 	lg.Debugw("starting doBatchUpdCrOSDev()",
 		"args", args)
+	defer lg.Debug("finished doBatchUpdCrOSDev()")
 
 	var crosdevs []*admin.ChromeOsDevice
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryDeviceChromeosScope)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
@@ -96,7 +96,6 @@ func doBatchUpdCrOSDev(cmd *cobra.Command, args []string) error {
 
 	scanner, err := cmn.InputFromStdIn(inputFlgVal)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
@@ -124,13 +123,11 @@ func doBatchUpdCrOSDev(cmd *cobra.Command, args []string) error {
 	case lwrFmt == "csv":
 		crosdevs, err = bucProcessCSVFile(ds, inputFlgVal)
 		if err != nil {
-			lg.Error(err)
 			return err
 		}
 	case lwrFmt == "json":
 		crosdevs, err = bucProcessJSON(ds, inputFlgVal, scanner)
 		if err != nil {
-			lg.Error(err)
 			return err
 		}
 	case lwrFmt == "gsheet":
@@ -142,26 +139,26 @@ func doBatchUpdCrOSDev(cmd *cobra.Command, args []string) error {
 
 		crosdevs, err = bucProcessGSheet(ds, inputFlgVal, rangeFlgVal)
 		if err != nil {
-			lg.Error(err)
 			return err
 		}
 	default:
-		return fmt.Errorf(gmess.ERR_INVALIDFILEFORMAT, formatFlgVal)
-	}
-
-	err = bucProcessObjects(ds, crosdevs)
-	if err != nil {
+		err = fmt.Errorf(gmess.ERR_INVALIDFILEFORMAT, formatFlgVal)
 		lg.Error(err)
 		return err
 	}
 
-	lg.Debug("finished doBatchUpdCrOSDev()")
+	err = bucProcessObjects(ds, crosdevs)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
 func bucFromFileFactory(hdrMap map[int]string, cdevData []interface{}) (*admin.ChromeOsDevice, error) {
 	lg.Debugw("starting bucFromFileFactory()",
 		"hdrMap", hdrMap)
+	defer lg.Debug("finished bucFromFileFactory()")
 
 	var crosdev *admin.ChromeOsDevice
 
@@ -196,13 +193,13 @@ func bucFromFileFactory(hdrMap map[int]string, cdevData []interface{}) (*admin.C
 			crosdev.OrgUnitPath = attrVal
 		}
 	}
-	lg.Debug("finished bucFromFileFactory()")
 	return crosdev, nil
 }
 
 func bucFromJSONFactory(ds *admin.Service, jsonData string) (*admin.ChromeOsDevice, error) {
 	lg.Debugw("starting bucFromJSONFactory()",
 		"jsonData", jsonData)
+	defer lg.Debug("finished bucFromJSONFactory()")
 
 	var (
 		crosdev   *admin.ChromeOsDevice
@@ -213,19 +210,18 @@ func bucFromJSONFactory(ds *admin.Service, jsonData string) (*admin.ChromeOsDevi
 	jsonBytes := []byte(jsonData)
 
 	if !json.Valid(jsonBytes) {
-		lg.Error(gmess.ERR_INVALIDJSONATTR)
-		return nil, errors.New(gmess.ERR_INVALIDJSONATTR)
+		err := errors.New(gmess.ERR_INVALIDJSONATTR)
+		lg.Error(err)
+		return nil, err
 	}
 
 	outStr, err := cmn.ParseInputAttrs(jsonBytes)
 	if err != nil {
-		lg.Error(err)
 		return nil, err
 	}
 
 	err = cmn.ValidateInputAttrs(outStr, cdevs.CrOSDevAttrMap)
 	if err != nil {
-		lg.Error(err)
 		return nil, err
 	}
 
@@ -249,13 +245,13 @@ func bucFromJSONFactory(ds *admin.Service, jsonData string) (*admin.ChromeOsDevi
 	if len(emptyVals.ForceSendFields) > 0 {
 		crosdev.ForceSendFields = emptyVals.ForceSendFields
 	}
-	lg.Debug("finished bucFromJSONFactory()")
 	return crosdev, nil
 }
 
 func bucProcessCSVFile(ds *admin.Service, filePath string) ([]*admin.ChromeOsDevice, error) {
 	lg.Debugw("starting bucProcessCSVFile()",
 		"filePath", filePath)
+	defer lg.Debug("finished bucProcessCSVFile()")
 
 	var (
 		iSlice   []interface{}
@@ -291,7 +287,6 @@ func bucProcessCSVFile(ds *admin.Service, filePath string) ([]*admin.ChromeOsDev
 			hdrMap = cmn.ProcessHeader(iSlice)
 			err = cmn.ValidateHeader(hdrMap, cdevs.CrOSDevAttrMap)
 			if err != nil {
-				lg.Error(err)
 				return nil, err
 			}
 			count = count + 1
@@ -304,7 +299,6 @@ func bucProcessCSVFile(ds *admin.Service, filePath string) ([]*admin.ChromeOsDev
 
 		cdevVar, err := bucFromFileFactory(hdrMap, iSlice)
 		if err != nil {
-			lg.Error(err)
 			return nil, err
 		}
 
@@ -313,13 +307,13 @@ func bucProcessCSVFile(ds *admin.Service, filePath string) ([]*admin.ChromeOsDev
 		count = count + 1
 	}
 
-	lg.Debug("finished bucProcessCSVFile()")
 	return crosdevs, nil
 }
 func bucProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]*admin.ChromeOsDevice, error) {
 	lg.Debugw("starting bucProcessGSheet()",
 		"sheetID", sheetID,
 		"sheetrange", sheetrange)
+	defer lg.Debug("finished bucProcessGSheet()")
 
 	var crosdevs []*admin.ChromeOsDevice
 
@@ -331,7 +325,6 @@ func bucProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]*
 
 	ss, err := cmn.CreateSheetService(sheet.DriveReadonlyScope)
 	if err != nil {
-		lg.Error(err)
 		return nil, err
 	}
 
@@ -351,7 +344,6 @@ func bucProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]*
 	hdrMap := cmn.ProcessHeader(sValRange.Values[0])
 	err = cmn.ValidateHeader(hdrMap, cdevs.CrOSDevAttrMap)
 	if err != nil {
-		lg.Error(err)
 		return nil, err
 	}
 
@@ -362,20 +354,19 @@ func bucProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]*
 
 		cdevVar, err := bucFromFileFactory(hdrMap, row)
 		if err != nil {
-			lg.Error(err)
 			return nil, err
 		}
 
 		crosdevs = append(crosdevs, cdevVar)
 	}
 
-	lg.Debug("finished bucProcessGSheet()")
 	return crosdevs, nil
 }
 
 func bucProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner) ([]*admin.ChromeOsDevice, error) {
 	lg.Debugw("starting bucProcessJSON()",
 		"filePath", filePath)
+	defer lg.Debug("finished bucProcessJSON()")
 
 	var crosdevs []*admin.ChromeOsDevice
 
@@ -395,7 +386,6 @@ func bucProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner) 
 
 		cdevVar, err := bucFromJSONFactory(ds, jsonData)
 		if err != nil {
-			lg.Error(err)
 			return nil, err
 		}
 
@@ -407,15 +397,15 @@ func bucProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner) 
 		return nil, err
 	}
 
-	lg.Debug("finished bucProcessJSON()")
 	return crosdevs, nil
 }
 
 func bucProcessObjects(ds *admin.Service, crosdevs []*admin.ChromeOsDevice) error {
 	lg.Debug("starting bucProcessObjects()")
 	wg := new(sync.WaitGroup)
+	defer lg.Debug("finished bucProcessObjects()")
 
-	customerID, err := cfg.ReadConfigString("customerid")
+	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {
 		lg.Error(err)
 		return err
@@ -431,12 +421,13 @@ func bucProcessObjects(ds *admin.Service, crosdevs []*admin.ChromeOsDevice) erro
 
 	wg.Wait()
 
-	lg.Debug("finished bucProcessObjects()")
 	return nil
 }
 
 func bucUpdate(crosdev *admin.ChromeOsDevice, wg *sync.WaitGroup, cduc *admin.ChromeosdevicesUpdateCall) {
 	lg.Debug("starting bucUpdate()")
+	defer lg.Debug("finished bucUpdate()")
+
 	defer wg.Done()
 
 	b := backoff.NewExponentialBackOff()
@@ -464,7 +455,6 @@ func bucUpdate(crosdev *admin.ChromeOsDevice, wg *sync.WaitGroup, cduc *admin.Ch
 		lg.Error(err)
 		fmt.Println(cmn.GminMessage(err.Error()))
 	}
-	lg.Debug("finished bucUpdate()")
 }
 
 func init() {

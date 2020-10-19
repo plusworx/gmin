@@ -48,6 +48,7 @@ N.B. Must use id and not email address.`,
 func doUndeleteUser(cmd *cobra.Command, args []string) error {
 	lg.Debugw("starting doUndeleteUser()",
 		"args", args)
+	defer lg.Debug("finished doUndeleteUser()")
 
 	var userUndelete *admin.UserUndelete
 	userUndelete = new(admin.UserUndelete)
@@ -65,7 +66,6 @@ func doUndeleteUser(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserScope)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
@@ -80,7 +80,6 @@ func doUndeleteUser(cmd *cobra.Command, args []string) error {
 	lg.Infof(gmess.INFO_USERUNDELETED, args[0])
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_USERUNDELETED, args[0])))
 
-	lg.Debug("finished doUndeleteUser()")
 	return nil
 }
 

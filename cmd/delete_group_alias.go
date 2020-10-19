@@ -46,10 +46,10 @@ gmin del ga my.alias@mycompany.com mygroup@mycompany.com`,
 func doDeleteGroupAlias(cmd *cobra.Command, args []string) error {
 	lg.Debugw("starting doDeleteGroupAlias()",
 		"args", args)
+	defer lg.Debug("finished doDeleteGroupAlias()")
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupScope)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
@@ -64,7 +64,6 @@ func doDeleteGroupAlias(cmd *cobra.Command, args []string) error {
 	lg.Infof(gmess.INFO_GROUPALIASDELETED, args[0], args[1])
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_GROUPALIASDELETED, args[0], args[1])))
 
-	lg.Debug("finished doDeleteGroupAlias()")
 	return nil
 }
 

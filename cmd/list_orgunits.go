@@ -52,6 +52,7 @@ gmin ls ous -t all`,
 func doListOUs(cmd *cobra.Command, args []string) error {
 	lg.Debugw("starting doListOUs()",
 		"args", args)
+	defer lg.Debug("finished doListOUs()")
 
 	var (
 		jsonData []byte
@@ -60,13 +61,11 @@ func doListOUs(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryOrgunitReadonlyScope)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
 	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
@@ -80,7 +79,6 @@ func doListOUs(cmd *cobra.Command, args []string) error {
 	if flgAttrsVal != "" {
 		listAttrs, err := gpars.ParseOutputAttrs(flgAttrsVal, ous.OrgUnitAttrMap)
 		if err != nil {
-			lg.Error(err)
 			return err
 		}
 		formattedAttrs := ous.STARTORGUNITSFIELD + listAttrs + ous.ENDFIELD
@@ -115,7 +113,6 @@ func doListOUs(cmd *cobra.Command, args []string) error {
 
 	orgUnits, err = ous.DoList(oulc)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
@@ -136,7 +133,6 @@ func doListOUs(cmd *cobra.Command, args []string) error {
 		fmt.Println(string(jsonData))
 	}
 
-	lg.Debug("finished doListOUs()")
 	return nil
 }
 

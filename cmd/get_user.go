@@ -100,8 +100,13 @@ func doGetUser(cmd *cobra.Command, args []string) error {
 		ugc = getCall.(*admin.UsersGetCall)
 
 		if proj == "custom" {
-			if customField != "" {
-				cFields := cmn.ParseTildeField(customField)
+			flgCustFldVal, err := cmd.Flags().GetString(flgnm.FLG_CUSTFLDMASK)
+			if err != nil {
+				lg.Error(err)
+				return err
+			}
+			if flgCustFldVal != "" {
+				cFields := strings.Split(flgCustFldVal, "~")
 				mask := strings.Join(cFields, ",")
 				getCall := usrs.AddCustomFieldMask(ugc, mask)
 				ugc = getCall.(*admin.UsersGetCall)
@@ -133,7 +138,6 @@ func doGetUser(cmd *cobra.Command, args []string) error {
 
 	user, err = usrs.DoGet(ugc)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 

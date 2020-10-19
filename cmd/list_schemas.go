@@ -50,6 +50,7 @@ gmin ls scs`,
 func doListSchemas(cmd *cobra.Command, args []string) error {
 	lg.Debugw("starting doListSchemas()",
 		"args", args)
+	defer lg.Debug("finished doListSchemas()")
 
 	var (
 		jsonData []byte
@@ -58,13 +59,11 @@ func doListSchemas(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserschemaReadonlyScope)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
 	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
@@ -78,7 +77,6 @@ func doListSchemas(cmd *cobra.Command, args []string) error {
 	if flgAttrsVal != "" {
 		listAttrs, err := gpars.ParseOutputAttrs(flgAttrsVal, scs.SchemaAttrMap)
 		if err != nil {
-			lg.Error(err)
 			return err
 		}
 		formattedAttrs := scs.STARTSCHEMASFIELD + listAttrs + scs.ENDFIELD
@@ -89,7 +87,6 @@ func doListSchemas(cmd *cobra.Command, args []string) error {
 
 	schemas, err = scs.DoList(sclc)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
@@ -110,7 +107,6 @@ func doListSchemas(cmd *cobra.Command, args []string) error {
 		fmt.Println(string(jsonData))
 	}
 
-	lg.Debug("finished doListSchemas()")
 	return nil
 }
 

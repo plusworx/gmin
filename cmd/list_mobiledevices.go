@@ -54,6 +54,7 @@ gmin ls mdevs --pages all`,
 func doListMobDevs(cmd *cobra.Command, args []string) error {
 	lg.Debugw("starting doListMobDevs()",
 		"args", args)
+	defer lg.Debug("finished doListMobDevs()")
 
 	var (
 		mobdevs *admin.MobileDevices
@@ -61,13 +62,11 @@ func doListMobDevs(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryDeviceMobileReadonlyScope)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
 	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
@@ -81,7 +80,6 @@ func doListMobDevs(cmd *cobra.Command, args []string) error {
 	if flgAttrsVal != "" {
 		listAttrs, err := gpars.ParseOutputAttrs(flgAttrsVal, mdevs.MobDevAttrMap)
 		if err != nil {
-			lg.Error(err)
 			return err
 		}
 		formattedAttrs := mdevs.STARTMOBDEVICESFIELD + listAttrs + mdevs.ENDFIELD
@@ -105,7 +103,6 @@ func doListMobDevs(cmd *cobra.Command, args []string) error {
 
 		validOrderBy, err := cmn.IsValidAttr(ob, mdevs.MobDevAttrMap)
 		if err != nil {
-			lg.Error(err)
 			return err
 		}
 
@@ -120,7 +117,6 @@ func doListMobDevs(cmd *cobra.Command, args []string) error {
 			so := strings.ToLower(flgSrtOrdVal)
 			validSortOrder, err := cmn.IsValidAttr(so, cmn.ValidSortOrders)
 			if err != nil {
-				lg.Error(err)
 				return err
 			}
 
@@ -154,7 +150,6 @@ func doListMobDevs(cmd *cobra.Command, args []string) error {
 	if flgQueryVal != "" {
 		formattedQuery, err := gpars.ParseQuery(flgQueryVal, mdevs.QueryAttrMap)
 		if err != nil {
-			lg.Error(err)
 			return err
 		}
 
@@ -170,7 +165,6 @@ func doListMobDevs(cmd *cobra.Command, args []string) error {
 
 	mobdevs, err = mdevs.DoList(mdlc)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
@@ -182,7 +176,6 @@ func doListMobDevs(cmd *cobra.Command, args []string) error {
 	if flgPagesVal != "" {
 		err = doMobDevPages(mdlc, mobdevs, flgPagesVal)
 		if err != nil {
-			lg.Error(err)
 			return err
 		}
 	}
@@ -204,18 +197,17 @@ func doListMobDevs(cmd *cobra.Command, args []string) error {
 		fmt.Println(string(jsonData))
 	}
 
-	lg.Debug("finished doListMobDevs()")
 	return nil
 }
 
 func doMobDevAllPages(mdlc *admin.MobiledevicesListCall, mobdevs *admin.MobileDevices) error {
 	lg.Debug("starting doMobDevAllPages()")
+	defer lg.Debug("finished doMobDevAllPages()")
 
 	if mobdevs.NextPageToken != "" {
 		mdlc = mdevs.AddPageToken(mdlc, mobdevs.NextPageToken)
 		nxtMobDevs, err := mdevs.DoList(mdlc)
 		if err != nil {
-			lg.Error(err)
 			return err
 		}
 		mobdevs.Mobiledevices = append(mobdevs.Mobiledevices, nxtMobDevs.Mobiledevices...)
@@ -227,19 +219,18 @@ func doMobDevAllPages(mdlc *admin.MobiledevicesListCall, mobdevs *admin.MobileDe
 		}
 	}
 
-	lg.Debug("finished doMobDevAllPages()")
 	return nil
 }
 
 func doMobDevNumPages(mdlc *admin.MobiledevicesListCall, mobdevs *admin.MobileDevices, numPages int) error {
 	lg.Debugw("starting doMobDevNumPages()",
 		"numPages", numPages)
+	defer lg.Debug("finished doMobDevNumPages()")
 
 	if mobdevs.NextPageToken != "" && numPages > 0 {
 		mdlc = mdevs.AddPageToken(mdlc, mobdevs.NextPageToken)
 		nxtMobDevs, err := mdevs.DoList(mdlc)
 		if err != nil {
-			lg.Error(err)
 			return err
 		}
 		mobdevs.Mobiledevices = append(mobdevs.Mobiledevices, nxtMobDevs.Mobiledevices...)
@@ -251,18 +242,17 @@ func doMobDevNumPages(mdlc *admin.MobiledevicesListCall, mobdevs *admin.MobileDe
 		}
 	}
 
-	lg.Debug("finished doMobDevNumPages()")
 	return nil
 }
 
 func doMobDevPages(mdlc *admin.MobiledevicesListCall, mobdevs *admin.MobileDevices, pages string) error {
 	lg.Debugw("starting doMobDevPages()",
 		"pages", pages)
+	defer lg.Debug("finished doMobDevPages()")
 
 	if pages == "all" {
 		err := doMobDevAllPages(mdlc, mobdevs)
 		if err != nil {
-			lg.Error(err)
 			return err
 		}
 	} else {
@@ -276,13 +266,11 @@ func doMobDevPages(mdlc *admin.MobiledevicesListCall, mobdevs *admin.MobileDevic
 		if numPages > 1 {
 			err = doMobDevNumPages(mdlc, mobdevs, numPages-1)
 			if err != nil {
-				lg.Error(err)
 				return err
 			}
 		}
 	}
 
-	lg.Debug("finished doMobDevPages()")
 	return nil
 }
 

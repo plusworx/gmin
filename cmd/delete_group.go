@@ -46,10 +46,10 @@ gmin del grp test@mycompany.com`,
 func doDeleteGroup(cmd *cobra.Command, args []string) error {
 	lg.Debugw("starting doDeleteGroup()",
 		"args", args)
+	defer lg.Debug("finished doDeleteGroup()")
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupScope)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
@@ -64,7 +64,6 @@ func doDeleteGroup(cmd *cobra.Command, args []string) error {
 	lg.Infof(gmess.INFO_GROUPDELETED, args[0])
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_GROUPDELETED, args[0])))
 
-	lg.Debug("finished doDeleteGroup()")
 	return nil
 }
 

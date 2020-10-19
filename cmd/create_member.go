@@ -48,6 +48,7 @@ gmin crt gmem finance.person@mycompany.com finance@mycompany.com -r MEMBER`,
 func doCreateMember(cmd *cobra.Command, args []string) error {
 	lg.Debugw("starting doCreateMember()",
 		"args", args)
+	defer lg.Debug("finished doCreateMember()")
 
 	var member *admin.Member
 
@@ -64,7 +65,6 @@ func doCreateMember(cmd *cobra.Command, args []string) error {
 	if flgDelSetVal != "" {
 		validDS, err := mems.ValidateDeliverySetting(flgDelSetVal)
 		if err != nil {
-			lg.Error(err)
 			return err
 		}
 		member.DeliverySettings = validDS
@@ -79,7 +79,6 @@ func doCreateMember(cmd *cobra.Command, args []string) error {
 	if flgRoleVal != "" {
 		validRole, err := mems.ValidateRole(flgRoleVal)
 		if err != nil {
-			lg.Error(err)
 			return err
 		}
 		member.Role = validRole
@@ -87,7 +86,6 @@ func doCreateMember(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupMemberScope)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
@@ -101,7 +99,6 @@ func doCreateMember(cmd *cobra.Command, args []string) error {
 	lg.Infof(gmess.INFO_MEMBERCREATED, newMember.Email, args[1])
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_MEMBERCREATED, newMember.Email, args[1])))
 
-	lg.Debug("finished doCreateMember()")
 	return nil
 }
 

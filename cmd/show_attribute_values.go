@@ -33,6 +33,7 @@ import (
 	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	grpset "github.com/plusworx/gmin/utils/groupsettings"
+	lg "github.com/plusworx/gmin/utils/logging"
 	gmems "github.com/plusworx/gmin/utils/members"
 	mdevs "github.com/plusworx/gmin/utils/mobiledevices"
 	usrs "github.com/plusworx/gmin/utils/users"
@@ -58,16 +59,23 @@ user, usr`,
 }
 
 func doShowAttrVals(cmd *cobra.Command, args []string) error {
+	lg.Debugw("starting doShowAttrVals()",
+		"args", args)
+	defer lg.Debug("finished doShowAttrVals")
+
 	lArgs := len(args)
 
 	flgFilterVal, err := cmd.Flags().GetString(flgnm.FLG_FILTER)
 	if err != nil {
+		lg.Error(err)
 		return err
 	}
 	lowerFilter := strings.ToLower(flgFilterVal)
 
 	if lArgs > 3 {
-		return errors.New(gmess.ERR_MAX3ARGSEXCEEDED)
+		err = errors.New(gmess.ERR_MAX3ARGSEXCEEDED)
+		lg.Error(err)
+		return err
 	}
 
 	object := strings.ToLower(args[0])
@@ -99,7 +107,9 @@ func doShowAttrVals(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	default:
-		return fmt.Errorf(gmess.ERR_OBJECTNOTRECOGNIZED, args[0])
+		err = fmt.Errorf(gmess.ERR_OBJECTNOTRECOGNIZED, args[0])
+		lg.Error(err)
+		return err
 	}
 	return nil
 }

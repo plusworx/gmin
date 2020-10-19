@@ -68,12 +68,12 @@ The column name is case insensitive.`,
 func doBatchDelUser(cmd *cobra.Command, args []string) error {
 	lg.Debugw("starting doBatchDelUser()",
 		"args", args)
+	defer lg.Debug("finished doBatchDelUser()")
 
 	var users []string
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserScope)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
@@ -85,7 +85,6 @@ func doBatchDelUser(cmd *cobra.Command, args []string) error {
 
 	scanner, err := cmn.InputFromStdIn(inputFlgVal)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
@@ -113,38 +112,36 @@ func doBatchDelUser(cmd *cobra.Command, args []string) error {
 	case lwrFmt == "text":
 		users, err = bduProcessTextFile(ds, inputFlgVal, scanner)
 		if err != nil {
-			lg.Error(err)
 			return err
 		}
 	case lwrFmt == "gsheet":
 		rangeFlgVal, err := cmd.Flags().GetString(flgnm.FLG_SHEETRANGE)
 		if err != nil {
-			lg.Error(err)
 			return err
 		}
 
 		users, err = bduProcessGSheet(ds, inputFlgVal, rangeFlgVal)
 		if err != nil {
-			lg.Error(err)
 			return err
 		}
 	default:
-		return fmt.Errorf(gmess.ERR_INVALIDFILEFORMAT, formatFlgVal)
-	}
-
-	err = bduProcessDeletion(ds, users)
-	if err != nil {
+		err = fmt.Errorf(gmess.ERR_INVALIDFILEFORMAT, formatFlgVal)
 		lg.Error(err)
 		return err
 	}
 
-	lg.Debug("finished doBatchDelUser()")
+	err = bduProcessDeletion(ds, users)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
 func bduDelete(wg *sync.WaitGroup, udc *admin.UsersDeleteCall, user string) {
 	lg.Debugw("starting bduDelete()",
 		"user", user)
+	defer lg.Debug("finished bduDelete()")
 
 	defer wg.Done()
 
@@ -174,12 +171,12 @@ func bduDelete(wg *sync.WaitGroup, udc *admin.UsersDeleteCall, user string) {
 		lg.Error(err)
 		fmt.Println(cmn.GminMessage(err.Error()))
 	}
-	lg.Debug("finished bduDelete()")
 }
 
 func bduFromFileFactory(hdrMap map[int]string, userData []interface{}) (string, error) {
 	lg.Debugw("starting bduFromFileFactory()",
 		"hdrMap", hdrMap)
+	defer lg.Debug("finished bduFromFileFactory()")
 
 	var user string
 
@@ -191,12 +188,12 @@ func bduFromFileFactory(hdrMap map[int]string, userData []interface{}) (string, 
 			user = attrVal
 		}
 	}
-	lg.Debug("finished bduFromFileFactory()")
 	return user, nil
 }
 
 func bduProcessDeletion(ds *admin.Service, users []string) error {
 	lg.Debug("starting bduProcessDeletion()")
+	defer lg.Debug("finished bduProcessDeletion()")
 
 	wg := new(sync.WaitGroup)
 
@@ -210,7 +207,6 @@ func bduProcessDeletion(ds *admin.Service, users []string) error {
 
 	wg.Wait()
 
-	lg.Debug("finished bduProcessDeletion()")
 	return nil
 }
 
@@ -218,6 +214,7 @@ func bduProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]s
 	lg.Debugw("starting bduProcessGSheet()",
 		"sheetID", sheetID,
 		"sheetrange", sheetrange)
+	defer lg.Debug("finished bduProcessGSheet()")
 
 	var users []string
 
@@ -229,7 +226,6 @@ func bduProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]s
 
 	ss, err := cmn.CreateSheetService(sheet.DriveReadonlyScope)
 	if err != nil {
-		lg.Error(err)
 		return nil, err
 	}
 
@@ -249,7 +245,6 @@ func bduProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]s
 	hdrMap := cmn.ProcessHeader(sValRange.Values[0])
 	err = cmn.ValidateHeader(hdrMap, usrs.UserAttrMap)
 	if err != nil {
-		lg.Error(err)
 		return nil, err
 	}
 
@@ -260,20 +255,19 @@ func bduProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]s
 
 		userVar, err := bduFromFileFactory(hdrMap, row)
 		if err != nil {
-			lg.Error(err)
 			return nil, err
 		}
 
 		users = append(users, userVar)
 	}
 
-	lg.Debug("finished bduProcessGSheet()")
 	return users, nil
 }
 
 func bduProcessTextFile(ds *admin.Service, filePath string, scanner *bufio.Scanner) ([]string, error) {
 	lg.Debugw("starting bduProcessTextFile()",
 		"filePath", filePath)
+	defer lg.Debug("finished bduProcessTextFile()")
 
 	var users []string
 
@@ -292,7 +286,6 @@ func bduProcessTextFile(ds *admin.Service, filePath string, scanner *bufio.Scann
 		users = append(users, user)
 	}
 
-	lg.Debug("finished bduProcessTextFile()")
 	return users, nil
 }
 

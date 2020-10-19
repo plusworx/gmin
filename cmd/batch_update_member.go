@@ -76,6 +76,7 @@ The column names are case insensitive and can be in any order.`,
 func doBatchUpdMember(cmd *cobra.Command, args []string) error {
 	lg.Debugw("starting doBatchUpdMember()",
 		"args", args)
+	defer lg.Debug("finished doBatchUpdMember()")
 
 	var (
 		memKeys []string
@@ -84,7 +85,6 @@ func doBatchUpdMember(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupMemberScope)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
@@ -96,7 +96,6 @@ func doBatchUpdMember(cmd *cobra.Command, args []string) error {
 
 	scanner, err := cmn.InputFromStdIn(inputFlgVal)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
@@ -126,13 +125,11 @@ func doBatchUpdMember(cmd *cobra.Command, args []string) error {
 	case lwrFmt == "csv":
 		memKeys, members, err = bumProcessCSVFile(ds, inputFlgVal)
 		if err != nil {
-			lg.Error(err)
 			return err
 		}
 	case lwrFmt == "json":
 		memKeys, members, err = bumProcessJSON(ds, inputFlgVal, scanner)
 		if err != nil {
-			lg.Error(err)
 			return err
 		}
 	case lwrFmt == "gsheet":
@@ -144,26 +141,26 @@ func doBatchUpdMember(cmd *cobra.Command, args []string) error {
 
 		memKeys, members, err = bumProcessGSheet(ds, inputFlgVal, rangeFlgVal)
 		if err != nil {
-			lg.Error(err)
 			return err
 		}
 	default:
-		return fmt.Errorf(gmess.ERR_INVALIDFILEFORMAT, formatFlgVal)
-	}
-
-	err = bumProcessObjects(ds, groupKey, members, memKeys)
-	if err != nil {
+		err = fmt.Errorf(gmess.ERR_INVALIDFILEFORMAT, formatFlgVal)
 		lg.Error(err)
 		return err
 	}
 
-	lg.Debug("finished doBatchUpdMember()")
+	err = bumProcessObjects(ds, groupKey, members, memKeys)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
 func bumFromFileFactory(hdrMap map[int]string, memData []interface{}) (*admin.Member, string, error) {
 	lg.Debugw("starting bumFromFileFactory()",
 		"hdrMap", hdrMap)
+	defer lg.Debug("finished bumFromFileFactory()")
 
 	var (
 		member *admin.Member
@@ -180,32 +177,31 @@ func bumFromFileFactory(hdrMap map[int]string, memData []interface{}) (*admin.Me
 		case attrName == "delivery_settings":
 			validDS, err := mems.ValidateDeliverySetting(attrVal)
 			if err != nil {
-				lg.Error(err)
 				return nil, "", err
 			}
 			member.DeliverySettings = validDS
 		case attrName == "role":
 			validRole, err := mems.ValidateRole(attrVal)
 			if err != nil {
-				lg.Error(err)
 				return nil, "", err
 			}
 			member.Role = validRole
 		case attrName == "memberKey":
 			if attrVal == "" {
 				err := fmt.Errorf(gmess.ERR_EMPTYSTRING, attrName)
+				lg.Error(err)
 				return nil, "", err
 			}
 			memKey = attrVal
 		}
 	}
-	lg.Debug("finished bumFromFileFactory()")
 	return member, memKey, nil
 }
 
 func bumFromJSONFactory(ds *admin.Service, jsonData string) (*admin.Member, string, error) {
 	lg.Debugw("starting bumFromJSONFactory()",
 		"jsonData", jsonData)
+	defer lg.Debug("finished bumFromJSONFactory()")
 
 	var (
 		member *admin.Member
@@ -216,19 +212,18 @@ func bumFromJSONFactory(ds *admin.Service, jsonData string) (*admin.Member, stri
 	jsonBytes := []byte(jsonData)
 
 	if !json.Valid(jsonBytes) {
-		lg.Error(gmess.ERR_INVALIDJSONATTR)
-		return nil, "", errors.New(gmess.ERR_INVALIDJSONATTR)
+		err := errors.New(gmess.ERR_INVALIDJSONATTR)
+		lg.Error(err)
+		return nil, "", err
 	}
 
 	outStr, err := cmn.ParseInputAttrs(jsonBytes)
 	if err != nil {
-		lg.Error(err)
 		return nil, "", err
 	}
 
 	err = cmn.ValidateInputAttrs(outStr, mems.MemberAttrMap)
 	if err != nil {
-		lg.Error(err)
 		return nil, "", err
 	}
 
@@ -249,13 +244,13 @@ func bumFromJSONFactory(ds *admin.Service, jsonData string) (*admin.Member, stri
 		lg.Error(err)
 		return nil, "", err
 	}
-	lg.Debug("finished bumFromJSONFactory()")
 	return member, memKey.MemberKey, nil
 }
 
 func bumProcessCSVFile(ds *admin.Service, filePath string) ([]string, []*admin.Member, error) {
 	lg.Debugw("starting bumProcessCSVFile()",
 		"filePath", filePath)
+	defer lg.Debug("finished bumProcessCSVFile()")
 
 	var (
 		iSlice  []interface{}
@@ -292,7 +287,6 @@ func bumProcessCSVFile(ds *admin.Service, filePath string) ([]string, []*admin.M
 			hdrMap = cmn.ProcessHeader(iSlice)
 			err = cmn.ValidateHeader(hdrMap, mems.MemberAttrMap)
 			if err != nil {
-				lg.Error(err)
 				return nil, nil, err
 			}
 			count = count + 1
@@ -305,7 +299,6 @@ func bumProcessCSVFile(ds *admin.Service, filePath string) ([]string, []*admin.M
 
 		memVar, memKey, err := bumFromFileFactory(hdrMap, iSlice)
 		if err != nil {
-			lg.Error(err)
 			return nil, nil, err
 		}
 
@@ -315,7 +308,6 @@ func bumProcessCSVFile(ds *admin.Service, filePath string) ([]string, []*admin.M
 		count = count + 1
 	}
 
-	lg.Debug("finished bumProcessCSVFile()")
 	return memKeys, members, nil
 }
 
@@ -323,6 +315,7 @@ func bumProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]s
 	lg.Debugw("starting bumProcessGSheet()",
 		"sheetID", sheetID,
 		"sheetrange", sheetrange)
+	defer lg.Debug("finished bumProcessGSheet()")
 
 	var (
 		memKeys []string
@@ -337,7 +330,6 @@ func bumProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]s
 
 	ss, err := cmn.CreateSheetService(sheet.DriveReadonlyScope)
 	if err != nil {
-		lg.Error(err)
 		return nil, nil, err
 	}
 
@@ -357,7 +349,6 @@ func bumProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]s
 	hdrMap := cmn.ProcessHeader(sValRange.Values[0])
 	err = cmn.ValidateHeader(hdrMap, mems.MemberAttrMap)
 	if err != nil {
-		lg.Error(err)
 		return nil, nil, err
 	}
 
@@ -368,7 +359,6 @@ func bumProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]s
 
 		memVar, memKey, err := bumFromFileFactory(hdrMap, row)
 		if err != nil {
-			lg.Error(err)
 			return nil, nil, err
 		}
 
@@ -376,13 +366,13 @@ func bumProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]s
 		members = append(members, memVar)
 	}
 
-	lg.Debug("finished bumProcessGSheet()")
 	return memKeys, members, nil
 }
 
 func bumProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner) ([]string, []*admin.Member, error) {
 	lg.Debugw("starting bumProcessJSON()",
 		"filePath", filePath)
+	defer lg.Debug("finished bumProcessJSON()")
 
 	var (
 		memKeys []string
@@ -405,7 +395,6 @@ func bumProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner) 
 
 		memVar, memKey, err := bumFromJSONFactory(ds, jsonData)
 		if err != nil {
-			lg.Error(err)
 			return nil, nil, err
 		}
 
@@ -418,7 +407,6 @@ func bumProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner) 
 		return nil, nil, err
 	}
 
-	lg.Debug("finished bumProcessJSON()")
 	return memKeys, members, nil
 }
 
@@ -426,6 +414,7 @@ func bumProcessObjects(ds *admin.Service, groupKey string, members []*admin.Memb
 	lg.Debugw("starting bumProcessObjects()",
 		"groupKey", groupKey,
 		"memKeys", memKeys)
+	defer lg.Debug("finished bumProcessObjects()")
 
 	wg := new(sync.WaitGroup)
 
@@ -439,7 +428,6 @@ func bumProcessObjects(ds *admin.Service, groupKey string, members []*admin.Memb
 
 	wg.Wait()
 
-	lg.Debug("finished bumProcessObjects()")
 	return nil
 }
 
@@ -447,6 +435,7 @@ func bumUpdate(member *admin.Member, groupKey string, wg *sync.WaitGroup, muc *a
 	lg.Debugw("starting bumUpdate()",
 		"groupKey", groupKey,
 		"memKey", memKey)
+	defer lg.Debug("finished bumUpdate()")
 
 	defer wg.Done()
 
@@ -476,7 +465,6 @@ func bumUpdate(member *admin.Member, groupKey string, wg *sync.WaitGroup, muc *a
 		lg.Error(err)
 		fmt.Println(cmn.GminMessage(err.Error()))
 	}
-	lg.Debug("finished bumUpdate()")
 }
 
 func init() {

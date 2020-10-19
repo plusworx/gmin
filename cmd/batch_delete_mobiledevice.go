@@ -69,12 +69,12 @@ The column name is case insensitive.`,
 func doBatchDelMobDev(cmd *cobra.Command, args []string) error {
 	lg.Debugw("starting doBatchDelMobDev()",
 		"args", args)
+	defer lg.Debug("finished doBatchDelMobDev()")
 
 	var mobdevs []string
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryDeviceMobileScope)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
@@ -86,7 +86,6 @@ func doBatchDelMobDev(cmd *cobra.Command, args []string) error {
 
 	scanner, err := cmn.InputFromStdIn(inputFlgVal)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
@@ -114,38 +113,36 @@ func doBatchDelMobDev(cmd *cobra.Command, args []string) error {
 	case lwrFmt == "text":
 		mobdevs, err = bdmdProcessTextFile(ds, inputFlgVal, scanner)
 		if err != nil {
-			lg.Error(err)
 			return err
 		}
 	case lwrFmt == "gsheet":
 		rangeFlgVal, err := cmd.Flags().GetString(flgnm.FLG_SHEETRANGE)
 		if err != nil {
-			lg.Error(err)
 			return err
 		}
 
 		mobdevs, err = bdmdProcessGSheet(ds, inputFlgVal, rangeFlgVal)
 		if err != nil {
-			lg.Error(err)
 			return err
 		}
 	default:
-		return fmt.Errorf(gmess.ERR_INVALIDFILEFORMAT, formatFlgVal)
-	}
-
-	err = bdmdProcessDeletion(ds, mobdevs)
-	if err != nil {
+		err = fmt.Errorf(gmess.ERR_INVALIDFILEFORMAT, formatFlgVal)
 		lg.Error(err)
 		return err
 	}
 
-	lg.Debug("finished doBatchDelMobDev()")
+	err = bdmdProcessDeletion(ds, mobdevs)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
 func bdmdDelete(wg *sync.WaitGroup, mdc *admin.MobiledevicesDeleteCall, resourceID string) {
 	lg.Debugw("starting bdmdDelete()",
 		"resourceID", resourceID)
+	defer lg.Debug("finished bdmdDelete()")
 
 	defer wg.Done()
 
@@ -174,12 +171,12 @@ func bdmdDelete(wg *sync.WaitGroup, mdc *admin.MobiledevicesDeleteCall, resource
 		lg.Error(err)
 		fmt.Println(cmn.GminMessage(err.Error()))
 	}
-	lg.Debug("finished bdmdDelete()")
 }
 
 func bdmdFromFileFactory(hdrMap map[int]string, mobDevData []interface{}) (string, error) {
 	lg.Debugw("starting bdmdFromFileFactory()",
 		"hdrMap", hdrMap)
+	defer lg.Debug("finished bdmdFromFileFactory()")
 
 	var mobResID string
 
@@ -191,14 +188,14 @@ func bdmdFromFileFactory(hdrMap map[int]string, mobDevData []interface{}) (strin
 			mobResID = attrVal
 		}
 	}
-	lg.Debug("finished bdmdFromFileFactory()")
 	return mobResID, nil
 }
 
 func bdmdProcessDeletion(ds *admin.Service, mobdevs []string) error {
 	lg.Debug("starting bdmdProcessDeletion()")
+	defer lg.Debug("finished bdmdProcessDeletion()")
 
-	customerID, err := cfg.ReadConfigString("customerid")
+	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {
 		lg.Error(err)
 		return err
@@ -216,7 +213,6 @@ func bdmdProcessDeletion(ds *admin.Service, mobdevs []string) error {
 
 	wg.Wait()
 
-	lg.Debug("finished bdmdProcessDeletion()")
 	return nil
 }
 
@@ -224,6 +220,7 @@ func bdmdProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]
 	lg.Debugw("starting bdmdProcessGSheet()",
 		"sheetID", sheetID,
 		"sheetrange", sheetrange)
+	defer lg.Debug("finished bdmdProcessGSheet()")
 
 	var mobdevs []string
 
@@ -235,7 +232,6 @@ func bdmdProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]
 
 	ss, err := cmn.CreateSheetService(sheet.DriveReadonlyScope)
 	if err != nil {
-		lg.Error(err)
 		return nil, err
 	}
 
@@ -255,7 +251,6 @@ func bdmdProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]
 	hdrMap := cmn.ProcessHeader(sValRange.Values[0])
 	err = cmn.ValidateHeader(hdrMap, mdevs.MobDevAttrMap)
 	if err != nil {
-		lg.Error(err)
 		return nil, err
 	}
 
@@ -266,20 +261,19 @@ func bdmdProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]
 
 		mobDevVar, err := bdmdFromFileFactory(hdrMap, row)
 		if err != nil {
-			lg.Error(err)
 			return nil, err
 		}
 
 		mobdevs = append(mobdevs, mobDevVar)
 	}
 
-	lg.Debug("finished bdmdProcessGSheet()")
 	return mobdevs, nil
 }
 
 func bdmdProcessTextFile(ds *admin.Service, filePath string, scanner *bufio.Scanner) ([]string, error) {
 	lg.Debugw("starting bdmdProcessTextFile()",
 		"filePath", filePath)
+	defer lg.Debug("finished bdmdProcessTextFile()")
 
 	var mobdevs []string
 
@@ -298,7 +292,6 @@ func bdmdProcessTextFile(ds *admin.Service, filePath string, scanner *bufio.Scan
 		mobdevs = append(mobdevs, mobdev)
 	}
 
-	lg.Debug("finished bdmdProcessTextFile()")
 	return mobdevs, nil
 }
 

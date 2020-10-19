@@ -385,12 +385,12 @@ func uuPasswordFlag(user *admin.User, flagName string, flgVal string) error {
 		err := fmt.Errorf(gmess.ERR_EMPTYSTRING, flagName)
 		return err
 	}
-	pwd, err := cmn.HashPassword(flgVal)
+	pwd, err := usrs.HashPassword(flgVal)
 	if err != nil {
 		return err
 	}
 	user.Password = pwd
-	user.HashFunction = cmn.HASHFUNCTION
+	user.HashFunction = usrs.HASHFUNCTION
 	lg.Debug("finished uuPasswordFlag()")
 	return nil
 }

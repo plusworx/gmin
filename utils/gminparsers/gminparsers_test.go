@@ -26,6 +26,7 @@ import (
 	"testing"
 
 	tsts "github.com/plusworx/gmin/tests"
+	lg "github.com/plusworx/gmin/utils/logging"
 )
 
 func TestParseOutputAttrs(t *testing.T) {
@@ -76,6 +77,8 @@ func TestParseOutputAttrs(t *testing.T) {
 			expectedResult: "customSchemas/EmploymentData/startDate",
 		},
 	}
+
+	lg.InitLogging("info")
 
 	for _, c := range cases {
 		output, err := ParseOutputAttrs(c.attrs, tsts.TestUserAttrMap)
@@ -156,6 +159,8 @@ func TestParseQuery(t *testing.T) {
 			expectedErr: "wrongattr attribute is not recognized",
 		},
 	}
+
+	lg.InitLogging("info")
 
 	for _, c := range cases {
 		output, err := ParseQuery(c.query, tsts.TestUserQueryAttrMap)

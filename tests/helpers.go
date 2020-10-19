@@ -28,6 +28,7 @@ import (
 	"reflect"
 	"strconv"
 
+	"go.uber.org/zap"
 	"golang.org/x/oauth2/google"
 	admin "google.golang.org/api/admin/directory/v1"
 	"google.golang.org/api/option"
@@ -222,6 +223,13 @@ func DummyDirectoryService(scope ...string) (*admin.Service, error) {
 		return nil, fmt.Errorf("NewService: %v", err)
 	}
 	return srv, nil
+}
+
+// GetLogger create logger
+func GetLogger() *zap.SugaredLogger {
+	logger, _ := zap.NewProduction()
+	sugar := logger.Sugar()
+	return sugar
 }
 
 // UserCompActualExpected compares actual test results in admin.User object with expected results

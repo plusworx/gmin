@@ -49,12 +49,12 @@ gmin ls uas myuser@mycompany.com`,
 func doListUserAliases(cmd *cobra.Command, args []string) error {
 	lg.Debugw("starting doListUserAliases()",
 		"args", args)
+	defer lg.Debug("finished doListUserAliases()")
 
 	var aliases *admin.Aliases
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserAliasReadonlyScope)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
@@ -68,7 +68,6 @@ func doListUserAliases(cmd *cobra.Command, args []string) error {
 	if flgAttrsVal != "" {
 		listAttrs, err := gpars.ParseOutputAttrs(flgAttrsVal, uas.UserAliasAttrMap)
 		if err != nil {
-			lg.Error(err)
 			return err
 		}
 		formattedAttrs := uas.STARTALIASESFIELD + listAttrs + uas.ENDFIELD
@@ -78,7 +77,6 @@ func doListUserAliases(cmd *cobra.Command, args []string) error {
 
 	aliases, err = uas.DoList(ualc)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
@@ -90,7 +88,6 @@ func doListUserAliases(cmd *cobra.Command, args []string) error {
 
 	fmt.Println(string(jsonData))
 
-	lg.Debug("finished doListUserAliases()")
 	return nil
 }
 

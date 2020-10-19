@@ -54,6 +54,7 @@ gmin ls grp -q email=mygroup@domain.com`,
 func doListGroups(cmd *cobra.Command, args []string) error {
 	lg.Debugw("starting doListGroups()",
 		"args", args)
+	defer lg.Debug("finished doListGroups()")
 
 	var (
 		groups       *admin.Groups
@@ -63,7 +64,6 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupReadonlyScope)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
@@ -77,7 +77,6 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 	if flgAttrsVal != "" {
 		listAttrs, err := gpars.ParseOutputAttrs(flgAttrsVal, grps.GroupAttrMap)
 		if err != nil {
-			lg.Error(err)
 			return err
 		}
 		formattedAttrs := grps.STARTGROUPSFIELD + listAttrs + grps.ENDFIELD
@@ -96,7 +95,6 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 	} else {
 		customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 		if err != nil {
-			lg.Error(err)
 			return err
 		}
 		glc = grps.AddCustomer(glc, customerID)
@@ -110,7 +108,6 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 	if flgQueryVal != "" {
 		formattedQuery, err := gpars.ParseQuery(flgQueryVal, grps.QueryAttrMap)
 		if err != nil {
-			lg.Error(err)
 			return err
 		}
 
@@ -133,7 +130,6 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 
 		validOrderBy, err = cmn.IsValidAttr(ob, grps.GroupAttrMap)
 		if err != nil {
-			lg.Error(err)
 			return err
 		}
 
@@ -148,7 +144,6 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 			so := strings.ToLower(flgSrtOrdVal)
 			validSortOrder, err := cmn.IsValidAttr(so, cmn.ValidSortOrders)
 			if err != nil {
-				lg.Error(err)
 				return err
 			}
 
@@ -180,7 +175,6 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 
 	groups, err = grps.DoList(glc)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
@@ -192,7 +186,6 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 	if flgPagesVal != "" {
 		err = doGrpPages(glc, groups, flgPagesVal)
 		if err != nil {
-			lg.Error(err)
 			return err
 		}
 	}
@@ -214,18 +207,17 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 		fmt.Println(string(jsonData))
 	}
 
-	lg.Debug("finished doListGroups()")
 	return nil
 }
 
 func doGrpAllPages(glc *admin.GroupsListCall, groups *admin.Groups) error {
 	lg.Debug("starting doGrpAllPages()")
+	defer lg.Debug("finished doGrpAllPages()")
 
 	if groups.NextPageToken != "" {
 		glc = grps.AddPageToken(glc, groups.NextPageToken)
 		nxtGroups, err := grps.DoList(glc)
 		if err != nil {
-			lg.Error(err)
 			return err
 		}
 		groups.Groups = append(groups.Groups, nxtGroups.Groups...)
@@ -237,19 +229,18 @@ func doGrpAllPages(glc *admin.GroupsListCall, groups *admin.Groups) error {
 		}
 	}
 
-	lg.Debug("finished doGrpAllPages()")
 	return nil
 }
 
 func doGrpNumPages(glc *admin.GroupsListCall, groups *admin.Groups, numPages int) error {
 	lg.Debugw("starting doGrpNumPages()",
 		"numPages", numPages)
+	defer lg.Debug("finished doGrpNumPages()")
 
 	if groups.NextPageToken != "" && numPages > 0 {
 		glc = grps.AddPageToken(glc, groups.NextPageToken)
 		nxtGroups, err := grps.DoList(glc)
 		if err != nil {
-			lg.Error(err)
 			return err
 		}
 		groups.Groups = append(groups.Groups, nxtGroups.Groups...)
@@ -261,18 +252,17 @@ func doGrpNumPages(glc *admin.GroupsListCall, groups *admin.Groups, numPages int
 		}
 	}
 
-	lg.Debug("finished doGrpNumPages()")
 	return nil
 }
 
 func doGrpPages(glc *admin.GroupsListCall, groups *admin.Groups, pages string) error {
 	lg.Debugw("starting doGrpPages()",
 		"pages", pages)
+	defer lg.Debug("finished doGrpPages()")
 
 	if pages == "all" {
 		err := doGrpAllPages(glc, groups)
 		if err != nil {
-			lg.Error(err)
 			return err
 		}
 	} else {
@@ -286,13 +276,11 @@ func doGrpPages(glc *admin.GroupsListCall, groups *admin.Groups, pages string) e
 		if numPages > 1 {
 			err = doGrpNumPages(glc, groups, numPages-1)
 			if err != nil {
-				lg.Error(err)
 				return err
 			}
 		}
 	}
 
-	lg.Debug("finished doGrpPages()")
 	return nil
 }
 

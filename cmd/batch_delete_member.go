@@ -69,6 +69,7 @@ The column name is case insensitive.`,
 func doBatchDelMember(cmd *cobra.Command, args []string) error {
 	lg.Debugw("starting doBatchDelMember()",
 		"args", args)
+	defer lg.Debug("finished doBatchDelMember()")
 
 	var members []string
 
@@ -76,7 +77,6 @@ func doBatchDelMember(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupMemberScope)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
@@ -88,7 +88,6 @@ func doBatchDelMember(cmd *cobra.Command, args []string) error {
 
 	scanner, err := cmn.InputFromStdIn(inputFlgVal)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
@@ -116,32 +115,29 @@ func doBatchDelMember(cmd *cobra.Command, args []string) error {
 	case lwrFmt == "text":
 		members, err = bdmProcessTextFile(ds, inputFlgVal, scanner)
 		if err != nil {
-			lg.Error(err)
 			return err
 		}
 	case lwrFmt == "gsheet":
 		rangeFlgVal, err := cmd.Flags().GetString(flgnm.FLG_SHEETRANGE)
 		if err != nil {
-			lg.Error(err)
 			return err
 		}
 
 		members, err = bdmProcessGSheet(ds, inputFlgVal, rangeFlgVal)
 		if err != nil {
-			lg.Error(err)
 			return err
 		}
 	default:
-		return fmt.Errorf(gmess.ERR_INVALIDFILEFORMAT, formatFlgVal)
-	}
-
-	err = bdmProcessDeletion(ds, group, members)
-	if err != nil {
+		err = fmt.Errorf(gmess.ERR_INVALIDFILEFORMAT, formatFlgVal)
 		lg.Error(err)
 		return err
 	}
 
-	lg.Debug("finished doBatchDelMember()")
+	err = bdmProcessDeletion(ds, group, members)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -149,6 +145,7 @@ func bdmDelete(wg *sync.WaitGroup, mdc *admin.MembersDeleteCall, member string, 
 	lg.Debugw("starting bdmDelete()",
 		"group", group,
 		"member", member)
+	defer lg.Debug("finished bdmDelete()")
 
 	defer wg.Done()
 
@@ -177,12 +174,12 @@ func bdmDelete(wg *sync.WaitGroup, mdc *admin.MembersDeleteCall, member string, 
 		lg.Error(err)
 		fmt.Println(cmn.GminMessage(err.Error()))
 	}
-	lg.Debug("finished bdmDelete()")
 }
 
 func bdmFromFileFactory(hdrMap map[int]string, memberData []interface{}) (string, error) {
 	lg.Debugw("starting bdmFromFileFactory()",
 		"hdrMap", hdrMap)
+	defer lg.Debug("finished bdmFromFileFactory()")
 
 	var member string
 
@@ -194,12 +191,12 @@ func bdmFromFileFactory(hdrMap map[int]string, memberData []interface{}) (string
 			member = attrVal
 		}
 	}
-	lg.Debug("finished bdmFromFileFactory()")
 	return member, nil
 }
 
 func bdmProcessDeletion(ds *admin.Service, group string, members []string) error {
 	lg.Debug("starting bdmProcessDeletion()")
+	defer lg.Debug("finished bdmProcessDeletion()")
 
 	wg := new(sync.WaitGroup)
 
@@ -213,7 +210,6 @@ func bdmProcessDeletion(ds *admin.Service, group string, members []string) error
 
 	wg.Wait()
 
-	lg.Debug("finished bdmProcessDeletion()")
 	return nil
 }
 
@@ -221,6 +217,7 @@ func bdmProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]s
 	lg.Debugw("starting bdmProcessGSheet()",
 		"sheetID", sheetID,
 		"sheetrange", sheetrange)
+	defer lg.Debug("finished bdmProcessGSheet()")
 
 	var members []string
 
@@ -232,7 +229,6 @@ func bdmProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]s
 
 	ss, err := cmn.CreateSheetService(sheet.DriveReadonlyScope)
 	if err != nil {
-		lg.Error(err)
 		return nil, err
 	}
 
@@ -252,7 +248,6 @@ func bdmProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]s
 	hdrMap := cmn.ProcessHeader(sValRange.Values[0])
 	err = cmn.ValidateHeader(hdrMap, mems.MemberAttrMap)
 	if err != nil {
-		lg.Error(err)
 		return nil, err
 	}
 
@@ -263,20 +258,19 @@ func bdmProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]s
 
 		memVar, err := bdgFromFileFactory(hdrMap, row)
 		if err != nil {
-			lg.Error(err)
 			return nil, err
 		}
 
 		members = append(members, memVar)
 	}
 
-	lg.Debug("finished bdmProcessGSheet()")
 	return members, nil
 }
 
 func bdmProcessTextFile(ds *admin.Service, filePath string, scanner *bufio.Scanner) ([]string, error) {
 	lg.Debugw("starting bdmProcessTextFile()",
 		"filePath", filePath)
+	defer lg.Debug("finished bdmProcessTextFile()")
 
 	var members []string
 
@@ -295,7 +289,6 @@ func bdmProcessTextFile(ds *admin.Service, filePath string, scanner *bufio.Scann
 		members = append(members, member)
 	}
 
-	lg.Debug("finished bdmProcessTextFile()")
 	return members, nil
 }
 

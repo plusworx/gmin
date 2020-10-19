@@ -47,16 +47,15 @@ gmin del mdev AFiQxQ83IZT4llDfTWPZt69JvwSJU0YECe1TVyVZC4x`,
 func doDeleteMobDev(cmd *cobra.Command, args []string) error {
 	lg.Debugw("starting doDeleteMobDev()",
 		"args", args)
+	defer lg.Debug("finished doDeleteMobDev()")
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryDeviceMobileScope)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
 	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 	mdc := ds.Mobiledevices.Delete(customerID, args[0])
@@ -70,7 +69,6 @@ func doDeleteMobDev(cmd *cobra.Command, args []string) error {
 	lg.Infof(gmess.INFO_MDEVDELETED, args[0])
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_MDEVDELETED, args[0])))
 
-	lg.Debug("finished doDeleteMobDev()")
 	return nil
 }
 

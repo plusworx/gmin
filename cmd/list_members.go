@@ -52,6 +52,7 @@ gmin ls gmems mygroup@mycompany.com -a email`,
 func doListMembers(cmd *cobra.Command, args []string) error {
 	lg.Debugw("starting doListMembers()",
 		"args", args)
+	defer lg.Debug("finished doListMembers()")
 
 	var (
 		jsonData []byte
@@ -60,7 +61,6 @@ func doListMembers(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupMemberReadonlyScope)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
@@ -74,7 +74,6 @@ func doListMembers(cmd *cobra.Command, args []string) error {
 	if flgAttrsVal != "" {
 		listAttrs, err := gpars.ParseOutputAttrs(flgAttrsVal, mems.MemberAttrMap)
 		if err != nil {
-			lg.Error(err)
 			return err
 		}
 		formattedAttrs := mems.STARTMEMBERSFIELD + listAttrs + mems.ENDFIELD
@@ -91,7 +90,6 @@ func doListMembers(cmd *cobra.Command, args []string) error {
 	if flgRolesVal != "" {
 		formattedRoles, err := gpars.ParseOutputAttrs(flgRolesVal, mems.RoleMap)
 		if err != nil {
-			lg.Error(err)
 			return err
 		}
 		mlc = mems.AddRoles(mlc, formattedRoles)
@@ -106,7 +104,6 @@ func doListMembers(cmd *cobra.Command, args []string) error {
 
 	members, err = mems.DoList(mlc)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
@@ -118,7 +115,6 @@ func doListMembers(cmd *cobra.Command, args []string) error {
 	if flgPagesVal != "" {
 		err = doMemPages(mlc, members, flgPagesVal)
 		if err != nil {
-			lg.Error(err)
 			return err
 		}
 	}
@@ -140,18 +136,17 @@ func doListMembers(cmd *cobra.Command, args []string) error {
 		fmt.Println(string(jsonData))
 	}
 
-	lg.Debug("finished doListMembers()")
 	return nil
 }
 
 func doMemAllPages(mlc *admin.MembersListCall, members *admin.Members) error {
 	lg.Debug("starting doMemAllPages()")
+	defer lg.Debug("finished doMemAllPages()")
 
 	if members.NextPageToken != "" {
 		mlc = mems.AddPageToken(mlc, members.NextPageToken)
 		nxtMems, err := mems.DoList(mlc)
 		if err != nil {
-			lg.Error(err)
 			return err
 		}
 		members.Members = append(members.Members, nxtMems.Members...)
@@ -163,19 +158,18 @@ func doMemAllPages(mlc *admin.MembersListCall, members *admin.Members) error {
 		}
 	}
 
-	lg.Debug("finished doMemAllPages()")
 	return nil
 }
 
 func doMemNumPages(mlc *admin.MembersListCall, members *admin.Members, numPages int) error {
 	lg.Debugw("starting doMemNumPages()",
 		"numPages", numPages)
+	defer lg.Debug("finished doMemNumPages()")
 
 	if members.NextPageToken != "" && numPages > 0 {
 		mlc = mems.AddPageToken(mlc, members.NextPageToken)
 		nxtMems, err := mems.DoList(mlc)
 		if err != nil {
-			lg.Error(err)
 			return err
 		}
 		members.Members = append(members.Members, nxtMems.Members...)
@@ -187,18 +181,17 @@ func doMemNumPages(mlc *admin.MembersListCall, members *admin.Members, numPages 
 		}
 	}
 
-	lg.Debug("finished doMemNumPages()")
 	return nil
 }
 
 func doMemPages(mlc *admin.MembersListCall, members *admin.Members, pages string) error {
 	lg.Debugw("starting doMemPages()",
 		"pages", pages)
+	defer lg.Debug("finished doMemPages()")
 
 	if pages == "all" {
 		err := doMemAllPages(mlc, members)
 		if err != nil {
-			lg.Error(err)
 			return err
 		}
 	} else {
@@ -212,13 +205,11 @@ func doMemPages(mlc *admin.MembersListCall, members *admin.Members, pages string
 		if numPages > 1 {
 			err = doMemNumPages(mlc, members, numPages-1)
 			if err != nil {
-				lg.Error(err)
 				return err
 			}
 		}
 	}
 
-	lg.Debug("finished doMemPages()")
 	return nil
 }
 

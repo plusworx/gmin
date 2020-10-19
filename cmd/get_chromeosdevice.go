@@ -52,6 +52,7 @@ gmin get cdev 5ad9ae43-5996-394e-9c39-12d45a8f10e8 -a serialnumber`,
 func doGetCrOSDev(cmd *cobra.Command, args []string) error {
 	lg.Debugw("starting doGetCrOSDev()",
 		"args", args)
+	defer lg.Debug("finished doGetCrOSDev()")
 
 	var (
 		jsonData []byte
@@ -60,13 +61,11 @@ func doGetCrOSDev(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryDeviceChromeosReadonlyScope)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
 	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 	cdgc := ds.Chromeosdevices.Get(customerID, args[0])
@@ -79,7 +78,6 @@ func doGetCrOSDev(cmd *cobra.Command, args []string) error {
 	if flgAttrsVal != "" {
 		formattedAttrs, err := gpars.ParseOutputAttrs(flgAttrsVal, cdevs.CrOSDevAttrMap)
 		if err != nil {
-			lg.Error(err)
 			return err
 		}
 
@@ -107,7 +105,6 @@ func doGetCrOSDev(cmd *cobra.Command, args []string) error {
 
 	crosdev, err = cdevs.DoGet(cdgc)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
@@ -119,7 +116,6 @@ func doGetCrOSDev(cmd *cobra.Command, args []string) error {
 
 	fmt.Println(string(jsonData))
 
-	lg.Debug("finished doGetCrOSDev()")
 	return nil
 }
 

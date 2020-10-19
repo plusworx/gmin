@@ -52,6 +52,7 @@ gmin get mdev AFiQxQ83IZT4llDfTWPZt69JvwSJU0YECe1TVyVZC4x -a serialnumber`,
 func doGetMobDev(cmd *cobra.Command, args []string) error {
 	lg.Debugw("starting doGetMobDev()",
 		"args", args)
+	defer lg.Debug("finished doGetMobDev()")
 
 	var (
 		jsonData []byte
@@ -60,13 +61,11 @@ func doGetMobDev(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryDeviceMobileReadonlyScope)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
 	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 	mdgc := ds.Mobiledevices.Get(customerID, args[0])
@@ -79,7 +78,6 @@ func doGetMobDev(cmd *cobra.Command, args []string) error {
 	if flgAttrsVal != "" {
 		formattedAttrs, err := gpars.ParseOutputAttrs(flgAttrsVal, mdevs.MobDevAttrMap)
 		if err != nil {
-			lg.Error(err)
 			return err
 		}
 
@@ -107,7 +105,6 @@ func doGetMobDev(cmd *cobra.Command, args []string) error {
 
 	mobdev, err = mdevs.DoGet(mdgc)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
@@ -119,7 +116,6 @@ func doGetMobDev(cmd *cobra.Command, args []string) error {
 
 	fmt.Println(string(jsonData))
 
-	lg.Debug("finished doGetMobDev()")
 	return nil
 }
 

@@ -27,6 +27,7 @@ import (
 
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	"github.com/spf13/viper"
+	"go.uber.org/zap"
 )
 
 const (
@@ -68,14 +69,22 @@ type File struct {
 	LogPath        string `yaml:"logpath"`
 }
 
+// Logger passed from logging package
+var Logger *zap.SugaredLogger
+
 // ReadConfigString gets a string item from config file
 func ReadConfigString(key string) (string, error) {
+	Logger.Debugw("starting ReadConfigString()",
+		"key", key)
+	defer Logger.Debug("finished ReadConfigString()")
+
 	var err error
 
+	// Use viper directly here because logging may not be set up yet
 	str := viper.GetString(key)
 	if str == "" {
 		err = fmt.Errorf(gmess.ERR_NOTFOUNDINCONFIG, key)
+		Logger.Error(err)
 	}
-
 	return str, err
 }

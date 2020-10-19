@@ -48,6 +48,7 @@ gmin crt ou Finance -d "Finance Department"`,
 func doCreateOU(cmd *cobra.Command, args []string) error {
 	lg.Debugw("starting doCreateOU()",
 		"args", args)
+	defer lg.Debug("finished doCreateOU()")
 
 	var orgunit *admin.OrgUnit
 
@@ -88,13 +89,11 @@ func doCreateOU(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryOrgunitScope)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
 	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
@@ -108,7 +107,6 @@ func doCreateOU(cmd *cobra.Command, args []string) error {
 	lg.Infof(gmess.INFO_OUCREATED, newOrgUnit.OrgUnitPath)
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_OUCREATED, newOrgUnit.OrgUnitPath)))
 
-	lg.Debug("finished doCreateOU()")
 	return nil
 }
 

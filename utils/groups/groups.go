@@ -29,6 +29,7 @@ import (
 
 	cmn "github.com/plusworx/gmin/utils/common"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	lg "github.com/plusworx/gmin/utils/logging"
 	admin "google.golang.org/api/admin/directory/v1"
 	"google.golang.org/api/googleapi"
 )
@@ -79,6 +80,10 @@ var ValidOrderByStrs = []string{
 
 // AddCustomer adds Customer to admin calls
 func AddCustomer(glc *admin.GroupsListCall, customerID string) *admin.GroupsListCall {
+	lg.Debugw("starting AddCustomer()",
+		"customerID", customerID)
+	defer lg.Debug("finished AddCustomer()")
+
 	var newGLC *admin.GroupsListCall
 
 	newGLC = glc.Customer(customerID)
@@ -88,6 +93,10 @@ func AddCustomer(glc *admin.GroupsListCall, customerID string) *admin.GroupsList
 
 // AddDomain adds domain to admin calls
 func AddDomain(glc *admin.GroupsListCall, domain string) *admin.GroupsListCall {
+	lg.Debugw("starting AddDomain()",
+		"domain", domain)
+	defer lg.Debug("finished AddDomain()")
+
 	var newGLC *admin.GroupsListCall
 
 	newGLC = glc.Domain(domain)
@@ -97,6 +106,10 @@ func AddDomain(glc *admin.GroupsListCall, domain string) *admin.GroupsListCall {
 
 // AddFields adds fields to be returned from admin calls
 func AddFields(callObj interface{}, attrs string) interface{} {
+	lg.Debugw("starting AddFields()",
+		"attrs", attrs)
+	defer lg.Debug("finished AddFields()")
+
 	var fields googleapi.Field = googleapi.Field(attrs)
 
 	switch callObj.(type) {
@@ -119,6 +132,10 @@ func AddFields(callObj interface{}, attrs string) interface{} {
 
 // AddMaxResults adds MaxResults to admin calls
 func AddMaxResults(glc *admin.GroupsListCall, maxResults int64) *admin.GroupsListCall {
+	lg.Debugw("starting AddMaxResults()",
+		"maxResults", maxResults)
+	defer lg.Debug("finished AddMaxResults()")
+
 	var newGLC *admin.GroupsListCall
 
 	newGLC = glc.MaxResults(maxResults)
@@ -128,6 +145,10 @@ func AddMaxResults(glc *admin.GroupsListCall, maxResults int64) *admin.GroupsLis
 
 // AddOrderBy adds OrderBy to admin calls
 func AddOrderBy(glc *admin.GroupsListCall, orderBy string) *admin.GroupsListCall {
+	lg.Debugw("starting AddOrderBy()",
+		"orderBy", orderBy)
+	defer lg.Debug("finished AddOrderBy()")
+
 	var newGLC *admin.GroupsListCall
 
 	newGLC = glc.OrderBy(orderBy)
@@ -137,6 +158,10 @@ func AddOrderBy(glc *admin.GroupsListCall, orderBy string) *admin.GroupsListCall
 
 // AddPageToken adds PageToken to admin calls
 func AddPageToken(glc *admin.GroupsListCall, token string) *admin.GroupsListCall {
+	lg.Debugw("starting AddPageToken()",
+		"token", token)
+	defer lg.Debug("finished AddPageToken()")
+
 	var newGLC *admin.GroupsListCall
 
 	newGLC = glc.PageToken(token)
@@ -146,6 +171,10 @@ func AddPageToken(glc *admin.GroupsListCall, token string) *admin.GroupsListCall
 
 // AddQuery adds query to admin calls
 func AddQuery(glc *admin.GroupsListCall, query string) *admin.GroupsListCall {
+	lg.Debugw("starting AddQuery()",
+		"query", query)
+	defer lg.Debug("finished AddQuery()")
+
 	var newGLC *admin.GroupsListCall
 
 	newGLC = glc.Query(query)
@@ -155,6 +184,10 @@ func AddQuery(glc *admin.GroupsListCall, query string) *admin.GroupsListCall {
 
 // AddSortOrder adds SortOrder to admin calls
 func AddSortOrder(glc *admin.GroupsListCall, sortorder string) *admin.GroupsListCall {
+	lg.Debugw("starting AddSortOrder()",
+		"sortorder", sortorder)
+	defer lg.Debug("finished AddSortOrder()")
+
 	var newGLC *admin.GroupsListCall
 
 	newGLC = glc.SortOrder(sortorder)
@@ -164,6 +197,10 @@ func AddSortOrder(glc *admin.GroupsListCall, sortorder string) *admin.GroupsList
 
 // AddUserKey adds UserKey to admin calls
 func AddUserKey(glc *admin.GroupsListCall, key string) *admin.GroupsListCall {
+	lg.Debugw("starting AddUserKey()",
+		"key", key)
+	defer lg.Debug("finished AddUserKey()")
+
 	var newGLC *admin.GroupsListCall
 
 	newGLC = glc.UserKey(key)
@@ -173,8 +210,12 @@ func AddUserKey(glc *admin.GroupsListCall, key string) *admin.GroupsListCall {
 
 // DoGet calls the .Do() function on the admin.GroupsGetCall
 func DoGet(ggc *admin.GroupsGetCall) (*admin.Group, error) {
+	lg.Debug("starting DoGet()")
+	defer lg.Debug("finished DoGet()")
+
 	group, err := ggc.Do()
 	if err != nil {
+		lg.Error(err)
 		return nil, err
 	}
 
@@ -183,8 +224,12 @@ func DoGet(ggc *admin.GroupsGetCall) (*admin.Group, error) {
 
 // DoList calls the .Do() function on the admin.GroupsListCall
 func DoList(glc *admin.GroupsListCall) (*admin.Groups, error) {
+	lg.Debug("starting DoList()")
+	defer lg.Debug("finished DoList()")
+
 	groups, err := glc.Do()
 	if err != nil {
+		lg.Error(err)
 		return nil, err
 	}
 
@@ -193,6 +238,10 @@ func DoList(glc *admin.GroupsListCall) (*admin.Groups, error) {
 
 // ShowAttrs displays requested group attributes
 func ShowAttrs(filter string) {
+	lg.Debugw("starting ShowAttrs()",
+		"filter", filter)
+	defer lg.Debug("finished ShowAttrs()")
+
 	keys := make([]string, 0, len(GroupAttrMap))
 	for k := range GroupAttrMap {
 		keys = append(keys, k)
@@ -214,6 +263,12 @@ func ShowAttrs(filter string) {
 
 // ShowFlagValues displays enumerated flag values
 func ShowFlagValues(lenArgs int, args []string, filter string) error {
+	lg.Debugw("starting ShowFlagValues()",
+		"lenArgs", lenArgs,
+		"args", args,
+		"filter", filter)
+	defer lg.Debug("finished ShowFlagValues()")
+
 	if lenArgs == 1 {
 		cmn.ShowFlagValues(flagValues, filter)
 	}
@@ -232,7 +287,9 @@ func ShowFlagValues(lenArgs int, args []string, filter string) error {
 			uniqueSlice := cmn.UniqueStrSlice(valSlice)
 			cmn.ShowFlagValues(uniqueSlice, filter)
 		default:
-			return fmt.Errorf(gmess.ERR_FLAGNOTRECOGNIZED, args[1])
+			err := fmt.Errorf(gmess.ERR_FLAGNOTRECOGNIZED, args[1])
+			lg.Error(err)
+			return err
 		}
 	}
 	return nil

@@ -47,6 +47,7 @@ gmin crt grp finance@mycompany.com -n Finance -d "Finance Department Group"`,
 func doCreateGroup(cmd *cobra.Command, args []string) error {
 	lg.Debugw("starting doCreateGroup()",
 		"args", args)
+	defer lg.Debug("finished doCreateGroup()")
 
 	var group *admin.Group
 
@@ -76,7 +77,6 @@ func doCreateGroup(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupScope)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
@@ -90,7 +90,6 @@ func doCreateGroup(cmd *cobra.Command, args []string) error {
 	lg.Infof(gmess.INFO_GROUPCREATED, newGroup.Email)
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_GROUPCREATED, newGroup.Email)))
 
-	lg.Debug("finished doCreateGroup()")
 	return nil
 }
 

@@ -50,12 +50,12 @@ gmin mng mdev 4cx07eba348f09b3 admin_remote_wipe`,
 func doManageMobDev(cmd *cobra.Command, args []string) error {
 	lg.Debugw("starting doManageMobDev()",
 		"args", args)
+	defer lg.Debug("finished doManageMobDev()")
 
 	var devAction = admin.MobileDeviceAction{}
 
 	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
@@ -71,7 +71,6 @@ func doManageMobDev(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryDeviceMobileActionScope)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
@@ -86,7 +85,6 @@ func doManageMobDev(cmd *cobra.Command, args []string) error {
 	lg.Infof(gmess.INFO_MDEVACTIONPERFORMED, args[1], args[0])
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_MDEVACTIONPERFORMED, args[1], args[0])))
 
-	lg.Debug("finished doManageMobDev()")
 	return nil
 }
 

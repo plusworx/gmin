@@ -46,10 +46,10 @@ gmin del ua myalias@mycompany.com myuser@mycompany.com`,
 func doDeleteUserAlias(cmd *cobra.Command, args []string) error {
 	lg.Debugw("starting doDeleteUserAlias()",
 		"args", args)
+	defer lg.Debug("finished doDeleteUserAlias()")
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserAliasScope)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
@@ -64,7 +64,6 @@ func doDeleteUserAlias(cmd *cobra.Command, args []string) error {
 	lg.Infof(gmess.INFO_USERALIASDELETED, args[0], args[1])
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_USERALIASDELETED, args[0], args[1])))
 
-	lg.Debug("finished doDeleteUserAlias()")
 	return nil
 }
 

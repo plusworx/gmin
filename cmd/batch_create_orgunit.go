@@ -75,12 +75,12 @@ The column names are case insensitive and can be in any order.`,
 func doBatchCrtOrgUnit(cmd *cobra.Command, args []string) error {
 	lg.Debugw("starting doBatchCrtOrgUnit()",
 		"args", args)
+	defer lg.Debug("finished doBatchCrtOrgUnit()")
 
 	var orgunits []*admin.OrgUnit
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryOrgunitScope)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
@@ -92,7 +92,6 @@ func doBatchCrtOrgUnit(cmd *cobra.Command, args []string) error {
 
 	scanner, err := cmn.InputFromStdIn(inputFlgVal)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
@@ -120,43 +119,40 @@ func doBatchCrtOrgUnit(cmd *cobra.Command, args []string) error {
 	case lwrFmt == "csv":
 		orgunits, err = bcoProcessCSVFile(ds, inputFlgVal)
 		if err != nil {
-			lg.Error(err)
 			return err
 		}
 	case lwrFmt == "json":
 		orgunits, err = bcoProcessJSON(ds, inputFlgVal, scanner)
 		if err != nil {
-			lg.Error(err)
 			return err
 		}
 	case lwrFmt == "gsheet":
 		rangeFlgVal, err := cmd.Flags().GetString(flgnm.FLG_SHEETRANGE)
 		if err != nil {
-			lg.Error(err)
 			return err
 		}
 
 		orgunits, err = bcoProcessGSheet(ds, inputFlgVal, rangeFlgVal)
 		if err != nil {
-			lg.Error(err)
 			return err
 		}
 	default:
-		return fmt.Errorf(gmess.ERR_INVALIDFILEFORMAT, formatFlgVal)
-	}
-
-	err = bcoProcessObjects(ds, orgunits)
-	if err != nil {
+		err = fmt.Errorf(gmess.ERR_INVALIDFILEFORMAT, formatFlgVal)
 		lg.Error(err)
 		return err
 	}
 
-	lg.Debug("finished doBatchCrtOrgUnit()")
+	err = bcoProcessObjects(ds, orgunits)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
 func bcoCreate(orgunit *admin.OrgUnit, wg *sync.WaitGroup, ouic *admin.OrgunitsInsertCall) {
 	lg.Debug("starting bcoCreate()")
+	defer lg.Debug("finished bcoCreate()")
 
 	defer wg.Done()
 
@@ -185,12 +181,12 @@ func bcoCreate(orgunit *admin.OrgUnit, wg *sync.WaitGroup, ouic *admin.OrgunitsI
 		lg.Error(err)
 		fmt.Println(cmn.GminMessage(err.Error()))
 	}
-	lg.Debug("finished bcoCreate()")
 }
 
 func bcoFromFileFactory(hdrMap map[int]string, ouData []interface{}) (*admin.OrgUnit, error) {
 	lg.Debugw("starting bcoFromFileFactory()",
 		"hdrMap", hdrMap)
+	defer lg.Debug("finished bcoFromFileFactory()")
 
 	var orgunit *admin.OrgUnit
 
@@ -211,24 +207,26 @@ func bcoFromFileFactory(hdrMap map[int]string, ouData []interface{}) (*admin.Org
 		case attrName == "name":
 			if attrVal == "" {
 				err := fmt.Errorf(gmess.ERR_EMPTYSTRING, attrName)
+				lg.Error(err)
 				return nil, err
 			}
 			orgunit.Name = attrVal
 		case attrName == "parentOrgUnitPath":
 			if attrVal == "" {
 				err := fmt.Errorf(gmess.ERR_EMPTYSTRING, attrName)
+				lg.Error(err)
 				return nil, err
 			}
 			orgunit.ParentOrgUnitPath = attrVal
 		}
 	}
-	lg.Debug("finished bcoFromFileFactory()")
 	return orgunit, nil
 }
 
 func bcoFromJSONFactory(ds *admin.Service, jsonData string) (*admin.OrgUnit, error) {
 	lg.Debugw("starting bcoFromJSONFactory()",
 		"jsonData", jsonData)
+	defer lg.Debug("finished bcoFromJSONFactory()")
 
 	var (
 		emptyVals = cmn.EmptyValues{}
@@ -245,13 +243,11 @@ func bcoFromJSONFactory(ds *admin.Service, jsonData string) (*admin.OrgUnit, err
 
 	outStr, err := cmn.ParseInputAttrs(jsonBytes)
 	if err != nil {
-		lg.Error(err)
 		return nil, err
 	}
 
 	err = cmn.ValidateInputAttrs(outStr, ous.OrgUnitAttrMap)
 	if err != nil {
-		lg.Error(err)
 		return nil, err
 	}
 
@@ -269,13 +265,13 @@ func bcoFromJSONFactory(ds *admin.Service, jsonData string) (*admin.OrgUnit, err
 	if len(emptyVals.ForceSendFields) > 0 {
 		orgunit.ForceSendFields = emptyVals.ForceSendFields
 	}
-	lg.Debug("finished bcoFromJSONFactory()")
 	return orgunit, nil
 }
 
 func bcoProcessCSVFile(ds *admin.Service, filePath string) ([]*admin.OrgUnit, error) {
 	lg.Debugw("starting bcoProcessCSVFile()",
 		"filePath", filePath)
+	defer lg.Debug("finished bcoProcessCSVFile()")
 
 	var (
 		iSlice   []interface{}
@@ -311,7 +307,6 @@ func bcoProcessCSVFile(ds *admin.Service, filePath string) ([]*admin.OrgUnit, er
 			hdrMap = cmn.ProcessHeader(iSlice)
 			err = cmn.ValidateHeader(hdrMap, ous.OrgUnitAttrMap)
 			if err != nil {
-				lg.Error(err)
 				return nil, err
 			}
 			count = count + 1
@@ -324,7 +319,6 @@ func bcoProcessCSVFile(ds *admin.Service, filePath string) ([]*admin.OrgUnit, er
 
 		ouVar, err := bcoFromFileFactory(hdrMap, iSlice)
 		if err != nil {
-			lg.Error(err)
 			return nil, err
 		}
 
@@ -333,7 +327,6 @@ func bcoProcessCSVFile(ds *admin.Service, filePath string) ([]*admin.OrgUnit, er
 		count = count + 1
 	}
 
-	lg.Debug("finished bcoProcessCSVFile()")
 	return orgunits, nil
 }
 
@@ -341,6 +334,7 @@ func bcoProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]*
 	lg.Debugw("starting bcoProcessGSheet()",
 		"sheetID", sheetID,
 		"sheetrange", sheetrange)
+	defer lg.Debug("finished bcoProcessGSheet()")
 
 	var orgunits []*admin.OrgUnit
 
@@ -352,7 +346,6 @@ func bcoProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]*
 
 	ss, err := cmn.CreateSheetService(sheet.DriveReadonlyScope)
 	if err != nil {
-		lg.Error(err)
 		return nil, err
 	}
 
@@ -372,7 +365,6 @@ func bcoProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]*
 	hdrMap := cmn.ProcessHeader(sValRange.Values[0])
 	err = cmn.ValidateHeader(hdrMap, ous.OrgUnitAttrMap)
 	if err != nil {
-		lg.Error(err)
 		return nil, err
 	}
 
@@ -383,20 +375,19 @@ func bcoProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]*
 
 		ouVar, err := bcoFromFileFactory(hdrMap, row)
 		if err != nil {
-			lg.Error(err)
 			return nil, err
 		}
 
 		orgunits = append(orgunits, ouVar)
 	}
 
-	lg.Debug("finished bcoProcessGSheet()")
 	return orgunits, nil
 }
 
 func bcoProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner) ([]*admin.OrgUnit, error) {
 	lg.Debugw("starting bcoProcessJSON()",
 		"filePath", filePath)
+	defer lg.Debug("finished bcoProcessJSON()")
 
 	var orgunits []*admin.OrgUnit
 
@@ -416,7 +407,6 @@ func bcoProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner) 
 
 		ouVar, err := bcoFromJSONFactory(ds, jsonData)
 		if err != nil {
-			lg.Error(err)
 			return nil, err
 		}
 
@@ -428,16 +418,15 @@ func bcoProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner) 
 		return nil, err
 	}
 
-	lg.Debug("finished bcoProcessJSON()")
 	return orgunits, nil
 }
 
 func bcoProcessObjects(ds *admin.Service, orgunits []*admin.OrgUnit) error {
 	lg.Debug("starting bcoProcessObjects()")
+	defer lg.Debug("finished bcoProcessObjects()")
 
-	customerID, err := cfg.ReadConfigString("customerid")
+	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
@@ -463,7 +452,6 @@ func bcoProcessObjects(ds *admin.Service, orgunits []*admin.OrgUnit) error {
 
 	wg.Wait()
 
-	lg.Debug("finished bcoProcessObjects()")
 	return nil
 }
 

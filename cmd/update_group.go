@@ -48,6 +48,7 @@ gmin upd grp 02502m921to3a9m -e newfinance@mycompany.com -n "New Finance" -d "Ne
 func doUpdateGroup(cmd *cobra.Command, args []string) error {
 	lg.Debugw("starting doUpdateGroup()",
 		"args", args)
+	defer lg.Debug("finished doUpdateGroup()")
 
 	var (
 		group    *admin.Group
@@ -86,7 +87,6 @@ func doUpdateGroup(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupScope)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
@@ -97,10 +97,9 @@ func doUpdateGroup(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	lg.Infof(gmess.INFO_GROUPUPDATED, groupKey)
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_GROUPUPDATED, groupKey)))
+	lg.Infof(gmess.INFO_GROUPUPDATED, groupKey)
 
-	lg.Debug("finished doUpdateGroup()")
 	return nil
 }
 

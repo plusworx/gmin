@@ -80,6 +80,7 @@ func processGroupMember(memID string, attrs string, groupEmail string, flgAttrsV
 		"flgAttrsVal", flgAttrsVal,
 		"groupEmail", groupEmail,
 		"memID", memID)
+	defer lg.Debug("finished processGroupMember()")
 
 	var (
 		jsonData []byte
@@ -88,7 +89,6 @@ func processGroupMember(memID string, attrs string, groupEmail string, flgAttrsV
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupMemberReadonlyScope)
 	if err != nil {
-		lg.Error(err)
 		return nil, err
 	}
 
@@ -97,7 +97,6 @@ func processGroupMember(memID string, attrs string, groupEmail string, flgAttrsV
 	if flgAttrsVal != "" {
 		formattedAttrs, err := gpars.ParseOutputAttrs(flgAttrsVal, mems.MemberAttrMap)
 		if err != nil {
-			lg.Error(err)
 			return nil, err
 		}
 
@@ -107,7 +106,6 @@ func processGroupMember(memID string, attrs string, groupEmail string, flgAttrsV
 
 	member, err = mems.DoGet(mgc)
 	if err != nil {
-		lg.Error(err)
 		return nil, err
 	}
 
@@ -117,6 +115,5 @@ func processGroupMember(memID string, attrs string, groupEmail string, flgAttrsV
 		return nil, err
 	}
 
-	lg.Debug("finished processGroupMember()")
 	return jsonData, nil
 }

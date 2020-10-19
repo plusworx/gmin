@@ -222,6 +222,17 @@ func preRunForDisplayCmds(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	// Get gmin admin email address
+	admAddr, err := cfg.ReadConfigString(cfg.CONFIGADMIN)
+	if err != nil {
+		return err
+	}
+	// Log current user
+	lg.Infow("User Information",
+		"gmin admin", admAddr,
+		"Username", cmn.Username(),
+		"Hostname", cmn.Hostname(),
+		"IP Address", cmn.IPAddress())
 	return nil
 }
 

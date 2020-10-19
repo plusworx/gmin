@@ -48,6 +48,7 @@ gmin upd gmem finance.person@mycompany.com finance@mycompany.com -r MEMBER`,
 func doUpdateMember(cmd *cobra.Command, args []string) error {
 	lg.Debugw("starting doUpdateMember()",
 		"args", args)
+	defer lg.Debug("finished doUpdateMember()")
 
 	var (
 		member    *admin.Member
@@ -65,7 +66,6 @@ func doUpdateMember(cmd *cobra.Command, args []string) error {
 	if flgDelSettingVal != "" {
 		validDS, err := mems.ValidateDeliverySetting(flgDelSettingVal)
 		if err != nil {
-			lg.Error(err)
 			return err
 		}
 		member.DeliverySettings = validDS
@@ -79,7 +79,6 @@ func doUpdateMember(cmd *cobra.Command, args []string) error {
 	if flgRoleVal != "" {
 		validRole, err := mems.ValidateRole(flgRoleVal)
 		if err != nil {
-			lg.Error(err)
 			return err
 		}
 		member.Role = validRole
@@ -87,7 +86,6 @@ func doUpdateMember(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupMemberScope, admin.AdminDirectoryGroupScope)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
@@ -98,10 +96,9 @@ func doUpdateMember(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	lg.Infof(gmess.INFO_MEMBERUPDATED, memberKey, args[1])
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_MEMBERUPDATED, memberKey, args[1])))
+	lg.Infof(gmess.INFO_MEMBERUPDATED, memberKey, args[1])
 
-	lg.Debug("finished doUpdateMember()")
 	return nil
 }
 

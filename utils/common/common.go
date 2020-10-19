@@ -25,7 +25,6 @@ package common
 import (
 	"bufio"
 	"context"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -39,11 +38,10 @@ import (
 	"strings"
 	"time"
 
-	"crypto/sha1"
-
 	cfg "github.com/plusworx/gmin/utils/config"
 	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	"go.uber.org/zap"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	admin "google.golang.org/api/admin/directory/v1"
@@ -54,10 +52,10 @@ import (
 )
 
 const (
-	// HASHFUNCTION specifies password hash function
-	HASHFUNCTION string = "SHA-1"
 	// QUIT is used for terminating commands
 	QUIT int = 99
+	// TIMEFORMAT is used to format timestamp
+	TIMEFORMAT string = "2006-01-02T15:04:05Z0700"
 )
 
 // EmptyValues is struct used to extract ForceSendFields from JSON
@@ -68,6 +66,9 @@ type EmptyValues struct {
 var globalFlagValues = []string{
 	"loglevel",
 }
+
+// Logger passed from logging package
+var Logger *zap.SugaredLogger
 
 // ValidFileFormats provides valid file format strings
 var ValidFileFormats = []string{
@@ -133,6 +134,10 @@ var ValidPrimaryShowArgs = []string{
 
 // CreateDirectoryService function creates and returns Admin Service object
 func CreateDirectoryService(scope ...string) (*admin.Service, error) {
+	Logger.Debugw("starting CreateDirectoryService()",
+		"scope", scope)
+	defer Logger.Debug("finished CreateDirectoryService()")
+
 	ctx, ts, err := oauthSetup(scope)
 	if err != nil {
 		return nil, err
@@ -140,13 +145,19 @@ func CreateDirectoryService(scope ...string) (*admin.Service, error) {
 
 	srv, err := admin.NewService(ctx, option.WithTokenSource(ts))
 	if err != nil {
-		return nil, fmt.Errorf(gmess.ERR_CREATEDIRECTORYSERVICE, err)
+		err = fmt.Errorf(gmess.ERR_CREATEDIRECTORYSERVICE, err)
+		Logger.Error(err)
+		return nil, err
 	}
 	return srv, nil
 }
 
 // CreateGroupSettingService function creates and returns Group Setting Service object
 func CreateGroupSettingService(scope ...string) (*gset.Service, error) {
+	Logger.Debugw("starting CreateGroupSettingService()",
+		"scope", scope)
+	defer Logger.Debug("finished CreateGroupSettingService()")
+
 	ctx, ts, err := oauthSetup(scope)
 	if err != nil {
 		return nil, err
@@ -154,13 +165,19 @@ func CreateGroupSettingService(scope ...string) (*gset.Service, error) {
 
 	srv, err := gset.NewService(ctx, option.WithTokenSource(ts))
 	if err != nil {
-		return nil, fmt.Errorf(gmess.ERR_CREATEGRPSETTINGSERVICE, err)
+		err = fmt.Errorf(gmess.ERR_CREATEGRPSETTINGSERVICE, err)
+		Logger.Error(err)
+		return nil, err
 	}
 	return srv, nil
 }
 
 // CreateSheetService function creates and returns Sheet Service object
 func CreateSheetService(scope ...string) (*sheet.Service, error) {
+	Logger.Debugw("starting CreateSheetService()",
+		"scope", scope)
+	defer Logger.Debug("finished CreateSheetService()")
+
 	ctx, ts, err := oauthSetup(scope)
 	if err != nil {
 		return nil, err
@@ -168,13 +185,18 @@ func CreateSheetService(scope ...string) (*sheet.Service, error) {
 
 	srv, err := sheet.NewService(ctx, option.WithTokenSource(ts))
 	if err != nil {
-		return nil, fmt.Errorf(gmess.ERR_CREATESHEETSERVICE, err)
+		err = fmt.Errorf(gmess.ERR_CREATESHEETSERVICE, err)
+		Logger.Error(err)
+		return nil, err
 	}
 	return srv, nil
 }
 
 // deDupeStrSlice gets rid of duplicate values in a slice
 func deDupeStrSlice(strSlice []string) []string {
+	Logger.Debugw("starting dDupeStrSlice()",
+		"strSlice", strSlice)
+	defer Logger.Debug("finished dDupeStrSlice()")
 
 	check := make(map[string]int)
 	res := make([]string, 0)
@@ -182,35 +204,25 @@ func deDupeStrSlice(strSlice []string) []string {
 		check[val] = 1
 	}
 
-	for s := range check {
-		res = append(res, s)
+	for str := range check {
+		res = append(res, str)
 	}
-
 	return res
 }
 
 // GminMessage constructs a message for output
 func GminMessage(msgTxt string) string {
+	Logger.Debugw("starting dDupeStrSlice()",
+		"msgTxt", msgTxt)
+	defer Logger.Debug("finished dDupeStrSlice()")
 	return Timestamp() + " gmin: " + msgTxt
-}
-
-// HashPassword creates a password hash
-func HashPassword(password string) (string, error) {
-	hasher := sha1.New()
-
-	_, err := hasher.Write([]byte(password))
-	if err != nil {
-		return "", err
-	}
-
-	hashedBytes := hasher.Sum(nil)
-	hexSha1 := hex.EncodeToString(hashedBytes)
-
-	return hexSha1, nil
 }
 
 // Hostname gets machine hostname if possible
 func Hostname() string {
+	Logger.Debug("starting Hostname()")
+	defer Logger.Debug("finished Hostname()")
+
 	var hName string
 
 	hName, err := os.Hostname()
@@ -222,9 +234,14 @@ func Hostname() string {
 
 // InputFromStdIn checks to see if there is stdin data and sets up a scanner for it
 func InputFromStdIn(inputFile string) (*bufio.Scanner, error) {
+	Logger.Debugw("starting InputFromStdIn()",
+		"inputFile", inputFile)
+	defer Logger.Debug("finished InputFromStdIn()")
+
 	file := os.Stdin
 	input, err := file.Stat()
 	if err != nil {
+		Logger.Error(err)
 		return nil, err
 	}
 	if input.Mode()&os.ModeNamedPipe == 0 {
@@ -232,6 +249,7 @@ func InputFromStdIn(inputFile string) (*bufio.Scanner, error) {
 	}
 	if inputFile != "" {
 		err = errors.New(gmess.ERR_PIPEINPUTFILECONFLICT)
+		Logger.Error(err)
 		return nil, err
 	}
 	scanner := bufio.NewScanner(os.Stdin)
@@ -241,6 +259,9 @@ func InputFromStdIn(inputFile string) (*bufio.Scanner, error) {
 
 // IPAddress gets IP address of machine if possible
 func IPAddress() string {
+	Logger.Debug("starting IPAddress()")
+	defer Logger.Debug("finished IPAddress()")
+
 	var ip string
 
 	conn, err := net.Dial("udp", "8.8.8.8:80")
@@ -256,6 +277,10 @@ func IPAddress() string {
 
 // IsErrRetryable checks to see whether Google API error should allow retry
 func IsErrRetryable(e error) bool {
+	Logger.Debugw("starting IsErrRetryable()",
+		"e", e)
+	defer Logger.Debug("finished IsErrRetryable()")
+
 	var retryable bool
 
 	gErr, ok := e.(*googleapi.Error)
@@ -279,11 +304,17 @@ func IsErrRetryable(e error) bool {
 
 // IsValidAttr checks to see whether or not an attribute is valid
 func IsValidAttr(attr string, attrMap map[string]string) (string, error) {
+	Logger.Debugw("starting IsValidAttr()",
+		"attr", attr,
+		"attrMap", attrMap)
+	defer Logger.Debug("finished IsValidAttr()")
+
 	lowerAttr := strings.ToLower(attr)
 
 	validAttr := attrMap[lowerAttr]
 	if validAttr == "" {
 		err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, attr)
+		Logger.Error(err)
 		return "", err
 	}
 
@@ -291,6 +322,10 @@ func IsValidAttr(attr string, attrMap map[string]string) (string, error) {
 }
 
 func oauthSetup(scope []string) (context.Context, oauth2.TokenSource, error) {
+	Logger.Debugw("starting oauthSetup()",
+		"scope", scope)
+	defer Logger.Debug("finished oauthSetup()")
+
 	adminEmail, err := cfg.ReadConfigString(cfg.CONFIGADMIN)
 	if err != nil {
 		return nil, nil, err
@@ -307,11 +342,13 @@ func oauthSetup(scope []string) (context.Context, oauth2.TokenSource, error) {
 
 	jsonCredentials, err := ioutil.ReadFile(ServiceAccountFilePath)
 	if err != nil {
+		Logger.Error(err)
 		return nil, nil, err
 	}
 
 	config, err := google.JWTConfigFromJSON(jsonCredentials, scope...)
 	if err != nil {
+		Logger.Error(err)
 		return nil, nil, fmt.Errorf(gmess.ERR_JWTCONFIGFROMJSON, err)
 	}
 	config.Subject = adminEmail
@@ -321,15 +358,13 @@ func oauthSetup(scope []string) (context.Context, oauth2.TokenSource, error) {
 	return ctx, ts, nil
 }
 
-// ParseTildeField parses argument string with elements delimited by ~
-func ParseTildeField(cStr string) []string {
-	sArgs := strings.Split(cStr, "~")
-
-	return sArgs
-}
-
 // ParseForceSend parses force send fields arguments
 func ParseForceSend(fStr string, attrMap map[string]string) ([]string, error) {
+	Logger.Debugw("starting ParseForceSend()",
+		"fStr", fStr,
+		"attrMap", attrMap)
+	defer Logger.Debug("finished ParseForceSend()")
+
 	result := []string{}
 
 	fArgs := strings.Split(fStr, "~")
@@ -346,11 +381,15 @@ func ParseForceSend(fStr string, attrMap map[string]string) ([]string, error) {
 
 // ParseInputAttrs parses create and update JSON attribute strings
 func ParseInputAttrs(jsonBytes []byte) ([]string, error) {
+	Logger.Debug("starting ParseInputAttrs()")
+	defer Logger.Debug("finished ParseInputAttrs()")
+
 	m := map[string]interface{}{}
 	outStr := []string{}
 
 	err := json.Unmarshal(jsonBytes, &m)
 	if err != nil {
+		Logger.Error(err)
 		return nil, err
 	}
 	parseMap(m, &outStr)
@@ -359,6 +398,10 @@ func ParseInputAttrs(jsonBytes []byte) ([]string, error) {
 }
 
 func parseMap(attrMap map[string]interface{}, outStr *[]string) {
+	Logger.Debugw("starting parseMap()",
+		"attrMap", attrMap)
+	defer Logger.Debug("finished parseMap()")
+
 	for key, val := range attrMap {
 		if strings.ToLower(key) == "customschemas" {
 			*outStr = append(*outStr, key)
@@ -380,6 +423,10 @@ func parseMap(attrMap map[string]interface{}, outStr *[]string) {
 }
 
 func parseArray(anArray []interface{}, outStr *[]string) {
+	Logger.Debugw("starting parseArray()",
+		"anArray", anArray)
+	defer Logger.Debug("finished parseArray()")
+
 	for i, val := range anArray {
 		iStr := strconv.Itoa(i)
 		switch concreteVal := val.(type) {
@@ -398,6 +445,11 @@ func parseArray(anArray []interface{}, outStr *[]string) {
 }
 
 func parseVal(idx string, val interface{}, outStr *[]string) {
+	Logger.Debugw("starting parseVal()",
+		"idx", idx,
+		"val", val)
+	defer Logger.Debug("finished parseVal()")
+
 	switch v := val.(type) {
 	case int:
 		*outStr = append(*outStr, idx+strconv.Itoa(v))
@@ -412,17 +464,26 @@ func parseVal(idx string, val interface{}, outStr *[]string) {
 
 // ProcessHeader processes header column names
 func ProcessHeader(hdr []interface{}) map[int]string {
+	Logger.Debugw("starting ProcessHeader()",
+		"hdr", hdr)
+	defer Logger.Debug("finished ProcessHeader()")
+
 	hdrMap := make(map[int]string)
 	for idx, attr := range hdr {
 		strAttr := fmt.Sprintf("%v", attr)
 		hdrMap[idx] = strings.ToLower(strAttr)
 	}
-
 	return hdrMap
 }
 
 // ShowAttrs displays object attributes
 func ShowAttrs(attrSlice []string, attrMap map[string]string, filter string) {
+	Logger.Debugw("starting ShowAttrs()",
+		"attrSlice", attrSlice,
+		"attrMap", attrMap,
+		"filter", filter)
+	defer Logger.Debug("finished ShowAttrs()")
+
 	for _, a := range attrSlice {
 		s, _ := IsValidAttr(a, attrMap)
 
@@ -438,6 +499,11 @@ func ShowAttrs(attrSlice []string, attrMap map[string]string, filter string) {
 
 // ShowAttrVals displays object attribute enumerated values or names of attributes that have them
 func ShowAttrVals(attrSlice []string, filter string) {
+	Logger.Debugw("starting ShowAttrVals()",
+		"attrSlice", attrSlice,
+		"filter", filter)
+	defer Logger.Debug("finished ShowAttrVals()")
+
 	for _, a := range attrSlice {
 		if filter == "" {
 			fmt.Println(a)
@@ -451,6 +517,11 @@ func ShowAttrVals(attrSlice []string, filter string) {
 
 // ShowFlagValues displays enumerated flag values
 func ShowFlagValues(flagSlice []string, filter string) {
+	Logger.Debugw("starting ShowFlagValues()",
+		"flagSlice", flagSlice,
+		"filter", filter)
+	defer Logger.Debug("finished ShowFlagValues()")
+
 	for _, value := range flagSlice {
 		if filter == "" {
 			fmt.Println(value)
@@ -465,6 +536,12 @@ func ShowFlagValues(flagSlice []string, filter string) {
 
 // ShowGlobalFlagValues displays enumerated global flag values
 func ShowGlobalFlagValues(lenArgs int, args []string, filter string) error {
+	Logger.Debugw("starting ShowGlobalFlagValues()",
+		"lenArgs", lenArgs,
+		"args", args,
+		"filter", filter)
+	defer Logger.Debug("finished ShowGlobalFlagValues()")
+
 	if lenArgs == 1 {
 		ShowFlagValues(globalFlagValues, filter)
 	}
@@ -476,15 +553,21 @@ func ShowGlobalFlagValues(lenArgs int, args []string, filter string) error {
 		case flag == flgnm.FLG_LOGLEVEL:
 			ShowFlagValues(validLogLevels, filter)
 		default:
-			return fmt.Errorf(gmess.ERR_FLAGNOTRECOGNIZED, args[1])
+			err := fmt.Errorf(gmess.ERR_FLAGNOTRECOGNIZED, args[1])
+			Logger.Error(err)
+			return err
 		}
 	}
-
 	return nil
 }
 
 // ShowQueryableAttrs displays user queryable attributes
 func ShowQueryableAttrs(filter string, qAttrMap map[string]string) {
+	Logger.Debugw("starting ShowQueryableAttrs()",
+		"filter", filter,
+		"qAttrMap", qAttrMap)
+	defer Logger.Debug("finished ShowQueryableAttrs()")
+
 	keys := make([]string, 0, len(qAttrMap))
 	for k := range qAttrMap {
 		keys = append(keys, k)
@@ -506,12 +589,16 @@ func ShowQueryableAttrs(filter string, qAttrMap map[string]string) {
 		if strings.Contains(v, strings.ToLower(filter)) {
 			fmt.Println(v)
 		}
-
 	}
 }
 
 // SliceContainsStr tells whether a slice contains a particular string
 func SliceContainsStr(strs []string, s string) bool {
+	Logger.Debugw("starting SliceContainsStr()",
+		"strs", strs,
+		"s", s)
+	defer Logger.Debug("finished SliceContainsStr()")
+
 	for _, sComp := range strs {
 		if s == sComp {
 			return true
@@ -523,11 +610,15 @@ func SliceContainsStr(strs []string, s string) bool {
 // Timestamp gets current formatted time
 func Timestamp() string {
 	t := time.Now()
-	return "[" + t.Format("2006-01-02 15:04:05") + "]"
+	return "[" + t.Format(TIMEFORMAT) + "]"
 }
 
 // UniqueStrSlice takes a slice with duplicate values and returns one with unique values
 func UniqueStrSlice(inSlice []string) []string {
+	Logger.Debugw("starting UniqueStrSlice()",
+		"inSlice", inSlice)
+	defer Logger.Debug("finished UniqueStrSlice()")
+
 	outSlice := []string{}
 	for _, val := range inSlice {
 		ok := SliceContainsStr(outSlice, val)
@@ -540,6 +631,9 @@ func UniqueStrSlice(inSlice []string) []string {
 
 // Username gets username of current user if possible
 func Username() string {
+	Logger.Debug("starting Username()")
+	defer Logger.Debug("finished Username()")
+
 	var (
 		uName       string
 		currentUser *user.User
@@ -555,6 +649,11 @@ func Username() string {
 
 // ValidateHeader validated header column names
 func ValidateHeader(hdr map[int]string, attrMap map[string]string) error {
+	Logger.Debugw("starting ValidateHeader()",
+		"hdr", hdr,
+		"attrMap", attrMap)
+	defer Logger.Debug("finished ValidateHeader()")
+
 	for idx, hdrAttr := range hdr {
 		correctVal, err := IsValidAttr(hdrAttr, attrMap)
 		if err != nil {
@@ -567,6 +666,11 @@ func ValidateHeader(hdr map[int]string, attrMap map[string]string) error {
 
 // ValidateInputAttrs validates JSON attribute string for create and update calls
 func ValidateInputAttrs(attrs []string, attrMap map[string]string) error {
+	Logger.Debugw("starting ValidateInputAttrs()",
+		"attrs", attrs,
+		"attrMap", attrMap)
+	defer Logger.Debug("finished ValidateInputAttrs()")
+
 	for _, elem := range attrs {
 		if strings.HasPrefix(elem, "Index") {
 			continue
@@ -580,7 +684,9 @@ func ValidateInputAttrs(attrs []string, attrMap map[string]string) error {
 		}
 
 		if s != attrName {
-			return fmt.Errorf(gmess.ERR_ATTRSHOULDBE, attrName, s)
+			err = fmt.Errorf(gmess.ERR_ATTRSHOULDBE, attrName, s)
+			Logger.Error(err)
+			return err
 		}
 	}
 	return nil
@@ -588,8 +694,14 @@ func ValidateInputAttrs(attrs []string, attrMap map[string]string) error {
 
 // ValidateRecoveryPhone validates recovery phone number
 func ValidateRecoveryPhone(phoneNo string) error {
+	Logger.Debugw("starting ValidateRecoveryPhone()",
+		"phoneNo", phoneNo)
+	defer Logger.Debug("finished ValidateRecoveryPhone()")
+
 	if string(phoneNo[0]) != "+" {
-		return fmt.Errorf(gmess.ERR_INVALIDRECOVERYPHONE, phoneNo)
+		err := fmt.Errorf(gmess.ERR_INVALIDRECOVERYPHONE, phoneNo)
+		Logger.Error(err)
+		return err
 	}
 	return nil
 }

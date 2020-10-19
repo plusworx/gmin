@@ -50,18 +50,17 @@ gmin upd cdev 4cx07eba348f09b3 -u "Mark Zuckerberg"`,
 func doUpdateCrOSDev(cmd *cobra.Command, args []string) error {
 	lg.Debugw("starting doUpdateCrOSDev()",
 		"args", args)
+	defer lg.Debug("finished doUpdateCrOSDev()")
 
 	var crosdev = admin.ChromeOsDevice{}
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryDeviceChromeosScope)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
 	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
@@ -136,10 +135,9 @@ func doUpdateCrOSDev(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	lg.Infof(gmess.INFO_CDEVUPDATED, updCrOSDev.DeviceId)
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_CDEVUPDATED, updCrOSDev.DeviceId)))
+	lg.Infof(gmess.INFO_CDEVUPDATED, updCrOSDev.DeviceId)
 
-	lg.Debug("finished doUpdateCrOSDev()")
 	return nil
 }
 

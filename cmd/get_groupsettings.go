@@ -49,6 +49,7 @@ gmin get gset 042yioqz3p5ulpk -a email`,
 func doGetGroupSettings(cmd *cobra.Command, args []string) error {
 	lg.Debugw("starting doGetGroupSettings()",
 		"args", args)
+	defer lg.Debug("finished doGetGroupSettings()")
 
 	var (
 		jsonData []byte
@@ -57,7 +58,6 @@ func doGetGroupSettings(cmd *cobra.Command, args []string) error {
 
 	gss, err := cmn.CreateGroupSettingService(gset.AppsGroupsSettingsScope)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
@@ -71,7 +71,6 @@ func doGetGroupSettings(cmd *cobra.Command, args []string) error {
 	if flgAttrsVal != "" {
 		formattedAttrs, err := gpars.ParseOutputAttrs(flgAttrsVal, grpset.GroupSettingsAttrMap)
 		if err != nil {
-			lg.Error(err)
 			return err
 		}
 
@@ -81,7 +80,6 @@ func doGetGroupSettings(cmd *cobra.Command, args []string) error {
 
 	group, err = grpset.DoGet(gsgc)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
@@ -93,7 +91,6 @@ func doGetGroupSettings(cmd *cobra.Command, args []string) error {
 
 	fmt.Println(string(jsonData))
 
-	lg.Debug("finished doGetGroupSettings()")
 	return nil
 }
 

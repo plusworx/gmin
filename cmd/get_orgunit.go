@@ -50,6 +50,7 @@ gmin get ou Marketing -a name~orgUnitId`,
 func doGetOrgUnit(cmd *cobra.Command, args []string) error {
 	lg.Debugw("starting doGetOrgUnit()",
 		"args", args)
+	defer lg.Debug("finished doGetOrgUnit()")
 
 	var (
 		jsonData []byte
@@ -58,13 +59,11 @@ func doGetOrgUnit(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryOrgunitReadonlyScope)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
 	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
@@ -84,7 +83,6 @@ func doGetOrgUnit(cmd *cobra.Command, args []string) error {
 	if flgAttrsVal != "" {
 		formattedAttrs, err := gpars.ParseOutputAttrs(flgAttrsVal, ous.OrgUnitAttrMap)
 		if err != nil {
-			lg.Error(err)
 			return err
 		}
 		getCall := ous.AddFields(ougc, formattedAttrs)
@@ -93,7 +91,6 @@ func doGetOrgUnit(cmd *cobra.Command, args []string) error {
 
 	orgUnit, err = ous.DoGet(ougc)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
@@ -105,7 +102,6 @@ func doGetOrgUnit(cmd *cobra.Command, args []string) error {
 
 	fmt.Println(string(jsonData))
 
-	lg.Debug("finished doGetOrgUnit()")
 	return nil
 }
 

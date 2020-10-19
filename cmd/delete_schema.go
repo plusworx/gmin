@@ -47,16 +47,15 @@ gmin del sc TestSchema`,
 func doDeleteSchema(cmd *cobra.Command, args []string) error {
 	lg.Debugw("starting doDeleteSchema()",
 		"args", args)
+	defer lg.Debug("finished doDeleteSchema()")
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserschemaScope)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
 	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
@@ -71,7 +70,6 @@ func doDeleteSchema(cmd *cobra.Command, args []string) error {
 	lg.Infof(gmess.INFO_SCHEMADELETED, args[0])
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_SCHEMADELETED, args[0])))
 
-	lg.Debug("finished doDeleteSchema()")
 	return nil
 }
 

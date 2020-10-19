@@ -304,6 +304,10 @@ var ValidProjections = []string{
 
 // AddFields adds fields to be returned from admin calls
 func AddFields(callObj interface{}, attrs string) interface{} {
+	lg.Debugw("starting AddFields()",
+		"attrs", attrs)
+	defer lg.Debug("finished AddFields()")
+
 	var fields googleapi.Field = googleapi.Field(attrs)
 
 	switch callObj.(type) {
@@ -343,6 +347,10 @@ func AddFields(callObj interface{}, attrs string) interface{} {
 
 // AddMaxResults adds MaxResults to admin calls
 func AddMaxResults(cdlc *admin.ChromeosdevicesListCall, maxResults int64) *admin.ChromeosdevicesListCall {
+	lg.Debugw("starting AddMaxResults()",
+		"maxResults", maxResults)
+	defer lg.Debug("finished AddMaxResults()")
+
 	var newCDLC *admin.ChromeosdevicesListCall
 
 	newCDLC = cdlc.MaxResults(maxResults)
@@ -352,6 +360,10 @@ func AddMaxResults(cdlc *admin.ChromeosdevicesListCall, maxResults int64) *admin
 
 // AddOrderBy adds OrderBy to admin calls
 func AddOrderBy(cdlc *admin.ChromeosdevicesListCall, orderBy string) *admin.ChromeosdevicesListCall {
+	lg.Debugw("starting AddOrderBy()",
+		"orderBy", orderBy)
+	defer lg.Debug("finished AddOrderBy()")
+
 	var newCDLC *admin.ChromeosdevicesListCall
 
 	newCDLC = cdlc.OrderBy(orderBy)
@@ -361,6 +373,10 @@ func AddOrderBy(cdlc *admin.ChromeosdevicesListCall, orderBy string) *admin.Chro
 
 // AddOrgUnitPath adds OrgUnitPath to admin calls
 func AddOrgUnitPath(cdlc *admin.ChromeosdevicesListCall, orgUnitPath string) *admin.ChromeosdevicesListCall {
+	lg.Debugw("starting AddOrgUnitPath()",
+		"orgUnitPath", orgUnitPath)
+	defer lg.Debug("finished AddOrgUnitPath()")
+
 	var newCDLC *admin.ChromeosdevicesListCall
 
 	newCDLC = cdlc.OrgUnitPath(orgUnitPath)
@@ -370,6 +386,10 @@ func AddOrgUnitPath(cdlc *admin.ChromeosdevicesListCall, orgUnitPath string) *ad
 
 // AddPageToken adds PageToken to admin calls
 func AddPageToken(cdlc *admin.ChromeosdevicesListCall, token string) *admin.ChromeosdevicesListCall {
+	lg.Debugw("starting AddPageToken()",
+		"token", token)
+	defer lg.Debug("finished AddPageToken()")
+
 	var newCDLC *admin.ChromeosdevicesListCall
 
 	newCDLC = cdlc.PageToken(token)
@@ -379,6 +399,10 @@ func AddPageToken(cdlc *admin.ChromeosdevicesListCall, token string) *admin.Chro
 
 // AddProjection adds Projection to admin calls
 func AddProjection(callObj interface{}, projection string) interface{} {
+	lg.Debugw("starting AddProjection()",
+		"projection", projection)
+	defer lg.Debug("finished AddProjection()")
+
 	switch callObj.(type) {
 	case *admin.ChromeosdevicesGetCall:
 		var newCDGC *admin.ChromeosdevicesGetCall
@@ -405,6 +429,10 @@ func AddProjection(callObj interface{}, projection string) interface{} {
 
 // AddQuery adds query to admin calls
 func AddQuery(cdlc *admin.ChromeosdevicesListCall, query string) *admin.ChromeosdevicesListCall {
+	lg.Debugw("starting AddQuery()",
+		"query", query)
+	defer lg.Debug("finished AddQuery()")
+
 	var newCDLC *admin.ChromeosdevicesListCall
 
 	newCDLC = cdlc.Query(query)
@@ -414,6 +442,10 @@ func AddQuery(cdlc *admin.ChromeosdevicesListCall, query string) *admin.Chromeos
 
 // AddSortOrder adds SortOrder to admin calls
 func AddSortOrder(cdlc *admin.ChromeosdevicesListCall, sortorder string) *admin.ChromeosdevicesListCall {
+	lg.Debugw("starting AddSortOrder()",
+		"sortorder", sortorder)
+	defer lg.Debug("finished AddSortOrder()")
+
 	var newCDLC *admin.ChromeosdevicesListCall
 
 	newCDLC = cdlc.SortOrder(sortorder)
@@ -423,6 +455,9 @@ func AddSortOrder(cdlc *admin.ChromeosdevicesListCall, sortorder string) *admin.
 
 // DoGet calls the .Do() function on the admin.ChromeosdevicesGetCall
 func DoGet(cdgc *admin.ChromeosdevicesGetCall) (*admin.ChromeOsDevice, error) {
+	lg.Debug("starting DoGet()")
+	defer lg.Debug("finished DoGet()")
+
 	crosdev, err := cdgc.Do()
 	if err != nil {
 		lg.Error(err)
@@ -434,6 +469,9 @@ func DoGet(cdgc *admin.ChromeosdevicesGetCall) (*admin.ChromeOsDevice, error) {
 
 // DoList calls the .Do() function on the admin.ChromeosdevicesListCall
 func DoList(cdlc *admin.ChromeosdevicesListCall) (*admin.ChromeOsDevices, error) {
+	lg.Debug("starting DoList()")
+	defer lg.Debug("finished DoList()")
+
 	crosdevs, err := cdlc.Do()
 	if err != nil {
 		lg.Error(err)
@@ -445,6 +483,10 @@ func DoList(cdlc *admin.ChromeosdevicesListCall) (*admin.ChromeOsDevices, error)
 
 // ShowAttrs displays requested chromeOS device attributes
 func ShowAttrs(filter string) {
+	lg.Debugw("starting ShowAttrs()",
+		"filter", filter)
+	defer lg.Debug("finished ShowAttrs()")
+
 	for _, a := range crOSDevAttrs {
 		lwrA := strings.ToLower(a)
 		comp, _ := cmn.IsValidAttr(lwrA, crOSDevCompAttrs)
@@ -464,14 +506,21 @@ func ShowAttrs(filter string) {
 				fmt.Println(a)
 			}
 		}
-
 	}
 }
 
 // ShowAttrValues displays enumerated attribute values
 func ShowAttrValues(lenArgs int, args []string, filter string) error {
+	lg.Debugw("starting ShowAttrValues()",
+		"lenArgs", lenArgs,
+		"args", args,
+		"filter", filter)
+	defer lg.Debug("finished ShowAttrValues()")
+
 	if lenArgs > 2 {
-		return fmt.Errorf(gmess.ERR_TOOMANYARGSMAX1, args[0])
+		err := fmt.Errorf(gmess.ERR_TOOMANYARGSMAX1, args[0])
+		lg.Error(err)
+		return err
 	}
 
 	if lenArgs == 1 {
@@ -495,6 +544,10 @@ func ShowAttrValues(lenArgs int, args []string, filter string) error {
 
 // ShowCompAttrs displays chromeOS device composite attributes
 func ShowCompAttrs(filter string) {
+	lg.Debugw("starting ShowCompAttrs()",
+		"filter", filter)
+	defer lg.Debug("finished ShowCompAttrs()")
+
 	keys := make([]string, 0, len(crOSDevCompAttrs))
 	for k := range crOSDevCompAttrs {
 		keys = append(keys, k)
@@ -516,6 +569,12 @@ func ShowCompAttrs(filter string) {
 
 // ShowFlagValues displays enumerated flag values
 func ShowFlagValues(lenArgs int, args []string, filter string) error {
+	lg.Debugw("starting ShowFlagValues()",
+		"lenArgs", lenArgs,
+		"args", args,
+		"filter", filter)
+	defer lg.Debug("finished ShowFlagValues()")
+
 	if lenArgs == 1 {
 		cmn.ShowFlagValues(flagValues, filter)
 	}
@@ -557,6 +616,11 @@ func ShowFlagValues(lenArgs int, args []string, filter string) error {
 
 // ShowSubAttrs displays attributes of composite attributes
 func ShowSubAttrs(compAttr string, filter string) error {
+	lg.Debugw("starting ShowSubAttrs()",
+		"compAttr", compAttr,
+		"filter", filter)
+	defer lg.Debug("finished ShowSubAttrs()")
+
 	lwrCompAttr := strings.ToLower(compAttr)
 	switch lwrCompAttr {
 	case "activetimeranges":

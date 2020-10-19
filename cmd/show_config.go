@@ -47,6 +47,7 @@ var showConfigCmd = &cobra.Command{
 
 func doShowConfig(cmd *cobra.Command, args []string) error {
 	lg.Debug("starting doShowConfig()")
+	defer lg.Debug("finished doShowConfig()")
 
 	fmt.Println("gmin Configuration Information")
 	fmt.Println("==============================")
@@ -86,7 +87,6 @@ func doShowConfig(cmd *cobra.Command, args []string) error {
 
 	fmt.Println(string(yamlFile))
 
-	lg.Debug("finished doShowConfig()")
 	return nil
 }
 

@@ -46,10 +46,10 @@ gmin del user myuser@mycompany.com`,
 func doDeleteUser(cmd *cobra.Command, args []string) error {
 	lg.Debugw("starting doDeleteUser()",
 		"args", args)
+	defer lg.Debug("finished doDeleteUser()")
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserScope)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
@@ -64,7 +64,6 @@ func doDeleteUser(cmd *cobra.Command, args []string) error {
 	lg.Infof(gmess.INFO_USERDELETED, args[0])
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_USERDELETED, args[0])))
 
-	lg.Debug("finished doDeleteUser()")
 	return nil
 }
 

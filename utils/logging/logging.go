@@ -24,11 +24,14 @@ package logging
 
 import (
 	"fmt"
+	"os"
+	"strings"
 	"time"
 
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	"github.com/spf13/viper"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -46,14 +49,20 @@ func createLogger(loglevel string) (*zap.Logger, error) {
 	err = setLogLevel(zconf, loglevel)
 
 	zconf.EncoderConfig.EncodeTime = zapcore.TimeEncoder(func(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
-		enc.AppendString(t.Local().Format("2006-01-02T15:04:05Z0700"))
+		enc.AppendString(t.Local().Format(cmn.TIMEFORMAT))
 	})
-	logpath, err := cfg.ReadConfigString(cfg.CONFIGLOGPATH)
-	if err != nil {
-		return nil, err
+
+	logpath := viper.GetString(cfg.CONFIGLOGPATH)
+	if logpath == "" {
+		// Look for environment variable
+		logpath = os.Getenv(cfg.ENVPREFIX + cfg.ENVVARLOGPATH)
+		if logpath == "" {
+			err = fmt.Errorf(gmess.ERR_NOTFOUNDINCONFIG, cfg.CONFIGLOGPATH)
+			return nil, err
+		}
 	}
 
-	lpaths := cmn.ParseTildeField(logpath)
+	lpaths := strings.Split(logpath, "~")
 	zconf.OutputPaths = lpaths
 
 	zlog, err = zconf.Build()
@@ -104,7 +113,10 @@ func InitLogging(loglevel string) error {
 	if err != nil {
 		return err
 	}
+
 	logger = zlog.Sugar()
+	cfg.Logger = logger
+	cmn.Logger = logger
 	return nil
 }
 

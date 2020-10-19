@@ -54,6 +54,7 @@ gmin ls cdevs --pages all`,
 func doListCrOSDevs(cmd *cobra.Command, args []string) error {
 	lg.Debugw("starting doListCrOSDevs()",
 		"args", args)
+	defer lg.Debug("finished doListCrOSDevs()")
 
 	var (
 		crosdevs *admin.ChromeOsDevices
@@ -61,13 +62,11 @@ func doListCrOSDevs(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryDeviceChromeosReadonlyScope)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
 	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
@@ -81,7 +80,6 @@ func doListCrOSDevs(cmd *cobra.Command, args []string) error {
 	if flgAttrsVal != "" {
 		listAttrs, err := gpars.ParseOutputAttrs(flgAttrsVal, cdevs.CrOSDevAttrMap)
 		if err != nil {
-			lg.Error(err)
 			return err
 		}
 		formattedAttrs := cdevs.STARTCHROMEDEVICESFIELD + listAttrs + cdevs.ENDFIELD
@@ -105,7 +103,6 @@ func doListCrOSDevs(cmd *cobra.Command, args []string) error {
 
 		validOrderBy, err := cmn.IsValidAttr(ob, cdevs.CrOSDevAttrMap)
 		if err != nil {
-			lg.Error(err)
 			return err
 		}
 
@@ -120,7 +117,6 @@ func doListCrOSDevs(cmd *cobra.Command, args []string) error {
 			so := strings.ToLower(flgSrtOrdVal)
 			validSortOrder, err := cmn.IsValidAttr(so, cmn.ValidSortOrders)
 			if err != nil {
-				lg.Error(err)
 				return err
 			}
 
@@ -163,7 +159,6 @@ func doListCrOSDevs(cmd *cobra.Command, args []string) error {
 	if flgQueryVal != "" {
 		formattedQuery, err := gpars.ParseQuery(flgQueryVal, cdevs.QueryAttrMap)
 		if err != nil {
-			lg.Error(err)
 			return err
 		}
 
@@ -179,7 +174,6 @@ func doListCrOSDevs(cmd *cobra.Command, args []string) error {
 
 	crosdevs, err = cdevs.DoList(cdlc)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
@@ -191,7 +185,6 @@ func doListCrOSDevs(cmd *cobra.Command, args []string) error {
 	if flgPagesVal != "" {
 		err = doCrOSDevPages(cdlc, crosdevs, flgPagesVal)
 		if err != nil {
-			lg.Error(err)
 			return err
 		}
 	}
@@ -213,18 +206,17 @@ func doListCrOSDevs(cmd *cobra.Command, args []string) error {
 		fmt.Println(string(jsonData))
 	}
 
-	lg.Debug("finished doListCrOSDevs()")
 	return nil
 }
 
 func doCrOSDevAllPages(cdlc *admin.ChromeosdevicesListCall, crosdevs *admin.ChromeOsDevices) error {
 	lg.Debug("starting doCrOSDevAllPages()")
+	defer lg.Debug("finished doCrOSDevAllPages()")
 
 	if crosdevs.NextPageToken != "" {
 		cdlc = cdevs.AddPageToken(cdlc, crosdevs.NextPageToken)
 		nxtCrOSDevs, err := cdevs.DoList(cdlc)
 		if err != nil {
-			lg.Error(err)
 			return err
 		}
 		crosdevs.Chromeosdevices = append(crosdevs.Chromeosdevices, nxtCrOSDevs.Chromeosdevices...)
@@ -236,19 +228,18 @@ func doCrOSDevAllPages(cdlc *admin.ChromeosdevicesListCall, crosdevs *admin.Chro
 		}
 	}
 
-	lg.Debug("finished doCrOSDevAllPages()")
 	return nil
 }
 
 func doCrOSDevNumPages(cdlc *admin.ChromeosdevicesListCall, crosdevs *admin.ChromeOsDevices, numPages int) error {
 	lg.Debugw("starting doCrOSDevNumPages()",
 		"numPages", numPages)
+	defer lg.Debug("finished doCrOSDevNumPages()")
 
 	if crosdevs.NextPageToken != "" && numPages > 0 {
 		cdlc = cdevs.AddPageToken(cdlc, crosdevs.NextPageToken)
 		nxtCrOSDevs, err := cdevs.DoList(cdlc)
 		if err != nil {
-			lg.Error(err)
 			return err
 		}
 		crosdevs.Chromeosdevices = append(crosdevs.Chromeosdevices, nxtCrOSDevs.Chromeosdevices...)
@@ -260,18 +251,17 @@ func doCrOSDevNumPages(cdlc *admin.ChromeosdevicesListCall, crosdevs *admin.Chro
 		}
 	}
 
-	lg.Debug("finished doCrOSDevNumPages()")
 	return nil
 }
 
 func doCrOSDevPages(cdlc *admin.ChromeosdevicesListCall, crosdevs *admin.ChromeOsDevices, pages string) error {
 	lg.Debugw("starting doCrOSDevPages()",
 		"pages", pages)
+	defer lg.Debug("finished doCrOSDevPages()")
 
 	if pages == "all" {
 		err := doCrOSDevAllPages(cdlc, crosdevs)
 		if err != nil {
-			lg.Error(err)
 			return err
 		}
 	} else {
@@ -285,13 +275,11 @@ func doCrOSDevPages(cdlc *admin.ChromeosdevicesListCall, crosdevs *admin.ChromeO
 		if numPages > 1 {
 			err = doCrOSDevNumPages(cdlc, crosdevs, numPages-1)
 			if err != nil {
-				lg.Error(err)
 				return err
 			}
 		}
 	}
 
-	lg.Debug("finished doCrOSDevPages()")
 	return nil
 }
 

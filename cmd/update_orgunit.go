@@ -107,6 +107,8 @@ func init() {
 func processUpdOUFlags(cmd *cobra.Command, orgunit *admin.OrgUnit, flagNames []string) error {
 	lg.Debugw("starting processUpdOUFlags()",
 		"flagNames", flagNames)
+	defer lg.Debug("finished processUpdOUFlags()")
+
 	for _, flName := range flagNames {
 		if flName == flgnm.FLG_BLOCKINHERIT {
 			flgBlkInheritVal, err := cmd.Flags().GetBool(flgnm.FLG_BLOCKINHERIT)
@@ -147,44 +149,47 @@ func processUpdOUFlags(cmd *cobra.Command, orgunit *admin.OrgUnit, flagNames []s
 			}
 		}
 	}
-	lg.Debug("finished processUpdOUFlags()")
 	return nil
 }
 
 func uoBlockInheritFlag(orgunit *admin.OrgUnit, flgVal bool) {
 	lg.Debugw("starting uoBlockInheritFlag()",
 		"flgVal", flgVal)
+	defer lg.Debug("finished uoBlockInheritFlag()")
+
 	if flgVal {
 		orgunit.BlockInheritance = true
 	} else {
 		orgunit.BlockInheritance = false
 		orgunit.ForceSendFields = append(orgunit.ForceSendFields, "BlockInheritance")
 	}
-	lg.Debug("finished uoBlockInheritFlag()")
 }
 
 func uoDescriptionFlag(orgunit *admin.OrgUnit, flgVal string) {
 	lg.Debugw("starting uoDescriptionFlag()",
 		"flgVal", flgVal)
+	defer lg.Debug("finished uoDescriptionFlag()")
+
 	if flgVal == "" {
 		orgunit.ForceSendFields = append(orgunit.ForceSendFields, "Description")
 	}
 	orgunit.Description = flgVal
-	lg.Debug("finished uoDescriptionFlag()")
 }
 
 func uoNameFlag(orgunit *admin.OrgUnit, flagName string, flgVal string) error {
 	lg.Debugw("starting uoNameFlag()",
 		"flagName", flagName,
 		"flgVal", flgVal)
+	defer lg.Debug("finished uoNameFlag()")
+
 	if flgVal == "" {
 		err := fmt.Errorf(gmess.ERR_EMPTYSTRING, flagName)
 		if err != nil {
+			lg.Error(err)
 			return err
 		}
 	}
 	orgunit.Name = flgVal
-	lg.Debug("finished uoNameFlag()")
 	return nil
 }
 
@@ -192,13 +197,15 @@ func uoParentPathFlag(orgunit *admin.OrgUnit, flagName string, flgVal string) er
 	lg.Debugw("starting uoParentPathFlag()",
 		"flagName", flagName,
 		"flgVal", flgVal)
+	defer lg.Debug("finished uoParentPathFlag()")
+
 	if flgVal == "" {
 		err := fmt.Errorf(gmess.ERR_EMPTYSTRING, flagName)
 		if err != nil {
+			lg.Error(err)
 			return err
 		}
 	}
 	orgunit.ParentOrgUnitPath = flgVal
-	lg.Debug("finished uoParentPathFlag()")
 	return nil
 }

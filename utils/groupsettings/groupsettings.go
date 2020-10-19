@@ -29,6 +29,7 @@ import (
 
 	cmn "github.com/plusworx/gmin/utils/common"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	lg "github.com/plusworx/gmin/utils/logging"
 	"google.golang.org/api/googleapi"
 	gset "google.golang.org/api/groupssettings/v1"
 )
@@ -317,6 +318,10 @@ type Key struct {
 
 // AddFields adds fields to be returned from admin calls
 func AddFields(gsgc *gset.GroupsGetCall, attrs string) interface{} {
+	lg.Debugw("starting AddFields()",
+		"attrs", attrs)
+	defer lg.Debug("finished AddFields()")
+
 	var (
 		fields  googleapi.Field = googleapi.Field(attrs)
 		newGSGC *gset.GroupsGetCall
@@ -328,14 +333,23 @@ func AddFields(gsgc *gset.GroupsGetCall, attrs string) interface{} {
 
 // DoGet calls the .Do() function on the gset.GroupsGetCall
 func DoGet(gsgc *gset.GroupsGetCall) (*gset.Groups, error) {
+	lg.Debug("starting DoGet()")
+	defer lg.Debug("finished DoGet()")
+
 	groups, err := gsgc.Do()
 	if err != nil {
+		lg.Error(err)
 		return nil, err
 	}
 	return groups, nil
 }
 
 func printFlagValues(flagMap map[string]string, filter string) {
+	lg.Debugw("starting printFlagValues()",
+		"flagMap", flagMap,
+		"filter", filter)
+	defer lg.Debug("finished printFlagValues()")
+
 	values := []string{}
 	for _, value := range flagMap {
 		values = append(values, value)
@@ -355,6 +369,10 @@ func printFlagValues(flagMap map[string]string, filter string) {
 
 // ShowAttrs displays requested group attributes
 func ShowAttrs(filter string) {
+	lg.Debugw("starting ShowAttrs()",
+		"filter", filter)
+	defer lg.Debug("finished ShowAttrs()")
+
 	keys := make([]string, 0, len(GroupSettingsAttrMap))
 	for k := range GroupSettingsAttrMap {
 		keys = append(keys, k)
@@ -374,10 +392,18 @@ func ShowAttrs(filter string) {
 
 // ShowAttrValues displays enumerated attribute values
 func ShowAttrValues(lenArgs int, args []string, filter string) error {
+	lg.Debugw("starting ShowAttrValues()",
+		"lenArgs", lenArgs,
+		"args", args,
+		"filter", filter)
+	defer lg.Debug("finished ShowAttrValues()")
+
 	values := []string{}
 
 	if lenArgs > 2 {
-		return fmt.Errorf(gmess.ERR_TOOMANYARGSMAX1, args[0])
+		err := fmt.Errorf(gmess.ERR_TOOMANYARGSMAX1, args[0])
+		lg.Error(err)
+		return err
 	}
 
 	if lenArgs == 1 {
@@ -467,7 +493,9 @@ func ShowAttrValues(lenArgs int, args []string, filter string) error {
 			}
 		}
 		if len(values) < 1 {
-			return fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[1])
+			err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[1])
+			lg.Error(err)
+			return err
 		}
 	}
 	sort.Strings(values)
@@ -477,6 +505,12 @@ func ShowAttrValues(lenArgs int, args []string, filter string) error {
 
 // ShowFlagValues displays enumerated flag values
 func ShowFlagValues(lenArgs int, args []string, filter string) error {
+	lg.Debugw("starting ShowFlagValues()",
+		"lenArgs", lenArgs,
+		"args", args,
+		"filter", filter)
+	defer lg.Debug("finished ShowFlagValues()")
+
 	if lenArgs == 1 {
 		for _, v := range flagValues {
 			if filter == "" {
@@ -558,7 +592,9 @@ func ShowFlagValues(lenArgs int, args []string, filter string) error {
 			return nil
 		}
 		// Flag not recognized
-		return fmt.Errorf(gmess.ERR_FLAGNOTRECOGNIZED, args[1])
+		err := fmt.Errorf(gmess.ERR_FLAGNOTRECOGNIZED, args[1])
+		lg.Error(err)
+		return err
 	}
 
 	return nil
@@ -566,10 +602,18 @@ func ShowFlagValues(lenArgs int, args []string, filter string) error {
 
 // ValidateGroupSettingValue checks that a valid value has been provided for flag or attribute
 func ValidateGroupSettingValue(valueMap map[string]string, name string, value string) (string, error) {
+	lg.Debugw("starting ValidateGroupSettingValue()",
+		"valueMap", valueMap,
+		"name", name,
+		"value", value)
+	defer lg.Debug("finished ValidateGroupSettingValue()")
+
 	lowerVal := strings.ToLower(value)
 	validStr := valueMap[lowerVal]
 	if validStr == "" {
-		return "", fmt.Errorf(gmess.ERR_INVALIDSTRING, name, value)
+		err := fmt.Errorf(gmess.ERR_INVALIDSTRING, name, value)
+		lg.Error(err)
+		return "", err
 	}
 	return validStr, nil
 }

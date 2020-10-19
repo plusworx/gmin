@@ -50,6 +50,7 @@ gmin get sc EmployeeInfo -a displayName~schemaName`,
 func doGetSchema(cmd *cobra.Command, args []string) error {
 	lg.Debugw("starting doGetSchema()",
 		"args", args)
+	defer lg.Debug("finished doGetSchema()")
 
 	var (
 		jsonData []byte
@@ -58,13 +59,11 @@ func doGetSchema(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserschemaReadonlyScope)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
 	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
@@ -78,7 +77,6 @@ func doGetSchema(cmd *cobra.Command, args []string) error {
 	if flgAttrsVal != "" {
 		formattedAttrs, err := gpars.ParseOutputAttrs(flgAttrsVal, scs.SchemaAttrMap)
 		if err != nil {
-			lg.Error(err)
 			return err
 		}
 		getCall := scs.AddFields(scgc, formattedAttrs)
@@ -87,7 +85,6 @@ func doGetSchema(cmd *cobra.Command, args []string) error {
 
 	schema, err = scs.DoGet(scgc)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
@@ -99,7 +96,6 @@ func doGetSchema(cmd *cobra.Command, args []string) error {
 
 	fmt.Println(string(jsonData))
 
-	lg.Debug("finished doGetSchema()")
 	return nil
 }
 

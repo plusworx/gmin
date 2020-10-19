@@ -224,12 +224,12 @@ func bupduFromFileFactory(hdrMap map[int]string, userData []interface{}) (*admin
 		}
 		if attrName == "password" {
 			if attrVal != "" {
-				pwd, err := cmn.HashPassword(attrVal)
+				pwd, err := usrs.HashPassword(attrVal)
 				if err != nil {
 					return nil, "", err
 				}
 				user.Password = pwd
-				user.HashFunction = cmn.HASHFUNCTION
+				user.HashFunction = usrs.HASHFUNCTION
 			}
 		}
 		if attrName == "primaryEmail" {
@@ -519,8 +519,8 @@ func bupduProcessObjects(ds *admin.Service, users []*admin.User, userKeys []stri
 
 	for idx, u := range users {
 		if u.Password != "" {
-			u.HashFunction = cmn.HASHFUNCTION
-			pwd, err := cmn.HashPassword(u.Password)
+			u.HashFunction = usrs.HASHFUNCTION
+			pwd, err := usrs.HashPassword(u.Password)
 			if err != nil {
 				lg.Error(err)
 				return err

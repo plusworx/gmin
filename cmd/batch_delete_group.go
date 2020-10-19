@@ -68,12 +68,12 @@ The column name is case insensitive.`,
 func doBatchDelGroup(cmd *cobra.Command, args []string) error {
 	lg.Debugw("starting doBatchDelGroup()",
 		"args", args)
+	defer lg.Debug("finished doBatchDelGroup()")
 
 	var groups []string
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupScope)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
@@ -85,7 +85,6 @@ func doBatchDelGroup(cmd *cobra.Command, args []string) error {
 
 	scanner, err := cmn.InputFromStdIn(inputFlgVal)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
@@ -113,38 +112,36 @@ func doBatchDelGroup(cmd *cobra.Command, args []string) error {
 	case lwrFmt == "text":
 		groups, err = bdgProcessTextFile(ds, inputFlgVal, scanner)
 		if err != nil {
-			lg.Error(err)
 			return err
 		}
 	case lwrFmt == "gsheet":
 		rangeFlgVal, err := cmd.Flags().GetString(flgnm.FLG_SHEETRANGE)
 		if err != nil {
-			lg.Error(err)
 			return err
 		}
 
 		groups, err = bdgProcessGSheet(ds, inputFlgVal, rangeFlgVal)
 		if err != nil {
-			lg.Error(err)
 			return err
 		}
 	default:
-		return fmt.Errorf(gmess.ERR_INVALIDFILEFORMAT, formatFlgVal)
-	}
-
-	err = bdgProcessDeletion(ds, groups)
-	if err != nil {
+		err = fmt.Errorf(gmess.ERR_INVALIDFILEFORMAT, formatFlgVal)
 		lg.Error(err)
 		return err
 	}
 
-	lg.Debug("finished doBatchDelGroup()")
+	err = bdgProcessDeletion(ds, groups)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
 func bdgDelete(wg *sync.WaitGroup, gdc *admin.GroupsDeleteCall, group string) {
 	lg.Debugw("starting bdgDelete()",
 		"group", group)
+	defer lg.Debug("finished bdgDelete()")
 
 	defer wg.Done()
 
@@ -174,12 +171,12 @@ func bdgDelete(wg *sync.WaitGroup, gdc *admin.GroupsDeleteCall, group string) {
 		lg.Error(err)
 		fmt.Println(cmn.GminMessage(err.Error()))
 	}
-	lg.Debug("finished bdgDelete()")
 }
 
 func bdgFromFileFactory(hdrMap map[int]string, groupData []interface{}) (string, error) {
 	lg.Debugw("starting bdgFromFileFactory()",
 		"hdrMap", hdrMap)
+	defer lg.Debug("finished bdgFromFileFactory()")
 
 	var group string
 
@@ -191,12 +188,12 @@ func bdgFromFileFactory(hdrMap map[int]string, groupData []interface{}) (string,
 			group = attrVal
 		}
 	}
-	lg.Debug("finished bdgFromFileFactory()")
 	return group, nil
 }
 
 func bdgProcessDeletion(ds *admin.Service, groups []string) error {
 	lg.Debug("starting bdgProcessDeletion()")
+	defer lg.Debug("finished bdgProcessDeletion()")
 
 	wg := new(sync.WaitGroup)
 
@@ -210,7 +207,6 @@ func bdgProcessDeletion(ds *admin.Service, groups []string) error {
 
 	wg.Wait()
 
-	lg.Debug("finished bdgProcessDeletion()")
 	return nil
 }
 
@@ -218,6 +214,7 @@ func bdgProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]s
 	lg.Debugw("starting bdgProcessGSheet()",
 		"sheetID", sheetID,
 		"sheetrange", sheetrange)
+	defer lg.Debug("finished bdgProcessGSheet()")
 
 	var groups []string
 
@@ -229,7 +226,6 @@ func bdgProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]s
 
 	ss, err := cmn.CreateSheetService(sheet.DriveReadonlyScope)
 	if err != nil {
-		lg.Error(err)
 		return nil, err
 	}
 
@@ -249,7 +245,6 @@ func bdgProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]s
 	hdrMap := cmn.ProcessHeader(sValRange.Values[0])
 	err = cmn.ValidateHeader(hdrMap, grps.GroupAttrMap)
 	if err != nil {
-		lg.Error(err)
 		return nil, err
 	}
 
@@ -260,20 +255,19 @@ func bdgProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]s
 
 		grpVar, err := bdgFromFileFactory(hdrMap, row)
 		if err != nil {
-			lg.Error(err)
 			return nil, err
 		}
 
 		groups = append(groups, grpVar)
 	}
 
-	lg.Debug("finished bdgProcessGSheet()")
 	return groups, nil
 }
 
 func bdgProcessTextFile(ds *admin.Service, filePath string, scanner *bufio.Scanner) ([]string, error) {
 	lg.Debugw("starting bdgProcessTextFile()",
 		"filePath", filePath)
+	defer lg.Debug("finished bdgProcessTextFile()")
 
 	var groups []string
 
@@ -292,7 +286,6 @@ func bdgProcessTextFile(ds *admin.Service, filePath string, scanner *bufio.Scann
 		groups = append(groups, group)
 	}
 
-	lg.Debug("finished bdgProcessTextFile()")
 	return groups, nil
 }
 

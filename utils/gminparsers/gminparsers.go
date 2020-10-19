@@ -29,6 +29,7 @@ import (
 	"unicode"
 
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	lg "github.com/plusworx/gmin/utils/logging"
 )
 
 const (
@@ -91,6 +92,10 @@ type OutputAttrParser struct {
 
 // Parse is the entry point for the parser
 func (oap *OutputAttrParser) Parse(attrMap map[string]string) (*OutputAttrStr, error) {
+	lg.Debugw("starting outputAttrParser Parse()",
+		"attrMap", attrMap)
+	defer lg.Debug("finished Parse()")
+
 	attrStr := &OutputAttrStr{}
 
 	for {
@@ -101,7 +106,9 @@ func (oap *OutputAttrParser) Parse(attrMap map[string]string) (*OutputAttrStr, e
 
 		if tok != IDENT && tok != ASTERISK && tok != OPENBRACK && tok != CLOSEBRACK &&
 			tok != COMMA && tok != FSLASH && tok != TILDE {
-			return nil, fmt.Errorf(gmess.ERR_UNEXPECTEDATTRCHAR, lit)
+			err := fmt.Errorf(gmess.ERR_UNEXPECTEDATTRCHAR, lit)
+			lg.Error(err)
+			return nil, err
 		}
 
 		if tok == IDENT && oap.oas.bCustomSchema == false {
@@ -109,6 +116,7 @@ func (oap *OutputAttrParser) Parse(attrMap map[string]string) (*OutputAttrStr, e
 			validAttr := attrMap[lowerLit]
 			if validAttr == "" {
 				err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, lit)
+				lg.Error(err)
 				return nil, err
 			}
 			lit = validAttr
@@ -129,6 +137,9 @@ func (oap *OutputAttrParser) Parse(attrMap map[string]string) (*OutputAttrStr, e
 
 // scan returns the next token from the underlying OutputAttrScanner
 func (oap *OutputAttrParser) scan() (Token, string) {
+	lg.Debug("starting outputAttrParser scan()")
+	defer lg.Debug("finished scan()")
+
 	// read the next token from the scanner
 	tok, lit := oap.oas.Scan()
 
@@ -137,6 +148,9 @@ func (oap *OutputAttrParser) scan() (Token, string) {
 
 // scanIgnoreWhitespace scans the next non-whitespace token
 func (oap *OutputAttrParser) scanIgnoreWhitespace() (Token, string) {
+	lg.Debug("starting outputAttrParser scanIgnoreWhitespace()")
+	defer lg.Debug("finished scanIgnoreWhitespace()")
+
 	tok, lit := oap.scan()
 	if tok == WS {
 		tok, lit = oap.scan()
@@ -152,6 +166,9 @@ type OutputAttrScanner struct {
 
 // Scan returns the next token and literal value from OutputAttrScanner
 func (oas *OutputAttrScanner) Scan() (Token, string) {
+	lg.Debug("starting outputAttrScanner Scan()")
+	defer lg.Debug("finished Scan()")
+
 	// Read the next rune
 	ch := oas.scanr.read()
 
@@ -206,6 +223,9 @@ type QueryParser struct {
 
 // scan returns the next token from the underlying QueryScanner
 func (qp *QueryParser) scan() (Token, string) {
+	lg.Debug("starting queryParser scan()")
+	defer lg.Debug("finished scan()")
+
 	// read the next token from the scanner
 	tok, lit := qp.qs.Scan()
 
@@ -214,6 +234,9 @@ func (qp *QueryParser) scan() (Token, string) {
 
 // scanIgnoreWhitespace scans the next non-whitespace token for QueryParser
 func (qp *QueryParser) scanIgnoreWhitespace() (Token, string) {
+	lg.Debug("starting queryParser scanIgnoreWhitespace()")
+	defer lg.Debug("finished scanIgnoreWhitespace()")
+
 	tok, lit := qp.scan()
 	if tok == WS {
 		tok, lit = qp.scan()
@@ -223,6 +246,10 @@ func (qp *QueryParser) scanIgnoreWhitespace() (Token, string) {
 
 // Parse is the entry point for the QueryParser
 func (qp *QueryParser) Parse(qAttrMap map[string]string) (*QueryStr, error) {
+	lg.Debugw("starting queryParser Parse()",
+		"qAttrMap", qAttrMap)
+	defer lg.Debug("finished Parse()")
+
 	qStr := &QueryStr{}
 	qp.qs.bConFieldName = true
 
@@ -235,7 +262,9 @@ func (qp *QueryParser) Parse(qAttrMap map[string]string) (*QueryStr, error) {
 		if tok != ASTERISK && tok != BSLASH && tok != COLON && tok != COMMA && tok != CLOSEBRACK &&
 			tok != CLOSESQBRACK && tok != FSLASH && tok != GT && tok != EQUALS && tok != IDENT && tok != LT &&
 			tok != OP && tok != OPENBRACK && tok != OPENSQBRACK && tok != TILDE && tok != VALUE {
-			return nil, fmt.Errorf(gmess.ERR_UNEXPECTEDQUERYCHAR, lit)
+			err := fmt.Errorf(gmess.ERR_UNEXPECTEDQUERYCHAR, lit)
+			lg.Error(err)
+			return nil, err
 		}
 
 		if tok == IDENT && !strings.Contains(lit, ".") {
@@ -243,6 +272,7 @@ func (qp *QueryParser) Parse(qAttrMap map[string]string) (*QueryStr, error) {
 			validAttr := qAttrMap[lowerLit]
 			if validAttr == "" {
 				err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, lit)
+				lg.Error(err)
 				return nil, err
 			}
 			lit = validAttr
@@ -275,6 +305,9 @@ type QueryScanner struct {
 
 // Scan returns the next token and literal value from QueryScanner
 func (qs *QueryScanner) Scan() (Token, string) {
+	lg.Debug("starting queryScanner Scan()")
+	defer lg.Debug("finished Scan()")
+
 	// Read the next rune
 	ch := qs.scanr.read()
 
@@ -361,6 +394,9 @@ func (qs *QueryScanner) Scan() (Token, string) {
 
 // scanIdent consumes the current rune and all contiguous ident runes for QueryScanner
 func (qs *QueryScanner) scanIdent() (Token, string) {
+	lg.Debug("starting queryScanner scanIndent()")
+	defer lg.Debug("finished scanIndent()")
+
 	// Create a buffer and read the current character into it
 	var (
 		buf bytes.Buffer
@@ -389,6 +425,9 @@ func (qs *QueryScanner) scanIdent() (Token, string) {
 
 // scanOperator consumes the current rune and all contiguous operator runes
 func (qs *QueryScanner) scanOperator() (Token, string) {
+	lg.Debug("starting queryScanner scanOperator()")
+	defer lg.Debug("finished scanOperator()")
+
 	// Create a buffer and read the current character into it
 	var (
 		buf bytes.Buffer
@@ -417,6 +456,9 @@ func (qs *QueryScanner) scanOperator() (Token, string) {
 
 // scanValue consumes the current rune and all contiguous value runes
 func (qs *QueryScanner) scanValue() (Token, string) {
+	lg.Debug("starting queryScanner scanValue()")
+	defer lg.Debug("finished scanValue()")
+
 	// Create a buffer and read the current character into it
 	var (
 		buf bytes.Buffer
@@ -458,6 +500,9 @@ type Token int
 
 // read reads the next rune from the string
 func (scanr *Scanner) read() rune {
+	lg.Debug("starting Scanner read()")
+	defer lg.Debug("finished read()")
+
 	ch, _, err := scanr.strbuf.ReadRune()
 	if err != nil {
 		return eos
@@ -467,6 +512,9 @@ func (scanr *Scanner) read() rune {
 
 // scanIdent consumes the current rune and all contiguous ident runes
 func (scanr *Scanner) scanIdent() (Token, string) {
+	lg.Debug("starting Scanner scanIdent()")
+	defer lg.Debug("finished scanIdent()")
+
 	// Create a buffer and read the current character into it
 	var (
 		buf bytes.Buffer
@@ -494,6 +542,9 @@ func (scanr *Scanner) scanIdent() (Token, string) {
 
 // scanWhitespace consumes the current rune and all contiguous whitespace
 func (scanr *Scanner) scanWhitespace() (Token, string) {
+	lg.Debug("starting Scanner scanWhitespace()")
+	defer lg.Debug("finished scanWhitespace()")
+
 	// Create a buffer and read the current character into it
 	var (
 		buf bytes.Buffer
@@ -522,6 +573,9 @@ func (scanr *Scanner) scanWhitespace() (Token, string) {
 
 // unread places the previously read rune back on the reader
 func (scanr *Scanner) unread() {
+	lg.Debug("starting Scanner unread()")
+	defer lg.Debug("finished unread()")
+
 	_ = scanr.strbuf.UnreadRune()
 }
 
@@ -536,6 +590,10 @@ var underscore = '_'
 
 // isOperator checks to see whether or not rune is an operator symbol
 func isOperator(ch rune) bool {
+	lg.Debugw("starting isOperator()",
+		"ch", ch)
+	defer lg.Debug("finished isOperator()")
+
 	if ch == '=' || ch == ':' || ch == '>' || ch == '<' {
 		return true
 	}
@@ -544,28 +602,45 @@ func isOperator(ch rune) bool {
 
 // NewOutputAttrParser returns a new instance of OutputAttrParser
 func NewOutputAttrParser(buf *bytes.Buffer) *OutputAttrParser {
+	lg.Debug("starting NewOutputAttrParser()")
+	defer lg.Debug("finished NewOutputAttrParser()")
+
 	return &OutputAttrParser{oas: NewOutputAttrScanner(buf)}
 }
 
 // NewOutputAttrScanner returns a new instance of OutputAttrScanner
 func NewOutputAttrScanner(buf *bytes.Buffer) *OutputAttrScanner {
+	lg.Debug("starting NewOutputAttrScanner()")
+	defer lg.Debug("finished NewOutputAttrScanner()")
+
 	scanr := &Scanner{strbuf: buf}
 	return &OutputAttrScanner{scanr: scanr}
 }
 
 // NewQueryParser returns a new instance of QueryParser
 func NewQueryParser(buf *bytes.Buffer) *QueryParser {
+	lg.Debug("starting NewQueryParser()")
+	defer lg.Debug("finished NewQueryParser()")
+
 	return &QueryParser{qs: NewQueryScanner(buf)}
 }
 
 // NewQueryScanner returns a new instance of QueryScanner
 func NewQueryScanner(buf *bytes.Buffer) *QueryScanner {
+	lg.Debug("starting NewQueryScanner()")
+	defer lg.Debug("finished NewQueryScanner()")
+
 	scanr := &Scanner{strbuf: buf}
 	return &QueryScanner{scanr: scanr}
 }
 
 // ParseOutputAttrs validates attributes string and formats it for Get and List calls
 func ParseOutputAttrs(attrs string, attrMap map[string]string) (string, error) {
+	lg.Debugw("starting ParseOutputAttrs()",
+		"attrs", attrs,
+		"attrMap", attrMap)
+	defer lg.Debug("finished ParseOutputAttrs()")
+
 	bb := bytes.NewBufferString(attrs)
 
 	p := NewOutputAttrParser(bb)
@@ -582,6 +657,11 @@ func ParseOutputAttrs(attrs string, attrMap map[string]string) (string, error) {
 
 // ParseQuery validates query string and formats it for queries in list calls
 func ParseQuery(query string, qAttrMap map[string]string) (string, error) {
+	lg.Debugw("starting ParseQuery()",
+		"query", query,
+		"qAttrMap", qAttrMap)
+	defer lg.Debug("finished ParseQuery()")
+
 	bb := bytes.NewBufferString(query)
 
 	p := NewQueryParser(bb)

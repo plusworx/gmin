@@ -47,16 +47,15 @@ gmin del ou TestOU`,
 func doDeleteOU(cmd *cobra.Command, args []string) error {
 	lg.Debugw("starting doDeleteOU()",
 		"args", args)
+	defer lg.Debug("finished doDeleteOU()")
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryOrgunitScope)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
 	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
@@ -71,7 +70,6 @@ func doDeleteOU(cmd *cobra.Command, args []string) error {
 	lg.Infof(gmess.INFO_OUDELETED, args[0])
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_OUDELETED, args[0])))
 
-	lg.Debug("finished doDeleteOU()")
 	return nil
 }
 

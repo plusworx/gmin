@@ -52,12 +52,12 @@ gmin mng cdev 4cx07eba348f09b3 reenable`,
 func doManageCrOSDev(cmd *cobra.Command, args []string) error {
 	lg.Debugw("starting doManageCrOSDev()",
 		"args", args)
+	defer lg.Debug("finished doManageCrOSDev()")
 
 	var devAction = admin.ChromeOsDeviceAction{}
 
 	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
@@ -86,7 +86,6 @@ func doManageCrOSDev(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryDeviceChromeosScope)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
@@ -101,7 +100,6 @@ func doManageCrOSDev(cmd *cobra.Command, args []string) error {
 	lg.Infof(gmess.INFO_CDEVACTIONPERFORMED, args[1], args[0])
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_CDEVACTIONPERFORMED, args[1], args[0])))
 
-	lg.Debug("finished doManageCrOSDev()")
 	return nil
 }
 

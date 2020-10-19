@@ -46,6 +46,7 @@ gmin crt ua my.alias@mycompany.com brian.cox@mycompany.com`,
 func doCreateUserAlias(cmd *cobra.Command, args []string) error {
 	lg.Debugw("starting doCreateUserAlias()",
 		"args", args)
+	defer lg.Debug("finished doCreateUserAlias()")
 
 	var alias *admin.Alias
 
@@ -55,7 +56,6 @@ func doCreateUserAlias(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserAliasScope)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
@@ -69,7 +69,6 @@ func doCreateUserAlias(cmd *cobra.Command, args []string) error {
 	lg.Infof(gmess.INFO_USERALIASCREATED, newAlias.Alias, args[1])
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_USERALIASCREATED, newAlias.Alias, args[1])))
 
-	lg.Debug("finished doCreateUserAlias()")
 	return nil
 }
 

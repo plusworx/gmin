@@ -34,6 +34,7 @@ import (
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	grps "github.com/plusworx/gmin/utils/groups"
 	grpset "github.com/plusworx/gmin/utils/groupsettings"
+	lg "github.com/plusworx/gmin/utils/logging"
 	gmems "github.com/plusworx/gmin/utils/members"
 	mdevs "github.com/plusworx/gmin/utils/mobiledevices"
 	ous "github.com/plusworx/gmin/utils/orgunits"
@@ -62,6 +63,10 @@ user`,
 }
 
 func doShowFlagVals(cmd *cobra.Command, args []string) error {
+	lg.Debugw("starting doShowFlagVals()",
+		"args", args)
+	defer lg.Debug("finished doShowFlagVals()")
+
 	if len(args) > 2 {
 		return errors.New(gmess.ERR_MAX2ARGSEXCEEDED)
 	}

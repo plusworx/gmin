@@ -46,10 +46,10 @@ gmin del gmem mymember@mycompany.org mygroup@mycompany.org`,
 func doDeleteMember(cmd *cobra.Command, args []string) error {
 	lg.Debugw("starting doDeleteMember()",
 		"args", args)
+	defer lg.Debug("finished doDeleteMember()")
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupMemberScope)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
@@ -64,7 +64,6 @@ func doDeleteMember(cmd *cobra.Command, args []string) error {
 	lg.Infof(gmess.INFO_MEMBERDELETED, args[0], args[1])
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_MEMBERDELETED, args[0], args[1])))
 
-	lg.Debug("finished doDeleteMember()")
 	return nil
 }
 

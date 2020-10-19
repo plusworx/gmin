@@ -29,6 +29,7 @@ import (
 
 	cmn "github.com/plusworx/gmin/utils/common"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	lg "github.com/plusworx/gmin/utils/logging"
 	admin "google.golang.org/api/admin/directory/v1"
 	"google.golang.org/api/googleapi"
 )
@@ -72,6 +73,10 @@ type Key struct {
 
 // AddFields adds fields to be returned to admin calls
 func AddFields(callObj interface{}, attrs string) interface{} {
+	lg.Debugw("starting AddFields()",
+		"attrs", attrs)
+	defer lg.Debug("finished AddFields()")
+
 	var fields googleapi.Field = googleapi.Field(attrs)
 
 	switch callObj.(type) {
@@ -94,6 +99,10 @@ func AddFields(callObj interface{}, attrs string) interface{} {
 
 // AddOUPath adds OrgUnitPath or ID to admin calls
 func AddOUPath(oulc *admin.OrgunitsListCall, path string) *admin.OrgunitsListCall {
+	lg.Debugw("starting AddOUPath()",
+		"path", path)
+	defer lg.Debug("finished AddOUPath()")
+
 	var newOULC *admin.OrgunitsListCall
 
 	newOULC = oulc.OrgUnitPath(path)
@@ -103,6 +112,10 @@ func AddOUPath(oulc *admin.OrgunitsListCall, path string) *admin.OrgunitsListCal
 
 // AddType adds Type to admin calls
 func AddType(oulc *admin.OrgunitsListCall, searchType string) *admin.OrgunitsListCall {
+	lg.Debugw("starting AddType()",
+		"searchType", searchType)
+	defer lg.Debug("finished AddType()")
+
 	var newOULC *admin.OrgunitsListCall
 
 	newOULC = oulc.Type(searchType)
@@ -112,8 +125,12 @@ func AddType(oulc *admin.OrgunitsListCall, searchType string) *admin.OrgunitsLis
 
 // DoGet calls the .Do() function on the admin.OrgunitsGetCall
 func DoGet(ougc *admin.OrgunitsGetCall) (*admin.OrgUnit, error) {
+	lg.Debug("starting DoGet()")
+	defer lg.Debug("finished DoGet()")
+
 	orgUnit, err := ougc.Do()
 	if err != nil {
+		lg.Error(err)
 		return nil, err
 	}
 
@@ -122,8 +139,12 @@ func DoGet(ougc *admin.OrgunitsGetCall) (*admin.OrgUnit, error) {
 
 // DoList calls the .Do() function on the admin.OrgunitsListCall
 func DoList(oulc *admin.OrgunitsListCall) (*admin.OrgUnits, error) {
+	lg.Debug("starting DoList()")
+	defer lg.Debug("finished DoList()")
+
 	orgunits, err := oulc.Do()
 	if err != nil {
+		lg.Error(err)
 		return nil, err
 	}
 
@@ -132,6 +153,10 @@ func DoList(oulc *admin.OrgunitsListCall) (*admin.OrgUnits, error) {
 
 // ShowAttrs displays requested orgunit attributes
 func ShowAttrs(filter string) {
+	lg.Debug("starting ShowAttrs()",
+		"filter", filter)
+	defer lg.Debug("finished ShowAttrs()")
+
 	keys := make([]string, 0, len(OrgUnitAttrMap))
 	for k := range OrgUnitAttrMap {
 		keys = append(keys, k)
@@ -153,6 +178,12 @@ func ShowAttrs(filter string) {
 
 // ShowFlagValues displays enumerated flag values
 func ShowFlagValues(lenArgs int, args []string, filter string) error {
+	lg.Debug("starting ShowFlagValues()",
+		"lenArgs", lenArgs,
+		"args", args,
+		"filter", filter)
+	defer lg.Debug("finished ShowFlagValues()")
+
 	if lenArgs == 1 {
 		cmn.ShowFlagValues(flagValues, filter)
 	}
@@ -164,7 +195,9 @@ func ShowFlagValues(lenArgs int, args []string, filter string) error {
 		case flag == "type":
 			cmn.ShowFlagValues(ValidSearchTypes, filter)
 		default:
-			return fmt.Errorf(gmess.ERR_FLAGNOTRECOGNIZED, args[1])
+			err := fmt.Errorf(gmess.ERR_FLAGNOTRECOGNIZED, args[1])
+			lg.Error(err)
+			return err
 		}
 	}
 

@@ -49,12 +49,12 @@ gmin ls gas mygroup@mycompany.com`,
 func doListGroupAliases(cmd *cobra.Command, args []string) error {
 	lg.Debugw("starting doListGroupAliases()",
 		"args", args)
+	defer lg.Debug("finished doListGroupAliases()")
 
 	var aliases *admin.Aliases
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupReadonlyScope)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
@@ -68,7 +68,6 @@ func doListGroupAliases(cmd *cobra.Command, args []string) error {
 	if flgAttrsVal != "" {
 		listAttrs, err := gpars.ParseOutputAttrs(flgAttrsVal, gas.GroupAliasAttrMap)
 		if err != nil {
-			lg.Error(err)
 			return err
 		}
 		formattedAttrs := gas.STARTALIASESFIELD + listAttrs + gas.ENDFIELD
@@ -78,7 +77,6 @@ func doListGroupAliases(cmd *cobra.Command, args []string) error {
 
 	aliases, err = gas.DoList(galc)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
@@ -90,7 +88,6 @@ func doListGroupAliases(cmd *cobra.Command, args []string) error {
 
 	fmt.Println(string(jsonData))
 
-	lg.Debug("finished doListGroupAliases()")
 	return nil
 }
 

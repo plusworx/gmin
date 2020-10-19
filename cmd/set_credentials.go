@@ -33,6 +33,7 @@ import (
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	lg "github.com/plusworx/gmin/utils/logging"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -59,6 +60,10 @@ Once the user chooses a file, that file is copied to gmin_credentials in the cre
 }
 
 func askForCredentialsFile(nFiles int) int {
+	lg.Debugw("starting askForCredentials()",
+		"nFiles", nFiles)
+	defer lg.Debug("finished askForCredentials()")
+
 	var response string
 
 	fmt.Println("")
@@ -89,6 +94,10 @@ func askForCredentialsFile(nFiles int) int {
 }
 
 func doSetCredentials(cmd *cobra.Command, args []string) error {
+	lg.Debugw("starting doSetCredentials()",
+		"args", args)
+	defer lg.Debug("finished doSetCredentials()")
+
 	var (
 		justFiles  []os.FileInfo
 		validFiles []os.FileInfo
@@ -98,6 +107,7 @@ func doSetCredentials(cmd *cobra.Command, args []string) error {
 
 	files, err := ioutil.ReadDir(credPath)
 	if err != nil {
+		lg.Error(err)
 		return err
 	}
 
@@ -129,26 +139,31 @@ func doSetCredentials(cmd *cobra.Command, args []string) error {
 	usedName := validFiles[fileNum-1].Name()
 	newCred, err := os.Open(filepath.Join(filepath.ToSlash(credPath), usedName))
 	if err != nil {
+		lg.Error(err)
 		return err
 	}
 	defer newCred.Close()
 
 	gminCred, err := os.Create(filepath.Join(filepath.ToSlash(credPath), cfg.CREDENTIALFILE))
 	if err != nil {
+		lg.Error(err)
 		return err
 	}
 	defer gminCred.Close()
 
 	_, err = io.Copy(gminCred, newCred)
 	if err != nil {
+		lg.Error(err)
 		fmt.Println(err)
 	}
 
 	err = gminCred.Sync()
 	if err != nil {
+		lg.Error(err)
 		return err
 	}
 
+	lg.Infof(gmess.INFO_CREDENTIALSSET, usedName)
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_CREDENTIALSSET, usedName)))
 	return nil
 }

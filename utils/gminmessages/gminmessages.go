@@ -86,7 +86,7 @@ const (
 	ERR_NOSHEETDATAFOUND         string = "no data found in sheet %s - range: %s"
 	ERR_NOSHEETRANGE             string = "sheet-range must be provided"
 	ERR_NOTCOMPOSITEATTR         string = "%v is not a composite attribute"
-	ERR_NOTFOUNDINCONFIG         string = "%v not found in config file"
+	ERR_NOTFOUNDINCONFIG         string = "%v not found in config"
 	ERR_OBJECTNOTFOUND           string = "%v not found"
 	ERR_OBJECTNOTRECOGNIZED      string = " %v is not recognized"
 	ERR_PIPEINPUTFILECONFLICT    string = "cannot provide input file when piping in input"

@@ -97,6 +97,7 @@ The contents of the JSON file should look something like this:
 func doCreateSchema(cmd *cobra.Command, args []string) error {
 	lg.Debugw("starting doCreateSchema()",
 		"args", args)
+	defer lg.Debug("finished doCreateSchema()")
 
 	var schema *admin.Schema
 
@@ -128,13 +129,11 @@ func doCreateSchema(cmd *cobra.Command, args []string) error {
 
 	outStr, err := cmn.ParseInputAttrs(fileData)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
 	err = cmn.ValidateInputAttrs(outStr, scs.SchemaAttrMap)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
@@ -146,13 +145,11 @@ func doCreateSchema(cmd *cobra.Command, args []string) error {
 
 	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserschemaScope)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
@@ -166,7 +163,6 @@ func doCreateSchema(cmd *cobra.Command, args []string) error {
 	lg.Infof(gmess.INFO_SCHEMACREATED, newSchema.SchemaName)
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_SCHEMACREATED, newSchema.SchemaName)))
 
-	lg.Debug("finished doCreateSchema()")
 	return nil
 }
 

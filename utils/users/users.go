@@ -23,12 +23,15 @@ THE SOFTWARE.
 package users
 
 import (
+	"crypto/sha1"
+	"encoding/hex"
 	"fmt"
 	"sort"
 	"strings"
 
 	cmn "github.com/plusworx/gmin/utils/common"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	lg "github.com/plusworx/gmin/utils/logging"
 	admin "google.golang.org/api/admin/directory/v1"
 	"google.golang.org/api/googleapi"
 )
@@ -36,6 +39,8 @@ import (
 const (
 	// ENDFIELD is List call attribute string terminator
 	ENDFIELD = ")"
+	// HASHFUNCTION specifies password hash function
+	HASHFUNCTION string = "SHA-1"
 	// STARTUSERSFIELD is List call users attribute string prefix
 	STARTUSERSFIELD = "users("
 )
@@ -598,6 +603,10 @@ type UndeleteUser struct {
 
 // AddCustomer adds Customer to admin calls
 func AddCustomer(ulc *admin.UsersListCall, customerID string) *admin.UsersListCall {
+	lg.Debugw("starting AddCustomer()",
+		"customerID", customerID)
+	defer lg.Debug("finished AddCustomer()")
+
 	var newULC *admin.UsersListCall
 
 	newULC = ulc.Customer(customerID)
@@ -607,6 +616,9 @@ func AddCustomer(ulc *admin.UsersListCall, customerID string) *admin.UsersListCa
 
 // AddCustomFieldMask adds CustomFieldMask to be used with get and list admin calls with custom projections
 func AddCustomFieldMask(callObj interface{}, attrs string) interface{} {
+	lg.Debugw("starting AddCustomFieldMask()",
+		"attrs", attrs)
+	defer lg.Debug("finished AddCustomFieldMask()")
 
 	switch callObj.(type) {
 	case *admin.UsersListCall:
@@ -628,6 +640,10 @@ func AddCustomFieldMask(callObj interface{}, attrs string) interface{} {
 
 // AddDomain adds domain to admin calls
 func AddDomain(ulc *admin.UsersListCall, domain string) *admin.UsersListCall {
+	lg.Debugw("starting AddDomain()",
+		"domain", domain)
+	defer lg.Debug("finished AddDomain()")
+
 	var newULC *admin.UsersListCall
 
 	newULC = ulc.Domain(domain)
@@ -637,6 +653,10 @@ func AddDomain(ulc *admin.UsersListCall, domain string) *admin.UsersListCall {
 
 // AddFields adds fields to be returned from admin calls
 func AddFields(callObj interface{}, attrs string) interface{} {
+	lg.Debugw("starting AddFields()",
+		"attrs", attrs)
+	defer lg.Debug("finished AddFields()")
+
 	var fields googleapi.Field = googleapi.Field(attrs)
 
 	switch callObj.(type) {
@@ -659,6 +679,10 @@ func AddFields(callObj interface{}, attrs string) interface{} {
 
 // AddMaxResults adds MaxResults to admin calls
 func AddMaxResults(ulc *admin.UsersListCall, maxResults int64) *admin.UsersListCall {
+	lg.Debugw("starting AddMaxResults()",
+		"maxResults", maxResults)
+	defer lg.Debug("finished AddMaxResults()")
+
 	var newULC *admin.UsersListCall
 
 	newULC = ulc.MaxResults(maxResults)
@@ -668,6 +692,10 @@ func AddMaxResults(ulc *admin.UsersListCall, maxResults int64) *admin.UsersListC
 
 // AddOrderBy adds OrderBy to admin calls
 func AddOrderBy(ulc *admin.UsersListCall, orderBy string) *admin.UsersListCall {
+	lg.Debugw("starting AddOrderBy()",
+		"orderBy", orderBy)
+	defer lg.Debug("finished AddOrderBy()")
+
 	var newULC *admin.UsersListCall
 
 	newULC = ulc.OrderBy(orderBy)
@@ -677,6 +705,10 @@ func AddOrderBy(ulc *admin.UsersListCall, orderBy string) *admin.UsersListCall {
 
 // AddPageToken adds PageToken to admin calls
 func AddPageToken(ulc *admin.UsersListCall, token string) *admin.UsersListCall {
+	lg.Debugw("starting AddPageToken()",
+		"token", token)
+	defer lg.Debug("finished AddPageToken()")
+
 	var newULC *admin.UsersListCall
 
 	newULC = ulc.PageToken(token)
@@ -686,6 +718,10 @@ func AddPageToken(ulc *admin.UsersListCall, token string) *admin.UsersListCall {
 
 // AddProjection adds Projection to admin calls
 func AddProjection(callObj interface{}, projection string) interface{} {
+	lg.Debugw("starting AddProjection()",
+		"projection", projection)
+	defer lg.Debug("finished AddProjection()")
+
 	switch callObj.(type) {
 	case *admin.UsersListCall:
 		var newULC *admin.UsersListCall
@@ -706,6 +742,10 @@ func AddProjection(callObj interface{}, projection string) interface{} {
 
 // AddQuery adds query to admin calls
 func AddQuery(ulc *admin.UsersListCall, query string) *admin.UsersListCall {
+	lg.Debugw("starting AddQuery()",
+		"query", query)
+	defer lg.Debug("finished AddQuery()")
+
 	var newULC *admin.UsersListCall
 
 	newULC = ulc.Query(query)
@@ -715,6 +755,9 @@ func AddQuery(ulc *admin.UsersListCall, query string) *admin.UsersListCall {
 
 // AddShowDeleted adds ShowDeleted to admin calls
 func AddShowDeleted(ulc *admin.UsersListCall) *admin.UsersListCall {
+	lg.Debug("starting AddShowDeleted()")
+	defer lg.Debug("finished AddShowDeleted()")
+
 	var newULC *admin.UsersListCall
 
 	newULC = ulc.ShowDeleted("true")
@@ -724,6 +767,10 @@ func AddShowDeleted(ulc *admin.UsersListCall) *admin.UsersListCall {
 
 // AddSortOrder adds SortOrder to admin calls
 func AddSortOrder(ulc *admin.UsersListCall, sortorder string) *admin.UsersListCall {
+	lg.Debugw("starting AddSortOrder()",
+		"sortorder", sortorder)
+	defer lg.Debug("finished AddSortOrder()")
+
 	var newULC *admin.UsersListCall
 
 	newULC = ulc.SortOrder(sortorder)
@@ -733,6 +780,10 @@ func AddSortOrder(ulc *admin.UsersListCall, sortorder string) *admin.UsersListCa
 
 // AddViewType adds ViewType to admin calls
 func AddViewType(callObj interface{}, viewType string) interface{} {
+	lg.Debugw("starting AddViewType()",
+		"viewType", viewType)
+	defer lg.Debug("finished AddViewType()")
+
 	switch callObj.(type) {
 	case *admin.UsersListCall:
 		var newULC *admin.UsersListCall
@@ -753,8 +804,12 @@ func AddViewType(callObj interface{}, viewType string) interface{} {
 
 // DoGet calls the .Do() function on the admin.UsersGetCall
 func DoGet(ugc *admin.UsersGetCall) (*admin.User, error) {
+	lg.Debug("starting DoGet()")
+	defer lg.Debug("finished DoGet()")
+
 	user, err := ugc.Do()
 	if err != nil {
+		lg.Error(err)
 		return nil, err
 	}
 
@@ -763,6 +818,9 @@ func DoGet(ugc *admin.UsersGetCall) (*admin.User, error) {
 
 // DoList calls the .Do() function on the admin.UsersListCall
 func DoList(ulc *admin.UsersListCall) (*admin.Users, error) {
+	lg.Debug("starting DoList()")
+	defer lg.Debug("finished DoList()")
+
 	users, err := ulc.Do()
 	if err != nil {
 		return nil, err
@@ -771,8 +829,32 @@ func DoList(ulc *admin.UsersListCall) (*admin.Users, error) {
 	return users, nil
 }
 
+// HashPassword creates a password hash
+func HashPassword(password string) (string, error) {
+	lg.Debugw("starting HashPassword()",
+		"password", password)
+	defer lg.Debug("finished HashPassword()")
+
+	hasher := sha1.New()
+
+	_, err := hasher.Write([]byte(password))
+	if err != nil {
+		lg.Error(err)
+		return "", err
+	}
+
+	hashedBytes := hasher.Sum(nil)
+	hexSha1 := hex.EncodeToString(hashedBytes)
+
+	return hexSha1, nil
+}
+
 // ShowAttrs displays requested user attributes
 func ShowAttrs(filter string) {
+	lg.Debugw("starting ShowAttrs()",
+		"filter", filter)
+	defer lg.Debug("finished ShowAttrs()")
+
 	for _, a := range userAttrs {
 		lwrA := strings.ToLower(a)
 		comp, _ := cmn.IsValidAttr(lwrA, userCompAttrs)
@@ -792,12 +874,17 @@ func ShowAttrs(filter string) {
 				fmt.Println(a)
 			}
 		}
-
 	}
 }
 
 // ShowAttrValues displays enumerated attribute values
 func ShowAttrValues(lenArgs int, args []string, filter string) error {
+	lg.Debugw("starting ShowAttrValues()",
+		"lenArgs", lenArgs,
+		"args", args,
+		"filter", filter)
+	defer lg.Debug("finished ShowAttrValues()")
+
 	if lenArgs == 1 {
 		cmn.ShowAttrVals(attrValues, filter)
 	}
@@ -816,7 +903,9 @@ func ShowAttrValues(lenArgs int, args []string, filter string) error {
 		case attr == "posixaccount":
 			fmt.Println("operatingSystemType")
 		default:
-			return fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[1])
+			err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[1])
+			lg.Error(err)
+			return err
 		}
 	}
 
@@ -829,84 +918,108 @@ func ShowAttrValues(lenArgs int, args []string, filter string) error {
 				cmn.ShowAttrVals(validAddressTypes, filter)
 				return nil
 			}
-			return fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[2])
+			err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[2])
+			lg.Error(err)
+			return err
 		}
 		if attr2 == "email" {
 			if attr3 == "type" {
 				cmn.ShowAttrVals(validEmailTypes, filter)
 				return nil
 			}
-			return fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[2])
+			err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[2])
+			lg.Error(err)
+			return err
 		}
 		if attr2 == "externalid" {
 			if attr3 == "type" {
 				cmn.ShowAttrVals(validExtIDTypes, filter)
 				return nil
 			}
-			return fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[2])
+			err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[2])
+			lg.Error(err)
+			return err
 		}
 		if attr2 == "gender" {
 			if attr3 == "type" {
 				cmn.ShowAttrVals(validGenders, filter)
 				return nil
 			}
-			return fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[2])
+			err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[2])
+			lg.Error(err)
+			return err
 		}
 		if attr2 == "keyword" {
 			if attr3 == "type" {
 				cmn.ShowAttrVals(validKeywordTypes, filter)
 				return nil
 			}
-			return fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[2])
+			err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[2])
+			lg.Error(err)
+			return err
 		}
 		if attr2 == "location" {
 			if attr3 == "type" {
 				cmn.ShowAttrVals(validLocationTypes, filter)
 				return nil
 			}
-			return fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[2])
+			err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[2])
+			lg.Error(err)
+			return err
 		}
 		if attr2 == "notes" {
 			if attr3 == "type" {
 				cmn.ShowAttrVals(validNotesContentTypes, filter)
 				return nil
 			}
-			return fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[2])
+			err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[2])
+			lg.Error(err)
+			return err
 		}
 		if attr2 == "organization" {
 			if attr3 == "type" {
 				cmn.ShowAttrVals(validOrgTypes, filter)
 				return nil
 			}
-			return fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[2])
+			err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[2])
+			lg.Error(err)
+			return err
 		}
 		if attr2 == "phone" {
 			if attr3 == "type" {
 				cmn.ShowAttrVals(validPhoneTypes, filter)
 				return nil
 			}
-			return fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[2])
+			err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[2])
+			lg.Error(err)
+			return err
 		}
 		if attr2 == "posixaccount" {
 			if attr3 == "operatingsystemtype" {
 				cmn.ShowAttrVals(validOSTypes, filter)
 				return nil
 			}
-			return fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[2])
+			err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[2])
+			lg.Error(err)
+			return err
 		}
 		if attr2 == "relation" {
 			if attr3 == "type" {
 				cmn.ShowAttrVals(validRelationTypes, filter)
 				return nil
 			}
-			return fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[2])
+			err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[2])
+			lg.Error(err)
+			return err
 		}
 		if attr2 == "website" {
 			if attr3 == "type" {
 				cmn.ShowAttrVals(validWebsiteTypes, filter)
 				return nil
 			}
-			return fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[2])
+			err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[2])
+			lg.Error(err)
+			return err
 		}
 		if attr2 == "im" {
 			if attr3 == "protocol" {
@@ -917,10 +1030,14 @@ func ShowAttrValues(lenArgs int, args []string, filter string) error {
 				cmn.ShowAttrVals(validImTypes, filter)
 				return nil
 			}
-			return fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[2])
+			err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[2])
+			lg.Error(err)
+			return err
 		}
 		// Attribute not recognized
-		return fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[1])
+		err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[1])
+		lg.Error(err)
+		return err
 	}
 
 	return nil
@@ -928,6 +1045,10 @@ func ShowAttrValues(lenArgs int, args []string, filter string) error {
 
 // ShowCompAttrs displays user composite attributes
 func ShowCompAttrs(filter string) {
+	lg.Debugw("starting ShowCompAttrs()",
+		"filter", filter)
+	defer lg.Debug("finished ShowCompAttrs()")
+
 	keys := make([]string, 0, len(userCompAttrs))
 	for k := range userCompAttrs {
 		keys = append(keys, k)
@@ -943,12 +1064,17 @@ func ShowCompAttrs(filter string) {
 		if strings.Contains(k, strings.ToLower(filter)) {
 			fmt.Println(userCompAttrs[k])
 		}
-
 	}
 }
 
 // ShowFlagValues displays enumerated flag values
 func ShowFlagValues(lenArgs int, args []string, filter string) error {
+	lg.Debugw("starting ShowFlagValues()",
+		"lenArgs", lenArgs,
+		"args", args,
+		"filter", filter)
+	defer lg.Debug("finished ShowFlagValues()")
+
 	if lenArgs == 1 {
 		cmn.ShowFlagValues(flagValues, filter)
 	}
@@ -979,7 +1105,9 @@ func ShowFlagValues(lenArgs int, args []string, filter string) error {
 		case flag == "view-type":
 			cmn.ShowFlagValues(ValidViewTypes, filter)
 		default:
-			return fmt.Errorf(gmess.ERR_FLAGNOTRECOGNIZED, args[1])
+			err := fmt.Errorf(gmess.ERR_FLAGNOTRECOGNIZED, args[1])
+			lg.Error(err)
+			return err
 		}
 	}
 
@@ -988,6 +1116,11 @@ func ShowFlagValues(lenArgs int, args []string, filter string) error {
 
 // ShowSubAttrs displays attributes of composite attributes
 func ShowSubAttrs(compAttr string, filter string) error {
+	lg.Debugw("starting ShowSubAttrs()",
+		"compAttr", compAttr,
+		"filter", filter)
+	defer lg.Debug("finished ShowSubAttrs()")
+
 	lwrCompAttr := strings.ToLower(compAttr)
 	switch lwrCompAttr {
 	case "address":
@@ -1023,7 +1156,9 @@ func ShowSubAttrs(compAttr string, filter string) error {
 	case "website":
 		cmn.ShowAttrs(websiteAttrs, UserAttrMap, filter)
 	default:
-		return fmt.Errorf(gmess.ERR_NOTCOMPOSITEATTR, compAttr)
+		err := fmt.Errorf(gmess.ERR_NOTCOMPOSITEATTR, compAttr)
+		lg.Error(err)
+		return err
 	}
 
 	return nil

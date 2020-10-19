@@ -49,6 +49,7 @@ gmin get grp 042yioqz3p5ulpk -a email`,
 func doGetGroup(cmd *cobra.Command, args []string) error {
 	lg.Debugw("starting doGetGroup()",
 		"args", args)
+	defer lg.Debug("finished doGetGroup()")
 
 	var (
 		jsonData []byte
@@ -57,7 +58,6 @@ func doGetGroup(cmd *cobra.Command, args []string) error {
 
 	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupReadonlyScope)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
@@ -71,7 +71,6 @@ func doGetGroup(cmd *cobra.Command, args []string) error {
 	if flgAttrsVal != "" {
 		formattedAttrs, err := gpars.ParseOutputAttrs(flgAttrsVal, grps.GroupAttrMap)
 		if err != nil {
-			lg.Error(err)
 			return err
 		}
 
@@ -81,7 +80,6 @@ func doGetGroup(cmd *cobra.Command, args []string) error {
 
 	group, err = grps.DoGet(ggc)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
 
@@ -93,7 +91,6 @@ func doGetGroup(cmd *cobra.Command, args []string) error {
 
 	fmt.Println(string(jsonData))
 
-	lg.Debug("finished doGetGroup()")
 	return nil
 }
 
