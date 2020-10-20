@@ -55,7 +55,7 @@ const (
 	FLG_FOOTERTEXT      string = "footer-text"
 	FLG_FORCE           string = "force"
 	FLG_FORMAT          string = "format"
-	FLG_GAL             string = "gal"
+	FLG_GAL             string = "global-address-list"
 	FLG_INPUTFILE       string = "input-file"
 	FLG_JOIN            string = "join"
 	FLG_LANGUAGE        string = "language"
