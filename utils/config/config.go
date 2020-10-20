@@ -58,7 +58,7 @@ const (
 	// ENVVARLOGPATH is gmin log path environment variable suffix
 	ENVVARLOGPATH string = "_LOGPATH"
 	// LOGFILE is default gmin log file name
-	LOGFILE string = "gmin.log"
+	LOGFILE string = "gmin-%d-%02d-%02d.log"
 )
 
 // File holds configuration data

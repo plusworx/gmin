@@ -194,9 +194,9 @@ func CreateSheetService(scope ...string) (*sheet.Service, error) {
 
 // deDupeStrSlice gets rid of duplicate values in a slice
 func deDupeStrSlice(strSlice []string) []string {
-	Logger.Debugw("starting dDupeStrSlice()",
+	Logger.Debugw("starting deDupeStrSlice()",
 		"strSlice", strSlice)
-	defer Logger.Debug("finished dDupeStrSlice()")
+	defer Logger.Debug("finished deDupeStrSlice()")
 
 	check := make(map[string]int)
 	res := make([]string, 0)
@@ -212,9 +212,9 @@ func deDupeStrSlice(strSlice []string) []string {
 
 // GminMessage constructs a message for output
 func GminMessage(msgTxt string) string {
-	Logger.Debugw("starting dDupeStrSlice()",
+	Logger.Debugw("starting GminMessage()",
 		"msgTxt", msgTxt)
-	defer Logger.Debug("finished dDupeStrSlice()")
+	defer Logger.Debug("finished GminMessage()")
 	return Timestamp() + " gmin: " + msgTxt
 }
 

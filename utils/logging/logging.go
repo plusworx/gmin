@@ -25,9 +25,10 @@ package logging
 import (
 	"fmt"
 	"os"
-	"strings"
+	"path/filepath"
 	"time"
 
+	rlogs "github.com/lestrrat-go/file-rotatelogs"
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
@@ -41,17 +42,12 @@ var logger *zap.SugaredLogger
 // createLogger sets log level and creates logger
 func createLogger(loglevel string) (*zap.Logger, error) {
 	var (
-		err  error
-		zlog *zap.Logger
+		encCfg zapcore.EncoderConfig
+		err    error
+		zlog   *zap.Logger
 	)
 
-	zconf := zap.NewProductionConfig()
-	err = setLogLevel(zconf, loglevel)
-
-	zconf.EncoderConfig.EncodeTime = zapcore.TimeEncoder(func(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
-		enc.AppendString(t.Local().Format(cmn.TIMEFORMAT))
-	})
-
+	// Get logpath
 	logpath := viper.GetString(cfg.CONFIGLOGPATH)
 	if logpath == "" {
 		// Look for environment variable
@@ -62,13 +58,54 @@ func createLogger(loglevel string) (*zap.Logger, error) {
 		}
 	}
 
-	lpaths := strings.Split(logpath, "~")
-	zconf.OutputPaths = lpaths
+	// Configure log rotation
+	t := time.Now()
 
-	zlog, err = zconf.Build()
+	fmtLogName := fmt.Sprintf(cfg.LOGFILE,
+		t.Year(), t.Month(), t.Day())
+
+	rotator, err := rlogs.New(
+		// filepath.Join(filepath.ToSlash(logpath), cfg.LOGFILE),
+		filepath.Join(filepath.ToSlash(logpath), fmtLogName),
+		rlogs.WithLinkName(filepath.Join(filepath.ToSlash(logpath), "current")),
+		rlogs.WithMaxAge(-1),
+		rlogs.WithRotationCount(7),
+		rlogs.WithRotationTime(24*time.Hour))
 	if err != nil {
 		return nil, err
 	}
+
+	w := zapcore.AddSync(rotator)
+
+	// initialize the JSON encoding config
+	encCfg.CallerKey = "caller"
+	encCfg.EncodeCaller = zapcore.ShortCallerEncoder
+	encCfg.EncodeDuration = zapcore.SecondsDurationEncoder
+	encCfg.EncodeLevel = zapcore.LowercaseLevelEncoder
+	encCfg.EncodeTime = zapcore.ISO8601TimeEncoder
+	// encCfg.EncodeTime = zapcore.TimeEncoder(func(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
+	// 	enc.AppendString(t.Local().Format(cmn.TIMEFORMAT))
+	// })
+	encCfg.FunctionKey = zapcore.OmitKey
+	encCfg.LevelKey = "level"
+	encCfg.LineEnding = zapcore.DefaultLineEnding
+	encCfg.MessageKey = "msg"
+	encCfg.NameKey = "logger"
+	encCfg.StacktraceKey = "stacktrace"
+	encCfg.TimeKey = "ts"
+
+	zlevel, err := getLogLevel(loglevel)
+	if err != nil {
+		return nil, err
+	}
+
+	core := zapcore.NewCore(
+		zapcore.NewJSONEncoder(encCfg),
+		w,
+		zlevel)
+
+	zlog = zap.New(core)
+
 	return zlog, nil
 }
 
@@ -87,9 +124,20 @@ func Error(args ...interface{}) {
 	logger.Error(args...)
 }
 
-// GetLogger gets logger
-func GetLogger() *zap.SugaredLogger {
-	return logger
+// getLogLevel gets requested logging zapcore.Level
+func getLogLevel(loglevel string) (zapcore.Level, error) {
+	switch loglevel {
+	case "debug":
+		return zapcore.DebugLevel, nil
+	case "info":
+		return zapcore.InfoLevel, nil
+	case "error":
+		return zapcore.ErrorLevel, nil
+	case "warn":
+		return zapcore.WarnLevel, nil
+	default:
+		return -99, fmt.Errorf(gmess.ERR_INVALIDLOGLEVEL, loglevel)
+	}
 }
 
 // Info wrapper function for logger.Info
@@ -117,24 +165,6 @@ func InitLogging(loglevel string) error {
 	logger = zlog.Sugar()
 	cfg.Logger = logger
 	cmn.Logger = logger
-	return nil
-}
-
-// setLogLevel sets log level in zconf
-func setLogLevel(zconf zap.Config, loglevel string) error {
-	switch loglevel {
-	case "debug":
-		zconf.Level.SetLevel(zapcore.DebugLevel)
-	case "info":
-		zconf.Level.SetLevel(zapcore.InfoLevel)
-	case "error":
-		zconf.Level.SetLevel(zapcore.ErrorLevel)
-	case "warn":
-		zconf.Level.SetLevel(zapcore.WarnLevel)
-	default:
-		return fmt.Errorf(gmess.ERR_INVALIDLOGLEVEL, loglevel)
-	}
-
 	return nil
 }
 

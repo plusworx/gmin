@@ -43,20 +43,17 @@ var initCmd = &cobra.Command{
 before creating gmin configuration file (.gmin.yaml) in the default location (the home directory of the user)
 or at the specified path.
 
-N.B. Log file path must include the name of the log file and can contain multiple paths separated by tilde '~'.
-stdout is a valid path and will direct output to the console.
-
 Example log paths
 -----------------
-/tmp/logs/gmin.log
-stdout~/home/myuser/logs/gmin.log
+/tmp/logs
+stdout~/home/myuser/logs
 
 Defaults
 --------
 Credentials Path: <home directory>
 Customer ID: my_customer
 Config File Path: <home directory>
-Log File Path: <home directory>/gmin.log`,
+Log File Path: <home directory>`,
 	RunE: doInit,
 }
 
@@ -220,7 +217,7 @@ func doInit(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			log.Fatal(err)
 		}
-		answers.LogPath = filepath.Join(filepath.ToSlash(hmDir), cfg.LOGFILE)
+		answers.LogPath = hmDir
 	}
 
 	cfgFile := cfg.File{Administrator: answers.AdminEmail, CredentialPath: answers.CredentialPath,
