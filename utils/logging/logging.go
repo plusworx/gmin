@@ -39,7 +39,6 @@ import (
 
 var logger *zap.SugaredLogger
 
-// createLogger sets log level and creates logger
 func createLogger(loglevel string) (*zap.Logger, error) {
 	var (
 		encCfg zapcore.EncoderConfig
@@ -75,6 +74,7 @@ func createLogger(loglevel string) (*zap.Logger, error) {
 		return nil, err
 	}
 
+	// Add log rotation to zap logging
 	w := zapcore.AddSync(rotator)
 
 	// initialize the JSON encoding config
@@ -83,9 +83,6 @@ func createLogger(loglevel string) (*zap.Logger, error) {
 	encCfg.EncodeDuration = zapcore.SecondsDurationEncoder
 	encCfg.EncodeLevel = zapcore.LowercaseLevelEncoder
 	encCfg.EncodeTime = zapcore.ISO8601TimeEncoder
-	// encCfg.EncodeTime = zapcore.TimeEncoder(func(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
-	// 	enc.AppendString(t.Local().Format(cmn.TIMEFORMAT))
-	// })
 	encCfg.FunctionKey = zapcore.OmitKey
 	encCfg.LevelKey = "level"
 	encCfg.LineEnding = zapcore.DefaultLineEnding
@@ -99,6 +96,7 @@ func createLogger(loglevel string) (*zap.Logger, error) {
 		return nil, err
 	}
 
+	// Create zap logger object
 	core := zapcore.NewCore(
 		zapcore.NewJSONEncoder(encCfg),
 		w,
