@@ -43,10 +43,18 @@ const (
 	CONFIGFILEPREFIX string = ".gmin"
 	// CONFIGLOGPATH is config file log path variable name
 	CONFIGLOGPATH string = "logpath"
+	// CONFIGLOGROTATIONCOUNT is config file log rotation count variable name
+	CONFIGLOGROTATIONCOUNT string = "logrotationcount"
+	// CONFIGLOGROTATIONTIME is config file log rotation time variable name
+	CONFIGLOGROTATIONTIME string = "logrotationtime"
 	// CREDENTIALFILE service account credentials file name
 	CREDENTIALFILE string = "gmin_credentials"
 	// DEFAULTCUSTID is default customer id value
 	DEFAULTCUSTID string = "my_customer"
+	// DEFAULTLOGROTATIONCOUNT is default log rotation count value
+	DEFAULTLOGROTATIONCOUNT uint = 7
+	// DEFAULTLOGROTATIONTIME is default log rotation time value
+	DEFAULTLOGROTATIONTIME int = 86400
 	// ENVPREFIX is prefix for gmin environment variables
 	ENVPREFIX string = "GMIN"
 	// ENVVARADMIN is gmin administrator environment variable suffix
@@ -57,16 +65,22 @@ const (
 	ENVVARCUSTID string = "_CUSTOMERID"
 	// ENVVARLOGPATH is gmin log path environment variable suffix
 	ENVVARLOGPATH string = "_LOGPATH"
+	// ENVVARLOGROTATIONCOUNT is number of log files that are kept
+	ENVVARLOGROTATIONCOUNT string = "_LOGROTATIONCOUNT"
+	// ENVVARLOGROTATIONTIME is amount of time (seconds) before a new log file is created
+	ENVVARLOGROTATIONTIME string = "_LOGROTATIONTIME"
 	// LOGFILE is default gmin log file name
 	LOGFILE string = "gmin-%d-%02d-%02d.log"
 )
 
 // File holds configuration data
 type File struct {
-	Administrator  string `yaml:"administrator"`
-	CredentialPath string `yaml:"credentialpath"`
-	CustomerID     string `yaml:"customerid"`
-	LogPath        string `yaml:"logpath"`
+	Administrator    string `yaml:"administrator"`
+	CredentialPath   string `yaml:"credentialpath"`
+	CustomerID       string `yaml:"customerid"`
+	LogPath          string `yaml:"logpath"`
+	LogRotationCount uint   `yaml:"logrotationcount"`
+	LogRotationTime  int    `yaml:"logrotationtime"`
 }
 
 // Logger passed from logging package
