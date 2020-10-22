@@ -849,6 +849,87 @@ func HashPassword(password string) (string, error) {
 	return hexSha1, nil
 }
 
+// PopulateUser is used in batch processing
+func PopulateUser(user *admin.User, hdrMap map[int]string, objData []interface{}) error {
+	lg.Debugw("starting populateGroup()",
+		"hdrMap", hdrMap)
+	defer lg.Debug("finished populateGroup()")
+
+	name := new(admin.UserName)
+
+	for idx, attr := range objData {
+		attrName := hdrMap[idx]
+		attrVal := fmt.Sprintf("%v", attr)
+		lowerAttrVal := strings.ToLower(fmt.Sprintf("%v", attr))
+
+		if attrName == "changePasswordAtNextLogin" {
+			if lowerAttrVal == "true" {
+				user.ChangePasswordAtNextLogin = true
+			}
+		}
+		if attrName == "familyName" {
+			name.FamilyName = attrVal
+		}
+		if attrName == "givenName" {
+			name.GivenName = attrVal
+		}
+		if attrName == "includeInGlobalAddressList" {
+			if lowerAttrVal == "false" {
+				user.IncludeInGlobalAddressList = false
+				user.ForceSendFields = append(user.ForceSendFields, "IncludeInGlobalAddressList")
+			}
+		}
+		if attrName == "ipWhitelisted" {
+			if lowerAttrVal == "true" {
+				user.IpWhitelisted = true
+			}
+		}
+		if attrName == "orgUnitPath" {
+			user.OrgUnitPath = attrVal
+		}
+		if attrName == "password" {
+			if attrVal == "" {
+				err := fmt.Errorf(gmess.ERR_EMPTYSTRING, attrName)
+				lg.Error(err)
+				return err
+			}
+			pwd, err := HashPassword(attrVal)
+			if err != nil {
+				return err
+			}
+			user.Password = pwd
+			user.HashFunction = HASHFUNCTION
+		}
+		if attrName == "primaryEmail" {
+			if attrVal == "" {
+				err := fmt.Errorf(gmess.ERR_EMPTYSTRING, attrName)
+				lg.Error(err)
+				return err
+			}
+			user.PrimaryEmail = attrVal
+		}
+		if attrName == "recoveryEmail" {
+			user.RecoveryEmail = attrVal
+		}
+		if attrName == "recoveryPhone" {
+			if attrVal != "" {
+				err := cmn.ValidateRecoveryPhone(attrVal)
+				if err != nil {
+					return err
+				}
+				user.RecoveryPhone = attrVal
+			}
+		}
+		if attrName == "suspended" {
+			if lowerAttrVal == "true" {
+				user.Suspended = true
+			}
+		}
+	}
+	user.Name = name
+	return nil
+}
+
 // ShowAttrs displays requested user attributes
 func ShowAttrs(filter string) {
 	lg.Debugw("starting ShowAttrs()",

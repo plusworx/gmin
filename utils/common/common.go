@@ -52,6 +52,28 @@ import (
 )
 
 const (
+	// Object Types
+
+	OBJTYPECROSDEV = iota
+	OBJTYPEGROUP
+	OBJTYPEGRPSET
+	OBJTYPEMEMBER
+	OBJTYPEMOBDEV
+	OBJTYPEORGUNIT
+	OBJTYPEUSER
+)
+const (
+	// Service Types
+
+	// SRVTYPEADMIN is used to request admin service
+	SRVTYPEADMIN = iota
+	// SRVTYPEGRPSETTING is used to request sheet service
+	SRVTYPEGRPSETTING
+	// SRVTYPESHEET is used to request sheet service
+	SRVTYPESHEET
+)
+
+const (
 	// QUIT is used for terminating commands
 	QUIT int = 99
 	// TIMEFORMAT is used to format timestamp
@@ -189,6 +211,48 @@ func CreateSheetService(scope ...string) (*sheet.Service, error) {
 		Logger.Error(err)
 		return nil, err
 	}
+	return srv, nil
+}
+
+// CreateService function creates and returns a service object
+func CreateService(serviceType int, scope ...string) (interface{}, error) {
+	var srv interface{}
+
+	ctx, ts, err := oauthSetup(scope)
+	if err != nil {
+		return nil, err
+	}
+
+	// Admin service
+	if serviceType == SRVTYPEADMIN {
+		srv, err = admin.NewService(ctx, option.WithTokenSource(ts))
+		if err != nil {
+			err = fmt.Errorf(gmess.ERR_CREATEDIRECTORYSERVICE, err)
+			Logger.Error(err)
+			return nil, err
+		}
+	}
+
+	// Group Setting service
+	if serviceType == SRVTYPEGRPSETTING {
+		srv, err = gset.NewService(ctx, option.WithTokenSource(ts))
+		if err != nil {
+			err = fmt.Errorf(gmess.ERR_CREATEGRPSETTINGSERVICE, err)
+			Logger.Error(err)
+			return nil, err
+		}
+	}
+
+	// Sheet service
+	if serviceType == SRVTYPESHEET {
+		srv, err = sheet.NewService(ctx, option.WithTokenSource(ts))
+		if err != nil {
+			err = fmt.Errorf(gmess.ERR_CREATESHEETSERVICE, err)
+			Logger.Error(err)
+			return nil, err
+		}
+	}
+
 	return srv, nil
 }
 

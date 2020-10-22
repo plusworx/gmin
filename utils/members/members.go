@@ -177,6 +177,44 @@ func DoList(mlc *admin.MembersListCall) (*admin.Members, error) {
 	return members, nil
 }
 
+// PopulateMember is used in batch processing
+func PopulateMember(member *admin.Member, hdrMap map[int]string, objData []interface{}) error {
+	lg.Debugw("starting populateMember()",
+		"hdrMap", hdrMap)
+	defer lg.Debug("finished populateMember()")
+
+	for idx, attr := range objData {
+		attrName := hdrMap[idx]
+		attrVal := fmt.Sprintf("%v", attr)
+
+		switch {
+		case attrName == "delivery_settings":
+			validDS, err := ValidateDeliverySetting(attrVal)
+			if err != nil {
+				return err
+			}
+			member.DeliverySettings = validDS
+		case attrName == "email":
+			if attrVal == "" {
+				err := fmt.Errorf(gmess.ERR_EMPTYSTRING, attrName)
+				lg.Error(err)
+				return err
+			}
+			member.Email = attrVal
+		case attrName == "role":
+			validRole, err := ValidateRole(attrVal)
+			if err != nil {
+				return err
+			}
+			member.Role = validRole
+		default:
+			err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, attrName)
+			return err
+		}
+	}
+	return nil
+}
+
 // ShowAttrs displays requested group member attributes
 func ShowAttrs(filter string) {
 	lg.Debugw("starting ShowAttrs()",

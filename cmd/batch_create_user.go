@@ -23,18 +23,14 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"bufio"
-	"encoding/csv"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"os"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
+	btch "github.com/plusworx/gmin/utils/batch"
 	cmn "github.com/plusworx/gmin/utils/common"
 	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
@@ -42,7 +38,6 @@ import (
 	usrs "github.com/plusworx/gmin/utils/users"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
-	sheet "google.golang.org/api/sheets/v4"
 )
 
 var batchCrtUserCmd = &cobra.Command{
@@ -83,12 +78,16 @@ func doBatchCrtUser(cmd *cobra.Command, args []string) error {
 		"args", args)
 	defer lg.Debug("finished doBatchCrtUser()")
 
-	var users []*admin.User
+	var (
+		objs  []interface{}
+		users []*admin.User
+	)
 
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserScope)
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryUserScope)
 	if err != nil {
 		return err
 	}
+	ds := srv.(*admin.Service)
 
 	inputFlgVal, err := cmd.Flags().GetString(flgnm.FLG_INPUTFILE)
 	if err != nil {
@@ -124,12 +123,12 @@ func doBatchCrtUser(cmd *cobra.Command, args []string) error {
 
 	switch {
 	case lwrFmt == "csv":
-		users, err = bcuProcessCSVFile(ds, inputFlgVal)
+		objs, err = btch.CreateProcessCSVFile(cmn.OBJTYPEUSER, inputFlgVal, usrs.UserAttrMap)
 		if err != nil {
 			return err
 		}
 	case lwrFmt == "json":
-		users, err = bcuProcessJSON(ds, inputFlgVal, scanner)
+		objs, err = btch.CreateProcessJSON(cmn.OBJTYPEUSER, inputFlgVal, scanner, usrs.UserAttrMap)
 		if err != nil {
 			return err
 		}
@@ -140,12 +139,18 @@ func doBatchCrtUser(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
-		users, err = bcuProcessGSheet(ds, inputFlgVal, rangeFlgVal)
+		objs, err = btch.CreateProcessGSheet(cmn.OBJTYPEUSER, inputFlgVal, rangeFlgVal, usrs.UserAttrMap)
 		if err != nil {
 			return err
 		}
 	default:
-		return fmt.Errorf(gmess.ERR_INVALIDFILEFORMAT, formatFlgVal)
+		err = fmt.Errorf(gmess.ERR_INVALIDFILEFORMAT, formatFlgVal)
+		lg.Error(err)
+		return err
+	}
+
+	for _, userObj := range objs {
+		users = append(users, userObj.(*admin.User))
 	}
 
 	err = bcuProcessObjects(ds, users)
@@ -187,291 +192,6 @@ func bcuCreate(user *admin.User, wg *sync.WaitGroup, uic *admin.UsersInsertCall)
 		lg.Error(err)
 		fmt.Println(cmn.GminMessage(err.Error()))
 	}
-}
-
-func bcuFromFileFactory(hdrMap map[int]string, userData []interface{}) (*admin.User, error) {
-	lg.Debugw("starting bcuFromFileFactory()",
-		"hdrMap", hdrMap)
-	defer lg.Debug("finished bcuFromFileFactory()")
-
-	var (
-		name *admin.UserName
-		user *admin.User
-	)
-
-	name = new(admin.UserName)
-	user = new(admin.User)
-
-	for idx, val := range userData {
-		attrName := hdrMap[idx]
-		attrVal := fmt.Sprintf("%v", val)
-		lowerAttrVal := strings.ToLower(fmt.Sprintf("%v", val))
-
-		if attrName == "changePasswordAtNextLogin" {
-			if lowerAttrVal == "true" {
-				user.ChangePasswordAtNextLogin = true
-			}
-		}
-		if attrName == "familyName" {
-			name.FamilyName = attrVal
-		}
-		if attrName == "givenName" {
-			name.GivenName = attrVal
-		}
-		if attrName == "includeInGlobalAddressList" {
-			if lowerAttrVal == "false" {
-				user.IncludeInGlobalAddressList = false
-				user.ForceSendFields = append(user.ForceSendFields, "IncludeInGlobalAddressList")
-			}
-		}
-		if attrName == "ipWhitelisted" {
-			if lowerAttrVal == "true" {
-				user.IpWhitelisted = true
-			}
-		}
-		if attrName == "orgUnitPath" {
-			user.OrgUnitPath = attrVal
-		}
-		if attrName == "password" {
-			if attrVal == "" {
-				err := fmt.Errorf(gmess.ERR_EMPTYSTRING, attrName)
-				lg.Error(err)
-				return nil, err
-			}
-			pwd, err := usrs.HashPassword(attrVal)
-			if err != nil {
-				return nil, err
-			}
-			user.Password = pwd
-			user.HashFunction = usrs.HASHFUNCTION
-		}
-		if attrName == "primaryEmail" {
-			if attrVal == "" {
-				err := fmt.Errorf(gmess.ERR_EMPTYSTRING, attrName)
-				lg.Error(err)
-				return nil, err
-			}
-			user.PrimaryEmail = attrVal
-		}
-		if attrName == "recoveryEmail" {
-			user.RecoveryEmail = attrVal
-		}
-		if attrName == "recoveryPhone" {
-			if attrVal != "" {
-				err := cmn.ValidateRecoveryPhone(attrVal)
-				if err != nil {
-					return nil, err
-				}
-				user.RecoveryPhone = attrVal
-			}
-		}
-		if attrName == "suspended" {
-			if lowerAttrVal == "true" {
-				user.Suspended = true
-			}
-		}
-	}
-	user.Name = name
-	return user, nil
-}
-
-func bcuFromJSONFactory(ds *admin.Service, jsonData string) (*admin.User, error) {
-	lg.Debugw("starting bcuFromJSONFactory()",
-		"jsonData", jsonData)
-	defer lg.Debug("finished bcuFromJSONFactory()")
-
-	var (
-		emptyVals = cmn.EmptyValues{}
-		user      *admin.User
-	)
-
-	user = new(admin.User)
-	jsonBytes := []byte(jsonData)
-
-	if !json.Valid(jsonBytes) {
-		err := errors.New(gmess.ERR_INVALIDJSONATTR)
-		lg.Error(err)
-		return nil, err
-	}
-
-	outStr, err := cmn.ParseInputAttrs(jsonBytes)
-	if err != nil {
-		return nil, err
-	}
-
-	err = cmn.ValidateInputAttrs(outStr, usrs.UserAttrMap)
-	if err != nil {
-		return nil, err
-	}
-
-	err = json.Unmarshal(jsonBytes, &user)
-	if err != nil {
-		lg.Error(err)
-		return nil, err
-	}
-
-	err = json.Unmarshal(jsonBytes, &emptyVals)
-	if err != nil {
-		lg.Error(err)
-		return nil, err
-	}
-	if len(emptyVals.ForceSendFields) > 0 {
-		user.ForceSendFields = emptyVals.ForceSendFields
-	}
-	return user, nil
-}
-
-func bcuProcessCSVFile(ds *admin.Service, filePath string) ([]*admin.User, error) {
-	lg.Debugw("starting bcuProcessCSVFile()",
-		"filePath", filePath)
-	defer lg.Debug("finished bcuProcessCSVFile()")
-
-	var (
-		iSlice []interface{}
-		hdrMap = map[int]string{}
-		users  []*admin.User
-	)
-
-	csvfile, err := os.Open(filePath)
-	if err != nil {
-		lg.Error(err)
-		return nil, err
-	}
-	defer csvfile.Close()
-
-	r := csv.NewReader(csvfile)
-
-	count := 0
-	for {
-		record, err := r.Read()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			lg.Error(err)
-			return nil, err
-		}
-
-		if count == 0 {
-			iSlice = make([]interface{}, len(record))
-			for idx, value := range record {
-				iSlice[idx] = value
-			}
-			hdrMap = cmn.ProcessHeader(iSlice)
-			err = cmn.ValidateHeader(hdrMap, usrs.UserAttrMap)
-			if err != nil {
-				return nil, err
-			}
-			count = count + 1
-			continue
-		}
-
-		for idx, value := range record {
-			iSlice[idx] = value
-		}
-
-		userVar, err := bcuFromFileFactory(hdrMap, iSlice)
-		if err != nil {
-			return nil, err
-		}
-
-		users = append(users, userVar)
-
-		count = count + 1
-	}
-
-	return users, nil
-}
-
-func bcuProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]*admin.User, error) {
-	lg.Debugw("starting bcuProcessGSheet()",
-		"sheetID", sheetID,
-		"sheetrange", sheetrange)
-	defer lg.Debug("finished bcuProcessGSheet()")
-
-	var users []*admin.User
-
-	if sheetrange == "" {
-		err := errors.New(gmess.ERR_NOSHEETRANGE)
-		lg.Error(err)
-		return nil, err
-	}
-
-	ss, err := cmn.CreateSheetService(sheet.DriveReadonlyScope)
-	if err != nil {
-		return nil, err
-	}
-
-	ssvgc := ss.Spreadsheets.Values.Get(sheetID, sheetrange)
-	sValRange, err := ssvgc.Do()
-	if err != nil {
-		lg.Error(err)
-		return nil, err
-	}
-
-	if len(sValRange.Values) == 0 {
-		err = fmt.Errorf(gmess.ERR_NOSHEETDATAFOUND, sheetID, sheetrange)
-		lg.Error(err)
-		return nil, err
-	}
-
-	hdrMap := cmn.ProcessHeader(sValRange.Values[0])
-	err = cmn.ValidateHeader(hdrMap, usrs.UserAttrMap)
-	if err != nil {
-		return nil, err
-	}
-
-	for idx, row := range sValRange.Values {
-		if idx == 0 {
-			continue
-		}
-
-		userVar, err := bcuFromFileFactory(hdrMap, row)
-		if err != nil {
-			return nil, err
-		}
-
-		users = append(users, userVar)
-	}
-
-	return users, nil
-}
-
-func bcuProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner) ([]*admin.User, error) {
-	lg.Debugw("starting bcuProcessJSON()",
-		"filePath", filePath)
-	defer lg.Debug("finished bcuProcessJSON()")
-
-	var users []*admin.User
-
-	if filePath != "" {
-		file, err := os.Open(filePath)
-		if err != nil {
-			lg.Error(err)
-			return nil, err
-		}
-		defer file.Close()
-
-		scanner = bufio.NewScanner(file)
-	}
-
-	for scanner.Scan() {
-		jsonData := scanner.Text()
-
-		userVar, err := bcuFromJSONFactory(ds, jsonData)
-		if err != nil {
-			return nil, err
-		}
-
-		users = append(users, userVar)
-	}
-	err := scanner.Err()
-	if err != nil {
-		lg.Error(err)
-		return nil, err
-	}
-
-	return users, nil
 }
 
 func bcuProcessObjects(ds *admin.Service, users []*admin.User) error {

@@ -23,18 +23,14 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"bufio"
-	"encoding/csv"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"os"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
+	btch "github.com/plusworx/gmin/utils/batch"
 	cmn "github.com/plusworx/gmin/utils/common"
 	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
@@ -42,7 +38,6 @@ import (
 	lg "github.com/plusworx/gmin/utils/logging"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
-	sheet "google.golang.org/api/sheets/v4"
 )
 
 var batchCrtGroupCmd = &cobra.Command{
@@ -75,12 +70,16 @@ func doBatchCrtGroup(cmd *cobra.Command, args []string) error {
 		"args", args)
 	defer lg.Debug("finished doBatchCrtGroup()")
 
-	var groups []*admin.Group
+	var (
+		groups []*admin.Group
+		objs   []interface{}
+	)
 
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupScope)
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryGroupScope)
 	if err != nil {
 		return err
 	}
+	ds := srv.(*admin.Service)
 
 	inputFlgVal, err := cmd.Flags().GetString(flgnm.FLG_INPUTFILE)
 	if err != nil {
@@ -115,12 +114,12 @@ func doBatchCrtGroup(cmd *cobra.Command, args []string) error {
 
 	switch {
 	case lwrFmt == "csv":
-		groups, err = bcgProcessCSVFile(ds, inputFlgVal)
+		objs, err = btch.CreateProcessCSVFile(cmn.OBJTYPEGROUP, inputFlgVal, grps.GroupAttrMap)
 		if err != nil {
 			return err
 		}
 	case lwrFmt == "json":
-		groups, err = bcgProcessJSON(ds, inputFlgVal, scanner)
+		objs, err = btch.CreateProcessJSON(cmn.OBJTYPEGROUP, inputFlgVal, scanner, grps.GroupAttrMap)
 		if err != nil {
 			return err
 		}
@@ -130,7 +129,7 @@ func doBatchCrtGroup(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
-		groups, err = bcgProcessGSheet(ds, inputFlgVal, rangeFlgVal)
+		objs, err = btch.CreateProcessGSheet(cmn.OBJTYPEGROUP, inputFlgVal, rangeFlgVal, grps.GroupAttrMap)
 		if err != nil {
 			return err
 		}
@@ -138,6 +137,10 @@ func doBatchCrtGroup(cmd *cobra.Command, args []string) error {
 		err = fmt.Errorf(gmess.ERR_INVALIDFILEFORMAT, formatFlgVal)
 		lg.Error(err)
 		return err
+	}
+
+	for _, grpObj := range objs {
+		groups = append(groups, grpObj.(*admin.Group))
 	}
 
 	err = bcgProcessObjects(ds, groups)
@@ -179,240 +182,6 @@ func bcgCreate(group *admin.Group, wg *sync.WaitGroup, gic *admin.GroupsInsertCa
 		lg.Error(err)
 		fmt.Println(cmn.GminMessage(err.Error()))
 	}
-}
-
-func bcgFromFileFactory(hdrMap map[int]string, grpData []interface{}) (*admin.Group, error) {
-	lg.Debugw("starting bcgFromFileFactory()",
-		"hdrMap", hdrMap)
-	defer lg.Debug("finished bcgFromFileFactory()")
-
-	var group *admin.Group
-
-	group = new(admin.Group)
-
-	for idx, attr := range grpData {
-		attrName := hdrMap[idx]
-		attrVal := fmt.Sprintf("%v", attr)
-
-		switch {
-		case attrName == "description":
-			group.Description = attrVal
-		case attrName == "email":
-			if attrVal == "" {
-				err := fmt.Errorf(gmess.ERR_EMPTYSTRING, attrName)
-				lg.Error(err)
-				return nil, err
-			}
-			group.Email = attrVal
-		case attrName == "name":
-			if attrVal == "" {
-				err := fmt.Errorf(gmess.ERR_EMPTYSTRING, attrName)
-				lg.Error(err)
-				return nil, err
-			}
-			group.Name = attrVal
-		}
-	}
-	return group, nil
-}
-
-func bcgFromJSONFactory(ds *admin.Service, jsonData string) (*admin.Group, error) {
-	lg.Debugw("starting bcgFromJSONFactory()",
-		"jsonData", jsonData)
-	defer lg.Debug("finished bcgFromJSONFactory()")
-
-	var (
-		emptyVals = cmn.EmptyValues{}
-		group     *admin.Group
-	)
-
-	group = new(admin.Group)
-	jsonBytes := []byte(jsonData)
-
-	if !json.Valid(jsonBytes) {
-		err := errors.New(gmess.ERR_INVALIDJSONATTR)
-		lg.Error(err)
-		return nil, err
-	}
-
-	outStr, err := cmn.ParseInputAttrs(jsonBytes)
-	if err != nil {
-		return nil, err
-	}
-
-	err = cmn.ValidateInputAttrs(outStr, grps.GroupAttrMap)
-	if err != nil {
-		return nil, err
-	}
-
-	err = json.Unmarshal(jsonBytes, &group)
-	if err != nil {
-		lg.Error(err)
-		return nil, err
-	}
-
-	err = json.Unmarshal(jsonBytes, &emptyVals)
-	if err != nil {
-		lg.Error(err)
-		return nil, err
-	}
-	if len(emptyVals.ForceSendFields) > 0 {
-		group.ForceSendFields = emptyVals.ForceSendFields
-	}
-	return group, nil
-}
-
-func bcgProcessCSVFile(ds *admin.Service, filePath string) ([]*admin.Group, error) {
-	lg.Debugw("starting bcgProcessCSVFile()",
-		"filePath", filePath)
-	defer lg.Debug("finished bcgProcessCSVFile()")
-
-	var (
-		iSlice []interface{}
-		hdrMap = map[int]string{}
-		groups []*admin.Group
-	)
-
-	csvfile, err := os.Open(filePath)
-	if err != nil {
-		lg.Error(err)
-		return nil, err
-	}
-	defer csvfile.Close()
-
-	r := csv.NewReader(csvfile)
-
-	count := 0
-	for {
-		record, err := r.Read()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			lg.Error(err)
-			return nil, err
-		}
-
-		if count == 0 {
-			iSlice = make([]interface{}, len(record))
-			for idx, value := range record {
-				iSlice[idx] = value
-			}
-			hdrMap = cmn.ProcessHeader(iSlice)
-			err = cmn.ValidateHeader(hdrMap, grps.GroupAttrMap)
-			if err != nil {
-				return nil, err
-			}
-			count = count + 1
-			continue
-		}
-
-		for idx, value := range record {
-			iSlice[idx] = value
-		}
-
-		grpVar, err := bcgFromFileFactory(hdrMap, iSlice)
-		if err != nil {
-			return nil, err
-		}
-
-		groups = append(groups, grpVar)
-
-		count = count + 1
-	}
-
-	return groups, nil
-}
-
-func bcgProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]*admin.Group, error) {
-	lg.Debugw("starting bcgProcessGSheet()",
-		"sheetID", sheetID,
-		"sheetrange", sheetrange)
-	defer lg.Debug("finished bcgProcessGSheet()")
-
-	var groups []*admin.Group
-
-	if sheetrange == "" {
-		err := errors.New(gmess.ERR_NOSHEETRANGE)
-		lg.Error(err)
-		return nil, err
-	}
-
-	ss, err := cmn.CreateSheetService(sheet.DriveReadonlyScope)
-	if err != nil {
-		return nil, err
-	}
-
-	ssvgc := ss.Spreadsheets.Values.Get(sheetID, sheetrange)
-	sValRange, err := ssvgc.Do()
-	if err != nil {
-		lg.Error(err)
-		return nil, err
-	}
-
-	if len(sValRange.Values) == 0 {
-		err = fmt.Errorf(gmess.ERR_NOSHEETDATAFOUND, sheetID, sheetrange)
-		lg.Error(err)
-		return nil, err
-	}
-
-	hdrMap := cmn.ProcessHeader(sValRange.Values[0])
-	err = cmn.ValidateHeader(hdrMap, grps.GroupAttrMap)
-	if err != nil {
-		return nil, err
-	}
-
-	for idx, row := range sValRange.Values {
-		if idx == 0 {
-			continue
-		}
-
-		grpVar, err := bcgFromFileFactory(hdrMap, row)
-		if err != nil {
-			return nil, err
-		}
-
-		groups = append(groups, grpVar)
-	}
-
-	return groups, nil
-}
-
-func bcgProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner) ([]*admin.Group, error) {
-	lg.Debugw("starting bcgProcessJSON()",
-		"filePath", filePath)
-	defer lg.Debug("finished bcgProcessJSON()")
-
-	var groups []*admin.Group
-
-	if filePath != "" {
-		file, err := os.Open(filePath)
-		if err != nil {
-			lg.Error(err)
-			return nil, err
-		}
-		defer file.Close()
-
-		scanner = bufio.NewScanner(file)
-	}
-
-	for scanner.Scan() {
-		jsonData := scanner.Text()
-
-		grpVar, err := bcgFromJSONFactory(ds, jsonData)
-		if err != nil {
-			return nil, err
-		}
-
-		groups = append(groups, grpVar)
-	}
-	err := scanner.Err()
-	if err != nil {
-		lg.Error(err)
-		return nil, err
-	}
-
-	return groups, nil
 }
 
 func bcgProcessObjects(ds *admin.Service, groups []*admin.Group) error {

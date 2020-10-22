@@ -236,6 +236,35 @@ func DoList(glc *admin.GroupsListCall) (*admin.Groups, error) {
 	return groups, nil
 }
 
+// PopulateGroup is used in batch processing
+func PopulateGroup(group *admin.Group, hdrMap map[int]string, objData []interface{}) error {
+	lg.Debugw("starting populateGroup()",
+		"hdrMap", hdrMap)
+	defer lg.Debug("finished populateGroup()")
+
+	for idx, attr := range objData {
+		attrName := hdrMap[idx]
+		attrVal := fmt.Sprintf("%v", attr)
+
+		switch {
+		case (attrName == "email" || attrName == "name") && attrVal == "":
+			err := fmt.Errorf(gmess.ERR_EMPTYSTRING, attrName)
+			lg.Error(err)
+			return err
+		case attrName == "description":
+			group.Description = attrVal
+		case attrName == "email":
+			group.Email = attrVal
+		case attrName == "name":
+			group.Name = attrVal
+		default:
+			err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, attrName)
+			return err
+		}
+	}
+	return nil
+}
+
 // ShowAttrs displays requested group attributes
 func ShowAttrs(filter string) {
 	lg.Debugw("starting ShowAttrs()",

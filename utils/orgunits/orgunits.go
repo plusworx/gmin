@@ -151,6 +151,46 @@ func DoList(oulc *admin.OrgunitsListCall) (*admin.OrgUnits, error) {
 	return orgunits, nil
 }
 
+// PopulateOrgUnit is used in batch processing
+func PopulateOrgUnit(orgunit *admin.OrgUnit, hdrMap map[int]string, objData []interface{}) error {
+	lg.Debugw("starting populateMember()",
+		"hdrMap", hdrMap)
+	defer lg.Debug("finished populateMember()")
+
+	for idx, attr := range objData {
+		attrName := hdrMap[idx]
+		attrVal := fmt.Sprintf("%v", attr)
+		lowerAttrVal := strings.ToLower(fmt.Sprintf("%v", attr))
+
+		switch {
+		case attrName == "blockInheritance":
+			if lowerAttrVal == "true" {
+				orgunit.BlockInheritance = true
+			}
+		case attrName == "description":
+			orgunit.Description = attrVal
+		case attrName == "name":
+			if attrVal == "" {
+				err := fmt.Errorf(gmess.ERR_EMPTYSTRING, attrName)
+				lg.Error(err)
+				return err
+			}
+			orgunit.Name = attrVal
+		case attrName == "parentOrgUnitPath":
+			if attrVal == "" {
+				err := fmt.Errorf(gmess.ERR_EMPTYSTRING, attrName)
+				lg.Error(err)
+				return err
+			}
+			orgunit.ParentOrgUnitPath = attrVal
+		default:
+			err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, attrName)
+			return err
+		}
+	}
+	return nil
+}
+
 // ShowAttrs displays requested orgunit attributes
 func ShowAttrs(filter string) {
 	lg.Debug("starting ShowAttrs()",

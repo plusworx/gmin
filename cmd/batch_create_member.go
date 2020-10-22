@@ -23,18 +23,14 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"bufio"
-	"encoding/csv"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"os"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
+	btch "github.com/plusworx/gmin/utils/batch"
 	cmn "github.com/plusworx/gmin/utils/common"
 	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
@@ -42,7 +38,6 @@ import (
 	mems "github.com/plusworx/gmin/utils/members"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
-	sheet "google.golang.org/api/sheets/v4"
 )
 
 var batchCrtMemberCmd = &cobra.Command{
@@ -76,12 +71,16 @@ func doBatchCrtMember(cmd *cobra.Command, args []string) error {
 		"args", args)
 	defer lg.Debug("finished doBatchCrtMember()")
 
-	var members []*admin.Member
+	var (
+		members []*admin.Member
+		objs    []interface{}
+	)
 
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupMemberScope)
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryGroupMemberScope)
 	if err != nil {
 		return err
 	}
+	ds := srv.(*admin.Service)
 
 	inputFlgVal, err := cmd.Flags().GetString(flgnm.FLG_INPUTFILE)
 	if err != nil {
@@ -118,12 +117,12 @@ func doBatchCrtMember(cmd *cobra.Command, args []string) error {
 
 	switch {
 	case lwrFmt == "csv":
-		members, err = bcmProcessCSVFile(ds, inputFlgVal)
+		objs, err = btch.CreateProcessCSVFile(cmn.OBJTYPEMEMBER, inputFlgVal, mems.MemberAttrMap)
 		if err != nil {
 			return err
 		}
 	case lwrFmt == "json":
-		members, err = bcmProcessJSON(ds, inputFlgVal, scanner)
+		objs, err = btch.CreateProcessJSON(cmn.OBJTYPEMEMBER, inputFlgVal, scanner, mems.MemberAttrMap)
 		if err != nil {
 			return err
 		}
@@ -133,7 +132,7 @@ func doBatchCrtMember(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
-		members, err = bcmProcessGSheet(ds, inputFlgVal, rangeFlgVal)
+		objs, err = btch.CreateProcessGSheet(cmn.OBJTYPEMEMBER, inputFlgVal, rangeFlgVal, mems.MemberAttrMap)
 		if err != nil {
 			return err
 		}
@@ -141,6 +140,10 @@ func doBatchCrtMember(cmd *cobra.Command, args []string) error {
 		err = fmt.Errorf(gmess.ERR_INVALIDFILEFORMAT, formatFlgVal)
 		lg.Error(err)
 		return err
+	}
+
+	for _, memObj := range objs {
+		members = append(members, memObj.(*admin.Member))
 	}
 
 	err = bcmProcessObjects(ds, groupKey, members)
@@ -184,241 +187,6 @@ func bcmCreate(member *admin.Member, groupKey string, wg *sync.WaitGroup, mic *a
 		lg.Error(err)
 		fmt.Println(cmn.GminMessage(err.Error()))
 	}
-}
-
-func bcmFromFileFactory(hdrMap map[int]string, grpData []interface{}) (*admin.Member, error) {
-	lg.Debugw("starting bcmFromFileFactory()",
-		"hdrMap", hdrMap)
-	defer lg.Debug("finished bcmFromFileFactory()")
-
-	var member *admin.Member
-
-	member = new(admin.Member)
-
-	for idx, attr := range grpData {
-		attrName := hdrMap[idx]
-		attrVal := fmt.Sprintf("%v", attr)
-
-		switch {
-		case attrName == "delivery_settings":
-			validDS, err := mems.ValidateDeliverySetting(attrVal)
-			if err != nil {
-				return nil, err
-			}
-			member.DeliverySettings = validDS
-		case attrName == "email":
-			if attrVal == "" {
-				err := fmt.Errorf(gmess.ERR_EMPTYSTRING, attrName)
-				lg.Error(err)
-				return nil, err
-			}
-			member.Email = attrVal
-		case attrName == "role":
-			validRole, err := mems.ValidateRole(attrVal)
-			if err != nil {
-				return nil, err
-			}
-			member.Role = validRole
-		}
-	}
-	return member, nil
-}
-
-func bcmFromJSONFactory(ds *admin.Service, jsonData string) (*admin.Member, error) {
-	lg.Debugw("starting bcmFromJSONFactory()",
-		"jsonData", jsonData)
-	defer lg.Debug("finished bcmFromJSONFactory()")
-
-	var (
-		emptyVals = cmn.EmptyValues{}
-		member    *admin.Member
-	)
-
-	member = new(admin.Member)
-	jsonBytes := []byte(jsonData)
-
-	if !json.Valid(jsonBytes) {
-		lg.Error(gmess.ERR_INVALIDJSONATTR)
-		return nil, errors.New(gmess.ERR_INVALIDJSONATTR)
-	}
-
-	outStr, err := cmn.ParseInputAttrs(jsonBytes)
-	if err != nil {
-		return nil, err
-	}
-
-	err = cmn.ValidateInputAttrs(outStr, mems.MemberAttrMap)
-	if err != nil {
-		return nil, err
-	}
-
-	err = json.Unmarshal(jsonBytes, &member)
-	if err != nil {
-		lg.Error(err)
-		return nil, err
-	}
-
-	err = json.Unmarshal(jsonBytes, &emptyVals)
-	if err != nil {
-		lg.Error(err)
-		return nil, err
-	}
-	if len(emptyVals.ForceSendFields) > 0 {
-		member.ForceSendFields = emptyVals.ForceSendFields
-	}
-	return member, nil
-}
-
-func bcmProcessCSVFile(ds *admin.Service, filePath string) ([]*admin.Member, error) {
-	lg.Debugw("starting bcmProcessCSVFile()",
-		"filePath", filePath)
-	defer lg.Debug("finished bcmProcessCSVFile")
-
-	var (
-		iSlice  []interface{}
-		hdrMap  = map[int]string{}
-		members []*admin.Member
-	)
-
-	csvfile, err := os.Open(filePath)
-	if err != nil {
-		return nil, err
-	}
-	defer csvfile.Close()
-
-	r := csv.NewReader(csvfile)
-
-	count := 0
-	for {
-		record, err := r.Read()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			lg.Error(err)
-			return nil, err
-		}
-
-		if count == 0 {
-			iSlice = make([]interface{}, len(record))
-			for idx, value := range record {
-				iSlice[idx] = value
-			}
-			hdrMap = cmn.ProcessHeader(iSlice)
-			err = cmn.ValidateHeader(hdrMap, mems.MemberAttrMap)
-			if err != nil {
-				return nil, err
-			}
-			count = count + 1
-			continue
-		}
-
-		for idx, value := range record {
-			iSlice[idx] = value
-		}
-
-		memVar, err := bcmFromFileFactory(hdrMap, iSlice)
-		if err != nil {
-			return nil, err
-		}
-
-		members = append(members, memVar)
-
-		count = count + 1
-	}
-
-	return members, nil
-}
-
-func bcmProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]*admin.Member, error) {
-	lg.Debugw("starting bcmProcessGSheet()",
-		"sheetID", sheetID,
-		"sheetrange", sheetrange)
-	defer lg.Debug("finished bcmProcessGSheet()")
-
-	var members []*admin.Member
-
-	if sheetrange == "" {
-		err := errors.New(gmess.ERR_NOSHEETRANGE)
-		lg.Error(err)
-		return nil, err
-	}
-
-	ss, err := cmn.CreateSheetService(sheet.DriveReadonlyScope)
-	if err != nil {
-		return nil, err
-	}
-
-	ssvgc := ss.Spreadsheets.Values.Get(sheetID, sheetrange)
-	sValRange, err := ssvgc.Do()
-	if err != nil {
-		lg.Error(err)
-		return nil, err
-	}
-
-	if len(sValRange.Values) == 0 {
-		err = fmt.Errorf(gmess.ERR_NOSHEETDATAFOUND, sheetID, sheetrange)
-		lg.Error(err)
-		return nil, err
-	}
-
-	hdrMap := cmn.ProcessHeader(sValRange.Values[0])
-	err = cmn.ValidateHeader(hdrMap, mems.MemberAttrMap)
-	if err != nil {
-		return nil, err
-	}
-
-	for idx, row := range sValRange.Values {
-		if idx == 0 {
-			continue
-		}
-
-		memVar, err := bcmFromFileFactory(hdrMap, row)
-		if err != nil {
-			return nil, err
-		}
-
-		members = append(members, memVar)
-	}
-
-	return members, nil
-}
-
-func bcmProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner) ([]*admin.Member, error) {
-	lg.Debugw("starting bcmProcessJSON()",
-		"filePath", filePath)
-	defer lg.Debug("finished bcmProcessJSON()")
-
-	var members []*admin.Member
-
-	if filePath != "" {
-		file, err := os.Open(filePath)
-		if err != nil {
-			lg.Error(err)
-			return nil, err
-		}
-		defer file.Close()
-
-		scanner = bufio.NewScanner(file)
-	}
-
-	for scanner.Scan() {
-		jsonData := scanner.Text()
-
-		memVar, err := bcmFromJSONFactory(ds, jsonData)
-		if err != nil {
-			return nil, err
-		}
-
-		members = append(members, memVar)
-	}
-	err := scanner.Err()
-	if err != nil {
-		lg.Error(err)
-		return nil, err
-	}
-
-	return members, nil
 }
 
 func bcmProcessObjects(ds *admin.Service, groupKey string, members []*admin.Member) error {
