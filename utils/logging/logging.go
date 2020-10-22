@@ -26,6 +26,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"time"
 
 	rlogs "github.com/lestrrat-go/file-rotatelogs"
@@ -57,6 +58,44 @@ func createLogger(loglevel string) (*zap.Logger, error) {
 		}
 	}
 
+	// Get logging properties
+	logRotationCount := viper.GetUint(cfg.CONFIGLOGROTATIONCOUNT)
+	if logRotationCount == 0 {
+		envVal := os.Getenv(cfg.ENVPREFIX + cfg.ENVVARLOGROTATIONCOUNT)
+		if envVal == "" {
+			err = fmt.Errorf(gmess.ERR_NOTFOUNDINCONFIG, cfg.CONFIGLOGROTATIONCOUNT)
+			return nil, err
+		}
+		retNum, err := strconv.Atoi(envVal)
+		if err != nil {
+			return nil, err
+		}
+		retUint := uint(retNum)
+		if retUint == 0 {
+			logRotationCount = cfg.DEFAULTLOGROTATIONCOUNT
+		} else {
+			logRotationCount = retUint
+		}
+	}
+
+	logRotationTime := viper.GetInt(cfg.CONFIGLOGROTATIONTIME)
+	if logRotationTime == 0 {
+		envVal := os.Getenv(cfg.ENVPREFIX + cfg.ENVVARLOGROTATIONTIME)
+		if envVal == "" {
+			err = fmt.Errorf(gmess.ERR_NOTFOUNDINCONFIG, cfg.CONFIGLOGROTATIONTIME)
+			return nil, err
+		}
+		retNum, err := strconv.Atoi(envVal)
+		if err != nil {
+			return nil, err
+		}
+		if retNum == 0 {
+			logRotationTime = cfg.DEFAULTLOGROTATIONTIME
+		} else {
+			logRotationTime = retNum
+		}
+	}
+
 	// Configure log rotation
 	t := time.Now()
 
@@ -68,8 +107,8 @@ func createLogger(loglevel string) (*zap.Logger, error) {
 		filepath.Join(filepath.ToSlash(logpath), fmtLogName),
 		rlogs.WithLinkName(filepath.Join(filepath.ToSlash(logpath), "current")),
 		rlogs.WithMaxAge(-1),
-		rlogs.WithRotationCount(7),
-		rlogs.WithRotationTime(24*time.Hour))
+		rlogs.WithRotationCount(logRotationCount),
+		rlogs.WithRotationTime(time.Duration(logRotationTime)*time.Second))
 	if err != nil {
 		return nil, err
 	}

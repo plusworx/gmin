@@ -84,6 +84,8 @@ var (
 	location         string
 	logLevel         string
 	logPath          string
+	logRotationCount uint
+	logRotationTime  int
 	maxResults       int64
 	messageMod       string
 	modContent       string
@@ -212,7 +214,8 @@ func preRun(cmd *cobra.Command, args []string) error {
 		"gmin admin", admAddr,
 		"Username", cmn.Username(),
 		"Hostname", cmn.Hostname(),
-		"IP Address", cmn.IPAddress())
+		"IP Address", cmn.IPAddress(),
+		"command", cmd.Parent().Name()+" "+cmd.CalledAs()+" "+strings.Join(args, " "))
 	return nil
 }
 
@@ -232,7 +235,8 @@ func preRunForDisplayCmds(cmd *cobra.Command, args []string) error {
 		"gmin admin", admAddr,
 		"Username", cmn.Username(),
 		"Hostname", cmn.Hostname(),
-		"IP Address", cmn.IPAddress())
+		"IP Address", cmn.IPAddress(),
+		"command", cmd.Parent().Name()+" "+cmd.CalledAs()+" "+strings.Join(args, " "))
 	return nil
 }
 

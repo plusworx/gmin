@@ -27,6 +27,7 @@ import (
 	"io/ioutil"
 	"log"
 	"path/filepath"
+	"strconv"
 
 	valid "github.com/asaskevich/govalidator"
 	"github.com/mitchellh/go-homedir"
@@ -39,21 +40,21 @@ import (
 var initCmd = &cobra.Command{
 	Use:   "init",
 	Short: "Creates gmin config file",
-	Long: `Asks for admin email address, credentials path, customer id, config file path and log file path
-before creating gmin configuration file (.gmin.yaml) in the default location (the home directory of the user)
-or at the specified path.
+	Long: `Asks for admin email address, credentials path, customer id, config file path, log file path,
+log rotation count and log rotation time before creating gmin configuration file (.gmin.yaml) in the default
+location (the home directory of the user) or at the specified path.
 
-Example log paths
------------------
-/tmp/logs
-stdout~/home/myuser/logs
+Log rotation count specifies the maximum number of log files that will be kept before the oldest is deleted.
+Log rotation time specifies the amount of time before a new log file is created.
 
 Defaults
 --------
 Credentials Path: <home directory>
 Customer ID: my_customer
 Config File Path: <home directory>
-Log File Path: <home directory>`,
+Log File Path: <home directory>
+Log Rotation Count: 7
+Log Rotation Time: 86400`,
 	RunE: doInit,
 }
 
@@ -157,13 +158,65 @@ func askForLogPath() string {
 	return response
 }
 
+func askForLogRotationCount() string {
+	var response string
+
+	fmt.Print("Please enter a log rotation count (q to quit)\n(Press <Enter> for default value): ")
+
+	_, err := fmt.Scanln(&response)
+
+	if response == "" || response == "q" {
+		return response
+	}
+
+	if err != nil {
+		fmt.Println(gmess.ERR_INVALIDLOGROTATIONCOUNT)
+		return askForLogRotationCount()
+	}
+
+	ok := valid.IsNumeric(response)
+	if !ok {
+		fmt.Println(gmess.ERR_MUSTBENUMBER)
+		return askForLogRotationCount()
+	}
+
+	return response
+}
+
+func askForLogRotationTime() string {
+	var response string
+
+	fmt.Print("Please enter a log rotation time (q to quit)\n(Press <Enter> for default value): ")
+
+	_, err := fmt.Scanln(&response)
+
+	if response == "" || response == "q" {
+		return response
+	}
+
+	if err != nil {
+		fmt.Println(gmess.ERR_INVALIDLOGROTATIONTIME)
+		return askForLogRotationTime()
+	}
+
+	ok := valid.IsNumeric(response)
+	if !ok {
+		fmt.Println(gmess.ERR_MUSTBENUMBER)
+		return askForLogRotationTime()
+	}
+
+	return response
+}
+
 func doInit(cmd *cobra.Command, args []string) error {
 	answers := struct {
-		AdminEmail     string
-		ConfigPath     string
-		CredentialPath string
-		CustomerID     string
-		LogPath        string
+		AdminEmail       string
+		ConfigPath       string
+		CredentialPath   string
+		CustomerID       string
+		LogPath          string
+		LogRotationCount uint
+		LogRotationTime  int
 	}{}
 
 	answers.AdminEmail = askForEmail()
@@ -191,6 +244,33 @@ func doInit(cmd *cobra.Command, args []string) error {
 		fmt.Println(gmess.INFO_INITCANCELLED)
 		return nil
 	}
+	retVal := askForLogRotationCount()
+	if retVal == "q" {
+		fmt.Println(gmess.INFO_INITCANCELLED)
+		return nil
+	}
+	if retVal == "" {
+		retVal = "0"
+	}
+	retInt, err := strconv.Atoi(retVal)
+	if err != nil {
+		return err
+	}
+	answers.LogRotationCount = uint(retInt)
+
+	retVal = askForLogRotationTime()
+	if retVal == "q" {
+		fmt.Println(gmess.INFO_INITCANCELLED)
+		return nil
+	}
+	if retVal == "" {
+		retVal = "0"
+	}
+	retInt, err = strconv.Atoi(retVal)
+	if err != nil {
+		return err
+	}
+	answers.LogRotationTime = retInt
 
 	if answers.ConfigPath == "" {
 		hmDir, err := homedir.Dir()
@@ -220,8 +300,17 @@ func doInit(cmd *cobra.Command, args []string) error {
 		answers.LogPath = hmDir
 	}
 
+	if answers.LogRotationCount == 0 {
+		answers.LogRotationCount = cfg.DEFAULTLOGROTATIONCOUNT
+	}
+
+	if answers.LogRotationTime == 0 {
+		answers.LogRotationTime = cfg.DEFAULTLOGROTATIONTIME
+	}
+
 	cfgFile := cfg.File{Administrator: answers.AdminEmail, CredentialPath: answers.CredentialPath,
-		CustomerID: answers.CustomerID, LogPath: answers.LogPath}
+		CustomerID: answers.CustomerID, LogPath: answers.LogPath, LogRotationCount: answers.LogRotationCount,
+		LogRotationTime: answers.LogRotationTime}
 
 	path := filepath.Join(filepath.ToSlash(answers.ConfigPath), cfg.CONFIGFILENAME)
 

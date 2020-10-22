@@ -52,22 +52,6 @@ func doSetConfig(cmd *cobra.Command, args []string) error {
 		"args", args)
 	defer lg.Debug("finished doSetConfig()")
 
-	flgCustIDVal, err := cmd.Flags().GetString(flgnm.FLG_CUSTOMERID)
-	if err != nil {
-		lg.Error(err)
-		return err
-	}
-	if flgCustIDVal != "" {
-		viper.Set(cfg.CONFIGCUSTID, flgCustIDVal)
-		err := viper.WriteConfig()
-		if err != nil {
-			lg.Error(err)
-			return err
-		}
-		fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_CUSTOMERIDSET, flgCustIDVal)))
-		lg.Infof(gmess.INFO_CUSTOMERIDSET, flgCustIDVal)
-	}
-
 	flgAdminVal, err := cmd.Flags().GetString(flgnm.FLG_ADMIN)
 	if err != nil {
 		lg.Error(err)
@@ -106,6 +90,22 @@ func doSetConfig(cmd *cobra.Command, args []string) error {
 		lg.Infof(gmess.INFO_CREDENTIALPATHSET, flgCredPathVal)
 	}
 
+	flgCustIDVal, err := cmd.Flags().GetString(flgnm.FLG_CUSTOMERID)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+	if flgCustIDVal != "" {
+		viper.Set(cfg.CONFIGCUSTID, flgCustIDVal)
+		err := viper.WriteConfig()
+		if err != nil {
+			lg.Error(err)
+			return err
+		}
+		fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_CUSTOMERIDSET, flgCustIDVal)))
+		lg.Infof(gmess.INFO_CUSTOMERIDSET, flgCustIDVal)
+	}
+
 	flgLogPathVal, err := cmd.Flags().GetString(flgnm.FLG_LOGPATH)
 	if err != nil {
 		lg.Error(err)
@@ -122,7 +122,40 @@ func doSetConfig(cmd *cobra.Command, args []string) error {
 		lg.Infof(gmess.INFO_LOGPATHSET, flgLogPathVal)
 	}
 
-	if flgAdminVal == "" && flgCustIDVal == "" && flgCredPathVal == "" && flgLogPathVal == "" {
+	flgLogRotCountVal, err := cmd.Flags().GetUint(flgnm.FLG_LOGROTATIONCOUNT)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+	if flgLogRotCountVal != 0 {
+		viper.Set(cfg.CONFIGLOGROTATIONCOUNT, flgLogRotCountVal)
+		err := viper.WriteConfig()
+		if err != nil {
+			lg.Error(err)
+			return err
+		}
+		fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_LOGROTATIONCOUNTSET, flgLogRotCountVal)))
+		lg.Infof(gmess.INFO_LOGROTATIONCOUNTSET, flgLogRotCountVal)
+	}
+
+	flgLogRotTimeVal, err := cmd.Flags().GetInt(flgnm.FLG_LOGROTATIONTIME)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+	if flgLogRotTimeVal != 0 {
+		viper.Set(cfg.CONFIGLOGROTATIONTIME, flgLogRotTimeVal)
+		err := viper.WriteConfig()
+		if err != nil {
+			lg.Error(err)
+			return err
+		}
+		fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_LOGROTATIONTIMESET, flgLogRotTimeVal)))
+		lg.Infof(gmess.INFO_LOGROTATIONTIMESET, flgLogRotTimeVal)
+	}
+
+	if flgAdminVal == "" && flgCustIDVal == "" && flgCredPathVal == "" && flgLogPathVal == "" &&
+		flgLogRotCountVal == 0 && flgLogRotTimeVal == 0 {
 		cmd.Help()
 	}
 
@@ -134,7 +167,9 @@ func init() {
 
 	setConfigCmd.Flags().StringVarP(&adminEmail, flgnm.FLG_ADMIN, "a", "", "administrator email address")
 	setConfigCmd.Flags().StringVarP(&customerID, flgnm.FLG_CUSTOMERID, "c", "", "customer id for domain")
-	setConfigCmd.Flags().StringVarP(&logPath, flgnm.FLG_LOGPATH, "l", "", "log file path (multiple paths allowed separated by ~)")
+	setConfigCmd.Flags().StringVarP(&logPath, flgnm.FLG_LOGPATH, "l", "", "log file path")
+	setConfigCmd.Flags().UintVarP(&logRotationCount, flgnm.FLG_LOGROTATIONCOUNT, "r", 0, "max number of retained log files")
+	setConfigCmd.Flags().IntVarP(&logRotationTime, flgnm.FLG_LOGROTATIONTIME, "t", 0, "time after which new log file created")
 	setConfigCmd.Flags().StringVarP(&credentialPath, flgnm.FLG_CREDPATH, "p", "", "service account credential file path")
 	setConfigCmd.PersistentFlags().BoolVar(&silent, flgnm.FLG_SILENT, false, "suppress console output")
 }

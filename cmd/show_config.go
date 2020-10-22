@@ -58,8 +58,10 @@ func doShowConfig(cmd *cobra.Command, args []string) error {
 	credPath := os.Getenv(cfg.ENVPREFIX + cfg.ENVVARCREDPATH)
 	custID := os.Getenv(cfg.ENVPREFIX + cfg.ENVVARCUSTID)
 	logPath := os.Getenv(cfg.ENVPREFIX + cfg.ENVVARLOGPATH)
+	logRotationCount := os.Getenv(cfg.ENVPREFIX + cfg.ENVVARLOGROTATIONCOUNT)
+	logRotationTime := os.Getenv(cfg.ENVPREFIX + cfg.ENVVARLOGROTATIONTIME)
 
-	if admin == "" && credPath == "" && custID == "" && logPath == "" {
+	if admin == "" && credPath == "" && custID == "" && logPath == "" && logRotationCount == "" && logRotationTime == "" {
 		fmt.Println(gmess.INFO_ENVVARSNOTFOUND)
 	}
 	if admin != "" {
@@ -73,6 +75,12 @@ func doShowConfig(cmd *cobra.Command, args []string) error {
 	}
 	if logPath != "" {
 		fmt.Println(cfg.ENVPREFIX+cfg.ENVVARLOGPATH+":", logPath)
+	}
+	if logRotationCount != "" {
+		fmt.Println(cfg.ENVPREFIX+cfg.ENVVARLOGROTATIONCOUNT+":", logRotationCount)
+	}
+	if logRotationTime != "" {
+		fmt.Println(cfg.ENVPREFIX+cfg.ENVVARLOGROTATIONTIME+":", logRotationTime)
 	}
 
 	fmt.Println("")
