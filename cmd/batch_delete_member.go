@@ -23,15 +23,14 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"bufio"
 	"errors"
 	"fmt"
-	"os"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
+	btch "github.com/plusworx/gmin/utils/batch"
 	cmn "github.com/plusworx/gmin/utils/common"
 	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
@@ -39,7 +38,6 @@ import (
 	mems "github.com/plusworx/gmin/utils/members"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
-	sheet "google.golang.org/api/sheets/v4"
 )
 
 var batchDelMemberCmd = &cobra.Command{
@@ -75,10 +73,11 @@ func doBatchDelMember(cmd *cobra.Command, args []string) error {
 
 	group := args[0]
 
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupMemberScope)
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryGroupMemberScope)
 	if err != nil {
 		return err
 	}
+	ds := srv.(*admin.Service)
 
 	inputFlgVal, err := cmd.Flags().GetString(flgnm.FLG_INPUTFILE)
 	if err != nil {
@@ -113,7 +112,7 @@ func doBatchDelMember(cmd *cobra.Command, args []string) error {
 
 	switch {
 	case lwrFmt == "text":
-		members, err = bdmProcessTextFile(ds, inputFlgVal, scanner)
+		members, err = btch.DeleteProcessTextFile(inputFlgVal, scanner)
 		if err != nil {
 			return err
 		}
@@ -123,7 +122,7 @@ func doBatchDelMember(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
-		members, err = bdmProcessGSheet(ds, inputFlgVal, rangeFlgVal)
+		members, err = btch.DeleteProcessGSheet(inputFlgVal, rangeFlgVal, mems.MemberAttrMap, mems.KEYNAME)
 		if err != nil {
 			return err
 		}
@@ -176,24 +175,6 @@ func bdmDelete(wg *sync.WaitGroup, mdc *admin.MembersDeleteCall, member string, 
 	}
 }
 
-func bdmFromFileFactory(hdrMap map[int]string, memberData []interface{}) (string, error) {
-	lg.Debugw("starting bdmFromFileFactory()",
-		"hdrMap", hdrMap)
-	defer lg.Debug("finished bdmFromFileFactory()")
-
-	var member string
-
-	for idx, val := range memberData {
-		attrName := hdrMap[idx]
-		attrVal := fmt.Sprintf("%v", val)
-
-		if attrName == "memberKey" {
-			member = attrVal
-		}
-	}
-	return member, nil
-}
-
 func bdmProcessDeletion(ds *admin.Service, group string, members []string) error {
 	lg.Debug("starting bdmProcessDeletion()")
 	defer lg.Debug("finished bdmProcessDeletion()")
@@ -211,85 +192,6 @@ func bdmProcessDeletion(ds *admin.Service, group string, members []string) error
 	wg.Wait()
 
 	return nil
-}
-
-func bdmProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]string, error) {
-	lg.Debugw("starting bdmProcessGSheet()",
-		"sheetID", sheetID,
-		"sheetrange", sheetrange)
-	defer lg.Debug("finished bdmProcessGSheet()")
-
-	var members []string
-
-	if sheetrange == "" {
-		err := errors.New(gmess.ERR_NOSHEETRANGE)
-		lg.Error(err)
-		return nil, err
-	}
-
-	ss, err := cmn.CreateSheetService(sheet.DriveReadonlyScope)
-	if err != nil {
-		return nil, err
-	}
-
-	ssvgc := ss.Spreadsheets.Values.Get(sheetID, sheetrange)
-	sValRange, err := ssvgc.Do()
-	if err != nil {
-		lg.Error(err)
-		return nil, err
-	}
-
-	if len(sValRange.Values) == 0 {
-		err = fmt.Errorf(gmess.ERR_NOSHEETDATAFOUND, sheetID, sheetrange)
-		lg.Error(err)
-		return nil, err
-	}
-
-	hdrMap := cmn.ProcessHeader(sValRange.Values[0])
-	err = cmn.ValidateHeader(hdrMap, mems.MemberAttrMap)
-	if err != nil {
-		return nil, err
-	}
-
-	for idx, row := range sValRange.Values {
-		if idx == 0 {
-			continue
-		}
-
-		memVar, err := bdgFromFileFactory(hdrMap, row)
-		if err != nil {
-			return nil, err
-		}
-
-		members = append(members, memVar)
-	}
-
-	return members, nil
-}
-
-func bdmProcessTextFile(ds *admin.Service, filePath string, scanner *bufio.Scanner) ([]string, error) {
-	lg.Debugw("starting bdmProcessTextFile()",
-		"filePath", filePath)
-	defer lg.Debug("finished bdmProcessTextFile()")
-
-	var members []string
-
-	if filePath != "" {
-		file, err := os.Open(filePath)
-		if err != nil {
-			lg.Error(err)
-			return nil, err
-		}
-		defer file.Close()
-		scanner = bufio.NewScanner(file)
-	}
-
-	for scanner.Scan() {
-		member := scanner.Text()
-		members = append(members, member)
-	}
-
-	return members, nil
 }
 
 func init() {

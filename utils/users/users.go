@@ -41,6 +41,8 @@ const (
 	ENDFIELD = ")"
 	// HASHFUNCTION specifies password hash function
 	HASHFUNCTION string = "SHA-1"
+	// KEYNAME is name of key for processing
+	KEYNAME string = "userKey"
 	// STARTUSERSFIELD is List call users attribute string prefix
 	STARTUSERSFIELD = "users("
 )

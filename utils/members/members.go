@@ -37,6 +37,8 @@ import (
 const (
 	// ENDFIELD is List call attribute string terminator
 	ENDFIELD string = ")"
+	// KEYNAME is name of key for processing
+	KEYNAME string = "memberKey"
 	// STARTMEMBERSFIELD is List call attribute string prefix
 	STARTMEMBERSFIELD string = "members("
 )

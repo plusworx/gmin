@@ -23,15 +23,14 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"bufio"
 	"errors"
 	"fmt"
-	"os"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
+	btch "github.com/plusworx/gmin/utils/batch"
 	cmn "github.com/plusworx/gmin/utils/common"
 	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
@@ -39,7 +38,6 @@ import (
 	lg "github.com/plusworx/gmin/utils/logging"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
-	sheet "google.golang.org/api/sheets/v4"
 )
 
 var batchDelGroupCmd = &cobra.Command{
@@ -72,10 +70,11 @@ func doBatchDelGroup(cmd *cobra.Command, args []string) error {
 
 	var groups []string
 
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupScope)
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryGroupScope)
 	if err != nil {
 		return err
 	}
+	ds := srv.(*admin.Service)
 
 	inputFlgVal, err := cmd.Flags().GetString(flgnm.FLG_INPUTFILE)
 	if err != nil {
@@ -110,7 +109,7 @@ func doBatchDelGroup(cmd *cobra.Command, args []string) error {
 
 	switch {
 	case lwrFmt == "text":
-		groups, err = bdgProcessTextFile(ds, inputFlgVal, scanner)
+		groups, err = btch.DeleteProcessTextFile(inputFlgVal, scanner)
 		if err != nil {
 			return err
 		}
@@ -120,7 +119,7 @@ func doBatchDelGroup(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
-		groups, err = bdgProcessGSheet(ds, inputFlgVal, rangeFlgVal)
+		groups, err = btch.DeleteProcessGSheet(inputFlgVal, rangeFlgVal, grps.GroupAttrMap, grps.KEYNAME)
 		if err != nil {
 			return err
 		}
@@ -173,24 +172,6 @@ func bdgDelete(wg *sync.WaitGroup, gdc *admin.GroupsDeleteCall, group string) {
 	}
 }
 
-func bdgFromFileFactory(hdrMap map[int]string, groupData []interface{}) (string, error) {
-	lg.Debugw("starting bdgFromFileFactory()",
-		"hdrMap", hdrMap)
-	defer lg.Debug("finished bdgFromFileFactory()")
-
-	var group string
-
-	for idx, val := range groupData {
-		attrName := hdrMap[idx]
-		attrVal := fmt.Sprintf("%v", val)
-
-		if attrName == "groupKey" {
-			group = attrVal
-		}
-	}
-	return group, nil
-}
-
 func bdgProcessDeletion(ds *admin.Service, groups []string) error {
 	lg.Debug("starting bdgProcessDeletion()")
 	defer lg.Debug("finished bdgProcessDeletion()")
@@ -208,85 +189,6 @@ func bdgProcessDeletion(ds *admin.Service, groups []string) error {
 	wg.Wait()
 
 	return nil
-}
-
-func bdgProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]string, error) {
-	lg.Debugw("starting bdgProcessGSheet()",
-		"sheetID", sheetID,
-		"sheetrange", sheetrange)
-	defer lg.Debug("finished bdgProcessGSheet()")
-
-	var groups []string
-
-	if sheetrange == "" {
-		err := errors.New(gmess.ERR_NOSHEETRANGE)
-		lg.Error(err)
-		return nil, err
-	}
-
-	ss, err := cmn.CreateSheetService(sheet.DriveReadonlyScope)
-	if err != nil {
-		return nil, err
-	}
-
-	ssvgc := ss.Spreadsheets.Values.Get(sheetID, sheetrange)
-	sValRange, err := ssvgc.Do()
-	if err != nil {
-		lg.Error(err)
-		return nil, err
-	}
-
-	if len(sValRange.Values) == 0 {
-		err = fmt.Errorf(gmess.ERR_NOSHEETDATAFOUND, sheetID, sheetrange)
-		lg.Error(err)
-		return nil, err
-	}
-
-	hdrMap := cmn.ProcessHeader(sValRange.Values[0])
-	err = cmn.ValidateHeader(hdrMap, grps.GroupAttrMap)
-	if err != nil {
-		return nil, err
-	}
-
-	for idx, row := range sValRange.Values {
-		if idx == 0 {
-			continue
-		}
-
-		grpVar, err := bdgFromFileFactory(hdrMap, row)
-		if err != nil {
-			return nil, err
-		}
-
-		groups = append(groups, grpVar)
-	}
-
-	return groups, nil
-}
-
-func bdgProcessTextFile(ds *admin.Service, filePath string, scanner *bufio.Scanner) ([]string, error) {
-	lg.Debugw("starting bdgProcessTextFile()",
-		"filePath", filePath)
-	defer lg.Debug("finished bdgProcessTextFile()")
-
-	var groups []string
-
-	if filePath != "" {
-		file, err := os.Open(filePath)
-		if err != nil {
-			lg.Error(err)
-			return nil, err
-		}
-		defer file.Close()
-		scanner = bufio.NewScanner(file)
-	}
-
-	for scanner.Scan() {
-		group := scanner.Text()
-		groups = append(groups, group)
-	}
-
-	return groups, nil
 }
 
 func init() {

@@ -23,15 +23,14 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"bufio"
 	"errors"
 	"fmt"
-	"os"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
+	btch "github.com/plusworx/gmin/utils/batch"
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
 	flgnm "github.com/plusworx/gmin/utils/flagnames"
@@ -40,7 +39,6 @@ import (
 	mdevs "github.com/plusworx/gmin/utils/mobiledevices"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
-	sheet "google.golang.org/api/sheets/v4"
 )
 
 var batchDelMobDevCmd = &cobra.Command{
@@ -73,10 +71,11 @@ func doBatchDelMobDev(cmd *cobra.Command, args []string) error {
 
 	var mobdevs []string
 
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryDeviceMobileScope)
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryDeviceMobileScope)
 	if err != nil {
 		return err
 	}
+	ds := srv.(*admin.Service)
 
 	inputFlgVal, err := cmd.Flags().GetString(flgnm.FLG_INPUTFILE)
 	if err != nil {
@@ -111,7 +110,7 @@ func doBatchDelMobDev(cmd *cobra.Command, args []string) error {
 
 	switch {
 	case lwrFmt == "text":
-		mobdevs, err = bdmdProcessTextFile(ds, inputFlgVal, scanner)
+		mobdevs, err = btch.DeleteProcessTextFile(inputFlgVal, scanner)
 		if err != nil {
 			return err
 		}
@@ -121,7 +120,7 @@ func doBatchDelMobDev(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
-		mobdevs, err = bdmdProcessGSheet(ds, inputFlgVal, rangeFlgVal)
+		mobdevs, err = btch.DeleteProcessGSheet(inputFlgVal, rangeFlgVal, mdevs.MobDevAttrMap, mdevs.KEYNAME)
 		if err != nil {
 			return err
 		}
@@ -173,24 +172,6 @@ func bdmdDelete(wg *sync.WaitGroup, mdc *admin.MobiledevicesDeleteCall, resource
 	}
 }
 
-func bdmdFromFileFactory(hdrMap map[int]string, mobDevData []interface{}) (string, error) {
-	lg.Debugw("starting bdmdFromFileFactory()",
-		"hdrMap", hdrMap)
-	defer lg.Debug("finished bdmdFromFileFactory()")
-
-	var mobResID string
-
-	for idx, val := range mobDevData {
-		attrName := hdrMap[idx]
-		attrVal := fmt.Sprintf("%v", val)
-
-		if attrName == "resourceId" {
-			mobResID = attrVal
-		}
-	}
-	return mobResID, nil
-}
-
 func bdmdProcessDeletion(ds *admin.Service, mobdevs []string) error {
 	lg.Debug("starting bdmdProcessDeletion()")
 	defer lg.Debug("finished bdmdProcessDeletion()")
@@ -214,85 +195,6 @@ func bdmdProcessDeletion(ds *admin.Service, mobdevs []string) error {
 	wg.Wait()
 
 	return nil
-}
-
-func bdmdProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]string, error) {
-	lg.Debugw("starting bdmdProcessGSheet()",
-		"sheetID", sheetID,
-		"sheetrange", sheetrange)
-	defer lg.Debug("finished bdmdProcessGSheet()")
-
-	var mobdevs []string
-
-	if sheetrange == "" {
-		err := errors.New(gmess.ERR_NOSHEETRANGE)
-		lg.Error(err)
-		return nil, err
-	}
-
-	ss, err := cmn.CreateSheetService(sheet.DriveReadonlyScope)
-	if err != nil {
-		return nil, err
-	}
-
-	ssvgc := ss.Spreadsheets.Values.Get(sheetID, sheetrange)
-	sValRange, err := ssvgc.Do()
-	if err != nil {
-		lg.Error(err)
-		return nil, err
-	}
-
-	if len(sValRange.Values) == 0 {
-		err = fmt.Errorf(gmess.ERR_NOSHEETDATAFOUND, sheetID, sheetrange)
-		lg.Error(err)
-		return nil, err
-	}
-
-	hdrMap := cmn.ProcessHeader(sValRange.Values[0])
-	err = cmn.ValidateHeader(hdrMap, mdevs.MobDevAttrMap)
-	if err != nil {
-		return nil, err
-	}
-
-	for idx, row := range sValRange.Values {
-		if idx == 0 {
-			continue
-		}
-
-		mobDevVar, err := bdmdFromFileFactory(hdrMap, row)
-		if err != nil {
-			return nil, err
-		}
-
-		mobdevs = append(mobdevs, mobDevVar)
-	}
-
-	return mobdevs, nil
-}
-
-func bdmdProcessTextFile(ds *admin.Service, filePath string, scanner *bufio.Scanner) ([]string, error) {
-	lg.Debugw("starting bdmdProcessTextFile()",
-		"filePath", filePath)
-	defer lg.Debug("finished bdmdProcessTextFile()")
-
-	var mobdevs []string
-
-	if filePath != "" {
-		file, err := os.Open(filePath)
-		if err != nil {
-			lg.Error(err)
-			return nil, err
-		}
-		defer file.Close()
-		scanner = bufio.NewScanner(file)
-	}
-
-	for scanner.Scan() {
-		mobdev := scanner.Text()
-		mobdevs = append(mobdevs, mobdev)
-	}
-
-	return mobdevs, nil
 }
 
 func init() {

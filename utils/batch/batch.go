@@ -261,10 +261,12 @@ func CreateProcessGSheet(outType int, sheetID string, sheetrange string, attrMap
 		return nil, err
 	}
 
-	ss, err := cmn.CreateSheetService(sheet.DriveReadonlyScope)
+	srv, err := cmn.CreateService(cmn.SRVTYPESHEET, sheet.DriveReadonlyScope)
 	if err != nil {
+		lg.Error(err)
 		return nil, err
 	}
+	ss := srv.(*sheet.Service)
 
 	ssvgc := ss.Spreadsheets.Values.Get(sheetID, sheetrange)
 	sValRange, err := ssvgc.Do()
@@ -335,6 +337,108 @@ func CreateProcessJSON(outType int, filePath string, scanner *bufio.Scanner, att
 	if err != nil {
 		lg.Error(err)
 		return nil, err
+	}
+
+	return outputObjs, nil
+}
+
+// DeleteFromFileFactory produces objects from input file data
+func DeleteFromFileFactory(hdrMap map[int]string, objData []interface{}, keyName string) (string, error) {
+	lg.Debugw("starting DeleteFromFileFactory()",
+		"hdrMap", hdrMap)
+	defer lg.Debug("finished DeleteFromFileFactory()")
+
+	var outStr string
+
+	for idx, val := range objData {
+		attrName := hdrMap[idx]
+		attrVal := fmt.Sprintf("%v", val)
+
+		if attrName == keyName {
+			outStr = attrVal
+		}
+	}
+	return outStr, nil
+}
+
+// DeleteProcessGSheet does batch processing of Google Sheet input
+func DeleteProcessGSheet(sheetID string, sheetrange string, attrMap map[string]string, keyName string) ([]string, error) {
+	lg.Debugw("starting DeleteProcessGSheet()",
+		"sheetID", sheetID,
+		"sheetrange", sheetrange)
+	defer lg.Debug("finished DeleteProcessGSheet()")
+
+	var outputObjs []string
+
+	if sheetrange == "" {
+		err := errors.New(gmess.ERR_NOSHEETRANGE)
+		lg.Error(err)
+		return nil, err
+	}
+
+	srv, err := cmn.CreateService(cmn.SRVTYPESHEET, sheet.DriveReadonlyScope)
+	if err != nil {
+		lg.Error(err)
+		return nil, err
+	}
+	ss := srv.(*sheet.Service)
+
+	ssvgc := ss.Spreadsheets.Values.Get(sheetID, sheetrange)
+	sValRange, err := ssvgc.Do()
+	if err != nil {
+		lg.Error(err)
+		return nil, err
+	}
+
+	if len(sValRange.Values) == 0 {
+		err = fmt.Errorf(gmess.ERR_NOSHEETDATAFOUND, sheetID, sheetrange)
+		lg.Error(err)
+		return nil, err
+	}
+
+	hdrMap := cmn.ProcessHeader(sValRange.Values[0])
+	err = cmn.ValidateHeader(hdrMap, attrMap)
+	if err != nil {
+		return nil, err
+	}
+
+	for idx, row := range sValRange.Values {
+		if idx == 0 {
+			continue
+		}
+
+		objVar, err := DeleteFromFileFactory(hdrMap, row, keyName)
+		if err != nil {
+			return nil, err
+		}
+
+		outputObjs = append(outputObjs, objVar)
+	}
+
+	return outputObjs, nil
+}
+
+// DeleteProcessTextFile does batch processing of text input
+func DeleteProcessTextFile(filePath string, scanner *bufio.Scanner) ([]string, error) {
+	lg.Debugw("starting DeleteProcessTextFile()",
+		"filePath", filePath)
+	defer lg.Debug("finished DeleteProcessTextFile()")
+
+	var outputObjs []string
+
+	if filePath != "" {
+		file, err := os.Open(filePath)
+		if err != nil {
+			lg.Error(err)
+			return nil, err
+		}
+		defer file.Close()
+		scanner = bufio.NewScanner(file)
+	}
+
+	for scanner.Scan() {
+		obj := scanner.Text()
+		outputObjs = append(outputObjs, obj)
 	}
 
 	return outputObjs, nil

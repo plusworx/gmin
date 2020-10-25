@@ -23,15 +23,14 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"bufio"
 	"errors"
 	"fmt"
-	"os"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
+	btch "github.com/plusworx/gmin/utils/batch"
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
 	flgnm "github.com/plusworx/gmin/utils/flagnames"
@@ -40,7 +39,6 @@ import (
 	ous "github.com/plusworx/gmin/utils/orgunits"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
-	sheet "google.golang.org/api/sheets/v4"
 )
 
 var batchDelOrgUnitCmd = &cobra.Command{
@@ -58,7 +56,7 @@ Engineering/Skunkworx
 Engineering/SecretOps
 Engineering/Surplus
 
-n input Google sheet must have a header row with the following column names being the only ones that are valid:
+An input Google sheet must have a header row with the following column names being the only ones that are valid:
 
 ouKey [required]
 
@@ -73,10 +71,11 @@ func doBatchDelOrgUnit(cmd *cobra.Command, args []string) error {
 
 	var orgunits []string
 
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryOrgunitScope)
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryOrgunitScope)
 	if err != nil {
 		return err
 	}
+	ds := srv.(*admin.Service)
 
 	inputFlgVal, err := cmd.Flags().GetString(flgnm.FLG_INPUTFILE)
 	if err != nil {
@@ -111,7 +110,7 @@ func doBatchDelOrgUnit(cmd *cobra.Command, args []string) error {
 
 	switch {
 	case lwrFmt == "text":
-		orgunits, err = bdoProcessTextFile(ds, inputFlgVal, scanner)
+		orgunits, err = btch.DeleteProcessTextFile(inputFlgVal, scanner)
 		if err != nil {
 			return err
 		}
@@ -121,7 +120,7 @@ func doBatchDelOrgUnit(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
-		orgunits, err = bdoProcessGSheet(ds, inputFlgVal, rangeFlgVal)
+		orgunits, err = btch.DeleteProcessGSheet(inputFlgVal, rangeFlgVal, ous.OrgUnitAttrMap, ous.KEYNAME)
 		if err != nil {
 			return err
 		}
@@ -174,24 +173,6 @@ func bdoDelete(wg *sync.WaitGroup, oudc *admin.OrgunitsDeleteCall, ouPath string
 	}
 }
 
-func bdoFromFileFactory(hdrMap map[int]string, ouData []interface{}) (string, error) {
-	lg.Debugw("starting bdoFromFileFactory()",
-		"hdrMap", hdrMap)
-	defer lg.Debug("finished bdoFromFileFactory()")
-
-	var orgunit string
-
-	for idx, val := range ouData {
-		attrName := hdrMap[idx]
-		attrVal := fmt.Sprintf("%v", val)
-
-		if attrName == "ouKey" {
-			orgunit = attrVal
-		}
-	}
-	return orgunit, nil
-}
-
 func bdoProcessDeletion(ds *admin.Service, orgunits []string) error {
 	lg.Debug("starting bdoProcessDeletion()")
 	defer lg.Debug("finished bdoProcessDeletion()")
@@ -222,85 +203,6 @@ func bdoProcessDeletion(ds *admin.Service, orgunits []string) error {
 	wg.Wait()
 
 	return nil
-}
-
-func bdoProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]string, error) {
-	lg.Debugw("starting bdoProcessGSheet()",
-		"sheetID", sheetID,
-		"sheetrange", sheetrange)
-	defer lg.Debug("finished bdoProcessGSheet()")
-
-	var orgunits []string
-
-	if sheetrange == "" {
-		err := errors.New(gmess.ERR_NOSHEETRANGE)
-		lg.Error(err)
-		return nil, err
-	}
-
-	ss, err := cmn.CreateSheetService(sheet.DriveReadonlyScope)
-	if err != nil {
-		return nil, err
-	}
-
-	ssvgc := ss.Spreadsheets.Values.Get(sheetID, sheetrange)
-	sValRange, err := ssvgc.Do()
-	if err != nil {
-		lg.Error(err)
-		return nil, err
-	}
-
-	if len(sValRange.Values) == 0 {
-		err = fmt.Errorf(gmess.ERR_NOSHEETDATAFOUND, sheetID, sheetrange)
-		lg.Error(err)
-		return nil, err
-	}
-
-	hdrMap := cmn.ProcessHeader(sValRange.Values[0])
-	err = cmn.ValidateHeader(hdrMap, ous.OrgUnitAttrMap)
-	if err != nil {
-		return nil, err
-	}
-
-	for idx, row := range sValRange.Values {
-		if idx == 0 {
-			continue
-		}
-
-		ouVar, err := bdoFromFileFactory(hdrMap, row)
-		if err != nil {
-			return nil, err
-		}
-
-		orgunits = append(orgunits, ouVar)
-	}
-
-	return orgunits, nil
-}
-
-func bdoProcessTextFile(ds *admin.Service, filePath string, scanner *bufio.Scanner) ([]string, error) {
-	lg.Debugw("starting bdoProcessTextFile()",
-		"filePath", filePath)
-	defer lg.Debug("finished bdoProcessTextFile()")
-
-	var orgunits []string
-
-	if filePath != "" {
-		file, err := os.Open(filePath)
-		if err != nil {
-			lg.Error(err)
-			return nil, err
-		}
-		defer file.Close()
-		scanner = bufio.NewScanner(file)
-	}
-
-	for scanner.Scan() {
-		orgunit := scanner.Text()
-		orgunits = append(orgunits, orgunit)
-	}
-
-	return orgunits, nil
 }
 
 func init() {

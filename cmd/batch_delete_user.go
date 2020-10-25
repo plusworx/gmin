@@ -23,15 +23,14 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"bufio"
 	"errors"
 	"fmt"
-	"os"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
+	btch "github.com/plusworx/gmin/utils/batch"
 	cmn "github.com/plusworx/gmin/utils/common"
 	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
@@ -39,7 +38,6 @@ import (
 	usrs "github.com/plusworx/gmin/utils/users"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
-	sheet "google.golang.org/api/sheets/v4"
 )
 
 var batchDelUserCmd = &cobra.Command{
@@ -72,10 +70,11 @@ func doBatchDelUser(cmd *cobra.Command, args []string) error {
 
 	var users []string
 
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserScope)
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryUserScope)
 	if err != nil {
 		return err
 	}
+	ds := srv.(*admin.Service)
 
 	inputFlgVal, err := cmd.Flags().GetString(flgnm.FLG_INPUTFILE)
 	if err != nil {
@@ -110,7 +109,7 @@ func doBatchDelUser(cmd *cobra.Command, args []string) error {
 
 	switch {
 	case lwrFmt == "text":
-		users, err = bduProcessTextFile(ds, inputFlgVal, scanner)
+		users, err = btch.DeleteProcessTextFile(inputFlgVal, scanner)
 		if err != nil {
 			return err
 		}
@@ -120,7 +119,7 @@ func doBatchDelUser(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
-		users, err = bduProcessGSheet(ds, inputFlgVal, rangeFlgVal)
+		users, err = btch.DeleteProcessGSheet(inputFlgVal, rangeFlgVal, usrs.UserAttrMap, usrs.KEYNAME)
 		if err != nil {
 			return err
 		}
@@ -173,24 +172,6 @@ func bduDelete(wg *sync.WaitGroup, udc *admin.UsersDeleteCall, user string) {
 	}
 }
 
-func bduFromFileFactory(hdrMap map[int]string, userData []interface{}) (string, error) {
-	lg.Debugw("starting bduFromFileFactory()",
-		"hdrMap", hdrMap)
-	defer lg.Debug("finished bduFromFileFactory()")
-
-	var user string
-
-	for idx, val := range userData {
-		attrName := hdrMap[idx]
-		attrVal := fmt.Sprintf("%v", val)
-
-		if attrName == "userKey" {
-			user = attrVal
-		}
-	}
-	return user, nil
-}
-
 func bduProcessDeletion(ds *admin.Service, users []string) error {
 	lg.Debug("starting bduProcessDeletion()")
 	defer lg.Debug("finished bduProcessDeletion()")
@@ -208,85 +189,6 @@ func bduProcessDeletion(ds *admin.Service, users []string) error {
 	wg.Wait()
 
 	return nil
-}
-
-func bduProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]string, error) {
-	lg.Debugw("starting bduProcessGSheet()",
-		"sheetID", sheetID,
-		"sheetrange", sheetrange)
-	defer lg.Debug("finished bduProcessGSheet()")
-
-	var users []string
-
-	if sheetrange == "" {
-		err := errors.New(gmess.ERR_NOSHEETRANGE)
-		lg.Error(err)
-		return nil, err
-	}
-
-	ss, err := cmn.CreateSheetService(sheet.DriveReadonlyScope)
-	if err != nil {
-		return nil, err
-	}
-
-	ssvgc := ss.Spreadsheets.Values.Get(sheetID, sheetrange)
-	sValRange, err := ssvgc.Do()
-	if err != nil {
-		lg.Error(err)
-		return nil, err
-	}
-
-	if len(sValRange.Values) == 0 {
-		err = fmt.Errorf(gmess.ERR_NOSHEETDATAFOUND, sheetID, sheetrange)
-		lg.Error(err)
-		return nil, err
-	}
-
-	hdrMap := cmn.ProcessHeader(sValRange.Values[0])
-	err = cmn.ValidateHeader(hdrMap, usrs.UserAttrMap)
-	if err != nil {
-		return nil, err
-	}
-
-	for idx, row := range sValRange.Values {
-		if idx == 0 {
-			continue
-		}
-
-		userVar, err := bduFromFileFactory(hdrMap, row)
-		if err != nil {
-			return nil, err
-		}
-
-		users = append(users, userVar)
-	}
-
-	return users, nil
-}
-
-func bduProcessTextFile(ds *admin.Service, filePath string, scanner *bufio.Scanner) ([]string, error) {
-	lg.Debugw("starting bduProcessTextFile()",
-		"filePath", filePath)
-	defer lg.Debug("finished bduProcessTextFile()")
-
-	var users []string
-
-	if filePath != "" {
-		file, err := os.Open(filePath)
-		if err != nil {
-			lg.Error(err)
-			return nil, err
-		}
-		defer file.Close()
-		scanner = bufio.NewScanner(file)
-	}
-
-	for scanner.Scan() {
-		user := scanner.Text()
-		users = append(users, user)
-	}
-
-	return users, nil
 }
 
 func init() {
