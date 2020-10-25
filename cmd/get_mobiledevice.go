@@ -59,10 +59,11 @@ func doGetMobDev(cmd *cobra.Command, args []string) error {
 		mobdev   *admin.MobileDevice
 	)
 
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryDeviceMobileReadonlyScope)
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryDeviceMobileReadonlyScope)
 	if err != nil {
 		return err
 	}
+	ds := srv.(*admin.Service)
 
 	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {

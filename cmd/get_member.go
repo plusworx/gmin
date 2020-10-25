@@ -87,10 +87,11 @@ func processGroupMember(memID string, attrs string, groupEmail string, flgAttrsV
 		member   *admin.Member
 	)
 
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupMemberReadonlyScope)
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryGroupMemberReadonlyScope)
 	if err != nil {
 		return nil, err
 	}
+	ds := srv.(*admin.Service)
 
 	mgc := ds.Members.Get(groupEmail, memID)
 

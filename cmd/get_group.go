@@ -56,10 +56,11 @@ func doGetGroup(cmd *cobra.Command, args []string) error {
 		group    *admin.Group
 	)
 
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupReadonlyScope)
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryGroupReadonlyScope)
 	if err != nil {
 		return err
 	}
+	ds := srv.(*admin.Service)
 
 	ggc := ds.Groups.Get(args[0])
 

@@ -59,10 +59,11 @@ func doListMembers(cmd *cobra.Command, args []string) error {
 		members  *admin.Members
 	)
 
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupMemberReadonlyScope)
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryGroupMemberReadonlyScope)
 	if err != nil {
 		return err
 	}
+	ds := srv.(*admin.Service)
 
 	mlc := ds.Members.List(args[0])
 

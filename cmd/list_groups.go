@@ -62,10 +62,11 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 		validOrderBy string
 	)
 
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupReadonlyScope)
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryGroupReadonlyScope)
 	if err != nil {
 		return err
 	}
+	ds := srv.(*admin.Service)
 
 	glc := ds.Groups.List()
 

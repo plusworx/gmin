@@ -90,11 +90,11 @@ func doBatchUpdUser(cmd *cobra.Command, args []string) error {
 		users    []*admin.User
 	)
 
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserScope)
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryUserScope)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
+	ds := srv.(*admin.Service)
 
 	inputFlgVal, err := cmd.Flags().GetString(flgnm.FLG_INPUTFILE)
 	if err != nil {
@@ -424,11 +424,11 @@ func bupduProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([
 		return nil, nil, err
 	}
 
-	ss, err := cmn.CreateSheetService(sheet.DriveReadonlyScope)
+	srv, err := cmn.CreateService(cmn.SRVTYPESHEET, sheet.DriveReadonlyScope)
 	if err != nil {
-		lg.Error(err)
 		return nil, nil, err
 	}
+	ss := srv.(*sheet.Service)
 
 	ssvgc := ss.Spreadsheets.Values.Get(sheetID, sheetrange)
 	sValRange, err := ssvgc.Do()

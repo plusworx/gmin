@@ -87,10 +87,11 @@ func doCreateOU(cmd *cobra.Command, args []string) error {
 		orgunit.ParentOrgUnitPath = "/"
 	}
 
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryOrgunitScope)
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryOrgunitScope)
 	if err != nil {
 		return err
 	}
+	ds := srv.(*admin.Service)
 
 	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {

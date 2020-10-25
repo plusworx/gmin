@@ -84,10 +84,11 @@ func doManageCrOSDev(cmd *cobra.Command, args []string) error {
 		devAction.DeprovisionReason = flgReasonVal
 	}
 
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryDeviceChromeosScope)
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryDeviceChromeosScope)
 	if err != nil {
 		return err
 	}
+	ds := srv.(*admin.Service)
 
 	cdac := ds.Chromeosdevices.Action(customerID, args[0], &devAction)
 

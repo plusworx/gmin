@@ -69,10 +69,11 @@ func doManageMobDev(cmd *cobra.Command, args []string) error {
 
 	devAction.Action = action
 
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryDeviceMobileActionScope)
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryDeviceMobileActionScope)
 	if err != nil {
 		return err
 	}
+	ds := srv.(*admin.Service)
 
 	mdac := ds.Mobiledevices.Action(customerID, args[0], &devAction)
 

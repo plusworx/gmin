@@ -108,10 +108,11 @@ func doBatchMngGrpSettings(cmd *cobra.Command, args []string) error {
 		grpSettings []*gset.Groups
 	)
 
-	ds, err := cmn.CreateGroupSettingService(gset.AppsGroupsSettingsScope)
+	srv, err := cmn.CreateService(cmn.SRVTYPEGRPSETTING, gset.AppsGroupsSettingsScope)
 	if err != nil {
 		return err
 	}
+	gs := srv.(*gset.Service)
 
 	inputFlgVal, err := cmd.Flags().GetString(flgnm.FLG_INPUTFILE)
 	if err != nil {
@@ -146,12 +147,12 @@ func doBatchMngGrpSettings(cmd *cobra.Command, args []string) error {
 
 	switch {
 	case lwrFmt == "csv":
-		groupKeys, grpSettings, err = bmnggProcessCSVFile(ds, inputFlgVal)
+		groupKeys, grpSettings, err = bmnggProcessCSVFile(gs, inputFlgVal)
 		if err != nil {
 			return err
 		}
 	case lwrFmt == "json":
-		groupKeys, grpSettings, err = bmnggProcessJSON(ds, inputFlgVal, scanner)
+		groupKeys, grpSettings, err = bmnggProcessJSON(gs, inputFlgVal, scanner)
 		if err != nil {
 			return err
 		}
@@ -162,7 +163,7 @@ func doBatchMngGrpSettings(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
-		groupKeys, grpSettings, err = bmnggProcessGSheet(ds, inputFlgVal, rangeFlgVal)
+		groupKeys, grpSettings, err = bmnggProcessGSheet(gs, inputFlgVal, rangeFlgVal)
 		if err != nil {
 			return err
 		}
@@ -172,7 +173,7 @@ func doBatchMngGrpSettings(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	err = bmnggProcessObjects(ds, groupKeys, grpSettings)
+	err = bmnggProcessObjects(gs, groupKeys, grpSettings)
 	if err != nil {
 		return err
 	}
@@ -704,10 +705,11 @@ func bmnggProcessGSheet(ds *gset.Service, sheetID string, sheetrange string) ([]
 		return nil, nil, err
 	}
 
-	ss, err := cmn.CreateSheetService(sheet.DriveReadonlyScope)
+	srv, err := cmn.CreateService(cmn.SRVTYPESHEET, sheet.DriveReadonlyScope)
 	if err != nil {
 		return nil, nil, err
 	}
+	ss := srv.(*sheet.Service)
 
 	ssvgc := ss.Spreadsheets.Values.Get(sheetID, sheetrange)
 	sValRange, err := ssvgc.Do()

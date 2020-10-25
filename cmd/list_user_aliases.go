@@ -53,10 +53,11 @@ func doListUserAliases(cmd *cobra.Command, args []string) error {
 
 	var aliases *admin.Aliases
 
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserAliasReadonlyScope)
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryUserAliasReadonlyScope)
 	if err != nil {
 		return err
 	}
+	ds := srv.(*admin.Service)
 
 	ualc := ds.Users.Aliases.List(args[0])
 

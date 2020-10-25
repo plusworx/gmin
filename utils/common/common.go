@@ -154,66 +154,6 @@ var ValidPrimaryShowArgs = []string{
 	"usr",
 }
 
-// CreateDirectoryService function creates and returns Admin Service object
-func CreateDirectoryService(scope ...string) (*admin.Service, error) {
-	Logger.Debugw("starting CreateDirectoryService()",
-		"scope", scope)
-	defer Logger.Debug("finished CreateDirectoryService()")
-
-	ctx, ts, err := oauthSetup(scope)
-	if err != nil {
-		return nil, err
-	}
-
-	srv, err := admin.NewService(ctx, option.WithTokenSource(ts))
-	if err != nil {
-		err = fmt.Errorf(gmess.ERR_CREATEDIRECTORYSERVICE, err)
-		Logger.Error(err)
-		return nil, err
-	}
-	return srv, nil
-}
-
-// CreateGroupSettingService function creates and returns Group Setting Service object
-func CreateGroupSettingService(scope ...string) (*gset.Service, error) {
-	Logger.Debugw("starting CreateGroupSettingService()",
-		"scope", scope)
-	defer Logger.Debug("finished CreateGroupSettingService()")
-
-	ctx, ts, err := oauthSetup(scope)
-	if err != nil {
-		return nil, err
-	}
-
-	srv, err := gset.NewService(ctx, option.WithTokenSource(ts))
-	if err != nil {
-		err = fmt.Errorf(gmess.ERR_CREATEGRPSETTINGSERVICE, err)
-		Logger.Error(err)
-		return nil, err
-	}
-	return srv, nil
-}
-
-// CreateSheetService function creates and returns Sheet Service object
-func CreateSheetService(scope ...string) (*sheet.Service, error) {
-	Logger.Debugw("starting CreateSheetService()",
-		"scope", scope)
-	defer Logger.Debug("finished CreateSheetService()")
-
-	ctx, ts, err := oauthSetup(scope)
-	if err != nil {
-		return nil, err
-	}
-
-	srv, err := sheet.NewService(ctx, option.WithTokenSource(ts))
-	if err != nil {
-		err = fmt.Errorf(gmess.ERR_CREATESHEETSERVICE, err)
-		Logger.Error(err)
-		return nil, err
-	}
-	return srv, nil
-}
-
 // CreateService function creates and returns a service object
 func CreateService(serviceType int, scope ...string) (interface{}, error) {
 	var srv interface{}

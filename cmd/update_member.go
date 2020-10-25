@@ -84,10 +84,11 @@ func doUpdateMember(cmd *cobra.Command, args []string) error {
 		member.Role = validRole
 	}
 
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupMemberScope, admin.AdminDirectoryGroupScope)
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryGroupMemberScope, admin.AdminDirectoryGroupScope)
 	if err != nil {
 		return err
 	}
+	ds := srv.(*admin.Service)
 
 	muc := ds.Members.Update(args[1], memberKey, member)
 	_, err = muc.Do()

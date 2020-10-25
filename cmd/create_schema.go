@@ -148,10 +148,11 @@ func doCreateSchema(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserschemaScope)
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryUserschemaScope)
 	if err != nil {
 		return err
 	}
+	ds := srv.(*admin.Service)
 
 	scic := ds.Schemas.Insert(customerID, schema)
 	newSchema, err := scic.Do()

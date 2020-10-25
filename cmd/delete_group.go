@@ -48,10 +48,11 @@ func doDeleteGroup(cmd *cobra.Command, args []string) error {
 		"args", args)
 	defer lg.Debug("finished doDeleteGroup()")
 
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupScope)
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryGroupScope)
 	if err != nil {
 		return err
 	}
+	ds := srv.(*admin.Service)
 
 	gdc := ds.Groups.Delete(args[0])
 

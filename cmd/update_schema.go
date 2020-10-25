@@ -142,10 +142,11 @@ func doUpdateSchema(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserschemaScope)
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryUserschemaScope)
 	if err != nil {
 		return err
 	}
+	ds := srv.(*admin.Service)
 
 	scuc := ds.Schemas.Update(customerID, args[0], schema)
 	_, err = scuc.Do()

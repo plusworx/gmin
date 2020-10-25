@@ -75,10 +75,11 @@ func doCreateGroup(cmd *cobra.Command, args []string) error {
 		group.Name = flgNameVal
 	}
 
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupScope)
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryGroupScope)
 	if err != nil {
 		return err
 	}
+	ds := srv.(*admin.Service)
 
 	gic := ds.Groups.Insert(group)
 	newGroup, err := gic.Do()

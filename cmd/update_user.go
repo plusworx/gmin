@@ -127,11 +127,11 @@ func doUpdateUser(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserScope)
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryUserScope)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
+	ds := srv.(*admin.Service)
 
 	uuc := ds.Users.Update(userKey, user)
 	_, err = uuc.Do()

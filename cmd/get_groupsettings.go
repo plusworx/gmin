@@ -56,10 +56,11 @@ func doGetGroupSettings(cmd *cobra.Command, args []string) error {
 		group    *gset.Groups
 	)
 
-	gss, err := cmn.CreateGroupSettingService(gset.AppsGroupsSettingsScope)
+	srv, err := cmn.CreateService(cmn.SRVTYPEGRPSETTING, gset.AppsGroupsSettingsScope)
 	if err != nil {
 		return err
 	}
+	gss := srv.(*gset.Service)
 
 	gsgc := gss.Groups.Get(args[0])
 

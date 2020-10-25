@@ -54,10 +54,11 @@ func doCreateUserAlias(cmd *cobra.Command, args []string) error {
 
 	alias.Alias = args[0]
 
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserAliasScope)
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryUserAliasScope)
 	if err != nil {
 		return err
 	}
+	ds := srv.(*admin.Service)
 
 	uaic := ds.Users.Aliases.Insert(args[1], alias)
 	newAlias, err := uaic.Do()

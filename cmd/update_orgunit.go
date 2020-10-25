@@ -70,11 +70,11 @@ func doUpdateOU(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryOrgunitScope)
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryOrgunitScope)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
+	ds := srv.(*admin.Service)
 
 	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {

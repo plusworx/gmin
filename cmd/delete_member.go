@@ -48,10 +48,11 @@ func doDeleteMember(cmd *cobra.Command, args []string) error {
 		"args", args)
 	defer lg.Debug("finished doDeleteMember()")
 
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupMemberScope)
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryGroupMemberScope)
 	if err != nil {
 		return err
 	}
+	ds := srv.(*admin.Service)
 
 	mdc := ds.Members.Delete(args[1], args[0])
 

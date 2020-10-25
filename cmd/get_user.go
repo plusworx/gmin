@@ -58,11 +58,11 @@ func doGetUser(cmd *cobra.Command, args []string) error {
 		user     *admin.User
 	)
 
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserReadonlyScope)
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryUserReadonlyScope)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
+	ds := srv.(*admin.Service)
 
 	ugc := ds.Users.Get(args[0])
 

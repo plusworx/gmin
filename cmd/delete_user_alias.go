@@ -48,10 +48,11 @@ func doDeleteUserAlias(cmd *cobra.Command, args []string) error {
 		"args", args)
 	defer lg.Debug("finished doDeleteUserAlias()")
 
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserAliasScope)
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryUserAliasScope)
 	if err != nil {
 		return err
 	}
+	ds := srv.(*admin.Service)
 
 	uadc := ds.Users.Aliases.Delete(args[1], args[0])
 

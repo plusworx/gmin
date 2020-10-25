@@ -64,10 +64,11 @@ func doUndeleteUser(cmd *cobra.Command, args []string) error {
 		userUndelete.OrgUnitPath = flgOUVal
 	}
 
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserScope)
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryUserScope)
 	if err != nil {
 		return err
 	}
+	ds := srv.(*admin.Service)
 
 	uuc := ds.Users.Undelete(args[0], userUndelete)
 

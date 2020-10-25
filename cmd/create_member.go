@@ -84,10 +84,11 @@ func doCreateMember(cmd *cobra.Command, args []string) error {
 		member.Role = validRole
 	}
 
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupMemberScope)
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryGroupMemberScope)
 	if err != nil {
 		return err
 	}
+	ds := srv.(*admin.Service)
 
 	mic := ds.Members.Insert(args[1], member)
 	newMember, err := mic.Do()

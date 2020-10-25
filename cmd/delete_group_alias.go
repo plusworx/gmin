@@ -48,10 +48,11 @@ func doDeleteGroupAlias(cmd *cobra.Command, args []string) error {
 		"args", args)
 	defer lg.Debug("finished doDeleteGroupAlias()")
 
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupScope)
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryGroupScope)
 	if err != nil {
 		return err
 	}
+	ds := srv.(*admin.Service)
 
 	gadc := ds.Groups.Aliases.Delete(args[1], args[0])
 

@@ -54,10 +54,11 @@ func doUpdateCrOSDev(cmd *cobra.Command, args []string) error {
 
 	var crosdev = admin.ChromeOsDevice{}
 
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryDeviceChromeosScope)
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryDeviceChromeosScope)
 	if err != nil {
 		return err
 	}
+	ds := srv.(*admin.Service)
 
 	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {

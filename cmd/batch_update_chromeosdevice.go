@@ -83,10 +83,11 @@ func doBatchUpdCrOSDev(cmd *cobra.Command, args []string) error {
 
 	var crosdevs []*admin.ChromeOsDevice
 
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryDeviceChromeosScope)
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryDeviceChromeosScope)
 	if err != nil {
 		return err
 	}
+	ds := srv.(*admin.Service)
 
 	inputFlgVal, err := cmd.Flags().GetString(flgnm.FLG_INPUTFILE)
 	if err != nil {
@@ -323,10 +324,11 @@ func bucProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]*
 		return nil, err
 	}
 
-	ss, err := cmn.CreateSheetService(sheet.DriveReadonlyScope)
+	srv, err := cmn.CreateService(cmn.SRVTYPESHEET, sheet.DriveReadonlyScope)
 	if err != nil {
 		return nil, err
 	}
+	ss := srv.(*sheet.Service)
 
 	ssvgc := ss.Spreadsheets.Values.Get(sheetID, sheetrange)
 	sValRange, err := ssvgc.Do()

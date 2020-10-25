@@ -49,10 +49,11 @@ func doDeleteMobDev(cmd *cobra.Command, args []string) error {
 		"args", args)
 	defer lg.Debug("finished doDeleteMobDev()")
 
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryDeviceMobileScope)
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryDeviceMobileScope)
 	if err != nil {
 		return err
 	}
+	ds := srv.(*admin.Service)
 
 	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {

@@ -101,11 +101,11 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserReadonlyScope)
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryUserReadonlyScope)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
+	ds := srv.(*admin.Service)
 
 	ulc := ds.Users.List()
 

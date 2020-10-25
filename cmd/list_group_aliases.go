@@ -53,10 +53,11 @@ func doListGroupAliases(cmd *cobra.Command, args []string) error {
 
 	var aliases *admin.Aliases
 
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupReadonlyScope)
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryGroupReadonlyScope)
 	if err != nil {
 		return err
 	}
+	ds := srv.(*admin.Service)
 
 	galc := ds.Groups.Aliases.List(args[0])
 

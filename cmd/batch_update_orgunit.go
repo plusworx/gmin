@@ -85,10 +85,11 @@ func doBatchUpdOU(cmd *cobra.Command, args []string) error {
 		orgunits []*admin.OrgUnit
 	)
 
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryOrgunitScope)
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryOrgunitScope)
 	if err != nil {
 		return err
 	}
+	ds := srv.(*admin.Service)
 
 	inputFlgVal, err := cmd.Flags().GetString(flgnm.FLG_INPUTFILE)
 	if err != nil {
@@ -353,10 +354,11 @@ func buoProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]s
 		return nil, nil, err
 	}
 
-	ss, err := cmn.CreateSheetService(sheet.DriveReadonlyScope)
+	srv, err := cmn.CreateService(cmn.SRVTYPESHEET, sheet.DriveReadonlyScope)
 	if err != nil {
 		return nil, nil, err
 	}
+	ss := srv.(*sheet.Service)
 
 	ssvgc := ss.Spreadsheets.Values.Get(sheetID, sheetrange)
 	sValRange, err := ssvgc.Do()

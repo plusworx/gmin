@@ -59,10 +59,11 @@ func doMoveCrOSDev(cmd *cobra.Command, args []string) error {
 
 	move.DeviceIds = append(move.DeviceIds, args[0])
 
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryDeviceChromeosScope)
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryDeviceChromeosScope)
 	if err != nil {
 		return err
 	}
+	ds := srv.(*admin.Service)
 
 	cdmc := ds.Chromeosdevices.MoveDevicesToOu(customerID, args[1], &move)
 

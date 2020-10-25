@@ -69,11 +69,11 @@ func doManageGroupSettings(cmd *cobra.Command, args []string) error {
 
 	grpSettings.Email = args[0]
 
-	gss, err := cmn.CreateGroupSettingService(gset.AppsGroupsSettingsScope)
+	srv, err := cmn.CreateService(cmn.SRVTYPEGRPSETTING, gset.AppsGroupsSettingsScope)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
+	gss := srv.(*gset.Service)
 
 	gsuc := gss.Groups.Update(args[0], grpSettings)
 	newSettings, err := gsuc.Do()
