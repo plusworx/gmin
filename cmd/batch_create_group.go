@@ -112,14 +112,16 @@ func doBatchCrtGroup(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	callParams := btch.CallParams{CallType: cmn.CALLTYPECREATE, ObjectType: cmn.OBJTYPEGROUP}
+
 	switch {
 	case lwrFmt == "csv":
-		objs, err = btch.CreateProcessCSVFile(cmn.OBJTYPEGROUP, inputFlgVal, grps.GroupAttrMap)
+		objs, err = btch.ProcessCSVFile(callParams, inputFlgVal, grps.GroupAttrMap)
 		if err != nil {
 			return err
 		}
 	case lwrFmt == "json":
-		objs, err = btch.CreateProcessJSON(cmn.OBJTYPEGROUP, inputFlgVal, scanner, grps.GroupAttrMap)
+		objs, err = btch.ProcessJSON(callParams, inputFlgVal, scanner, grps.GroupAttrMap)
 		if err != nil {
 			return err
 		}
@@ -129,7 +131,7 @@ func doBatchCrtGroup(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
-		objs, err = btch.CreateProcessGSheet(cmn.OBJTYPEGROUP, inputFlgVal, rangeFlgVal, grps.GroupAttrMap)
+		objs, err = btch.ProcessGSheet(callParams, inputFlgVal, rangeFlgVal, grps.GroupAttrMap)
 		if err != nil {
 			return err
 		}

@@ -114,14 +114,16 @@ func doBatchCrtOrgUnit(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	callParams := btch.CallParams{CallType: cmn.CALLTYPECREATE, ObjectType: cmn.OBJTYPEORGUNIT}
+
 	switch {
 	case lwrFmt == "csv":
-		objs, err = btch.CreateProcessCSVFile(cmn.OBJTYPEORGUNIT, inputFlgVal, ous.OrgUnitAttrMap)
+		objs, err = btch.ProcessCSVFile(callParams, inputFlgVal, ous.OrgUnitAttrMap)
 		if err != nil {
 			return err
 		}
 	case lwrFmt == "json":
-		objs, err = btch.CreateProcessJSON(cmn.OBJTYPEORGUNIT, inputFlgVal, scanner, ous.OrgUnitAttrMap)
+		objs, err = btch.ProcessJSON(callParams, inputFlgVal, scanner, ous.OrgUnitAttrMap)
 		if err != nil {
 			return err
 		}
@@ -131,7 +133,7 @@ func doBatchCrtOrgUnit(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
-		objs, err = btch.CreateProcessGSheet(cmn.OBJTYPEORGUNIT, inputFlgVal, rangeFlgVal, ous.OrgUnitAttrMap)
+		objs, err = btch.ProcessGSheet(callParams, inputFlgVal, rangeFlgVal, ous.OrgUnitAttrMap)
 		if err != nil {
 			return err
 		}

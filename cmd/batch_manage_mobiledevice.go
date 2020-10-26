@@ -23,18 +23,14 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"bufio"
-	"encoding/csv"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"os"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
+	btch "github.com/plusworx/gmin/utils/batch"
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
 	flgnm "github.com/plusworx/gmin/utils/flagnames"
@@ -43,7 +39,6 @@ import (
 	mdevs "github.com/plusworx/gmin/utils/mobiledevices"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
-	sheet "google.golang.org/api/sheets/v4"
 )
 
 var batchMngMobDevCmd = &cobra.Command{
@@ -85,7 +80,10 @@ func doBatchMngMobDev(cmd *cobra.Command, args []string) error {
 		"args", args)
 	defer lg.Debug("finished doBatchMngMobDev()")
 
-	var managedDevs []mdevs.ManagedDevice
+	var (
+		managedDevs []mdevs.ManagedDevice
+		objs        []interface{}
+	)
 
 	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryDeviceMobileActionScope)
 	if err != nil {
@@ -124,14 +122,16 @@ func doBatchMngMobDev(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	callParams := btch.CallParams{CallType: cmn.CALLTYPEMANAGE, ObjectType: cmn.OBJTYPEMOBDEV}
+
 	switch {
 	case lwrFmt == "csv":
-		managedDevs, err = bmngmProcessCSVFile(ds, inputFlgVal)
+		objs, err = btch.ProcessCSVFile(callParams, inputFlgVal, mdevs.MobDevAttrMap)
 		if err != nil {
 			return err
 		}
 	case lwrFmt == "json":
-		managedDevs, err = bmngmProcessJSON(ds, inputFlgVal, scanner)
+		objs, err = btch.ProcessJSON(callParams, inputFlgVal, scanner, mdevs.MobDevAttrMap)
 		if err != nil {
 			return err
 		}
@@ -142,7 +142,7 @@ func doBatchMngMobDev(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
-		managedDevs, err = bmngmProcessGSheet(ds, inputFlgVal, rangeFlgVal)
+		objs, err = btch.ProcessGSheet(callParams, inputFlgVal, rangeFlgVal, mdevs.MobDevAttrMap)
 		if err != nil {
 			return err
 		}
@@ -152,72 +152,16 @@ func doBatchMngMobDev(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	for _, mdevObj := range objs {
+		managedDevs = append(managedDevs, mdevObj.(mdevs.ManagedDevice))
+	}
+
 	err = bmngmProcessObjects(ds, managedDevs)
 	if err != nil {
 		return err
 	}
 
 	return nil
-}
-
-func bmngmFromFileFactory(hdrMap map[int]string, mdevData []interface{}) (mdevs.ManagedDevice, error) {
-	lg.Debugw("starting bmngmFromFileFactory()",
-		"hdrMap", hdrMap)
-	defer lg.Debug("finished bmngmFromFileFactory()")
-
-	managedDev := mdevs.ManagedDevice{}
-
-	for idx, attr := range mdevData {
-		attrName := hdrMap[idx]
-		attrVal := fmt.Sprintf("%v", attr)
-		lowerAttrVal := strings.ToLower(fmt.Sprintf("%v", attr))
-
-		switch {
-		case attrName == "action":
-			ok := cmn.SliceContainsStr(mdevs.ValidActions, lowerAttrVal)
-			if !ok {
-				err := fmt.Errorf(gmess.ERR_INVALIDACTIONTYPE, attrVal)
-				lg.Error(err)
-				return managedDev, err
-			}
-			managedDev.Action = lowerAttrVal
-		case attrName == "resourceId":
-			managedDev.ResourceId = attrVal
-		}
-	}
-	return managedDev, nil
-}
-
-func bmngmFromJSONFactory(ds *admin.Service, jsonData string) (mdevs.ManagedDevice, error) {
-	lg.Debugw("starting bmngmFromJSONFactory()",
-		"jsonData", jsonData)
-	defer lg.Debug("finished bmngmFromJSONFactory()")
-
-	managedDev := mdevs.ManagedDevice{}
-	jsonBytes := []byte(jsonData)
-
-	if !json.Valid(jsonBytes) {
-		err := errors.New(gmess.ERR_INVALIDJSONATTR)
-		lg.Error(err)
-		return managedDev, err
-	}
-
-	outStr, err := cmn.ParseInputAttrs(jsonBytes)
-	if err != nil {
-		return managedDev, err
-	}
-
-	err = cmn.ValidateInputAttrs(outStr, mdevs.MobDevAttrMap)
-	if err != nil {
-		return managedDev, err
-	}
-
-	err = json.Unmarshal(jsonBytes, &managedDev)
-	if err != nil {
-		lg.Error(err)
-		return managedDev, err
-	}
-	return managedDev, nil
 }
 
 func bmngmPerformAction(resourceID string, action string, wg *sync.WaitGroup, mdac *admin.MobiledevicesActionCall) {
@@ -253,160 +197,6 @@ func bmngmPerformAction(resourceID string, action string, wg *sync.WaitGroup, md
 		lg.Error(err)
 		fmt.Println(cmn.GminMessage(err.Error()))
 	}
-}
-
-func bmngmProcessCSVFile(ds *admin.Service, filePath string) ([]mdevs.ManagedDevice, error) {
-	lg.Debugw("starting bmngmProcessCSVFile()",
-		"filePath", filePath)
-	defer lg.Debug("finished bmngmProcessCSVFile()")
-
-	var (
-		iSlice      []interface{}
-		hdrMap      = map[int]string{}
-		managedDevs []mdevs.ManagedDevice
-	)
-
-	csvfile, err := os.Open(filePath)
-	if err != nil {
-		lg.Error(err)
-		return nil, err
-	}
-	defer csvfile.Close()
-
-	r := csv.NewReader(csvfile)
-
-	count := 0
-	for {
-		record, err := r.Read()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			lg.Error(err)
-			return nil, err
-		}
-
-		if count == 0 {
-			iSlice = make([]interface{}, len(record))
-			for idx, value := range record {
-				iSlice[idx] = value
-			}
-			hdrMap = cmn.ProcessHeader(iSlice)
-			err = cmn.ValidateHeader(hdrMap, mdevs.MobDevAttrMap)
-			if err != nil {
-				return nil, err
-			}
-			count = count + 1
-			continue
-		}
-
-		for idx, value := range record {
-			iSlice[idx] = value
-		}
-
-		mngMdevVar, err := bmngmFromFileFactory(hdrMap, iSlice)
-		if err != nil {
-			return nil, err
-		}
-
-		managedDevs = append(managedDevs, mngMdevVar)
-
-		count = count + 1
-	}
-
-	return managedDevs, nil
-}
-
-func bmngmProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]mdevs.ManagedDevice, error) {
-	lg.Debugw("starting bmngmProcessGSheet()",
-		"sheetID", sheetID,
-		"sheetrange", sheetrange)
-	defer lg.Debug("finished bmngmProcessGSheet()")
-
-	var managedDevs []mdevs.ManagedDevice
-
-	if sheetrange == "" {
-		err := errors.New(gmess.ERR_NOSHEETRANGE)
-		lg.Error(err)
-		return nil, err
-	}
-
-	srv, err := cmn.CreateService(cmn.SRVTYPESHEET, sheet.DriveReadonlyScope)
-	if err != nil {
-		return nil, err
-	}
-	ss := srv.(*sheet.Service)
-
-	ssvgc := ss.Spreadsheets.Values.Get(sheetID, sheetrange)
-	sValRange, err := ssvgc.Do()
-	if err != nil {
-		lg.Error(err)
-		return nil, err
-	}
-
-	if len(sValRange.Values) == 0 {
-		err = fmt.Errorf(gmess.ERR_NOSHEETDATAFOUND, sheetID, sheetrange)
-		lg.Error(err)
-		return nil, err
-	}
-
-	hdrMap := cmn.ProcessHeader(sValRange.Values[0])
-	err = cmn.ValidateHeader(hdrMap, mdevs.MobDevAttrMap)
-	if err != nil {
-		return nil, err
-	}
-
-	for idx, row := range sValRange.Values {
-		if idx == 0 {
-			continue
-		}
-
-		mngMdevVar, err := bmngmFromFileFactory(hdrMap, row)
-		if err != nil {
-			return nil, err
-		}
-
-		managedDevs = append(managedDevs, mngMdevVar)
-	}
-
-	return managedDevs, nil
-}
-
-func bmngmProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner) ([]mdevs.ManagedDevice, error) {
-	lg.Debugw("starting bmngmProcessJSON()",
-		"filePath", filePath)
-	defer lg.Debug("finished bmngmProcessJSON()")
-
-	var managedDevs []mdevs.ManagedDevice
-
-	if filePath != "" {
-		file, err := os.Open(filePath)
-		if err != nil {
-			lg.Error(err)
-			return nil, err
-		}
-		defer file.Close()
-
-		scanner = bufio.NewScanner(file)
-	}
-
-	for scanner.Scan() {
-		jsonData := scanner.Text()
-
-		mngMdevVar, err := bmngmFromJSONFactory(ds, jsonData)
-		if err != nil {
-			return nil, err
-		}
-
-		managedDevs = append(managedDevs, mngMdevVar)
-	}
-	err := scanner.Err()
-	if err != nil {
-		lg.Error(err)
-		return nil, err
-	}
-
-	return managedDevs, nil
 }
 
 func bmngmProcessObjects(ds *admin.Service, managedDevs []mdevs.ManagedDevice) error {

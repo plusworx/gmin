@@ -52,6 +52,16 @@ import (
 )
 
 const (
+	// Call Types
+
+	CALLTYPECREATE = iota
+	CALLTYPEDELETE
+	CALLTYPEMANAGE
+	CALLTYPEMOVE
+	CALLTYPEUNDELETE
+	CALLTYPEUPDATE
+)
+const (
 	// Object Types
 
 	OBJTYPECROSDEV = iota

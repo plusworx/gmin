@@ -121,14 +121,16 @@ func doBatchCrtUser(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	callParams := btch.CallParams{CallType: cmn.CALLTYPECREATE, ObjectType: cmn.OBJTYPEUSER}
+
 	switch {
 	case lwrFmt == "csv":
-		objs, err = btch.CreateProcessCSVFile(cmn.OBJTYPEUSER, inputFlgVal, usrs.UserAttrMap)
+		objs, err = btch.ProcessCSVFile(callParams, inputFlgVal, usrs.UserAttrMap)
 		if err != nil {
 			return err
 		}
 	case lwrFmt == "json":
-		objs, err = btch.CreateProcessJSON(cmn.OBJTYPEUSER, inputFlgVal, scanner, usrs.UserAttrMap)
+		objs, err = btch.ProcessJSON(callParams, inputFlgVal, scanner, usrs.UserAttrMap)
 		if err != nil {
 			return err
 		}
@@ -139,7 +141,7 @@ func doBatchCrtUser(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
-		objs, err = btch.CreateProcessGSheet(cmn.OBJTYPEUSER, inputFlgVal, rangeFlgVal, usrs.UserAttrMap)
+		objs, err = btch.ProcessGSheet(callParams, inputFlgVal, rangeFlgVal, usrs.UserAttrMap)
 		if err != nil {
 			return err
 		}

@@ -23,6 +23,7 @@ THE SOFTWARE.
 package chromeosdevices
 
 import (
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -479,6 +480,52 @@ func DoList(cdlc *admin.ChromeosdevicesListCall) (*admin.ChromeOsDevices, error)
 	}
 
 	return crosdevs, nil
+}
+
+// PopulateManagedDev is used in batch processing
+func PopulateManagedDev(managedDev *ManagedDevice, hdrMap map[int]string, objData []interface{}) error {
+	lg.Debugw("starting PopulateManagedDev()",
+		"hdrMap", hdrMap)
+	defer lg.Debug("finished PopulateManagedDev()")
+
+	for idx, attr := range objData {
+		attrName := hdrMap[idx]
+		attrVal := fmt.Sprintf("%v", attr)
+		lowerAttrVal := strings.ToLower(fmt.Sprintf("%v", attr))
+
+		switch {
+		case attrName == "action":
+			ok := cmn.SliceContainsStr(ValidActions, lowerAttrVal)
+			if !ok {
+				err := fmt.Errorf(gmess.ERR_INVALIDACTIONTYPE, attrVal)
+				lg.Error(err)
+				return err
+			}
+			managedDev.Action = lowerAttrVal
+		case attrName == "deviceId":
+			managedDev.DeviceId = attrVal
+		case attrName == "deprovisionReason":
+			if lowerAttrVal != "" {
+				ok := cmn.SliceContainsStr(ValidDeprovisionReasons, lowerAttrVal)
+				if !ok {
+					err := fmt.Errorf(gmess.ERR_INVALIDDEPROVISIONREASON, attrVal)
+					lg.Error(err)
+					return err
+				}
+				managedDev.DeprovisionReason = lowerAttrVal
+			}
+		default:
+			err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, attrName)
+			return err
+		}
+	}
+	if managedDev.Action == "deprovision" && managedDev.DeprovisionReason == "" {
+		err := errors.New(gmess.ERR_NODEPROVISIONREASON)
+		lg.Error(err)
+		return err
+	}
+
+	return nil
 }
 
 // ShowAttrs displays requested chromeOS device attributes

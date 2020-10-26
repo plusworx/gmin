@@ -360,6 +360,36 @@ func DoList(mdlc *admin.MobiledevicesListCall) (*admin.MobileDevices, error) {
 	return mobdevs, nil
 }
 
+// PopulateManagedDev is used in batch processing
+func PopulateManagedDev(managedDev *ManagedDevice, hdrMap map[int]string, objData []interface{}) error {
+	lg.Debugw("starting PopulateManagedDev()",
+		"hdrMap", hdrMap)
+	defer lg.Debug("finished PopulateManagedDev()")
+
+	for idx, attr := range objData {
+		attrName := hdrMap[idx]
+		attrVal := fmt.Sprintf("%v", attr)
+		lowerAttrVal := strings.ToLower(fmt.Sprintf("%v", attr))
+
+		switch {
+		case attrName == "action":
+			ok := cmn.SliceContainsStr(ValidActions, lowerAttrVal)
+			if !ok {
+				err := fmt.Errorf(gmess.ERR_INVALIDACTIONTYPE, attrVal)
+				lg.Error(err)
+				return err
+			}
+			managedDev.Action = lowerAttrVal
+		case attrName == "resourceId":
+			managedDev.ResourceId = attrVal
+		default:
+			err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, attrName)
+			return err
+		}
+	}
+	return nil
+}
+
 // ShowAttrs displays requested chromeOS device attributes
 func ShowAttrs(filter string) {
 	lg.Debugw("starting ShowAttrs()",

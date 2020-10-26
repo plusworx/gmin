@@ -27,6 +27,7 @@ import (
 	"sort"
 	"strings"
 
+	valid "github.com/asaskevich/govalidator"
 	cmn "github.com/plusworx/gmin/utils/common"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	lg "github.com/plusworx/gmin/utils/logging"
@@ -311,6 +312,12 @@ var ViewMembershipMap = map[string]string{
 	"all_members_can_view":   "ALL_MEMBERS_CAN_VIEW",
 }
 
+// GroupParams holds group data for batch processing
+type GroupParams struct {
+	GroupKey string
+	Settings *gset.Groups
+}
+
 // Key is struct used to extract groupKey
 type Key struct {
 	GroupKey string
@@ -331,6 +338,66 @@ func AddFields(gsgc *gset.GroupsGetCall, attrs string) interface{} {
 	return newGSGC
 }
 
+func approveMemberVal(grpSetting *gset.Groups, attrName string, attrValue string) error {
+	lg.Debug("starting approveMemberVal()")
+	defer lg.Debug("finished approveMemberVal()")
+
+	validTxt, err := ValidateGroupSettingValue(ApproveMemberMap, attrName, attrValue)
+	if err != nil {
+		return err
+	}
+	grpSetting.WhoCanApproveMembers = validTxt
+	return nil
+}
+
+func assistContentVal(grpSetting *gset.Groups, attrName string, attrValue string) error {
+	lg.Debug("starting assistContentVal()")
+	defer lg.Debug("finished assistContentVal()")
+
+	validTxt, err := ValidateGroupSettingValue(AssistContentMap, attrName, attrValue)
+	if err != nil {
+		return err
+	}
+	grpSetting.WhoCanAssistContent = validTxt
+	return nil
+}
+
+func banUserVal(grpSetting *gset.Groups, attrName string, attrValue string) error {
+	lg.Debug("starting banUserVal()")
+	defer lg.Debug("finished banUserVal()")
+
+	validTxt, err := ValidateGroupSettingValue(BanUserMap, attrName, attrValue)
+	if err != nil {
+		return err
+	}
+	grpSetting.WhoCanBanUsers = validTxt
+	return nil
+}
+
+func contactOwnerVal(grpSetting *gset.Groups, attrName string, attrValue string) error {
+	lg.Debug("starting contactOwnerVal()")
+	defer lg.Debug("finished contactOwnerVal()")
+
+	validTxt, err := ValidateGroupSettingValue(ContactOwnerMap, attrName, attrValue)
+	if err != nil {
+		return err
+	}
+	grpSetting.WhoCanContactOwner = validTxt
+	return nil
+}
+
+func discoverGroupVal(grpSettings *gset.Groups, attrName string, attrValue string) error {
+	lg.Debug("starting discoverGroupVal()")
+	defer lg.Debug("finished discoverGroupVal()")
+
+	validTxt, err := ValidateGroupSettingValue(DiscoverGroupMap, attrName, attrValue)
+	if err != nil {
+		return err
+	}
+	grpSettings.WhoCanDiscoverGroup = validTxt
+	return nil
+}
+
 // DoGet calls the .Do() function on the gset.GroupsGetCall
 func DoGet(gsgc *gset.GroupsGetCall) (*gset.Groups, error) {
 	lg.Debug("starting DoGet()")
@@ -342,6 +409,301 @@ func DoGet(gsgc *gset.GroupsGetCall) (*gset.Groups, error) {
 		return nil, err
 	}
 	return groups, nil
+}
+
+func joinVal(grpSetting *gset.Groups, attrName string, attrValue string) error {
+	lg.Debug("starting joinVal()")
+	defer lg.Debug("finished joinVal()")
+
+	validTxt, err := ValidateGroupSettingValue(JoinMap, attrName, attrValue)
+	if err != nil {
+		return err
+	}
+	grpSetting.WhoCanJoin = validTxt
+	return nil
+}
+
+func languageVal(grpSetting *gset.Groups, attrName string, attrValue string) error {
+	lg.Debug("starting languageVal()")
+	defer lg.Debug("finished languageVal()")
+
+	validTxt, err := ValidateGroupSettingValue(LanguageMap, attrName, attrValue)
+	if err != nil {
+		return err
+	}
+	grpSetting.PrimaryLanguage = validTxt
+	return nil
+}
+
+func leaveVal(grpSetting *gset.Groups, attrName string, attrValue string) error {
+	lg.Debug("starting leaveVal()")
+	defer lg.Debug("finished leaveVal()")
+
+	validTxt, err := ValidateGroupSettingValue(LeaveMap, attrName, attrValue)
+	if err != nil {
+		return err
+	}
+	grpSetting.WhoCanLeaveGroup = validTxt
+	return nil
+}
+
+func messageModVal(grpSetting *gset.Groups, attrName string, attrValue string) error {
+	lg.Debug("starting messageModVal()")
+	defer lg.Debug("finished messageModVal()")
+
+	validTxt, err := ValidateGroupSettingValue(MessageModMap, attrName, attrValue)
+	if err != nil {
+		return err
+	}
+	grpSetting.MessageModerationLevel = validTxt
+	return nil
+}
+
+func modContentVal(grpSetting *gset.Groups, attrName string, attrValue string) error {
+	lg.Debug("starting modContentVal()")
+	defer lg.Debug("finished modContentVal()")
+
+	validTxt, err := ValidateGroupSettingValue(ModContentMap, attrName, attrValue)
+	if err != nil {
+		return err
+	}
+	grpSetting.WhoCanModerateContent = validTxt
+	return nil
+}
+
+func modMemberVal(grpSetting *gset.Groups, attrName string, attrValue string) error {
+	lg.Debug("starting modMemberVal()")
+	defer lg.Debug("finished modMemberVal()")
+
+	validTxt, err := ValidateGroupSettingValue(ModMemberMap, attrName, attrValue)
+	if err != nil {
+		return err
+	}
+	grpSetting.WhoCanModerateMembers = validTxt
+	return nil
+}
+
+// PopulateGroupSettings is used in batch processing
+func PopulateGroupSettings(grpParams *GroupParams, hdrMap map[int]string, objData []interface{}) error {
+	lg.Debugw("starting PopulateGroupSettings()",
+		"hdrMap", hdrMap)
+	defer lg.Debug("finished PopulateGroupSettings()")
+
+	for idx, attr := range objData {
+		attrName := hdrMap[idx]
+		attrVal := fmt.Sprintf("%v", attr)
+		lowerAttrName := strings.ToLower(hdrMap[idx])
+		lowerAttrVal := strings.ToLower(fmt.Sprintf("%v", attr))
+
+		if lowerAttrName == "allowexternalmembers" {
+			if lowerAttrVal == "true" {
+				grpParams.Settings.AllowExternalMembers = "true"
+			} else {
+				grpParams.Settings.AllowExternalMembers = "false"
+				grpParams.Settings.ForceSendFields = append(grpParams.Settings.ForceSendFields, "AllowExternalMembers")
+			}
+		}
+		if lowerAttrName == "allowwebposting" {
+			if lowerAttrVal == "true" {
+				grpParams.Settings.AllowWebPosting = "true"
+			} else {
+				grpParams.Settings.AllowWebPosting = "false"
+				grpParams.Settings.ForceSendFields = append(grpParams.Settings.ForceSendFields, "AllowWebPosting")
+			}
+		}
+		if lowerAttrName == "archiveonly" {
+			if lowerAttrVal == "true" {
+				grpParams.Settings.ArchiveOnly = "true"
+			} else {
+				grpParams.Settings.ArchiveOnly = "false"
+				grpParams.Settings.ForceSendFields = append(grpParams.Settings.ForceSendFields, "ArchiveOnly")
+			}
+		}
+		if lowerAttrName == "customfootertext" {
+			if attrVal == "" {
+				grpParams.Settings.ForceSendFields = append(grpParams.Settings.ForceSendFields, "CustomFooterText")
+			}
+			grpParams.Settings.CustomFooterText = attrVal
+		}
+		if lowerAttrName == "customreplyto" {
+			err := replyEmailVal(grpParams.Settings, attrVal)
+			if err != nil {
+				return err
+			}
+		}
+		if lowerAttrName == "defaultmessagedenynotificationtext" {
+			if attrVal == "" {
+				grpParams.Settings.ForceSendFields = append(grpParams.Settings.ForceSendFields, "DefaultMessageDenyNotificationText")
+			}
+			grpParams.Settings.DefaultMessageDenyNotificationText = attrVal
+		}
+		if lowerAttrName == "enablecollaborativeinbox" {
+			if lowerAttrVal == "true" {
+				grpParams.Settings.EnableCollaborativeInbox = "true"
+			} else {
+				grpParams.Settings.EnableCollaborativeInbox = "false"
+				grpParams.Settings.ForceSendFields = append(grpParams.Settings.ForceSendFields, "EnableCollaborativeInbox")
+			}
+		}
+		if lowerAttrName == "favoriterepliesontop" {
+			if lowerAttrVal == "true" {
+				grpParams.Settings.FavoriteRepliesOnTop = "true"
+			} else {
+				grpParams.Settings.FavoriteRepliesOnTop = "false"
+				grpParams.Settings.ForceSendFields = append(grpParams.Settings.ForceSendFields, "FavoriteRepliesOnTop")
+			}
+		}
+		if lowerAttrName == "groupkey" {
+			if attrVal == "" {
+				err := fmt.Errorf(gmess.ERR_EMPTYSTRING, attrName)
+				lg.Error(err)
+				return err
+			}
+			grpParams.GroupKey = attrVal
+		}
+		if lowerAttrName == "includecustomfooter" {
+			if lowerAttrVal == "true" {
+				grpParams.Settings.IncludeCustomFooter = "true"
+			} else {
+				grpParams.Settings.IncludeCustomFooter = "false"
+				grpParams.Settings.ForceSendFields = append(grpParams.Settings.ForceSendFields, "IncludeCustomFooter")
+			}
+		}
+		if lowerAttrName == "isarchived" {
+			if lowerAttrVal == "true" {
+				grpParams.Settings.IsArchived = "true"
+			} else {
+				grpParams.Settings.IsArchived = "false"
+				grpParams.Settings.ForceSendFields = append(grpParams.Settings.ForceSendFields, "IsArchived")
+			}
+		}
+		if lowerAttrName == "memberscanpostasthegroup" {
+			if attrVal == "" {
+				grpParams.Settings.MembersCanPostAsTheGroup = "true"
+			} else {
+				grpParams.Settings.MembersCanPostAsTheGroup = "false"
+				grpParams.Settings.ForceSendFields = append(grpParams.Settings.ForceSendFields, "MembersCanPostAsTheGroup")
+			}
+		}
+		if lowerAttrName == "messagemoderationlevel" {
+			err := messageModVal(grpParams.Settings, attrName, attrVal)
+			if err != nil {
+				return err
+			}
+		}
+		if lowerAttrName == "primarylanguage" {
+			err := languageVal(grpParams.Settings, attrName, attrVal)
+			if err != nil {
+				return err
+			}
+		}
+		if lowerAttrName == "replyto" {
+			err := replyToVal(grpParams.Settings, attrName, attrVal)
+			if err != nil {
+				return err
+			}
+		}
+		if lowerAttrName == "sendmessagedenynotification" {
+			if attrVal == "" {
+				grpParams.Settings.SendMessageDenyNotification = "true"
+			} else {
+				grpParams.Settings.SendMessageDenyNotification = "false"
+				grpParams.Settings.ForceSendFields = append(grpParams.Settings.ForceSendFields, "SendMessageDenyNotification")
+			}
+		}
+		if lowerAttrName == "spammoderationlevel" {
+			err := spamModVal(grpParams.Settings, attrName, attrVal)
+			if err != nil {
+				return err
+			}
+		}
+		if lowerAttrName == "whocanapprovemembers" {
+			err := approveMemberVal(grpParams.Settings, attrName, attrVal)
+			if err != nil {
+				return err
+			}
+		}
+		if lowerAttrName == "whocanassistcontent" {
+			err := assistContentVal(grpParams.Settings, attrName, attrVal)
+			if err != nil {
+				return err
+			}
+		}
+		if lowerAttrName == "whocanbanusers" {
+			err := banUserVal(grpParams.Settings, attrName, attrVal)
+			if err != nil {
+				return err
+			}
+		}
+		if lowerAttrName == "whocancontactowner" {
+			err := contactOwnerVal(grpParams.Settings, attrName, attrVal)
+			if err != nil {
+				return err
+			}
+		}
+		if lowerAttrName == "whocandiscovergroup" {
+			err := discoverGroupVal(grpParams.Settings, attrName, attrVal)
+			if err != nil {
+				return err
+			}
+		}
+		if lowerAttrName == "whocanjoin" {
+			err := joinVal(grpParams.Settings, attrName, attrVal)
+			if err != nil {
+				return err
+			}
+		}
+		if lowerAttrName == "whocanleavegroup" {
+			err := leaveVal(grpParams.Settings, attrName, attrVal)
+			if err != nil {
+				return err
+			}
+		}
+		if lowerAttrName == "whocanmoderatecontent" {
+			err := modContentVal(grpParams.Settings, attrName, attrVal)
+			if err != nil {
+				return err
+			}
+		}
+		if lowerAttrName == "whocanmoderatemembers" {
+			err := modMemberVal(grpParams.Settings, attrName, attrVal)
+			if err != nil {
+				return err
+			}
+		}
+		if lowerAttrName == "whocanpostmessage" {
+			err := postMessageVal(grpParams.Settings, attrName, attrVal)
+			if err != nil {
+				return err
+			}
+		}
+		if lowerAttrName == "whocanviewgroup" {
+			err := viewGroupVal(grpParams.Settings, attrName, attrVal)
+			if err != nil {
+				return err
+			}
+		}
+		if lowerAttrName == "whocanviewmembership" {
+			err := viewMembershipVal(grpParams.Settings, attrName, attrVal)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func postMessageVal(grpSettings *gset.Groups, attrName string, attrValue string) error {
+	lg.Debug("starting postMessageVal()")
+	defer lg.Debug("finished postMessageVal()")
+
+	validTxt, err := ValidateGroupSettingValue(PostMessageMap, attrName, attrValue)
+	if err != nil {
+		return err
+	}
+	grpSettings.WhoCanPostMessage = validTxt
+	return nil
 }
 
 func printFlagValues(flagMap map[string]string, filter string) {
@@ -365,6 +727,36 @@ func printFlagValues(flagMap map[string]string, filter string) {
 			fmt.Println(v)
 		}
 	}
+}
+
+func replyEmailVal(grpSettings *gset.Groups, attrValue string) error {
+	lg.Debug("starting replyEmailVal()")
+	defer lg.Debug("finished replyEmailVal()")
+
+	if attrValue == "" {
+		grpSettings.CustomReplyTo = attrValue
+		grpSettings.ForceSendFields = append(grpSettings.ForceSendFields, "CustomReplyTo")
+		return nil
+	}
+	ok := valid.IsEmail(attrValue)
+	if !ok {
+		err := fmt.Errorf(gmess.ERR_INVALIDEMAILADDRESS, attrValue)
+		return err
+	}
+	grpSettings.CustomReplyTo = attrValue
+	return nil
+}
+
+func replyToVal(grpSetting *gset.Groups, attrName string, attrValue string) error {
+	lg.Debug("starting replyToVal()")
+	defer lg.Debug("finished replyToVal()")
+
+	validTxt, err := ValidateGroupSettingValue(ReplyToMap, attrName, attrValue)
+	if err != nil {
+		return err
+	}
+	grpSetting.ReplyTo = validTxt
+	return nil
 }
 
 // ShowAttrs displays requested group attributes
@@ -600,6 +992,18 @@ func ShowFlagValues(lenArgs int, args []string, filter string) error {
 	return nil
 }
 
+func spamModVal(grpSetting *gset.Groups, attrName string, attrValue string) error {
+	lg.Debug("starting spamModVal()")
+	defer lg.Debug("finished spamModVal()")
+
+	validTxt, err := ValidateGroupSettingValue(SpamModMap, attrName, attrValue)
+	if err != nil {
+		return err
+	}
+	grpSetting.SpamModerationLevel = validTxt
+	return nil
+}
+
 // ValidateGroupSettingValue checks that a valid value has been provided for flag or attribute
 func ValidateGroupSettingValue(valueMap map[string]string, name string, value string) (string, error) {
 	lg.Debugw("starting ValidateGroupSettingValue()",
@@ -616,4 +1020,28 @@ func ValidateGroupSettingValue(valueMap map[string]string, name string, value st
 		return "", err
 	}
 	return validStr, nil
+}
+
+func viewGroupVal(grpSetting *gset.Groups, attrName string, attrValue string) error {
+	lg.Debug("starting viewGroupVal()")
+	defer lg.Debug("finished viewGroupVal()")
+
+	validTxt, err := ValidateGroupSettingValue(ViewGroupMap, attrName, attrValue)
+	if err != nil {
+		return err
+	}
+	grpSetting.WhoCanViewGroup = validTxt
+	return nil
+}
+
+func viewMembershipVal(grpSetting *gset.Groups, attrName string, attrValue string) error {
+	lg.Debug("starting viewMembershipVal()")
+	defer lg.Debug("finished viewMembershipVal()")
+
+	validTxt, err := ValidateGroupSettingValue(ViewMembershipMap, attrName, attrValue)
+	if err != nil {
+		return err
+	}
+	grpSetting.WhoCanViewMembership = validTxt
+	return nil
 }
