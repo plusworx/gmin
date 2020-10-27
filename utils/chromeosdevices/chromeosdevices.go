@@ -482,6 +482,47 @@ func DoList(cdlc *admin.ChromeosdevicesListCall) (*admin.ChromeOsDevices, error)
 	return crosdevs, nil
 }
 
+// PopulateCrOSDev is used in batch processing
+func PopulateCrOSDev(crosdev *admin.ChromeOsDevice, hdrMap map[int]string, objData []interface{}) error {
+	lg.Debugw("starting PopulateCrOSDev()",
+		"hdrMap", hdrMap)
+	defer lg.Debug("finished PopulateCrOSDev()")
+
+	for idx, attr := range objData {
+		attrName := hdrMap[idx]
+		attrVal := fmt.Sprintf("%v", attr)
+
+		switch {
+		case attrName == "annotatedAssetId":
+			crosdev.AnnotatedAssetId = attrVal
+			if attrVal == "" {
+				crosdev.ForceSendFields = append(crosdev.ForceSendFields, "AnnotatedAssetId")
+			}
+		case attrName == "annotatedLocation":
+			crosdev.AnnotatedLocation = attrVal
+			if attrVal == "" {
+				crosdev.ForceSendFields = append(crosdev.ForceSendFields, "AnnotatedLocation")
+			}
+		case attrName == "annotatedUser":
+			crosdev.AnnotatedUser = attrVal
+			if attrVal == "" {
+				crosdev.ForceSendFields = append(crosdev.ForceSendFields, "AnnotatedUser")
+			}
+		case attrName == "notes":
+			crosdev.Notes = attrVal
+			if attrVal == "" {
+				crosdev.ForceSendFields = append(crosdev.ForceSendFields, "Notes")
+			}
+		case attrName == "orgUnitPath":
+			crosdev.OrgUnitPath = attrVal
+		default:
+			err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, attrName)
+			return err
+		}
+	}
+	return nil
+}
+
 // PopulateManagedDev is used in batch processing
 func PopulateManagedDev(managedDev *ManagedDevice, hdrMap map[int]string, objData []interface{}) error {
 	lg.Debugw("starting PopulateManagedDev()",

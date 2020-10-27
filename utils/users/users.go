@@ -47,6 +47,23 @@ const (
 	STARTUSERSFIELD = "users("
 )
 
+// Key is struct used to extract userKey
+type Key struct {
+	UserKey string
+}
+
+// UndeleteUser is struct to extract undelete data
+type UndeleteUser struct {
+	UserKey     string
+	OrgUnitPath string
+}
+
+// UserParams is used in batch processing
+type UserParams struct {
+	UserKey string
+	User    *admin.User
+}
+
 // addressAttrs contains names of all the addressable admin.UserAddress attributes
 var addressAttrs = []string{
 	"country",
@@ -592,17 +609,6 @@ var validWebsiteTypes = []string{
 	"work",
 }
 
-// Key is struct used to extract userKey
-type Key struct {
-	UserKey string
-}
-
-// UndeleteUser is struct to extract undelete data
-type UndeleteUser struct {
-	UserKey     string
-	OrgUnitPath string
-}
-
 // AddCustomer adds Customer to admin calls
 func AddCustomer(ulc *admin.UsersListCall, customerID string) *admin.UsersListCall {
 	lg.Debugw("starting AddCustomer()",
@@ -851,6 +857,28 @@ func HashPassword(password string) (string, error) {
 	return hexSha1, nil
 }
 
+// PopulateUndeleteUser is used in batch processing
+func PopulateUndeleteUser(undelUser *UndeleteUser, hdrMap map[int]string, objData []interface{}) error {
+	lg.Debugw("starting PopulateUndeleteUser()",
+		"hdrMap", hdrMap)
+	defer lg.Debug("finished PopulateUndeleteUser()")
+
+	for idx, attr := range objData {
+		attrName := hdrMap[idx]
+
+		switch {
+		case attrName == "userKey":
+			undelUser.UserKey = fmt.Sprintf("%v", attr)
+		case attrName == "orgUnitPath":
+			undelUser.OrgUnitPath = fmt.Sprintf("%v", attr)
+		default:
+			err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, attrName)
+			return err
+		}
+	}
+	return nil
+}
+
 // PopulateUser is used in batch processing
 func PopulateUser(user *admin.User, hdrMap map[int]string, objData []interface{}) error {
 	lg.Debugw("starting populateGroup()",
@@ -929,6 +957,115 @@ func PopulateUser(user *admin.User, hdrMap map[int]string, objData []interface{}
 		}
 	}
 	user.Name = name
+	return nil
+}
+
+// PopulateUserForUpdate is used in batch processing
+func PopulateUserForUpdate(userParams *UserParams, hdrMap map[int]string, objData []interface{}) error {
+	lg.Debugw("starting PopulateUserForUpdate()",
+		"hdrMap", hdrMap)
+	defer lg.Debug("finished PopulateUserForUpdate()")
+
+	name := new(admin.UserName)
+
+	for idx, attr := range objData {
+		attrName := hdrMap[idx]
+		attrVal := fmt.Sprintf("%v", attr)
+		lowerAttrVal := strings.ToLower(fmt.Sprintf("%v", attr))
+
+		if attrName == "changePasswordAtNextLogin" {
+			if lowerAttrVal == "true" {
+				userParams.User.ChangePasswordAtNextLogin = true
+			} else {
+				userParams.User.ChangePasswordAtNextLogin = false
+				userParams.User.ForceSendFields = append(userParams.User.ForceSendFields, "ChangePasswordAtNextLogin")
+			}
+		}
+		if attrName == "familyName" {
+			name.FamilyName = attrVal
+		}
+		if attrName == "givenName" {
+			name.GivenName = attrVal
+		}
+		if attrName == "includeInGlobalAddressList" {
+			if lowerAttrVal == "true" {
+				userParams.User.IncludeInGlobalAddressList = true
+			} else {
+				userParams.User.IncludeInGlobalAddressList = false
+				userParams.User.ForceSendFields = append(userParams.User.ForceSendFields, "IncludeInGlobalAddressList")
+			}
+		}
+		if attrName == "ipWhitelisted" {
+			if lowerAttrVal == "true" {
+				userParams.User.IpWhitelisted = true
+			} else {
+				userParams.User.IpWhitelisted = false
+				userParams.User.ForceSendFields = append(userParams.User.ForceSendFields, "IpWhitelisted")
+			}
+		}
+		if attrName == "orgUnitPath" {
+			if attrVal == "" {
+				err := fmt.Errorf(gmess.ERR_EMPTYSTRING, attrName)
+				return err
+			}
+			userParams.User.OrgUnitPath = attrVal
+		}
+		if attrName == "password" {
+			if attrVal != "" {
+				pwd, err := HashPassword(attrVal)
+				if err != nil {
+					return err
+				}
+				userParams.User.Password = pwd
+				userParams.User.HashFunction = HASHFUNCTION
+			}
+		}
+		if attrName == "primaryEmail" {
+			if attrVal == "" {
+				err := fmt.Errorf(gmess.ERR_EMPTYSTRING, attrName)
+				return err
+			}
+			userParams.User.PrimaryEmail = attrVal
+		}
+		if attrName == "recoveryEmail" {
+			userParams.User.RecoveryEmail = attrVal
+			if attrVal == "" {
+				userParams.User.ForceSendFields = append(userParams.User.ForceSendFields, "RecoveryEmail")
+			}
+		}
+		if attrName == "recoveryPhone" {
+			if attrVal != "" {
+				err := cmn.ValidateRecoveryPhone(attrVal)
+				if err != nil {
+					lg.Error(err)
+					return err
+				}
+			}
+			if attrVal == "" {
+				userParams.User.ForceSendFields = append(userParams.User.ForceSendFields, "RecoveryPhone")
+			}
+			userParams.User.RecoveryPhone = attrVal
+		}
+		if attrName == "suspended" {
+			if lowerAttrVal == "true" {
+				userParams.User.Suspended = true
+			} else {
+				userParams.User.Suspended = false
+				userParams.User.ForceSendFields = append(userParams.User.ForceSendFields, "Suspended")
+			}
+		}
+		if attrName == "userKey" {
+			if attrVal == "" {
+				err := fmt.Errorf(gmess.ERR_EMPTYSTRING, attrName)
+				return err
+			}
+			userParams.UserKey = attrVal
+		}
+	}
+
+	if name.FamilyName != "" || name.GivenName != "" || name.FullName != "" {
+		userParams.User.Name = name
+	}
 	return nil
 }
 

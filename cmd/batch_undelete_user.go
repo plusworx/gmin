@@ -23,18 +23,14 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"bufio"
-	"encoding/csv"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"os"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
+	btch "github.com/plusworx/gmin/utils/batch"
 	cmn "github.com/plusworx/gmin/utils/common"
 	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
@@ -42,7 +38,6 @@ import (
 	usrs "github.com/plusworx/gmin/utils/users"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
-	sheet "google.golang.org/api/sheets/v4"
 )
 
 var batchUndelUserCmd = &cobra.Command{
@@ -76,7 +71,10 @@ func doBatchUndelUser(cmd *cobra.Command, args []string) error {
 		"args", args)
 	defer lg.Debug("finished doBatchUndelUser()")
 
-	var undelUsers []usrs.UndeleteUser
+	var (
+		objs       []interface{}
+		undelUsers []usrs.UndeleteUser
+	)
 
 	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryUserScope)
 	if err != nil {
@@ -115,14 +113,16 @@ func doBatchUndelUser(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	callParams := btch.CallParams{CallType: cmn.CALLTYPEUNDELETE, ObjectType: cmn.OBJTYPEUSER}
+
 	switch {
 	case lwrFmt == "csv":
-		undelUsers, err = bunduProcessCSVFile(ds, inputFlgVal)
+		objs, err = btch.ProcessCSVFile(callParams, inputFlgVal, usrs.UserAttrMap)
 		if err != nil {
 			return err
 		}
 	case lwrFmt == "json":
-		undelUsers, err = bunduProcessJSON(ds, inputFlgVal, scanner)
+		objs, err = btch.ProcessJSON(callParams, inputFlgVal, scanner, usrs.UserAttrMap)
 		if err != nil {
 			return err
 		}
@@ -133,7 +133,7 @@ func doBatchUndelUser(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
-		undelUsers, err = bunduProcessGSheet(ds, inputFlgVal, rangeFlgVal)
+		objs, err = btch.ProcessGSheet(callParams, inputFlgVal, rangeFlgVal, usrs.UserAttrMap)
 		if err != nil {
 			return err
 		}
@@ -143,218 +143,16 @@ func doBatchUndelUser(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	for _, uuObj := range objs {
+		undelUsers = append(undelUsers, uuObj.(usrs.UndeleteUser))
+	}
+
 	err = bunduProcessObjects(ds, undelUsers)
 	if err != nil {
 		return err
 	}
 
 	return nil
-}
-
-func bunduFromFileFactory(hdrMap map[int]string, userData []interface{}) (usrs.UndeleteUser, error) {
-	lg.Debugw("starting bunduFromFileFactory()",
-		"hdrMap", hdrMap)
-	defer lg.Debug("finished bunduFromFileFactory()")
-
-	undelUser := usrs.UndeleteUser{}
-
-	for idx, attr := range userData {
-		attrName := hdrMap[idx]
-
-		switch {
-		case attrName == "userKey":
-			undelUser.UserKey = fmt.Sprintf("%v", attr)
-		case attrName == "orgUnitPath":
-			undelUser.OrgUnitPath = fmt.Sprintf("%v", attr)
-		}
-	}
-	return undelUser, nil
-}
-
-func bunduFromJSONFactory(ds *admin.Service, jsonData string) (usrs.UndeleteUser, error) {
-	lg.Debugw("starting bunduFromJSONFactory()",
-		"jsonData", jsonData)
-	defer lg.Debug("finished bunduFromJSONFactory()")
-
-	undelUser := usrs.UndeleteUser{}
-	jsonBytes := []byte(jsonData)
-
-	if !json.Valid(jsonBytes) {
-		err := errors.New(gmess.ERR_INVALIDJSONATTR)
-		lg.Error(err)
-		return undelUser, err
-	}
-
-	outStr, err := cmn.ParseInputAttrs(jsonBytes)
-	if err != nil {
-		return undelUser, err
-	}
-
-	err = cmn.ValidateInputAttrs(outStr, usrs.UserAttrMap)
-	if err != nil {
-		return undelUser, err
-	}
-
-	err = json.Unmarshal(jsonBytes, &undelUser)
-	if err != nil {
-		lg.Error(err)
-		return undelUser, err
-	}
-	return undelUser, nil
-}
-
-func bunduProcessCSVFile(ds *admin.Service, filePath string) ([]usrs.UndeleteUser, error) {
-	lg.Debugw("starting bunduProcessCSVFile()",
-		"filePath", filePath)
-	defer lg.Debug("finished bunduProcessCSVFile()")
-
-	var (
-		iSlice     []interface{}
-		hdrMap     = map[int]string{}
-		undelUsers []usrs.UndeleteUser
-	)
-
-	csvfile, err := os.Open(filePath)
-	if err != nil {
-		lg.Error(err)
-		return nil, err
-	}
-	defer csvfile.Close()
-
-	r := csv.NewReader(csvfile)
-
-	count := 0
-	for {
-		record, err := r.Read()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			lg.Error(err)
-			return nil, err
-		}
-
-		if count == 0 {
-			iSlice = make([]interface{}, len(record))
-			for idx, value := range record {
-				iSlice[idx] = value
-			}
-			hdrMap = cmn.ProcessHeader(iSlice)
-			err = cmn.ValidateHeader(hdrMap, usrs.UserAttrMap)
-			if err != nil {
-				return nil, err
-			}
-			count = count + 1
-			continue
-		}
-
-		for idx, value := range record {
-			iSlice[idx] = value
-		}
-
-		undelUserVar, err := bunduFromFileFactory(hdrMap, iSlice)
-		if err != nil {
-			return nil, err
-		}
-
-		undelUsers = append(undelUsers, undelUserVar)
-
-		count = count + 1
-	}
-
-	return undelUsers, nil
-}
-
-func bunduProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]usrs.UndeleteUser, error) {
-	lg.Debugw("starting bunduProcessGSheet()",
-		"sheetID", sheetID,
-		"sheetrange", sheetrange)
-	defer lg.Debug("finished bunduProcessGSheet()")
-
-	var undelUsers []usrs.UndeleteUser
-
-	if sheetrange == "" {
-		err := errors.New(gmess.ERR_NOSHEETRANGE)
-		lg.Error(err)
-		return nil, err
-	}
-
-	srv, err := cmn.CreateService(cmn.SRVTYPESHEET, sheet.DriveReadonlyScope)
-	if err != nil {
-		return nil, err
-	}
-	ss := srv.(*sheet.Service)
-
-	ssvgc := ss.Spreadsheets.Values.Get(sheetID, sheetrange)
-	sValRange, err := ssvgc.Do()
-	if err != nil {
-		lg.Error(err)
-		return nil, err
-	}
-
-	if len(sValRange.Values) == 0 {
-		err = fmt.Errorf(gmess.ERR_NOSHEETDATAFOUND, sheetID, sheetrange)
-		lg.Error(err)
-		return nil, err
-	}
-
-	hdrMap := cmn.ProcessHeader(sValRange.Values[0])
-	err = cmn.ValidateHeader(hdrMap, usrs.UserAttrMap)
-	if err != nil {
-		return nil, err
-	}
-
-	for idx, row := range sValRange.Values {
-		if idx == 0 {
-			continue
-		}
-
-		undelUserVar, err := bunduFromFileFactory(hdrMap, row)
-		if err != nil {
-			return nil, err
-		}
-
-		undelUsers = append(undelUsers, undelUserVar)
-	}
-
-	return undelUsers, nil
-}
-
-func bunduProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner) ([]usrs.UndeleteUser, error) {
-	lg.Debugw("starting bunduProcessJSON()",
-		"filePath", filePath)
-	defer lg.Debug("finished bunduProcessJSON()")
-
-	var undelUsers []usrs.UndeleteUser
-
-	if filePath != "" {
-		file, err := os.Open(filePath)
-		if err != nil {
-			lg.Error(err)
-			return nil, err
-		}
-		defer file.Close()
-
-		scanner = bufio.NewScanner(file)
-	}
-
-	for scanner.Scan() {
-		jsonData := scanner.Text()
-
-		undelUserVar, err := bunduFromJSONFactory(ds, jsonData)
-		if err != nil {
-			return nil, err
-		}
-
-		undelUsers = append(undelUsers, undelUserVar)
-	}
-	err := scanner.Err()
-	if err != nil {
-		lg.Error(err)
-		return nil, err
-	}
-
-	return undelUsers, nil
 }
 
 func bunduProcessObjects(ds *admin.Service, undelUsers []usrs.UndeleteUser) error {

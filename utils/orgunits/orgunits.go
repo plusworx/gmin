@@ -43,6 +43,17 @@ const (
 	STARTORGUNITSFIELD string = "organizationUnits("
 )
 
+// Key is struct used to extract ouKey
+type Key struct {
+	OUKey string
+}
+
+// OrgUnitParams holds group data for batch processing
+type OrgUnitParams struct {
+	OUKey   string
+	OrgUnit *admin.OrgUnit
+}
+
 var flagValues = []string{
 	"type",
 }
@@ -66,11 +77,6 @@ var OrgUnitAttrMap = map[string]string{
 var ValidSearchTypes = []string{
 	"all",
 	"children",
-}
-
-// Key is struct used to extract ouKey
-type Key struct {
-	OUKey string
 }
 
 // AddFields adds fields to be returned to admin calls
@@ -155,9 +161,9 @@ func DoList(oulc *admin.OrgunitsListCall) (*admin.OrgUnits, error) {
 
 // PopulateOrgUnit is used in batch processing
 func PopulateOrgUnit(orgunit *admin.OrgUnit, hdrMap map[int]string, objData []interface{}) error {
-	lg.Debugw("starting populateMember()",
+	lg.Debugw("starting PopulateOrgUnit()",
 		"hdrMap", hdrMap)
-	defer lg.Debug("finished populateMember()")
+	defer lg.Debug("finished PopulateOrgUnit()")
 
 	for idx, attr := range objData {
 		attrName := hdrMap[idx]
@@ -188,6 +194,56 @@ func PopulateOrgUnit(orgunit *admin.OrgUnit, hdrMap map[int]string, objData []in
 		default:
 			err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, attrName)
 			return err
+		}
+	}
+	return nil
+}
+
+// PopulateOrgUnitForUpdate is used in batch processing
+func PopulateOrgUnitForUpdate(ouParams *OrgUnitParams, hdrMap map[int]string, objData []interface{}) error {
+	lg.Debugw("starting PopulateOrgUnitForUpdate()",
+		"hdrMap", hdrMap)
+	defer lg.Debug("finished PopulateOrgUnitForUpdate()")
+
+	for idx, attr := range objData {
+		attrName := hdrMap[idx]
+		attrVal := fmt.Sprintf("%v", attr)
+		lowerAttrVal := strings.ToLower(fmt.Sprintf("%v", attr))
+
+		switch {
+		case attrName == "blockInheritance":
+			if lowerAttrVal == "true" {
+				ouParams.OrgUnit.BlockInheritance = true
+				break
+			}
+			ouParams.OrgUnit.BlockInheritance = false
+			ouParams.OrgUnit.ForceSendFields = append(ouParams.OrgUnit.ForceSendFields, "BlockInheritance")
+		case attrName == "description":
+			ouParams.OrgUnit.Description = attrVal
+			if attrVal == "" {
+				ouParams.OrgUnit.ForceSendFields = append(ouParams.OrgUnit.ForceSendFields, "Description")
+			}
+		case attrName == "name":
+			if attrVal == "" {
+				err := fmt.Errorf(gmess.ERR_EMPTYSTRING, attrName)
+				lg.Error(err)
+				return err
+			}
+			ouParams.OrgUnit.Name = attrVal
+		case attrName == "parentOrgUnitPath":
+			if attrVal == "" {
+				err := fmt.Errorf(gmess.ERR_EMPTYSTRING, attrName)
+				lg.Error(err)
+				return err
+			}
+			ouParams.OrgUnit.ParentOrgUnitPath = attrVal
+		case attrName == "ouKey":
+			if attrVal == "" {
+				err := fmt.Errorf(gmess.ERR_EMPTYSTRING, attrName)
+				lg.Error(err)
+				return err
+			}
+			ouParams.OUKey = attrVal
 		}
 	}
 	return nil

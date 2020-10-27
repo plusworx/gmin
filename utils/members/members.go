@@ -43,6 +43,17 @@ const (
 	STARTMEMBERSFIELD string = "members("
 )
 
+// Key is struct used to extract memberKey
+type Key struct {
+	MemberKey string
+}
+
+// MemberParams holds group data for batch processing
+type MemberParams struct {
+	MemberKey string
+	Member    *admin.Member
+}
+
 var attrValues = []string{
 	"delivery_settings",
 	"role",
@@ -79,11 +90,6 @@ var RoleMap = map[string]string{
 	"owner":   "OWNER",
 	"manager": "MANAGER",
 	"member":  "MEMBER",
-}
-
-// Key is struct used to extract memberKey
-type Key struct {
-	MemberKey string
 }
 
 // AddFields adds fields to be returned to admin calls
@@ -209,6 +215,44 @@ func PopulateMember(member *admin.Member, hdrMap map[int]string, objData []inter
 				return err
 			}
 			member.Role = validRole
+		default:
+			err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, attrName)
+			return err
+		}
+	}
+	return nil
+}
+
+// PopulateMemberForUpdate is used in batch processing
+func PopulateMemberForUpdate(memParam *MemberParams, hdrMap map[int]string, objData []interface{}) error {
+	lg.Debugw("starting PopulateMemberForUpdate()",
+		"hdrMap", hdrMap)
+	defer lg.Debug("finished PopulateMemberForUpdate()")
+
+	for idx, attr := range objData {
+		attrName := hdrMap[idx]
+		attrVal := fmt.Sprintf("%v", attr)
+
+		switch {
+		case attrName == "delivery_settings":
+			validDS, err := ValidateDeliverySetting(attrVal)
+			if err != nil {
+				return err
+			}
+			memParam.Member.DeliverySettings = validDS
+		case attrName == "role":
+			validRole, err := ValidateRole(attrVal)
+			if err != nil {
+				return err
+			}
+			memParam.Member.Role = validRole
+		case attrName == "memberKey":
+			if attrVal == "" {
+				err := fmt.Errorf(gmess.ERR_EMPTYSTRING, attrName)
+				lg.Error(err)
+				return err
+			}
+			memParam.MemberKey = attrVal
 		default:
 			err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, attrName)
 			return err

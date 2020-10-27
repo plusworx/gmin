@@ -23,18 +23,14 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"bufio"
-	"encoding/csv"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"os"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
+	btch "github.com/plusworx/gmin/utils/batch"
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
 	flgnm "github.com/plusworx/gmin/utils/flagnames"
@@ -43,7 +39,6 @@ import (
 	ous "github.com/plusworx/gmin/utils/orgunits"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
-	sheet "google.golang.org/api/sheets/v4"
 )
 
 var batchUpdOUCmd = &cobra.Command{
@@ -81,8 +76,8 @@ func doBatchUpdOU(cmd *cobra.Command, args []string) error {
 	defer lg.Debug("finished doBatchUpdOU()")
 
 	var (
-		ouKeys   []string
-		orgunits []*admin.OrgUnit
+		ouParams []ous.OrgUnitParams
+		objs     []interface{}
 	)
 
 	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryOrgunitScope)
@@ -122,14 +117,16 @@ func doBatchUpdOU(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	callParams := btch.CallParams{CallType: cmn.CALLTYPEUPDATE, ObjectType: cmn.OBJTYPEORGUNIT}
+
 	switch {
 	case lwrFmt == "csv":
-		ouKeys, orgunits, err = buoProcessCSVFile(ds, inputFlgVal)
+		objs, err = btch.ProcessCSVFile(callParams, inputFlgVal, ous.OrgUnitAttrMap)
 		if err != nil {
 			return err
 		}
 	case lwrFmt == "json":
-		ouKeys, orgunits, err = buoProcessJSON(ds, inputFlgVal, scanner)
+		objs, err = btch.ProcessJSON(callParams, inputFlgVal, scanner, ous.OrgUnitAttrMap)
 		if err != nil {
 			return err
 		}
@@ -140,7 +137,7 @@ func doBatchUpdOU(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
-		ouKeys, orgunits, err = buoProcessGSheet(ds, inputFlgVal, rangeFlgVal)
+		objs, err = btch.ProcessGSheet(callParams, inputFlgVal, rangeFlgVal, ous.OrgUnitAttrMap)
 		if err != nil {
 			return err
 		}
@@ -150,7 +147,11 @@ func doBatchUpdOU(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	err = buoProcessObjects(ds, orgunits, ouKeys)
+	for _, opObj := range objs {
+		ouParams = append(ouParams, opObj.(ous.OrgUnitParams))
+	}
+
+	err = buoProcessObjects(ds, ouParams)
 	if err != nil {
 		return err
 	}
@@ -158,288 +159,9 @@ func doBatchUpdOU(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func buoFromFileFactory(hdrMap map[int]string, ouData []interface{}) (*admin.OrgUnit, string, error) {
-	lg.Debugw("starting buoFromFileFactory()",
-		"hdrMap", hdrMap)
-	defer lg.Debug("finished buoFromFileFactory()")
-
-	var (
-		orgunit *admin.OrgUnit
-		ouKey   string
-	)
-
-	orgunit = new(admin.OrgUnit)
-
-	for idx, attr := range ouData {
-		attrName := hdrMap[idx]
-		attrVal := fmt.Sprintf("%v", attr)
-		lowerAttrVal := strings.ToLower(fmt.Sprintf("%v", attr))
-
-		switch {
-		case attrName == "blockInheritance":
-			if lowerAttrVal == "true" {
-				orgunit.BlockInheritance = true
-				break
-			}
-			orgunit.BlockInheritance = false
-			orgunit.ForceSendFields = append(orgunit.ForceSendFields, "BlockInheritance")
-		case attrName == "description":
-			orgunit.Description = attrVal
-			if attrVal == "" {
-				orgunit.ForceSendFields = append(orgunit.ForceSendFields, "Description")
-			}
-		case attrName == "name":
-			if attrVal == "" {
-				err := fmt.Errorf(gmess.ERR_EMPTYSTRING, attrName)
-				lg.Error(err)
-				return nil, "", err
-			}
-			orgunit.Name = attrVal
-		case attrName == "parentOrgUnitPath":
-			if attrVal == "" {
-				err := fmt.Errorf(gmess.ERR_EMPTYSTRING, attrName)
-				lg.Error(err)
-				return nil, "", err
-			}
-			orgunit.ParentOrgUnitPath = attrVal
-		case attrName == "ouKey":
-			if attrVal == "" {
-				err := fmt.Errorf(gmess.ERR_EMPTYSTRING, attrName)
-				lg.Error(err)
-				return nil, "", err
-			}
-			ouKey = attrVal
-		}
-	}
-	return orgunit, ouKey, nil
-}
-
-func buoFromJSONFactory(ds *admin.Service, jsonData string) (*admin.OrgUnit, string, error) {
-	lg.Debugw("starting buoFromJSONFactory()",
-		"jsonData", jsonData)
-	defer lg.Debug("finished buoFromJSONFactory()")
-
-	var (
-		orgunit   *admin.OrgUnit
-		ouKey     = ous.Key{}
-		emptyVals = cmn.EmptyValues{}
-	)
-
-	orgunit = new(admin.OrgUnit)
-	jsonBytes := []byte(jsonData)
-
-	if !json.Valid(jsonBytes) {
-		err := errors.New(gmess.ERR_INVALIDJSONATTR)
-		lg.Error(err)
-		return nil, "", err
-	}
-
-	outStr, err := cmn.ParseInputAttrs(jsonBytes)
-	if err != nil {
-		return nil, "", err
-	}
-
-	err = cmn.ValidateInputAttrs(outStr, ous.OrgUnitAttrMap)
-	if err != nil {
-		return nil, "", err
-	}
-
-	err = json.Unmarshal(jsonBytes, &ouKey)
-	if err != nil {
-		lg.Error(err)
-		return nil, "", err
-	}
-
-	if ouKey.OUKey == "" {
-		err = errors.New(gmess.ERR_NOJSONOUKEY)
-		lg.Error(err)
-		return nil, "", err
-	}
-
-	err = json.Unmarshal(jsonBytes, &orgunit)
-	if err != nil {
-		lg.Error(err)
-		return nil, "", err
-	}
-
-	err = json.Unmarshal(jsonBytes, &emptyVals)
-	if err != nil {
-		lg.Error(err)
-		return nil, "", err
-	}
-	if len(emptyVals.ForceSendFields) > 0 {
-		orgunit.ForceSendFields = emptyVals.ForceSendFields
-	}
-	return orgunit, ouKey.OUKey, nil
-}
-
-func buoProcessCSVFile(ds *admin.Service, filePath string) ([]string, []*admin.OrgUnit, error) {
-	lg.Debugw("starting buoProcessCSVFile()",
-		"filePath", filePath)
-	defer lg.Debug("finished buoProcessCSVFile()")
-
-	var (
-		iSlice   []interface{}
-		hdrMap   = map[int]string{}
-		ouKeys   []string
-		orgunits []*admin.OrgUnit
-	)
-
-	csvfile, err := os.Open(filePath)
-	if err != nil {
-		lg.Error(err)
-		return nil, nil, err
-	}
-	defer csvfile.Close()
-
-	r := csv.NewReader(csvfile)
-
-	count := 0
-	for {
-		record, err := r.Read()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			lg.Error(err)
-			return nil, nil, err
-		}
-
-		if count == 0 {
-			iSlice = make([]interface{}, len(record))
-			for idx, value := range record {
-				iSlice[idx] = value
-			}
-			hdrMap = cmn.ProcessHeader(iSlice)
-			err = cmn.ValidateHeader(hdrMap, ous.OrgUnitAttrMap)
-			if err != nil {
-				return nil, nil, err
-			}
-			count = count + 1
-			continue
-		}
-
-		for idx, value := range record {
-			iSlice[idx] = value
-		}
-
-		ouVar, ouKey, err := buoFromFileFactory(hdrMap, iSlice)
-		if err != nil {
-			return nil, nil, err
-		}
-
-		orgunits = append(orgunits, ouVar)
-		ouKeys = append(ouKeys, ouKey)
-
-		count = count + 1
-	}
-
-	return ouKeys, orgunits, nil
-}
-
-func buoProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]string, []*admin.OrgUnit, error) {
-	lg.Debugw("starting buoProcessGSheet()",
-		"sheetID", sheetID,
-		"sheetrange", sheetrange)
-	defer lg.Debug("finished buoProcessGSheet()")
-
-	var (
-		ouKeys   []string
-		orgunits []*admin.OrgUnit
-	)
-
-	if sheetrange == "" {
-		err := errors.New(gmess.ERR_NOSHEETRANGE)
-		lg.Error(err)
-		return nil, nil, err
-	}
-
-	srv, err := cmn.CreateService(cmn.SRVTYPESHEET, sheet.DriveReadonlyScope)
-	if err != nil {
-		return nil, nil, err
-	}
-	ss := srv.(*sheet.Service)
-
-	ssvgc := ss.Spreadsheets.Values.Get(sheetID, sheetrange)
-	sValRange, err := ssvgc.Do()
-	if err != nil {
-		lg.Error(err)
-		return nil, nil, err
-	}
-
-	if len(sValRange.Values) == 0 {
-		err = fmt.Errorf(gmess.ERR_NOSHEETDATAFOUND, sheetID, sheetrange)
-		lg.Error(err)
-		return nil, nil, err
-	}
-
-	hdrMap := cmn.ProcessHeader(sValRange.Values[0])
-	err = cmn.ValidateHeader(hdrMap, ous.OrgUnitAttrMap)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	for idx, row := range sValRange.Values {
-		if idx == 0 {
-			continue
-		}
-
-		ouVar, ouKey, err := buoFromFileFactory(hdrMap, row)
-		if err != nil {
-			return nil, nil, err
-		}
-
-		ouKeys = append(ouKeys, ouKey)
-		orgunits = append(orgunits, ouVar)
-	}
-
-	return ouKeys, orgunits, nil
-}
-
-func buoProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner) ([]string, []*admin.OrgUnit, error) {
-	lg.Debugw("starting buoProcessJSON()",
-		"filePath", filePath)
-	defer lg.Debug("finished buoProcessJSON()")
-
-	var (
-		ouKeys   []string
-		orgunits []*admin.OrgUnit
-	)
-
-	if filePath != "" {
-		file, err := os.Open(filePath)
-		if err != nil {
-			lg.Error(err)
-			return nil, nil, err
-		}
-		defer file.Close()
-
-		scanner = bufio.NewScanner(file)
-	}
-
-	for scanner.Scan() {
-		jsonData := scanner.Text()
-
-		ouVar, ouKey, err := buoFromJSONFactory(ds, jsonData)
-		if err != nil {
-			return nil, nil, err
-		}
-
-		ouKeys = append(ouKeys, ouKey)
-		orgunits = append(orgunits, ouVar)
-	}
-	err := scanner.Err()
-	if err != nil {
-		lg.Error(err)
-		return nil, nil, err
-	}
-
-	return ouKeys, orgunits, nil
-}
-
-func buoProcessObjects(ds *admin.Service, orgunits []*admin.OrgUnit, ouKeys []string) error {
+func buoProcessObjects(ds *admin.Service, ouParams []ous.OrgUnitParams) error {
 	lg.Debugw("starting buoProcessObjects()",
-		"ouKeys", ouKeys)
+		"ouParams", ouParams)
 	defer lg.Debug("finished buoProcessObjects()")
 
 	wg := new(sync.WaitGroup)
@@ -450,8 +172,8 @@ func buoProcessObjects(ds *admin.Service, orgunits []*admin.OrgUnit, ouKeys []st
 		return err
 	}
 
-	for idx, ou := range orgunits {
-		ouuc := ds.Orgunits.Update(customerID, ouKeys[idx], ou)
+	for _, op := range ouParams {
+		ouuc := ds.Orgunits.Update(customerID, op.OUKey, op.OrgUnit)
 
 		wg.Add(1)
 
@@ -459,7 +181,7 @@ func buoProcessObjects(ds *admin.Service, orgunits []*admin.OrgUnit, ouKeys []st
 		// still can result in rate limit errors
 		time.Sleep(2 * time.Second)
 
-		go buoUpdate(ou, wg, ouuc, ouKeys[idx])
+		go buoUpdate(op.OrgUnit, wg, ouuc, op.OUKey)
 	}
 
 	wg.Wait()

@@ -23,18 +23,14 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"bufio"
-	"encoding/csv"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"os"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
+	btch "github.com/plusworx/gmin/utils/batch"
 	cdevs "github.com/plusworx/gmin/utils/chromeosdevices"
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
@@ -43,7 +39,6 @@ import (
 	lg "github.com/plusworx/gmin/utils/logging"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
-	sheet "google.golang.org/api/sheets/v4"
 )
 
 var batchUpdCrOSDevCmd = &cobra.Command{
@@ -81,7 +76,10 @@ func doBatchUpdCrOSDev(cmd *cobra.Command, args []string) error {
 		"args", args)
 	defer lg.Debug("finished doBatchUpdCrOSDev()")
 
-	var crosdevs []*admin.ChromeOsDevice
+	var (
+		crosdevs []*admin.ChromeOsDevice
+		objs     []interface{}
+	)
 
 	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryDeviceChromeosScope)
 	if err != nil {
@@ -120,14 +118,16 @@ func doBatchUpdCrOSDev(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	callParams := btch.CallParams{CallType: cmn.CALLTYPEUPDATE, ObjectType: cmn.OBJTYPECROSDEV}
+
 	switch {
 	case lwrFmt == "csv":
-		crosdevs, err = bucProcessCSVFile(ds, inputFlgVal)
+		objs, err = btch.ProcessCSVFile(callParams, inputFlgVal, cdevs.CrOSDevAttrMap)
 		if err != nil {
 			return err
 		}
 	case lwrFmt == "json":
-		crosdevs, err = bucProcessJSON(ds, inputFlgVal, scanner)
+		objs, err = btch.ProcessJSON(callParams, inputFlgVal, scanner, cdevs.CrOSDevAttrMap)
 		if err != nil {
 			return err
 		}
@@ -138,7 +138,7 @@ func doBatchUpdCrOSDev(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
-		crosdevs, err = bucProcessGSheet(ds, inputFlgVal, rangeFlgVal)
+		objs, err = btch.ProcessGSheet(callParams, inputFlgVal, rangeFlgVal, cdevs.CrOSDevAttrMap)
 		if err != nil {
 			return err
 		}
@@ -148,258 +148,16 @@ func doBatchUpdCrOSDev(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	for _, cdevObj := range objs {
+		crosdevs = append(crosdevs, cdevObj.(*admin.ChromeOsDevice))
+	}
+
 	err = bucProcessObjects(ds, crosdevs)
 	if err != nil {
 		return err
 	}
 
 	return nil
-}
-
-func bucFromFileFactory(hdrMap map[int]string, cdevData []interface{}) (*admin.ChromeOsDevice, error) {
-	lg.Debugw("starting bucFromFileFactory()",
-		"hdrMap", hdrMap)
-	defer lg.Debug("finished bucFromFileFactory()")
-
-	var crosdev *admin.ChromeOsDevice
-
-	crosdev = new(admin.ChromeOsDevice)
-
-	for idx, attr := range cdevData {
-		attrName := hdrMap[idx]
-		attrVal := fmt.Sprintf("%v", attr)
-
-		switch {
-		case attrName == "annotatedAssetId":
-			crosdev.AnnotatedAssetId = attrVal
-			if assetID == "" {
-				crosdev.ForceSendFields = append(crosdev.ForceSendFields, "AnnotatedAssetId")
-			}
-		case attrName == "annotatedLocation":
-			crosdev.AnnotatedLocation = attrVal
-			if location == "" {
-				crosdev.ForceSendFields = append(crosdev.ForceSendFields, "AnnotatedLocation")
-			}
-		case attrName == "annotatedUser":
-			crosdev.AnnotatedUser = attrVal
-			if attrVal == "" {
-				crosdev.ForceSendFields = append(crosdev.ForceSendFields, "AnnotatedUser")
-			}
-		case attrName == "notes":
-			crosdev.Notes = attrVal
-			if notes == "" {
-				crosdev.ForceSendFields = append(crosdev.ForceSendFields, "Notes")
-			}
-		case attrName == "orgUnitPath":
-			crosdev.OrgUnitPath = attrVal
-		}
-	}
-	return crosdev, nil
-}
-
-func bucFromJSONFactory(ds *admin.Service, jsonData string) (*admin.ChromeOsDevice, error) {
-	lg.Debugw("starting bucFromJSONFactory()",
-		"jsonData", jsonData)
-	defer lg.Debug("finished bucFromJSONFactory()")
-
-	var (
-		crosdev   *admin.ChromeOsDevice
-		emptyVals = cmn.EmptyValues{}
-	)
-
-	crosdev = new(admin.ChromeOsDevice)
-	jsonBytes := []byte(jsonData)
-
-	if !json.Valid(jsonBytes) {
-		err := errors.New(gmess.ERR_INVALIDJSONATTR)
-		lg.Error(err)
-		return nil, err
-	}
-
-	outStr, err := cmn.ParseInputAttrs(jsonBytes)
-	if err != nil {
-		return nil, err
-	}
-
-	err = cmn.ValidateInputAttrs(outStr, cdevs.CrOSDevAttrMap)
-	if err != nil {
-		return nil, err
-	}
-
-	err = json.Unmarshal(jsonBytes, &crosdev)
-	if err != nil {
-		lg.Error(err)
-		return nil, err
-	}
-
-	if crosdev.DeviceId == "" {
-		err = errors.New(gmess.ERR_NOJSONDEVICEID)
-		lg.Error(err)
-		return nil, err
-	}
-
-	err = json.Unmarshal(jsonBytes, &emptyVals)
-	if err != nil {
-		lg.Error(err)
-		return nil, err
-	}
-	if len(emptyVals.ForceSendFields) > 0 {
-		crosdev.ForceSendFields = emptyVals.ForceSendFields
-	}
-	return crosdev, nil
-}
-
-func bucProcessCSVFile(ds *admin.Service, filePath string) ([]*admin.ChromeOsDevice, error) {
-	lg.Debugw("starting bucProcessCSVFile()",
-		"filePath", filePath)
-	defer lg.Debug("finished bucProcessCSVFile()")
-
-	var (
-		iSlice   []interface{}
-		hdrMap   = map[int]string{}
-		crosdevs []*admin.ChromeOsDevice
-	)
-
-	csvfile, err := os.Open(filePath)
-	if err != nil {
-		lg.Error(err)
-		return nil, err
-	}
-	defer csvfile.Close()
-
-	r := csv.NewReader(csvfile)
-
-	count := 0
-	for {
-		record, err := r.Read()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			lg.Error(err)
-			return nil, err
-		}
-
-		if count == 0 {
-			iSlice = make([]interface{}, len(record))
-			for idx, value := range record {
-				iSlice[idx] = value
-			}
-			hdrMap = cmn.ProcessHeader(iSlice)
-			err = cmn.ValidateHeader(hdrMap, cdevs.CrOSDevAttrMap)
-			if err != nil {
-				return nil, err
-			}
-			count = count + 1
-			continue
-		}
-
-		for idx, value := range record {
-			iSlice[idx] = value
-		}
-
-		cdevVar, err := bucFromFileFactory(hdrMap, iSlice)
-		if err != nil {
-			return nil, err
-		}
-
-		crosdevs = append(crosdevs, cdevVar)
-
-		count = count + 1
-	}
-
-	return crosdevs, nil
-}
-func bucProcessGSheet(ds *admin.Service, sheetID string, sheetrange string) ([]*admin.ChromeOsDevice, error) {
-	lg.Debugw("starting bucProcessGSheet()",
-		"sheetID", sheetID,
-		"sheetrange", sheetrange)
-	defer lg.Debug("finished bucProcessGSheet()")
-
-	var crosdevs []*admin.ChromeOsDevice
-
-	if sheetrange == "" {
-		err := errors.New(gmess.ERR_NOSHEETRANGE)
-		lg.Error(err)
-		return nil, err
-	}
-
-	srv, err := cmn.CreateService(cmn.SRVTYPESHEET, sheet.DriveReadonlyScope)
-	if err != nil {
-		return nil, err
-	}
-	ss := srv.(*sheet.Service)
-
-	ssvgc := ss.Spreadsheets.Values.Get(sheetID, sheetrange)
-	sValRange, err := ssvgc.Do()
-	if err != nil {
-		lg.Error(err)
-		return nil, err
-	}
-
-	if len(sValRange.Values) == 0 {
-		err = fmt.Errorf(gmess.ERR_NOSHEETDATAFOUND, sheetID, sheetrange)
-		lg.Error(err)
-		return nil, err
-	}
-
-	hdrMap := cmn.ProcessHeader(sValRange.Values[0])
-	err = cmn.ValidateHeader(hdrMap, cdevs.CrOSDevAttrMap)
-	if err != nil {
-		return nil, err
-	}
-
-	for idx, row := range sValRange.Values {
-		if idx == 0 {
-			continue
-		}
-
-		cdevVar, err := bucFromFileFactory(hdrMap, row)
-		if err != nil {
-			return nil, err
-		}
-
-		crosdevs = append(crosdevs, cdevVar)
-	}
-
-	return crosdevs, nil
-}
-
-func bucProcessJSON(ds *admin.Service, filePath string, scanner *bufio.Scanner) ([]*admin.ChromeOsDevice, error) {
-	lg.Debugw("starting bucProcessJSON()",
-		"filePath", filePath)
-	defer lg.Debug("finished bucProcessJSON()")
-
-	var crosdevs []*admin.ChromeOsDevice
-
-	if filePath != "" {
-		file, err := os.Open(filePath)
-		if err != nil {
-			lg.Error(err)
-			return nil, err
-		}
-		defer file.Close()
-
-		scanner = bufio.NewScanner(file)
-	}
-
-	for scanner.Scan() {
-		jsonData := scanner.Text()
-
-		cdevVar, err := bucFromJSONFactory(ds, jsonData)
-		if err != nil {
-			return nil, err
-		}
-
-		crosdevs = append(crosdevs, cdevVar)
-	}
-	err := scanner.Err()
-	if err != nil {
-		lg.Error(err)
-		return nil, err
-	}
-
-	return crosdevs, nil
 }
 
 func bucProcessObjects(ds *admin.Service, crosdevs []*admin.ChromeOsDevice) error {

@@ -43,6 +43,12 @@ const (
 	STARTGROUPSFIELD string = "groups("
 )
 
+// GroupParams holds group data for batch processing
+type GroupParams struct {
+	GroupKey string
+	Group    *admin.Group
+}
+
 // Key is struct used to extract groupKey
 type Key struct {
 	GroupKey string
@@ -259,6 +265,50 @@ func PopulateGroup(group *admin.Group, hdrMap map[int]string, objData []interfac
 			group.Email = attrVal
 		case attrName == "name":
 			group.Name = attrVal
+		default:
+			err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, attrName)
+			return err
+		}
+	}
+	return nil
+}
+
+// PopulateGroupForUpdate is used in batch processing
+func PopulateGroupForUpdate(grpParams *GroupParams, hdrMap map[int]string, objData []interface{}) error {
+	lg.Debugw("starting PopulateGroupForUpdate()",
+		"hdrMap", hdrMap)
+	defer lg.Debug("finished PopulateGroupForUpdate()")
+	for idx, attr := range objData {
+		attrName := hdrMap[idx]
+		attrVal := fmt.Sprintf("%v", attr)
+
+		switch {
+		case attrName == "description":
+			grpParams.Group.Description = attrVal
+			if attrVal == "" {
+				grpParams.Group.ForceSendFields = append(grpParams.Group.ForceSendFields, "Description")
+			}
+		case attrName == "email":
+			if attrVal == "" {
+				err := fmt.Errorf(gmess.ERR_EMPTYSTRING, attrName)
+				lg.Error(err)
+				return err
+			}
+			grpParams.Group.Email = attrVal
+		case attrName == "name":
+			if attrVal == "" {
+				err := fmt.Errorf(gmess.ERR_EMPTYSTRING, attrName)
+				lg.Error(err)
+				return err
+			}
+			grpParams.Group.Name = attrVal
+		case attrName == "groupKey":
+			if attrVal == "" {
+				err := fmt.Errorf(gmess.ERR_EMPTYSTRING, attrName)
+				lg.Error(err)
+				return err
+			}
+			grpParams.GroupKey = attrVal
 		default:
 			err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, attrName)
 			return err

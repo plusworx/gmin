@@ -177,13 +177,31 @@ func FromFileFactory(callParams CallParams, hdrMap map[int]string, objData []int
 			}
 			return mvdev, nil
 		}
-	case cmn.OBJTYPEGROUP:
-		group := new(admin.Group)
-		err := grps.PopulateGroup(group, hdrMap, objData)
-		if err != nil {
-			return nil, err
+		if callParams.CallType == cmn.CALLTYPEUPDATE {
+			crosdev := new(admin.ChromeOsDevice)
+			err := cdevs.PopulateCrOSDev(crosdev, hdrMap, objData)
+			if err != nil {
+				return nil, err
+			}
+			return crosdev, nil
 		}
-		return group, nil
+	case cmn.OBJTYPEGROUP:
+		if callParams.CallType == cmn.CALLTYPECREATE {
+			group := new(admin.Group)
+			err := grps.PopulateGroup(group, hdrMap, objData)
+			if err != nil {
+				return nil, err
+			}
+			return group, nil
+		}
+		if callParams.CallType == cmn.CALLTYPEUPDATE {
+			grpParams := grps.GroupParams{}
+			err := grps.PopulateGroupForUpdate(&grpParams, hdrMap, objData)
+			if err != nil {
+				return nil, err
+			}
+			return grpParams, nil
+		}
 	case cmn.OBJTYPEGRPSET:
 		grpParams := grpset.GroupParams{}
 		err := grpset.PopulateGroupSettings(&grpParams, hdrMap, objData)
@@ -192,12 +210,22 @@ func FromFileFactory(callParams CallParams, hdrMap map[int]string, objData []int
 		}
 		return grpParams, nil
 	case cmn.OBJTYPEMEMBER:
-		member := new(admin.Member)
-		err := mems.PopulateMember(member, hdrMap, objData)
-		if err != nil {
-			return nil, err
+		if callParams.CallType == cmn.CALLTYPECREATE {
+			member := new(admin.Member)
+			err := mems.PopulateMember(member, hdrMap, objData)
+			if err != nil {
+				return nil, err
+			}
+			return member, nil
 		}
-		return member, nil
+		if callParams.CallType == cmn.CALLTYPEUPDATE {
+			memParams := mems.MemberParams{}
+			err := mems.PopulateMemberForUpdate(&memParams, hdrMap, objData)
+			if err != nil {
+				return nil, err
+			}
+			return memParams, nil
+		}
 	case cmn.OBJTYPEMOBDEV:
 		if callParams.CallType == cmn.CALLTYPEMANAGE {
 			mngdev := mdevs.ManagedDevice{}
@@ -208,25 +236,53 @@ func FromFileFactory(callParams CallParams, hdrMap map[int]string, objData []int
 			return mngdev, nil
 		}
 	case cmn.OBJTYPEORGUNIT:
-		orgunit := new(admin.OrgUnit)
-		err := ous.PopulateOrgUnit(orgunit, hdrMap, objData)
-		if err != nil {
-			return nil, err
+		if callParams.CallType == cmn.CALLTYPECREATE {
+			orgunit := new(admin.OrgUnit)
+			err := ous.PopulateOrgUnit(orgunit, hdrMap, objData)
+			if err != nil {
+				return nil, err
+			}
+			return orgunit, nil
 		}
-		return orgunit, nil
+		if callParams.CallType == cmn.CALLTYPEUPDATE {
+			ouParams := ous.OrgUnitParams{}
+			err := ous.PopulateOrgUnitForUpdate(&ouParams, hdrMap, objData)
+			if err != nil {
+				return nil, err
+			}
+			return ouParams, nil
+		}
 	case cmn.OBJTYPEUSER:
-		user := new(admin.User)
-		err := usrs.PopulateUser(user, hdrMap, objData)
-		if err != nil {
-			return nil, err
+		if callParams.CallType == cmn.CALLTYPECREATE {
+			user := new(admin.User)
+			err := usrs.PopulateUser(user, hdrMap, objData)
+			if err != nil {
+				return nil, err
+			}
+			return user, nil
 		}
-		return user, nil
+		if callParams.CallType == cmn.CALLTYPEUNDELETE {
+			undelUser := usrs.UndeleteUser{}
+			err := usrs.PopulateUndeleteUser(&undelUser, hdrMap, objData)
+			if err != nil {
+				return nil, err
+			}
+			return undelUser, nil
+		}
+		if callParams.CallType == cmn.CALLTYPEUPDATE {
+			userParams := usrs.UserParams{}
+			err := usrs.PopulateUserForUpdate(&userParams, hdrMap, objData)
+			if err != nil {
+				return nil, err
+			}
+			return userParams, nil
+		}
 	default:
 		err := fmt.Errorf(gmess.ERR_OBJECTNOTRECOGNIZED, callParams.ObjectType)
 		lg.Error(err)
 		return nil, err
 	}
-	// Only gets here if ChromeOSDev or MobDev call type invalid
+
 	err := fmt.Errorf(gmess.ERR_CALLTYPENOTRECOGNIZED, callParams.CallType)
 	lg.Error(err)
 	return nil, err
@@ -277,22 +333,81 @@ func FromJSONFactory(callParam CallParams, jsonData string, attrMap map[string]s
 			}
 			return mvDev, nil
 		}
+		if callParam.CallType == cmn.CALLTYPEUPDATE {
+			crosdev := new(admin.ChromeOsDevice)
+			err = json.Unmarshal(jsonBytes, &crosdev)
+			if err != nil {
+				lg.Error(err)
+				return nil, err
+			}
+
+			if crosdev.DeviceId == "" {
+				err = errors.New(gmess.ERR_NOJSONDEVICEID)
+				lg.Error(err)
+				return nil, err
+			}
+
+			err = json.Unmarshal(jsonBytes, &emptyVals)
+			if err != nil {
+				lg.Error(err)
+				return nil, err
+			}
+			if len(emptyVals.ForceSendFields) > 0 {
+				crosdev.ForceSendFields = emptyVals.ForceSendFields
+			}
+			return crosdev, nil
+		}
 	case cmn.OBJTYPEGROUP:
-		group := new(admin.Group)
-		err = json.Unmarshal(jsonBytes, &group)
-		if err != nil {
-			lg.Error(err)
-			return nil, err
+		if callParam.CallType == cmn.CALLTYPECREATE {
+			group := new(admin.Group)
+			err = json.Unmarshal(jsonBytes, &group)
+			if err != nil {
+				lg.Error(err)
+				return nil, err
+			}
+			err = json.Unmarshal(jsonBytes, &emptyVals)
+			if err != nil {
+				lg.Error(err)
+				return nil, err
+			}
+			if len(emptyVals.ForceSendFields) > 0 {
+				group.ForceSendFields = emptyVals.ForceSendFields
+			}
+			return group, nil
 		}
-		err = json.Unmarshal(jsonBytes, &emptyVals)
-		if err != nil {
-			lg.Error(err)
-			return nil, err
+		if callParam.CallType == cmn.CALLTYPEUPDATE {
+			var (
+				grpKey    = grps.Key{}
+				grpParams = grps.GroupParams{}
+			)
+			err = json.Unmarshal(jsonBytes, &grpKey)
+			if err != nil {
+				lg.Error(err)
+				return nil, err
+			}
+
+			if grpKey.GroupKey == "" {
+				err = errors.New(gmess.ERR_NOJSONGROUPKEY)
+				lg.Error(err)
+				return nil, err
+			}
+
+			err = json.Unmarshal(jsonBytes, &grpParams.Group)
+			if err != nil {
+				lg.Error(err)
+				return nil, err
+			}
+
+			err = json.Unmarshal(jsonBytes, &emptyVals)
+			if err != nil {
+				lg.Error(err)
+				return nil, err
+			}
+			if len(emptyVals.ForceSendFields) > 0 {
+				grpParams.Group.ForceSendFields = emptyVals.ForceSendFields
+			}
+			return grpParams, nil
 		}
-		if len(emptyVals.ForceSendFields) > 0 {
-			group.ForceSendFields = emptyVals.ForceSendFields
-		}
-		return group, nil
 	case cmn.OBJTYPEGRPSET:
 		var (
 			grpKey    = grpset.Key{}
@@ -319,21 +434,49 @@ func FromJSONFactory(callParam CallParams, jsonData string, attrMap map[string]s
 		}
 		return grpParams, nil
 	case cmn.OBJTYPEMEMBER:
-		member := new(admin.Member)
-		err = json.Unmarshal(jsonBytes, &member)
-		if err != nil {
-			lg.Error(err)
-			return nil, err
+		if callParam.CallType == cmn.CALLTYPECREATE {
+			member := new(admin.Member)
+			err = json.Unmarshal(jsonBytes, &member)
+			if err != nil {
+				lg.Error(err)
+				return nil, err
+			}
+			err = json.Unmarshal(jsonBytes, &emptyVals)
+			if err != nil {
+				lg.Error(err)
+				return nil, err
+			}
+			if len(emptyVals.ForceSendFields) > 0 {
+				member.ForceSendFields = emptyVals.ForceSendFields
+			}
+			return member, nil
 		}
-		err = json.Unmarshal(jsonBytes, &emptyVals)
-		if err != nil {
-			lg.Error(err)
-			return nil, err
+		if callParam.CallType == cmn.CALLTYPEUPDATE {
+			var (
+				memKey    = mems.Key{}
+				memParams = mems.MemberParams{}
+			)
+
+			err = json.Unmarshal(jsonBytes, &memKey)
+			if err != nil {
+				lg.Error(err)
+				return nil, err
+			}
+
+			if memKey.MemberKey == "" {
+				err = errors.New(gmess.ERR_NOJSONMEMBERKEY)
+				lg.Error(err)
+				return nil, err
+			}
+			memParams.MemberKey = memKey.MemberKey
+
+			err = json.Unmarshal(jsonBytes, &memParams.Member)
+			if err != nil {
+				lg.Error(err)
+				return nil, err
+			}
+			return memParams, nil
 		}
-		if len(emptyVals.ForceSendFields) > 0 {
-			member.ForceSendFields = emptyVals.ForceSendFields
-		}
-		return member, nil
 	case cmn.OBJTYPEMOBDEV:
 		if callParam.CallType == cmn.CALLTYPEMANAGE {
 			mngDev := mdevs.ManagedDevice{}
@@ -345,43 +488,126 @@ func FromJSONFactory(callParam CallParams, jsonData string, attrMap map[string]s
 			return mngDev, nil
 		}
 	case cmn.OBJTYPEORGUNIT:
-		orgunit := new(admin.OrgUnit)
-		err = json.Unmarshal(jsonBytes, &orgunit)
-		if err != nil {
-			lg.Error(err)
-			return nil, err
+		if callParam.CallType == cmn.CALLTYPECREATE {
+			orgunit := new(admin.OrgUnit)
+			err = json.Unmarshal(jsonBytes, &orgunit)
+			if err != nil {
+				lg.Error(err)
+				return nil, err
+			}
+			err = json.Unmarshal(jsonBytes, &emptyVals)
+			if err != nil {
+				lg.Error(err)
+				return nil, err
+			}
+			if len(emptyVals.ForceSendFields) > 0 {
+				orgunit.ForceSendFields = emptyVals.ForceSendFields
+			}
+			return orgunit, nil
 		}
-		err = json.Unmarshal(jsonBytes, &emptyVals)
-		if err != nil {
-			lg.Error(err)
-			return nil, err
+		if callParam.CallType == cmn.CALLTYPEUPDATE {
+			var (
+				ouKey    = ous.Key{}
+				ouParams = ous.OrgUnitParams{}
+			)
+
+			err = json.Unmarshal(jsonBytes, &ouKey)
+			if err != nil {
+				lg.Error(err)
+				return nil, err
+			}
+
+			if ouKey.OUKey == "" {
+				err = errors.New(gmess.ERR_NOJSONOUKEY)
+				lg.Error(err)
+				return nil, err
+			}
+			ouParams.OUKey = ouKey.OUKey
+
+			err = json.Unmarshal(jsonBytes, &ouParams.OrgUnit)
+			if err != nil {
+				lg.Error(err)
+				return nil, err
+			}
+
+			err = json.Unmarshal(jsonBytes, &emptyVals)
+			if err != nil {
+				lg.Error(err)
+				return nil, err
+			}
+			if len(emptyVals.ForceSendFields) > 0 {
+				ouParams.OrgUnit.ForceSendFields = emptyVals.ForceSendFields
+			}
+			return ouParams, nil
 		}
-		if len(emptyVals.ForceSendFields) > 0 {
-			orgunit.ForceSendFields = emptyVals.ForceSendFields
-		}
-		return orgunit, nil
 	case cmn.OBJTYPEUSER:
-		user := new(admin.User)
-		err = json.Unmarshal(jsonBytes, &user)
-		if err != nil {
-			lg.Error(err)
-			return nil, err
+		if callParam.CallType == cmn.CALLTYPECREATE {
+			user := new(admin.User)
+			err = json.Unmarshal(jsonBytes, &user)
+			if err != nil {
+				lg.Error(err)
+				return nil, err
+			}
+			err = json.Unmarshal(jsonBytes, &emptyVals)
+			if err != nil {
+				lg.Error(err)
+				return nil, err
+			}
+			if len(emptyVals.ForceSendFields) > 0 {
+				user.ForceSendFields = emptyVals.ForceSendFields
+			}
+			return user, nil
 		}
-		err = json.Unmarshal(jsonBytes, &emptyVals)
-		if err != nil {
-			lg.Error(err)
-			return nil, err
+		if callParam.CallType == cmn.CALLTYPEUNDELETE {
+			undelUser := usrs.UndeleteUser{}
+			err = json.Unmarshal(jsonBytes, &undelUser)
+			if err != nil {
+				lg.Error(err)
+				return nil, err
+			}
+			return undelUser, nil
 		}
-		if len(emptyVals.ForceSendFields) > 0 {
-			user.ForceSendFields = emptyVals.ForceSendFields
+		if callParam.CallType == cmn.CALLTYPEUPDATE {
+			var (
+				usrKey     = usrs.Key{}
+				userParams = usrs.UserParams{}
+			)
+
+			err = json.Unmarshal(jsonBytes, &usrKey)
+			if err != nil {
+				lg.Error(err)
+				return nil, err
+			}
+
+			if usrKey.UserKey == "" {
+				err = errors.New(gmess.ERR_NOJSONUSERKEY)
+				lg.Error(err)
+				return nil, err
+			}
+			userParams.UserKey = usrKey.UserKey
+
+			err = json.Unmarshal(jsonBytes, &userParams.User)
+			if err != nil {
+				lg.Error(err)
+				return nil, err
+			}
+
+			err = json.Unmarshal(jsonBytes, &emptyVals)
+			if err != nil {
+				lg.Error(err)
+				return nil, err
+			}
+			if len(emptyVals.ForceSendFields) > 0 {
+				userParams.User.ForceSendFields = emptyVals.ForceSendFields
+			}
+			return userParams, nil
 		}
-		return user, nil
 	default:
 		err := fmt.Errorf(gmess.ERR_OBJECTNOTRECOGNIZED, callParam.ObjectType)
 		lg.Error(err)
 		return nil, err
 	}
-	// Only gets here if ChromeOSDev or MobDev call type invalid
+
 	err = fmt.Errorf(gmess.ERR_CALLTYPENOTRECOGNIZED, callParam.CallType)
 	lg.Error(err)
 	return nil, err
