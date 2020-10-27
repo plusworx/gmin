@@ -528,6 +528,39 @@ func PopulateManagedDev(managedDev *ManagedDevice, hdrMap map[int]string, objDat
 	return nil
 }
 
+// PopulateMovedDev is used in batch processing
+func PopulateMovedDev(movedDev *MovedDevice, hdrMap map[int]string, objData []interface{}) error {
+	lg.Debugw("starting PopulateManagedDev()",
+		"hdrMap", hdrMap)
+	defer lg.Debug("finished PopulateManagedDev()")
+
+	for idx, attr := range objData {
+		attrName := hdrMap[idx]
+		attrVal := fmt.Sprintf("%v", attr)
+
+		switch {
+		case attrName == "deviceId":
+			if attrVal == "" {
+				err := fmt.Errorf(gmess.ERR_EMPTYSTRING, attrName)
+				lg.Error(err)
+				return err
+			}
+			movedDev.DeviceId = attrVal
+		case attrName == "orgUnitPath":
+			if attrVal == "" {
+				err := fmt.Errorf(gmess.ERR_EMPTYSTRING, attrName)
+				lg.Error(err)
+				return err
+			}
+			movedDev.OrgUnitPath = attrVal
+		default:
+			err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, attrName)
+			return err
+		}
+	}
+	return nil
+}
+
 // ShowAttrs displays requested chromeOS device attributes
 func ShowAttrs(filter string) {
 	lg.Debugw("starting ShowAttrs()",

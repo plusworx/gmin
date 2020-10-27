@@ -169,6 +169,14 @@ func FromFileFactory(callParams CallParams, hdrMap map[int]string, objData []int
 			}
 			return mngdev, nil
 		}
+		if callParams.CallType == cmn.CALLTYPEMOVE {
+			mvdev := cdevs.MovedDevice{}
+			err := cdevs.PopulateMovedDev(&mvdev, hdrMap, objData)
+			if err != nil {
+				return nil, err
+			}
+			return mvdev, nil
+		}
 	case cmn.OBJTYPEGROUP:
 		group := new(admin.Group)
 		err := grps.PopulateGroup(group, hdrMap, objData)
@@ -259,6 +267,15 @@ func FromJSONFactory(callParam CallParams, jsonData string, attrMap map[string]s
 				return nil, err
 			}
 			return mngDev, nil
+		}
+		if callParam.CallType == cmn.CALLTYPEMOVE {
+			mvDev := cdevs.MovedDevice{}
+			err = json.Unmarshal(jsonBytes, &mvDev)
+			if err != nil {
+				lg.Error(err)
+				return nil, err
+			}
+			return mvDev, nil
 		}
 	case cmn.OBJTYPEGROUP:
 		group := new(admin.Group)
