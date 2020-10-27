@@ -35,6 +35,17 @@ import (
 	gset "google.golang.org/api/groupssettings/v1"
 )
 
+// GroupParams holds group data for batch processing
+type GroupParams struct {
+	GroupKey string
+	Settings *gset.Groups
+}
+
+// Key is struct used to extract groupKey
+type Key struct {
+	GroupKey string
+}
+
 // ApproveMemberMap holds valid approve-mem flag values
 var ApproveMemberMap = map[string]string{
 	"all_managers_can_approve": "ALL_MANAGERS_CAN_APPROVE",
@@ -310,17 +321,6 @@ var ViewMembershipMap = map[string]string{
 	"all_in_domain_can_view": "ALL_IN_DOMAIN_CAN_VIEW",
 	"all_managers_can_view":  "ALL_MANAGERS_CAN_VIEW",
 	"all_members_can_view":   "ALL_MEMBERS_CAN_VIEW",
-}
-
-// GroupParams holds group data for batch processing
-type GroupParams struct {
-	GroupKey string
-	Settings *gset.Groups
-}
-
-// Key is struct used to extract groupKey
-type Key struct {
-	GroupKey string
 }
 
 // AddFields adds fields to be returned from admin calls
