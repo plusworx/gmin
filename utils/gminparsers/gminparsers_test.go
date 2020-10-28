@@ -78,6 +78,7 @@ func TestParseOutputAttrs(t *testing.T) {
 		},
 	}
 
+	tsts.InitConfig()
 	lg.InitLogging("info")
 
 	for _, c := range cases {
@@ -160,6 +161,7 @@ func TestParseQuery(t *testing.T) {
 		},
 	}
 
+	tsts.InitConfig()
 	lg.InitLogging("info")
 
 	for _, c := range cases {

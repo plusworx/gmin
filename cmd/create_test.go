@@ -78,7 +78,6 @@ func TestDoCreateUser(t *testing.T) {
 		recoveryPhone = c.recoveryPhone
 
 		initConfig()
-
 		lg.InitLogging("info")
 
 		got := doCreateUser(createUserCmd, c.args)

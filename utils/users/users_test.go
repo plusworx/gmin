@@ -39,6 +39,7 @@ func TestAddCustomer(t *testing.T) {
 		},
 	}
 
+	tsts.InitConfig()
 	lg.InitLogging("info")
 
 	ds, err := tsts.DummyDirectoryService(admin.AdminDirectoryUserReadonlyScope)
@@ -67,6 +68,7 @@ func TestAddDomain(t *testing.T) {
 		},
 	}
 
+	tsts.InitConfig()
 	lg.InitLogging("info")
 
 	ds, err := tsts.DummyDirectoryService(admin.AdminDirectoryUserReadonlyScope)
@@ -95,6 +97,7 @@ func TestAddFields(t *testing.T) {
 		},
 	}
 
+	tsts.InitConfig()
 	lg.InitLogging("info")
 
 	ds, err := tsts.DummyDirectoryService(admin.AdminDirectoryUserReadonlyScope)
@@ -123,6 +126,7 @@ func TestAddMaxResults(t *testing.T) {
 		},
 	}
 
+	tsts.InitConfig()
 	lg.InitLogging("info")
 
 	ds, err := tsts.DummyDirectoryService(admin.AdminDirectoryUserReadonlyScope)
@@ -151,6 +155,7 @@ func TestAddOrderBy(t *testing.T) {
 		},
 	}
 
+	tsts.InitConfig()
 	lg.InitLogging("info")
 
 	ds, err := tsts.DummyDirectoryService(admin.AdminDirectoryUserReadonlyScope)
@@ -179,6 +184,7 @@ func TestAddPageToken(t *testing.T) {
 		},
 	}
 
+	tsts.InitConfig()
 	lg.InitLogging("info")
 
 	ds, err := tsts.DummyDirectoryService(admin.AdminDirectoryUserReadonlyScope)
@@ -207,6 +213,7 @@ func TestAddProjection(t *testing.T) {
 		},
 	}
 
+	tsts.InitConfig()
 	lg.InitLogging("info")
 
 	ds, err := tsts.DummyDirectoryService(admin.AdminDirectoryUserReadonlyScope)
@@ -235,6 +242,7 @@ func TestAddQuery(t *testing.T) {
 		},
 	}
 
+	tsts.InitConfig()
 	lg.InitLogging("info")
 
 	ds, err := tsts.DummyDirectoryService(admin.AdminDirectoryUserReadonlyScope)
@@ -255,6 +263,7 @@ func TestAddQuery(t *testing.T) {
 }
 
 func TestAddShowDeleted(t *testing.T) {
+	tsts.InitConfig()
 	lg.InitLogging("info")
 
 	ds, err := tsts.DummyDirectoryService(admin.AdminDirectoryUserReadonlyScope)
@@ -280,6 +289,7 @@ func TestAddSortOrder(t *testing.T) {
 		},
 	}
 
+	tsts.InitConfig()
 	lg.InitLogging("info")
 
 	ds, err := tsts.DummyDirectoryService(admin.AdminDirectoryUserReadonlyScope)
@@ -308,6 +318,7 @@ func TestAddViewType(t *testing.T) {
 		},
 	}
 
+	tsts.InitConfig()
 	lg.InitLogging("info")
 
 	ds, err := tsts.DummyDirectoryService(admin.AdminDirectoryUserReadonlyScope)
@@ -328,6 +339,7 @@ func TestAddViewType(t *testing.T) {
 }
 
 func TestHashPassword(t *testing.T) {
+	tsts.InitConfig()
 	lg.InitLogging("info")
 
 	pwd := "MySuperStrongPassword"

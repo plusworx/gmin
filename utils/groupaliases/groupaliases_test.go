@@ -39,6 +39,7 @@ func TestAddFields(t *testing.T) {
 		},
 	}
 
+	tsts.InitConfig()
 	lg.InitLogging("info")
 
 	ds, err := tsts.DummyDirectoryService(admin.AdminDirectoryGroupReadonlyScope)

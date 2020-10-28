@@ -25,14 +25,19 @@ package tests
 import (
 	"context"
 	"fmt"
+	"log"
 	"reflect"
 	"strconv"
 
+	"github.com/mitchellh/go-homedir"
+	"github.com/spf13/viper"
 	"go.uber.org/zap"
 	"golang.org/x/oauth2/google"
 	admin "google.golang.org/api/admin/directory/v1"
 	"google.golang.org/api/option"
 )
+
+var cfgFile string
 
 // TestGroupAttrMap is Group attribute map for testing purposes
 var TestGroupAttrMap = map[string]string{
@@ -230,6 +235,26 @@ func GetLogger() *zap.SugaredLogger {
 	logger, _ := zap.NewProduction()
 	sugar := logger.Sugar()
 	return sugar
+}
+
+// InitConfig initialises config
+func InitConfig() {
+	viper.SetEnvPrefix("GMIN")
+
+	if cfgFile != "" {
+		viper.SetConfigFile(cfgFile)
+	} else {
+		home, err := homedir.Dir()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		viper.AddConfigPath(home)
+		viper.SetConfigName(".gmin")
+	}
+
+	viper.AutomaticEnv()
+	viper.ReadInConfig()
 }
 
 // UserCompActualExpected compares actual test results in admin.User object with expected results

@@ -39,6 +39,7 @@ func TestAddFields(t *testing.T) {
 		},
 	}
 
+	tsts.InitConfig()
 	lg.InitLogging("info")
 
 	ds, err := tsts.DummyDirectoryService(admin.AdminDirectoryOrgunitReadonlyScope)
@@ -67,6 +68,7 @@ func TestAddOUPath(t *testing.T) {
 		},
 	}
 
+	tsts.InitConfig()
 	lg.InitLogging("info")
 
 	ds, err := tsts.DummyDirectoryService(admin.AdminDirectoryOrgunitReadonlyScope)
@@ -95,6 +97,7 @@ func TestAddType(t *testing.T) {
 		},
 	}
 
+	tsts.InitConfig()
 	lg.InitLogging("info")
 
 	ds, err := tsts.DummyDirectoryService(admin.AdminDirectoryOrgunitReadonlyScope)

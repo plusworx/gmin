@@ -39,6 +39,7 @@ func TestAddFields(t *testing.T) {
 		},
 	}
 
+	tsts.InitConfig()
 	lg.InitLogging("info")
 
 	ds, err := tsts.DummyDirectoryService(admin.AdminDirectoryGroupMemberReadonlyScope)
@@ -67,6 +68,7 @@ func TestAddPageToken(t *testing.T) {
 		},
 	}
 
+	tsts.InitConfig()
 	lg.InitLogging("info")
 
 	ds, err := tsts.DummyDirectoryService(admin.AdminDirectoryGroupMemberReadonlyScope)
@@ -95,6 +97,7 @@ func TestAddMaxResults(t *testing.T) {
 		},
 	}
 
+	tsts.InitConfig()
 	lg.InitLogging("info")
 
 	ds, err := tsts.DummyDirectoryService(admin.AdminDirectoryGroupMemberReadonlyScope)
@@ -132,6 +135,7 @@ func TestValidateDeliverySetting(t *testing.T) {
 		},
 	}
 
+	tsts.InitConfig()
 	lg.InitLogging("info")
 
 	for _, c := range cases {
@@ -168,6 +172,7 @@ func TestValidateRole(t *testing.T) {
 		},
 	}
 
+	tsts.InitConfig()
 	lg.InitLogging("info")
 
 	for _, c := range cases {
