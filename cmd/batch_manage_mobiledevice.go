@@ -23,129 +23,189 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"bufio"
-	"encoding/csv"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"os"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
+	btch "github.com/plusworx/gmin/utils/batch"
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	lg "github.com/plusworx/gmin/utils/logging"
 	mdevs "github.com/plusworx/gmin/utils/mobiledevices"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
-	sheet "google.golang.org/api/sheets/v4"
 )
 
 var batchMngMobDevCmd = &cobra.Command{
-	Use:     "mobiledevices -i <input file>",
-	Aliases: []string{"mobiledevice", "mobdevices", "mobdevice", "mobdevs", "mobdev", "mdevs", "mdev"},
-	Short:   "Manages a batch of mobile devices",
-	Long: `Manages a batch of mobile devices where device details are provided in a Google Sheet or CSV/JSON input file.
-	
-	Examples:	gmin batch-manage mobiledevices -i inputfile.json
-			gmin bmng mdevs -i inputfile.csv -f csv
-			gmin bmng mdev -i 1odyAIp3jGspd3M4xeepxWD6aeQIUuHBgrZB2OHSu8MI -s 'Sheet1!A1:B25' -f gsheet
+	Use:     "mobile-devices -i <input file>",
+	Aliases: []string{"mobile-device", "mob-devices", "mob-device", "mob-devs", "mob-dev", "mdevs", "mdev"},
+	Example: `gmin batch-manage mobile-devices -i inputfile.json
+gmin bmng mdevs -i inputfile.csv -f csv
+gmin bmng mdev -i 1odyAIp3jGspd3M4xeepxWD6aeQIUuHBgrZB2OHSu8MI -s 'Sheet1!A1:B25' -f gsheet`,
+	Short: "Manages a batch of mobile devices",
+	Long: `Manages a batch of mobile devices where device details are provided in a Google Sheet, CSV/JSON input file or piped JSON.
 			  
-	The JSON file should contain mobile device management details like this:
-	
-	{"resourceId":"4cx07eba348f09b3Yjklj93xjsol0kE30lkl","action":"admin_account_wipe"}
-	{"resourceId":"Hkj98764yKK4jw8yyoyq9987js07q1hs7y98","action":"approve"}
-	{"resourceId":"lkalkju9027ja98na65wqHaTBOOUgarTQKk9","action":"admin_remote_wipe"}
+The JSON file or piped input should contain mobile device management details like this:
 
-	N.B. resourceId must be used NOT deviceId.
-	
-	CSV and Google sheets must have a header row with the following column names being the only ones that are valid:
-	
-	action [required]
-	resourceId [required]
-	
-	The column names are case insensitive and can be in any order.
-	
-	Valid actions are:
-	admin_account_wipe
-	admin_remote_wipe
-	approve
-	block
-	cancel_remote_wipe_then_activate
-	cancel_remote_wipe_then_block`,
+{"resourceId":"4cx07eba348f09b3Yjklj93xjsol0kE30lkl","action":"admin_account_wipe"}
+{"resourceId":"Hkj98764yKK4jw8yyoyq9987js07q1hs7y98","action":"approve"}
+{"resourceId":"lkalkju9027ja98na65wqHaTBOOUgarTQKk9","action":"admin_remote_wipe"}
+
+N.B. resourceId must be used NOT deviceId.
+
+CSV and Google sheets must have a header row with the following column names being the only ones that are valid:
+
+action [required]
+resourceId [required]
+
+The column names are case insensitive and can be in any order.
+
+Valid actions are:
+admin_account_wipe
+admin_remote_wipe
+approve
+block
+cancel_remote_wipe_then_activate
+cancel_remote_wipe_then_block`,
 	RunE: doBatchMngMobDev,
 }
 
 func doBatchMngMobDev(cmd *cobra.Command, args []string) error {
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryDeviceMobileActionScope)
+	lg.Debugw("starting doBatchMngMobDev()",
+		"args", args)
+	defer lg.Debug("finished doBatchMngMobDev()")
+
+	var (
+		managedDevs []mdevs.ManagedDevice
+		objs        []interface{}
+	)
+
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryDeviceMobileActionScope)
+	if err != nil {
+		return err
+	}
+	ds := srv.(*admin.Service)
+
+	inputFlgVal, err := cmd.Flags().GetString(flgnm.FLG_INPUTFILE)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+
+	scanner, err := cmn.InputFromStdIn(inputFlgVal)
 	if err != nil {
 		return err
 	}
 
-	if inputFile == "" {
-		err := errors.New("gmin: error - must provide inputfile")
+	if inputFlgVal == "" && scanner == nil {
+		err := errors.New(gmess.ERR_NOINPUTFILE)
+		lg.Error(err)
 		return err
 	}
 
-	lwrFmt := strings.ToLower(format)
+	formatFlgVal, err := cmd.Flags().GetString(flgnm.FLG_FORMAT)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+	lwrFmt := strings.ToLower(formatFlgVal)
 
 	ok := cmn.SliceContainsStr(cmn.ValidFileFormats, lwrFmt)
 	if !ok {
-		return fmt.Errorf("gmin: error - %v is not a valid file format", format)
+		err = fmt.Errorf(gmess.ERR_INVALIDFILEFORMAT, formatFlgVal)
+		lg.Error(err)
+		return err
 	}
+
+	callParams := btch.CallParams{CallType: cmn.CALLTYPEMANAGE, ObjectType: cmn.OBJTYPEMOBDEV}
 
 	switch {
 	case lwrFmt == "csv":
-		err := btchMngMobDevProcessCSV(ds, inputFile)
+		objs, err = btch.ProcessCSVFile(callParams, inputFlgVal, mdevs.MobDevAttrMap)
 		if err != nil {
 			return err
 		}
 	case lwrFmt == "json":
-		err := btchMngMobDevProcessJSON(ds, inputFile)
+		objs, err = btch.ProcessJSON(callParams, inputFlgVal, scanner, mdevs.MobDevAttrMap)
 		if err != nil {
 			return err
 		}
 	case lwrFmt == "gsheet":
-		err := btchMngMobDevProcessSheet(ds, inputFile)
+		rangeFlgVal, err := cmd.Flags().GetString(flgnm.FLG_SHEETRANGE)
+		if err != nil {
+			lg.Error(err)
+			return err
+		}
+
+		objs, err = btch.ProcessGSheet(callParams, inputFlgVal, rangeFlgVal, mdevs.MobDevAttrMap)
 		if err != nil {
 			return err
 		}
+	default:
+		err = fmt.Errorf(gmess.ERR_INVALIDFILEFORMAT, formatFlgVal)
+		lg.Error(err)
+		return err
+	}
+
+	for _, mdevObj := range objs {
+		managedDevs = append(managedDevs, mdevObj.(mdevs.ManagedDevice))
+	}
+
+	err = bmngmProcessObjects(ds, managedDevs)
+	if err != nil {
+		return err
 	}
 
 	return nil
 }
 
-func btchMngJSONMobDev(ds *admin.Service, jsonData string) (mdevs.ManagedDevice, error) {
-	managedDev := mdevs.ManagedDevice{}
-	jsonBytes := []byte(jsonData)
+func bmngmPerformAction(resourceID string, action string, wg *sync.WaitGroup, mdac *admin.MobiledevicesActionCall) {
+	lg.Debugw("starting bmngmPerformAction()",
+		"action", action,
+		"resourceID", resourceID)
+	defer lg.Debug("finished bmngmPerformAction()")
 
-	if !json.Valid(jsonBytes) {
-		return managedDev, errors.New("gmin: error - attribute string is not valid JSON")
-	}
+	defer wg.Done()
 
-	outStr, err := cmn.ParseInputAttrs(jsonBytes)
+	b := backoff.NewExponentialBackOff()
+	b.MaxElapsedTime = 32 * time.Second
+
+	err := backoff.Retry(func() error {
+		var err error
+		err = mdac.Do()
+		if err == nil {
+			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_MDEVACTIONPERFORMED, action, resourceID)))
+			lg.Infof(gmess.INFO_MDEVACTIONPERFORMED, action, resourceID)
+			return err
+		}
+		if !cmn.IsErrRetryable(err) {
+			return backoff.Permanent(fmt.Errorf(gmess.ERR_BATCHMOBILEDEVICE, err.Error(), resourceID))
+		}
+		// Log the retries
+		lg.Warnw(err.Error(),
+			"retrying", b.GetElapsedTime().String(),
+			"mobile device", resourceID)
+		return fmt.Errorf(gmess.ERR_BATCHMOBILEDEVICE, err.Error(), resourceID)
+	}, b)
 	if err != nil {
-		return managedDev, err
+		// Log final error
+		lg.Error(err)
+		fmt.Println(cmn.GminMessage(err.Error()))
 	}
-
-	err = cmn.ValidateInputAttrs(outStr, mdevs.MobDevAttrMap)
-	if err != nil {
-		return managedDev, err
-	}
-
-	err = json.Unmarshal(jsonBytes, &managedDev)
-	if err != nil {
-		return managedDev, err
-	}
-
-	return managedDev, nil
 }
 
-func btchMngMobDevs(ds *admin.Service, managedDevs []mdevs.ManagedDevice) error {
-	customerID, err := cfg.ReadConfigString("customerid")
+func bmngmProcessObjects(ds *admin.Service, managedDevs []mdevs.ManagedDevice) error {
+	lg.Debug("starting bmngmProcessObjects()")
+	defer lg.Debug("finished bmngmProcessObjects()")
+
+	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {
+		lg.Error(err)
 		return err
 	}
 
@@ -160,7 +220,7 @@ func btchMngMobDevs(ds *admin.Service, managedDevs []mdevs.ManagedDevice) error 
 
 		wg.Add(1)
 
-		go btchMngMobDevProcess(md.ResourceId, md.Action, wg, mdac)
+		go bmngmPerformAction(md.ResourceId, md.Action, wg, mdac)
 	}
 
 	wg.Wait()
@@ -168,199 +228,10 @@ func btchMngMobDevs(ds *admin.Service, managedDevs []mdevs.ManagedDevice) error 
 	return nil
 }
 
-func btchMngMobDevProcess(resourceID string, action string, wg *sync.WaitGroup, mdac *admin.MobiledevicesActionCall) {
-	defer wg.Done()
-
-	b := backoff.NewExponentialBackOff()
-	b.MaxElapsedTime = 32 * time.Second
-
-	err := backoff.Retry(func() error {
-		var err error
-		err = mdac.Do()
-		if err == nil {
-			fmt.Println(cmn.GminMessage("**** gmin: " + action + " successfully performed on mobile device " + resourceID + " ****"))
-			return err
-		}
-		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(errors.New(cmn.GminMessage("gmin: error - " + err.Error() + " " + resourceID)))
-		}
-		return errors.New(cmn.GminMessage("gmin: error - " + err.Error() + " " + resourceID))
-	}, b)
-	if err != nil {
-		fmt.Println(err)
-	}
-}
-
-func btchMngMobDevProcessCSV(ds *admin.Service, filePath string) error {
-	var (
-		iSlice      []interface{}
-		hdrMap      = map[int]string{}
-		managedDevs []mdevs.ManagedDevice
-	)
-
-	csvfile, err := os.Open(filePath)
-	if err != nil {
-		return err
-	}
-	defer csvfile.Close()
-
-	r := csv.NewReader(csvfile)
-
-	count := 0
-	for {
-		record, err := r.Read()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return err
-		}
-
-		if count == 0 {
-			iSlice = make([]interface{}, len(record))
-			for idx, value := range record {
-				iSlice[idx] = value
-			}
-			hdrMap = cmn.ProcessHeader(iSlice)
-			err = cmn.ValidateHeader(hdrMap, mdevs.MobDevAttrMap)
-			if err != nil {
-				return err
-			}
-			count = count + 1
-			continue
-		}
-
-		for idx, value := range record {
-			iSlice[idx] = value
-		}
-
-		mngMdevVar, err := btchMngProcessMobDev(hdrMap, iSlice)
-		if err != nil {
-			return err
-		}
-
-		managedDevs = append(managedDevs, mngMdevVar)
-
-		count = count + 1
-	}
-
-	err = btchMngMobDevs(ds, managedDevs)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func btchMngMobDevProcessJSON(ds *admin.Service, filePath string) error {
-	var managedDevs []mdevs.ManagedDevice
-
-	file, err := os.Open(filePath)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		jsonData := scanner.Text()
-
-		mngMdevVar, err := btchMngJSONMobDev(ds, jsonData)
-		if err != nil {
-			return err
-		}
-
-		managedDevs = append(managedDevs, mngMdevVar)
-	}
-	err = scanner.Err()
-	if err != nil {
-		return err
-	}
-
-	err = btchMngMobDevs(ds, managedDevs)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func btchMngMobDevProcessSheet(ds *admin.Service, sheetID string) error {
-	var managedDevs []mdevs.ManagedDevice
-
-	if sheetRange == "" {
-		return errors.New("gmin: error - sheetrange must be provided")
-	}
-
-	ss, err := cmn.CreateSheetService(sheet.DriveReadonlyScope)
-	if err != nil {
-		return err
-	}
-
-	ssvgc := ss.Spreadsheets.Values.Get(sheetID, sheetRange)
-	sValRange, err := ssvgc.Do()
-	if err != nil {
-		return err
-	}
-
-	if len(sValRange.Values) == 0 {
-		return errors.New("gmin: error - no data found in sheet " + sheetID + " range: " + sheetRange)
-	}
-
-	hdrMap := cmn.ProcessHeader(sValRange.Values[0])
-	err = cmn.ValidateHeader(hdrMap, mdevs.MobDevAttrMap)
-	if err != nil {
-		return err
-	}
-
-	for idx, row := range sValRange.Values {
-		if idx == 0 {
-			continue
-		}
-
-		mngMdevVar, err := btchMngProcessMobDev(hdrMap, row)
-		if err != nil {
-			return err
-		}
-
-		managedDevs = append(managedDevs, mngMdevVar)
-	}
-
-	err = btchMngMobDevs(ds, managedDevs)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func btchMngProcessMobDev(hdrMap map[int]string, mdevData []interface{}) (mdevs.ManagedDevice, error) {
-	managedDev := mdevs.ManagedDevice{}
-
-	for idx, attr := range mdevData {
-		attrName := hdrMap[idx]
-
-		switch {
-		case attrName == "action":
-			lwrAction := strings.ToLower(fmt.Sprintf("%v", attr))
-			ok := cmn.SliceContainsStr(mdevs.ValidActions, lwrAction)
-			if !ok {
-				return managedDev, fmt.Errorf("gmin: error - %v is not a valid action type", fmt.Sprintf("%v", attr))
-			}
-			managedDev.Action = lwrAction
-		case attrName == "resourceId":
-			managedDev.ResourceId = fmt.Sprintf("%v", attr)
-		}
-	}
-
-	return managedDev, nil
-}
-
 func init() {
 	batchManageCmd.AddCommand(batchMngMobDevCmd)
 
-	batchMngMobDevCmd.Flags().StringVarP(&inputFile, "inputfile", "i", "", "filepath to device data file")
-	batchMngMobDevCmd.Flags().StringVarP(&format, "format", "f", "json", "user data file format")
-	batchMngMobDevCmd.Flags().StringVarP(&sheetRange, "sheetrange", "s", "", "user data gsheet range")
-
-	batchMngMobDevCmd.MarkFlagRequired("inputfile")
+	batchMngMobDevCmd.Flags().StringVarP(&inputFile, flgnm.FLG_INPUTFILE, "i", "", "filepath to device data file")
+	batchMngMobDevCmd.Flags().StringVarP(&format, flgnm.FLG_FORMAT, "f", "json", "user data file format")
+	batchMngMobDevCmd.Flags().StringVarP(&sheetRange, flgnm.FLG_SHEETRANGE, "s", "", "user data gsheet range")
 }

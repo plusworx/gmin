@@ -23,162 +23,165 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"bufio"
-	"encoding/csv"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"os"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
+	btch "github.com/plusworx/gmin/utils/batch"
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	lg "github.com/plusworx/gmin/utils/logging"
 	ous "github.com/plusworx/gmin/utils/orgunits"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
-	sheet "google.golang.org/api/sheets/v4"
 )
 
 var batchUpdOUCmd = &cobra.Command{
 	Use:     "orgunits -i <input file path>",
 	Aliases: []string{"orgunit", "ous", "ou"},
-	Short:   "Updates a batch of orgunits",
-	Long: `Updates a batch of orgunits where orgunit details are provided in a Google Sheet or CSV/JSON input file.
-	
-	Examples:	gmin batch-update orgunits -i inputfile.json
-			gmin bupd ous -i inputfile.csv -f csv
-			gmin bupd ou -i 1odyAIp3jGspd3M4xeepxWD6aeQIUuHBgrZB2OHSu8MI -s 'Sheet1!A1:K25' -f gsheet
+	Example: `gmin batch-update orgunits -i inputfile.json
+gmin bupd ous -i inputfile.csv -f csv
+gmin bupd ou -i 1odyAIp3jGspd3M4xeepxWD6aeQIUuHBgrZB2OHSu8MI -s 'Sheet1!A1:K25' -f gsheet`,
+	Short: "Updates a batch of orgunits",
+	Long: `Updates a batch of orgunits where orgunit details are provided in a Google Sheet, CSV/JSON input file or piped JSON.
 			  
-	The contents of the JSON file should look something like this:
-	
-	{"ouKey":"Credit","parentOrgUnitPath":"/Finance","name":"Credit_Control"}
-	{"ouKey":"Audit","parentOrgUnitPath":"/Finance","name":"Audit_Governance"}
-	{"ouKey":"Planning","parentOrgUnitPath":"/Finance","name":"Planning_Reporting"}
-	
-	N.B. ouKey (full orgunit path or id) must be provided.
-	
-	CSV and Google sheets must have a header row with the following column names being the only ones that are valid:
-	
-	blockInheritance [value true or false]
-	description
-	name
-	ouKey [required]
-	parentOrgUnitPath
-	
-	The column names are case insensitive and can be in any order.`,
+The contents of the JSON file or piped input should look something like this:
+
+{"ouKey":"Credit","parentOrgUnitPath":"/Finance","name":"Credit_Control"}
+{"ouKey":"Audit","parentOrgUnitPath":"/Finance","name":"Audit_Governance"}
+{"ouKey":"Planning","parentOrgUnitPath":"/Finance","name":"Planning_Reporting"}
+
+N.B. ouKey (full orgunit path or id) must be provided.
+
+CSV and Google sheets must have a header row with the following column names being the only ones that are valid:
+
+blockInheritance [value true or false]
+description
+name
+ouKey [required]
+parentOrgUnitPath
+
+The column names are case insensitive and can be in any order.`,
 	RunE: doBatchUpdOU,
 }
 
 func doBatchUpdOU(cmd *cobra.Command, args []string) error {
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryOrgunitScope)
+	lg.Debugw("starting doBatchUpdOU()",
+		"args", args)
+	defer lg.Debug("finished doBatchUpdOU()")
+
+	var (
+		ouParams []ous.OrgUnitParams
+		objs     []interface{}
+	)
+
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryOrgunitScope)
+	if err != nil {
+		return err
+	}
+	ds := srv.(*admin.Service)
+
+	inputFlgVal, err := cmd.Flags().GetString(flgnm.FLG_INPUTFILE)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+
+	scanner, err := cmn.InputFromStdIn(inputFlgVal)
 	if err != nil {
 		return err
 	}
 
-	if inputFile == "" {
-		err := errors.New("gmin: error - must provide inputfile")
+	if inputFlgVal == "" && scanner == nil {
+		err := errors.New(gmess.ERR_NOINPUTFILE)
+		lg.Error(err)
 		return err
 	}
 
-	lwrFmt := strings.ToLower(format)
+	formatFlgVal, err := cmd.Flags().GetString(flgnm.FLG_FORMAT)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+	lwrFmt := strings.ToLower(formatFlgVal)
 
 	ok := cmn.SliceContainsStr(cmn.ValidFileFormats, lwrFmt)
 	if !ok {
-		return fmt.Errorf("gmin: error - %v is not a valid file format", format)
+		err = fmt.Errorf(gmess.ERR_INVALIDFILEFORMAT, formatFlgVal)
+		lg.Error(err)
+		return err
 	}
+
+	callParams := btch.CallParams{CallType: cmn.CALLTYPEUPDATE, ObjectType: cmn.OBJTYPEORGUNIT}
 
 	switch {
 	case lwrFmt == "csv":
-		err := btchUpdOUProcessCSV(ds, inputFile)
+		objs, err = btch.ProcessCSVFile(callParams, inputFlgVal, ous.OrgUnitAttrMap)
 		if err != nil {
 			return err
 		}
 	case lwrFmt == "json":
-		err := btchUpdOUProcessJSON(ds, inputFile)
+		objs, err = btch.ProcessJSON(callParams, inputFlgVal, scanner, ous.OrgUnitAttrMap)
 		if err != nil {
 			return err
 		}
 	case lwrFmt == "gsheet":
-		err := btchUpdOUProcessSheet(ds, inputFile)
+		rangeFlgVal, err := cmd.Flags().GetString(flgnm.FLG_SHEETRANGE)
+		if err != nil {
+			lg.Error(err)
+			return err
+		}
+
+		objs, err = btch.ProcessGSheet(callParams, inputFlgVal, rangeFlgVal, ous.OrgUnitAttrMap)
 		if err != nil {
 			return err
 		}
+	default:
+		err = fmt.Errorf(gmess.ERR_INVALIDFILEFORMAT, formatFlgVal)
+		lg.Error(err)
+		return err
+	}
+
+	for _, opObj := range objs {
+		ouParams = append(ouParams, opObj.(ous.OrgUnitParams))
+	}
+
+	err = buoProcessObjects(ds, ouParams)
+	if err != nil {
+		return err
 	}
 
 	return nil
 }
 
-func btchUpdJSONOrgUnit(ds *admin.Service, jsonData string) (*admin.OrgUnit, string, error) {
-	var (
-		orgunit   *admin.OrgUnit
-		ouKey     = ous.Key{}
-		emptyVals = cmn.EmptyValues{}
-	)
-
-	orgunit = new(admin.OrgUnit)
-	jsonBytes := []byte(jsonData)
-
-	if !json.Valid(jsonBytes) {
-		return nil, "", errors.New("gmin: error - attribute string is not valid JSON")
-	}
-
-	outStr, err := cmn.ParseInputAttrs(jsonBytes)
-	if err != nil {
-		return nil, "", err
-	}
-
-	err = cmn.ValidateInputAttrs(outStr, ous.OrgUnitAttrMap)
-	if err != nil {
-		return nil, "", err
-	}
-
-	err = json.Unmarshal(jsonBytes, &ouKey)
-	if err != nil {
-		return nil, "", err
-	}
-
-	if ouKey.OUKey == "" {
-		return nil, "", errors.New("gmin: error - ouKey must be included in the JSON input string")
-	}
-
-	err = json.Unmarshal(jsonBytes, &orgunit)
-	if err != nil {
-		return nil, "", err
-	}
-
-	err = json.Unmarshal(jsonBytes, &emptyVals)
-	if err != nil {
-		return nil, "", err
-	}
-	if len(emptyVals.ForceSendFields) > 0 {
-		orgunit.ForceSendFields = emptyVals.ForceSendFields
-	}
-
-	return orgunit, ouKey.OUKey, nil
-}
-
-func btchUpdateOrgUnits(ds *admin.Service, orgunits []*admin.OrgUnit, ouKeys []string) error {
-	var ouPath = []string{}
+func buoProcessObjects(ds *admin.Service, ouParams []ous.OrgUnitParams) error {
+	lg.Debugw("starting buoProcessObjects()",
+		"ouParams", ouParams)
+	defer lg.Debug("finished buoProcessObjects()")
 
 	wg := new(sync.WaitGroup)
 
-	customerID, err := cfg.ReadConfigString("customerid")
+	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {
+		lg.Error(err)
 		return err
 	}
 
-	for idx, ou := range orgunits {
-		ouPath = append(ouPath, ouKeys[idx])
-		ouuc := ds.Orgunits.Update(customerID, ouPath, ou)
+	for _, op := range ouParams {
+		ouuc := ds.Orgunits.Update(customerID, op.OUKey, op.OrgUnit)
 
 		wg.Add(1)
 
-		go btchOUUpdateProcess(ou, wg, ouuc, ouKeys[idx])
-		ouPath = []string{}
+		// Sleep for 2 seconds because only 1 orgunit can be updated per second but 1 second interval
+		// still can result in rate limit errors
+		time.Sleep(2 * time.Second)
+
+		go buoUpdate(op.OrgUnit, wg, ouuc, op.OUKey)
 	}
 
 	wg.Wait()
@@ -186,7 +189,11 @@ func btchUpdateOrgUnits(ds *admin.Service, orgunits []*admin.OrgUnit, ouKeys []s
 	return nil
 }
 
-func btchOUUpdateProcess(orgunit *admin.OrgUnit, wg *sync.WaitGroup, ouuc *admin.OrgunitsUpdateCall, ouKey string) {
+func buoUpdate(orgunit *admin.OrgUnit, wg *sync.WaitGroup, ouuc *admin.OrgunitsUpdateCall, ouKey string) {
+	lg.Debugw("starting buoUpdate()",
+		"ouKey", ouKey)
+	defer lg.Debug("finished buoUpdate()")
+
 	defer wg.Done()
 
 	b := backoff.NewExponentialBackOff()
@@ -196,216 +203,30 @@ func btchOUUpdateProcess(orgunit *admin.OrgUnit, wg *sync.WaitGroup, ouuc *admin
 		var err error
 		_, err = ouuc.Do()
 		if err == nil {
-			fmt.Println(cmn.GminMessage("**** gmin: orgunit " + ouKey + " updated ****"))
+			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_OUUPDATED, ouKey)))
+			lg.Infof(gmess.INFO_OUUPDATED, ouKey)
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(errors.New(cmn.GminMessage("gmin: error - " + err.Error() + " " + ouKey)))
+			return backoff.Permanent(fmt.Errorf(gmess.ERR_BATCHOU, err.Error(), ouKey))
 		}
-		return errors.New(cmn.GminMessage("gmin: error - " + err.Error() + " " + ouKey))
+		// Log the retries
+		lg.Warnw(err.Error(),
+			"retrying", b.GetElapsedTime().String(),
+			"orgunit", ouKey)
+		return fmt.Errorf(gmess.ERR_BATCHOU, err.Error(), ouKey)
 	}, b)
 	if err != nil {
-		fmt.Println(err)
+		// Log final error
+		lg.Error(err)
+		fmt.Println(cmn.GminMessage(err.Error()))
 	}
-}
-
-func btchUpdOUProcessCSV(ds *admin.Service, filePath string) error {
-	var (
-		iSlice   []interface{}
-		hdrMap   = map[int]string{}
-		ouKeys   []string
-		orgunits []*admin.OrgUnit
-	)
-
-	csvfile, err := os.Open(filePath)
-	if err != nil {
-		return err
-	}
-	defer csvfile.Close()
-
-	r := csv.NewReader(csvfile)
-
-	count := 0
-	for {
-		record, err := r.Read()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return err
-		}
-
-		if count == 0 {
-			iSlice = make([]interface{}, len(record))
-			for idx, value := range record {
-				iSlice[idx] = value
-			}
-			hdrMap = cmn.ProcessHeader(iSlice)
-			err = cmn.ValidateHeader(hdrMap, ous.OrgUnitAttrMap)
-			if err != nil {
-				return err
-			}
-			count = count + 1
-			continue
-		}
-
-		for idx, value := range record {
-			iSlice[idx] = value
-		}
-
-		ouVar, ouKey, err := btchUpdProcessOrgUnit(hdrMap, iSlice)
-		if err != nil {
-			fmt.Println(err.Error())
-		}
-
-		orgunits = append(orgunits, ouVar)
-		ouKeys = append(ouKeys, ouKey)
-
-		count = count + 1
-	}
-
-	err = btchUpdateOrgUnits(ds, orgunits, ouKeys)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func btchUpdOUProcessJSON(ds *admin.Service, filePath string) error {
-	var (
-		ouKeys   []string
-		orgunits []*admin.OrgUnit
-	)
-
-	file, err := os.Open(filePath)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		jsonData := scanner.Text()
-
-		ouVar, ouKey, err := btchUpdJSONOrgUnit(ds, jsonData)
-		if err != nil {
-			return err
-		}
-
-		ouKeys = append(ouKeys, ouKey)
-		orgunits = append(orgunits, ouVar)
-	}
-	err = scanner.Err()
-	if err != nil {
-		return err
-	}
-
-	err = btchUpdateOrgUnits(ds, orgunits, ouKeys)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func btchUpdOUProcessSheet(ds *admin.Service, sheetID string) error {
-	var (
-		ouKeys   []string
-		orgunits []*admin.OrgUnit
-	)
-
-	if sheetRange == "" {
-		return errors.New("gmin: error - sheetrange must be provided")
-	}
-
-	ss, err := cmn.CreateSheetService(sheet.DriveReadonlyScope)
-	if err != nil {
-		return err
-	}
-
-	ssvgc := ss.Spreadsheets.Values.Get(sheetID, sheetRange)
-	sValRange, err := ssvgc.Do()
-	if err != nil {
-		return err
-	}
-
-	if len(sValRange.Values) == 0 {
-		return errors.New("gmin: error - no data found in sheet " + sheetID + " range: " + sheetRange)
-	}
-
-	hdrMap := cmn.ProcessHeader(sValRange.Values[0])
-	err = cmn.ValidateHeader(hdrMap, ous.OrgUnitAttrMap)
-	if err != nil {
-		return err
-	}
-
-	for idx, row := range sValRange.Values {
-		if idx == 0 {
-			continue
-		}
-
-		ouVar, ouKey, err := btchUpdProcessOrgUnit(hdrMap, row)
-		if err != nil {
-			return err
-		}
-
-		ouKeys = append(ouKeys, ouKey)
-		orgunits = append(orgunits, ouVar)
-	}
-
-	err = btchUpdateOrgUnits(ds, orgunits, ouKeys)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func btchUpdProcessOrgUnit(hdrMap map[int]string, ouData []interface{}) (*admin.OrgUnit, string, error) {
-	var (
-		orgunit *admin.OrgUnit
-		ouKey   string
-	)
-
-	orgunit = new(admin.OrgUnit)
-
-	for idx, attr := range ouData {
-		attrName := hdrMap[idx]
-
-		switch {
-		case attrName == "blockInheritance":
-			lwrAttr := strings.ToLower(fmt.Sprintf("%v", attr))
-			if lwrAttr == "true" {
-				orgunit.BlockInheritance = true
-			}
-			if lwrAttr == "false" {
-				orgunit.BlockInheritance = false
-				orgunit.ForceSendFields = append(orgunit.ForceSendFields, "BlockInheritance")
-			}
-		case attrName == "description":
-			desc := fmt.Sprintf("%v", attr)
-			orgunit.Description = desc
-			if desc == "" {
-				orgunit.ForceSendFields = append(orgunit.ForceSendFields, "Description")
-			}
-		case attrName == "name":
-			orgunit.Name = fmt.Sprintf("%v", attr)
-		case attrName == "parentOrgUnitPath":
-			orgunit.ParentOrgUnitPath = fmt.Sprintf("%v", attr)
-		case attrName == "ouKey":
-			ouKey = fmt.Sprintf("%v", attr)
-		}
-	}
-
-	return orgunit, ouKey, nil
 }
 
 func init() {
 	batchUpdateCmd.AddCommand(batchUpdOUCmd)
 
-	batchUpdOUCmd.Flags().StringVarP(&inputFile, "inputfile", "i", "", "filepath to orgunit data file or sheet id")
-	batchUpdOUCmd.Flags().StringVarP(&format, "format", "f", "json", "user data file format")
-	batchUpdOUCmd.Flags().StringVarP(&sheetRange, "sheetrange", "s", "", "user data gsheet range")
-
-	batchUpdOUCmd.MarkFlagRequired("inputfile")
+	batchUpdOUCmd.Flags().StringVarP(&inputFile, flgnm.FLG_INPUTFILE, "i", "", "filepath to orgunit data file or sheet id")
+	batchUpdOUCmd.Flags().StringVarP(&format, flgnm.FLG_FORMAT, "f", "json", "user data file format")
+	batchUpdOUCmd.Flags().StringVarP(&sheetRange, flgnm.FLG_SHEETRANGE, "s", "", "user data gsheet range")
 }

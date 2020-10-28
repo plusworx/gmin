@@ -26,6 +26,9 @@ import (
 	"fmt"
 
 	cmn "github.com/plusworx/gmin/utils/common"
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	lg "github.com/plusworx/gmin/utils/logging"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 )
@@ -34,16 +37,19 @@ var updateGroupCmd = &cobra.Command{
 	Use:     "group <group email address, alias or id>",
 	Aliases: []string{"grp"},
 
-	Args:  cobra.ExactArgs(1),
+	Args: cobra.ExactArgs(1),
+	Example: `gmin update group office@mycompany.com
+gmin upd grp 02502m921to3a9m -e newfinance@mycompany.com -n "New Finance" -d "New Finance Department"`,
 	Short: "Updates a group",
-	Long: `Updates a group .
-	
-	Examples:	gmin update group office@mycompany.com
-			gmin upd grp 02502m921to3a9m -e newfinance@mycompany.com -n "New Finance" -d "New Finance Department"`,
-	RunE: doUpdateGroup,
+	Long:  `Updates a group .`,
+	RunE:  doUpdateGroup,
 }
 
 func doUpdateGroup(cmd *cobra.Command, args []string) error {
+	lg.Debugw("starting doUpdateGroup()",
+		"args", args)
+	defer lg.Debug("finished doUpdateGroup()")
+
 	var (
 		group    *admin.Group
 		groupKey string
@@ -52,30 +58,48 @@ func doUpdateGroup(cmd *cobra.Command, args []string) error {
 	groupKey = args[0]
 	group = new(admin.Group)
 
-	if groupEmail != "" {
-		group.Email = groupEmail
+	flgEmailVal, err := cmd.Flags().GetString(flgnm.FLG_EMAIL)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+	if flgEmailVal != "" {
+		group.Email = flgEmailVal
 	}
 
-	if groupDesc != "" {
-		group.Description = groupDesc
+	flgDescriptionVal, err := cmd.Flags().GetString(flgnm.FLG_DESCRIPTION)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+	if flgDescriptionVal != "" {
+		group.Description = flgDescriptionVal
 	}
 
-	if groupName != "" {
-		group.Name = groupName
+	flgNameVal, err := cmd.Flags().GetString(flgnm.FLG_NAME)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+	if flgNameVal != "" {
+		group.Name = flgNameVal
 	}
 
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupScope)
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryGroupScope)
 	if err != nil {
 		return err
 	}
+	ds := srv.(*admin.Service)
 
 	guc := ds.Groups.Update(groupKey, group)
 	_, err = guc.Do()
 	if err != nil {
+		lg.Error(err)
 		return err
 	}
 
-	fmt.Println(cmn.GminMessage("**** gmin: group " + groupKey + " updated ****"))
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_GROUPUPDATED, groupKey)))
+	lg.Infof(gmess.INFO_GROUPUPDATED, groupKey)
 
 	return nil
 }
@@ -83,7 +107,7 @@ func doUpdateGroup(cmd *cobra.Command, args []string) error {
 func init() {
 	updateCmd.AddCommand(updateGroupCmd)
 
-	updateGroupCmd.Flags().StringVarP(&groupDesc, "description", "d", "", "group description")
-	updateGroupCmd.Flags().StringVarP(&groupEmail, "email", "e", "", "group email")
-	updateGroupCmd.Flags().StringVarP(&groupName, "name", "n", "", "group name")
+	updateGroupCmd.Flags().StringVarP(&groupDesc, flgnm.FLG_DESCRIPTION, "d", "", "group description")
+	updateGroupCmd.Flags().StringVarP(&groupEmail, flgnm.FLG_EMAIL, "e", "", "group email")
+	updateGroupCmd.Flags().StringVarP(&groupName, flgnm.FLG_NAME, "n", "", "group name")
 }

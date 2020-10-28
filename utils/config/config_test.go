@@ -24,10 +24,14 @@ package config
 
 import (
 	"testing"
+
+	tsts "github.com/plusworx/gmin/tests"
 )
 
 func TestReadConfigString(t *testing.T) {
-	expectedErr := "gmin: error - test not found in config file"
+	Logger = tsts.GetLogger()
+
+	expectedErr := "test not found in config"
 	_, err := ReadConfigString("test")
 
 	if err.Error() != expectedErr {

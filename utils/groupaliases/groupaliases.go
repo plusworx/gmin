@@ -27,15 +27,16 @@ import (
 	"sort"
 	"strings"
 
+	lg "github.com/plusworx/gmin/utils/logging"
 	admin "google.golang.org/api/admin/directory/v1"
 	"google.golang.org/api/googleapi"
 )
 
 const (
-	// EndField is List call attribute string terminator
-	EndField string = ")"
-	// StartAliasesField is List call attribute string prefix
-	StartAliasesField string = "aliases("
+	// ENDFIELD is List call attribute string terminator
+	ENDFIELD string = ")"
+	// STARTALIASESFIELD is List call attribute string prefix
+	STARTALIASESFIELD string = "aliases("
 )
 
 // GroupAliasAttrMap provides lowercase mappings to valid admin.Alias attributes
@@ -49,6 +50,10 @@ var GroupAliasAttrMap = map[string]string{
 
 // AddFields adds Fields to admin calls
 func AddFields(galc *admin.GroupsAliasesListCall, attrs string) *admin.GroupsAliasesListCall {
+	lg.Debugw("starting AddFields()",
+		"attrs", attrs)
+	defer lg.Debug("finished AddFields()")
+
 	var fields googleapi.Field = googleapi.Field(attrs)
 	var newGALC *admin.GroupsAliasesListCall
 
@@ -59,8 +64,12 @@ func AddFields(galc *admin.GroupsAliasesListCall, attrs string) *admin.GroupsAli
 
 // DoList calls the .Do() function on the admin.GroupsAliasesListCall
 func DoList(galc *admin.GroupsAliasesListCall) (*admin.Aliases, error) {
+	lg.Debug("starting DoList()")
+	defer lg.Debug("finished DoList()")
+
 	aliases, err := galc.Do()
 	if err != nil {
+		lg.Error(err)
 		return nil, err
 	}
 
@@ -69,6 +78,10 @@ func DoList(galc *admin.GroupsAliasesListCall) (*admin.Aliases, error) {
 
 // ShowAttrs displays requested group alias attributes
 func ShowAttrs(filter string) {
+	lg.Debugw("starting ShowAttrs()",
+		"filter", filter)
+	defer lg.Debug("finished ShowAttrs()")
+
 	keys := make([]string, 0, len(GroupAliasAttrMap))
 	for k := range GroupAliasAttrMap {
 		keys = append(keys, k)

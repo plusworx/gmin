@@ -26,6 +26,9 @@ import (
 	"fmt"
 
 	cmn "github.com/plusworx/gmin/utils/common"
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	lg "github.com/plusworx/gmin/utils/logging"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 )
@@ -34,41 +37,59 @@ var createGroupCmd = &cobra.Command{
 	Use:     "group <group email address>",
 	Aliases: []string{"grp"},
 	Args:    cobra.ExactArgs(1),
-	Short:   "Creates a group",
-	Long: `Creates a group.
-	
-	Examples:	gmin create group office@mycompany.com
-			gmin crt grp finance@mycompany.com -n Finance -d "Finance Department Group"`,
-	RunE: doCreateGroup,
+	Example: `gmin create group office@mycompany.com
+gmin crt grp finance@mycompany.com -n Finance -d "Finance Department Group"`,
+	Short: "Creates a group",
+	Long:  `Creates a group.`,
+	RunE:  doCreateGroup,
 }
 
 func doCreateGroup(cmd *cobra.Command, args []string) error {
+	lg.Debugw("starting doCreateGroup()",
+		"args", args)
+	defer lg.Debug("finished doCreateGroup()")
+
 	var group *admin.Group
 
 	group = new(admin.Group)
 
 	group.Email = args[0]
 
-	if groupDesc != "" {
-		group.Description = groupDesc
+	flgDescVal, err := cmd.Flags().GetString(flgnm.FLG_DESCRIPTION)
+	if err != nil {
+		lg.Error(err)
+		return err
 	}
 
-	if groupName != "" {
-		group.Name = groupName
+	if flgDescVal != "" {
+		group.Description = flgDescVal
 	}
 
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupScope)
+	flgNameVal, err := cmd.Flags().GetString(flgnm.FLG_NAME)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+
+	if flgNameVal != "" {
+		group.Name = flgNameVal
+	}
+
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryGroupScope)
 	if err != nil {
 		return err
 	}
+	ds := srv.(*admin.Service)
 
 	gic := ds.Groups.Insert(group)
 	newGroup, err := gic.Do()
 	if err != nil {
+		lg.Error(err)
 		return err
 	}
 
-	fmt.Println(cmn.GminMessage("**** gmin: user " + newGroup.Email + " created ****"))
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_GROUPCREATED, newGroup.Email)))
+	lg.Infof(gmess.INFO_GROUPCREATED, newGroup.Email)
 
 	return nil
 }
@@ -76,6 +97,6 @@ func doCreateGroup(cmd *cobra.Command, args []string) error {
 func init() {
 	createCmd.AddCommand(createGroupCmd)
 
-	createGroupCmd.Flags().StringVarP(&groupDesc, "description", "d", "", "group description")
-	createGroupCmd.Flags().StringVarP(&groupName, "name", "n", "", "group name")
+	createGroupCmd.Flags().StringVarP(&groupDesc, flgnm.FLG_DESCRIPTION, "d", "", "group description")
+	createGroupCmd.Flags().StringVarP(&groupName, flgnm.FLG_NAME, "n", "", "group name")
 }

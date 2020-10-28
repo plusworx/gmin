@@ -30,41 +30,54 @@ import (
 	cdevs "github.com/plusworx/gmin/utils/chromeosdevices"
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	gpars "github.com/plusworx/gmin/utils/gminparsers"
+	lg "github.com/plusworx/gmin/utils/logging"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 )
 
 var getCrOSDevCmd = &cobra.Command{
-	Use:     "chromeosdevice <device id>",
-	Aliases: []string{"crosdevice", "crosdev", "cdev"},
+	Use:     "chromeos-device <device id>",
+	Aliases: []string{"cros-device", "cros-dev", "cdev"},
 	Args:    cobra.ExactArgs(1),
-	Short:   "Outputs information about a ChromeOS device",
-	Long: `Outputs information about a ChromeOS device.
-	
-	Examples:	gmin get chromeosdevice 5ad9ae43-5996-394e-9c39-12d45a8f10e8
-			gmin get cdev 5ad9ae43-5996-394e-9c39-12d45a8f10e8 -a serialnumber`,
-	RunE: doGetCrOSDev,
+	Example: `gmin get chromeos-device 5ad9ae43-5996-394e-9c39-12d45a8f10e8
+gmin get cdev 5ad9ae43-5996-394e-9c39-12d45a8f10e8 -a serialnumber`,
+	Short: "Outputs information about a ChromeOS device",
+	Long:  `Outputs information about a ChromeOS device.`,
+	RunE:  doGetCrOSDev,
 }
 
 func doGetCrOSDev(cmd *cobra.Command, args []string) error {
+	lg.Debugw("starting doGetCrOSDev()",
+		"args", args)
+	defer lg.Debug("finished doGetCrOSDev()")
+
 	var (
 		jsonData []byte
 		crosdev  *admin.ChromeOsDevice
 	)
 
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryDeviceChromeosReadonlyScope)
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryDeviceChromeosReadonlyScope)
 	if err != nil {
 		return err
 	}
+	ds := srv.(*admin.Service)
 
-	customerID, err := cfg.ReadConfigString("customerid")
+	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {
 		return err
 	}
 	cdgc := ds.Chromeosdevices.Get(customerID, args[0])
 
-	if attrs != "" {
-		formattedAttrs, err := cmn.ParseOutputAttrs(attrs, cdevs.CrOSDevAttrMap)
+	flgAttrsVal, err := cmd.Flags().GetString(flgnm.FLG_ATTRIBUTES)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+	if flgAttrsVal != "" {
+		formattedAttrs, err := gpars.ParseOutputAttrs(flgAttrsVal, cdevs.CrOSDevAttrMap)
 		if err != nil {
 			return err
 		}
@@ -73,11 +86,18 @@ func doGetCrOSDev(cmd *cobra.Command, args []string) error {
 		cdgc = getCall.(*admin.ChromeosdevicesGetCall)
 	}
 
-	if projection != "" {
-		proj := strings.ToLower(projection)
+	flgProjectionVal, err := cmd.Flags().GetString(flgnm.FLG_PROJECTION)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+	if flgProjectionVal != "" {
+		proj := strings.ToLower(flgProjectionVal)
 		ok := cmn.SliceContainsStr(cdevs.ValidProjections, proj)
 		if !ok {
-			return fmt.Errorf("gmin: error - %v is not a valid projection type", projection)
+			err = fmt.Errorf(gmess.ERR_INVALIDPROJECTIONTYPE, flgProjectionVal)
+			lg.Error(err)
+			return err
 		}
 
 		getCall := cdevs.AddProjection(cdgc, proj)
@@ -91,6 +111,7 @@ func doGetCrOSDev(cmd *cobra.Command, args []string) error {
 
 	jsonData, err = json.MarshalIndent(crosdev, "", "    ")
 	if err != nil {
+		lg.Error(err)
 		return err
 	}
 
@@ -102,6 +123,6 @@ func doGetCrOSDev(cmd *cobra.Command, args []string) error {
 func init() {
 	getCmd.AddCommand(getCrOSDevCmd)
 
-	getCrOSDevCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required device attributes (separated by ~)")
-	getCrOSDevCmd.Flags().StringVarP(&projection, "projection", "j", "", "type of projection")
+	getCrOSDevCmd.Flags().StringVarP(&attrs, flgnm.FLG_ATTRIBUTES, "a", "", "required device attributes (separated by ~)")
+	getCrOSDevCmd.Flags().StringVarP(&projection, flgnm.FLG_PROJECTION, "j", "", "type of projection")
 }

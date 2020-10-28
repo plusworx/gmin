@@ -26,6 +26,7 @@ import (
 	"testing"
 
 	tsts "github.com/plusworx/gmin/tests"
+	lg "github.com/plusworx/gmin/utils/logging"
 	admin "google.golang.org/api/admin/directory/v1"
 )
 
@@ -37,6 +38,9 @@ func TestAddFields(t *testing.T) {
 			fields: "email,role,status",
 		},
 	}
+
+	tsts.InitConfig()
+	lg.InitLogging("info")
 
 	ds, err := tsts.DummyDirectoryService(admin.AdminDirectoryGroupMemberReadonlyScope)
 	if err != nil {
@@ -64,6 +68,9 @@ func TestAddPageToken(t *testing.T) {
 		},
 	}
 
+	tsts.InitConfig()
+	lg.InitLogging("info")
+
 	ds, err := tsts.DummyDirectoryService(admin.AdminDirectoryGroupMemberReadonlyScope)
 	if err != nil {
 		t.Error("Error: failed to create dummy admin.Service")
@@ -89,6 +96,9 @@ func TestAddMaxResults(t *testing.T) {
 			maxResults: 150,
 		},
 	}
+
+	tsts.InitConfig()
+	lg.InitLogging("info")
 
 	ds, err := tsts.DummyDirectoryService(admin.AdminDirectoryGroupMemberReadonlyScope)
 	if err != nil {
@@ -120,10 +130,13 @@ func TestValidateDeliverySetting(t *testing.T) {
 		},
 		{
 			delSetting:      "Unknown",
-			expectedErr:     "gmin: error - Unknown is not a valid delivery setting",
+			expectedErr:     "invalid delivery setting: Unknown",
 			expectedSetting: "",
 		},
 	}
+
+	tsts.InitConfig()
+	lg.InitLogging("info")
 
 	for _, c := range cases {
 		output, err := ValidateDeliverySetting(c.delSetting)
@@ -154,10 +167,13 @@ func TestValidateRole(t *testing.T) {
 		},
 		{
 			role:         "Unknown",
-			expectedErr:  "gmin: error - Unknown is not a valid role",
+			expectedErr:  "invalid role: Unknown",
 			expectedRole: "",
 		},
 	}
+
+	tsts.InitConfig()
+	lg.InitLogging("info")
 
 	for _, c := range cases {
 		output, err := ValidateRole(c.role)

@@ -29,6 +29,10 @@ import (
 
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	gpars "github.com/plusworx/gmin/utils/gminparsers"
+	lg "github.com/plusworx/gmin/utils/logging"
 	ous "github.com/plusworx/gmin/utils/orgunits"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
@@ -38,55 +42,75 @@ var listOUsCmd = &cobra.Command{
 	Use:     "orgunits",
 	Aliases: []string{"orgunit", "ou", "ous"},
 	Args:    cobra.NoArgs,
-	Short:   "Outputs a list of orgunits",
-	Long: `Outputs a list of orgunits.
-	
-	Examples:	gmin list orgunits -a description~orgunitpath
-			gmin ls ous -t all`,
-	RunE: doListOUs,
+	Example: `gmin list orgunits -a description~orgunitpath
+gmin ls ous -t all`,
+	Short: "Outputs a list of orgunits",
+	Long:  `Outputs a list of orgunits.`,
+	RunE:  doListOUs,
 }
 
 func doListOUs(cmd *cobra.Command, args []string) error {
+	lg.Debugw("starting doListOUs()",
+		"args", args)
+	defer lg.Debug("finished doListOUs()")
+
 	var (
 		jsonData []byte
 		orgUnits *admin.OrgUnits
 	)
 
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryOrgunitReadonlyScope)
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryOrgunitReadonlyScope)
 	if err != nil {
 		return err
 	}
+	ds := srv.(*admin.Service)
 
-	customerID, err := cfg.ReadConfigString("customerid")
+	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {
 		return err
 	}
 
 	oulc := ds.Orgunits.List(customerID)
 
-	if attrs != "" {
-		listAttrs, err := cmn.ParseOutputAttrs(attrs, ous.OrgUnitAttrMap)
+	flgAttrsVal, err := cmd.Flags().GetString(flgnm.FLG_ATTRIBUTES)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+	if flgAttrsVal != "" {
+		listAttrs, err := gpars.ParseOutputAttrs(flgAttrsVal, ous.OrgUnitAttrMap)
 		if err != nil {
 			return err
 		}
-		formattedAttrs := ous.StartOrgUnitsField + listAttrs + ous.EndField
+		formattedAttrs := ous.STARTORGUNITSFIELD + listAttrs + ous.ENDFIELD
 
 		listCall := ous.AddFields(oulc, formattedAttrs)
 		oulc = listCall.(*admin.OrgunitsListCall)
 	}
 
-	if orgUnit != "" {
-		oulc = ous.AddOUPath(oulc, orgUnit)
-	}
-
-	searchType = strings.ToLower(searchType)
-
-	ok := cmn.SliceContainsStr(ous.ValidSearchTypes, searchType)
-	if !ok {
-		err := fmt.Errorf("gmin: error - %v is not a valid OrgunitsListCall type", searchType)
+	flgOUPathVal, err := cmd.Flags().GetString(flgnm.FLG_ORGUNITPATH)
+	if err != nil {
+		lg.Error(err)
 		return err
 	}
-	oulc = ous.AddType(oulc, searchType)
+	if flgOUPathVal != "" {
+		oulc = ous.AddOUPath(oulc, flgOUPathVal)
+	}
+
+	flgSearchTypeVal, err := cmd.Flags().GetString(flgnm.FLG_SEARCHTYPE)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+	lowerSearchType := strings.ToLower(flgSearchTypeVal)
+
+	ok := cmn.SliceContainsStr(ous.ValidSearchTypes, lowerSearchType)
+	if !ok {
+		err := fmt.Errorf(gmess.ERR_INVALIDSEARCHTYPE, flgSearchTypeVal)
+		lg.Error(err)
+		return err
+	}
+	oulc = ous.AddType(oulc, lowerSearchType)
 
 	orgUnits, err = ous.DoList(oulc)
 	if err != nil {
@@ -95,10 +119,16 @@ func doListOUs(cmd *cobra.Command, args []string) error {
 
 	jsonData, err = json.MarshalIndent(orgUnits, "", "    ")
 	if err != nil {
+		lg.Error(err)
 		return err
 	}
 
-	if count {
+	flgCountVal, err := cmd.Flags().GetBool(flgnm.FLG_COUNT)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+	if flgCountVal {
 		fmt.Println(len(orgUnits.OrganizationUnits))
 	} else {
 		fmt.Println(string(jsonData))
@@ -110,8 +140,8 @@ func doListOUs(cmd *cobra.Command, args []string) error {
 func init() {
 	listCmd.AddCommand(listOUsCmd)
 
-	listOUsCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required orgunit attributes separated by (~)")
-	listOUsCmd.Flags().BoolVarP(&count, "count", "", false, "count number of entities returned")
-	listOUsCmd.Flags().StringVarP(&orgUnit, "orgunitpath", "o", "", "orgunitpath or id of starting orgunit")
-	listOUsCmd.Flags().StringVarP(&searchType, "type", "t", "children", "all sub-organizational units or only immediate children")
+	listOUsCmd.Flags().StringVarP(&attrs, flgnm.FLG_ATTRIBUTES, "a", "", "required orgunit attributes separated by (~)")
+	listOUsCmd.Flags().BoolVarP(&count, flgnm.FLG_COUNT, "", false, "count number of entities returned")
+	listOUsCmd.Flags().StringVarP(&orgUnit, flgnm.FLG_ORGUNITPATH, "o", "", "orgunitpath or id of starting orgunit")
+	listOUsCmd.Flags().StringVarP(&searchType, flgnm.FLG_SEARCHTYPE, "t", "children", "all sub-organizational units or only immediate children")
 }

@@ -27,6 +27,9 @@ import (
 
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	lg "github.com/plusworx/gmin/utils/logging"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 )
@@ -35,41 +38,62 @@ var createOUCmd = &cobra.Command{
 	Use:     "orgunit <orgunit name>",
 	Aliases: []string{"ou"},
 	Args:    cobra.ExactArgs(1),
-	Short:   "Creates an orgunit",
-	Long: `Creates an orgunit.
-	
-	Examples:	gmin create orgunit Sales -d "Sales Department"
-			gmin crt ou Finance -d "Finance Department"`,
-	RunE: doCreateOU,
+	Example: `gmin create orgunit Sales -d "Sales Department"
+gmin crt ou Finance -d "Finance Department"`,
+	Short: "Creates an orgunit",
+	Long:  `Creates an orgunit.`,
+	RunE:  doCreateOU,
 }
 
 func doCreateOU(cmd *cobra.Command, args []string) error {
+	lg.Debugw("starting doCreateOU()",
+		"args", args)
+	defer lg.Debug("finished doCreateOU()")
+
 	var orgunit *admin.OrgUnit
 
 	orgunit = new(admin.OrgUnit)
 
 	orgunit.Name = args[0]
 
-	if blockInherit {
+	flgBlkInheritVal, err := cmd.Flags().GetBool(flgnm.FLG_BLOCKINHERIT)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+
+	if flgBlkInheritVal {
 		orgunit.BlockInheritance = true
 	}
 
-	if orgUnitDesc != "" {
-		orgunit.Description = orgUnitDesc
+	flgDescVal, err := cmd.Flags().GetString(flgnm.FLG_DESCRIPTION)
+	if err != nil {
+		lg.Error(err)
+		return err
 	}
 
-	if parentOUPath != "" {
-		orgunit.ParentOrgUnitPath = parentOUPath
+	if flgDescVal != "" {
+		orgunit.Description = flgDescVal
+	}
+
+	flgParPthVal, err := cmd.Flags().GetString(flgnm.FLG_PARENTPATH)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+	if flgParPthVal != "" {
+		orgunit.ParentOrgUnitPath = flgParPthVal
 	} else {
 		orgunit.ParentOrgUnitPath = "/"
 	}
 
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryOrgunitScope)
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryOrgunitScope)
 	if err != nil {
 		return err
 	}
+	ds := srv.(*admin.Service)
 
-	customerID, err := cfg.ReadConfigString("customerid")
+	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {
 		return err
 	}
@@ -77,10 +101,12 @@ func doCreateOU(cmd *cobra.Command, args []string) error {
 	ouic := ds.Orgunits.Insert(customerID, orgunit)
 	newOrgUnit, err := ouic.Do()
 	if err != nil {
+		lg.Error(err)
 		return err
 	}
 
-	fmt.Println(cmn.GminMessage("**** gmin: orgunit " + newOrgUnit.OrgUnitPath + " created ****"))
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_OUCREATED, newOrgUnit.OrgUnitPath)))
+	lg.Infof(gmess.INFO_OUCREATED, newOrgUnit.OrgUnitPath)
 
 	return nil
 }
@@ -88,7 +114,7 @@ func doCreateOU(cmd *cobra.Command, args []string) error {
 func init() {
 	createCmd.AddCommand(createOUCmd)
 
-	createOUCmd.Flags().BoolVarP(&blockInherit, "blockinherit", "b", false, "block orgunit policy inheritance")
-	createOUCmd.Flags().StringVarP(&orgUnitDesc, "description", "d", "", "orgunit description")
-	createOUCmd.Flags().StringVarP(&parentOUPath, "parentpath", "p", "", "orgunit parent path")
+	createOUCmd.Flags().BoolVarP(&blockInherit, flgnm.FLG_BLOCKINHERIT, "b", false, "block orgunit policy inheritance")
+	createOUCmd.Flags().StringVarP(&orgUnitDesc, flgnm.FLG_DESCRIPTION, "d", "", "orgunit description")
+	createOUCmd.Flags().StringVarP(&parentOUPath, flgnm.FLG_PARENTPATH, "p", "", "orgunit parent path")
 }

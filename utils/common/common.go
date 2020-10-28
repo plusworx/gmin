@@ -24,87 +24,70 @@ package common
 
 import (
 	"bufio"
-	"bytes"
 	"context"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"os"
+	"os/user"
 	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
-	"unicode"
-
-	"crypto/sha1"
 
 	cfg "github.com/plusworx/gmin/utils/config"
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	"go.uber.org/zap"
+	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	admin "google.golang.org/api/admin/directory/v1"
 	"google.golang.org/api/googleapi"
+	gset "google.golang.org/api/groupssettings/v1"
 	"google.golang.org/api/option"
 	sheet "google.golang.org/api/sheets/v4"
 )
 
 const (
-	// HashFunction specifies password hash function
-	HashFunction string = "SHA-1"
+	// Call Types
+
+	CALLTYPECREATE = iota
+	CALLTYPEDELETE
+	CALLTYPEMANAGE
+	CALLTYPEMOVE
+	CALLTYPEUNDELETE
+	CALLTYPEUPDATE
+)
+const (
+	// Object Types
+
+	OBJTYPECROSDEV = iota
+	OBJTYPEGROUP
+	OBJTYPEGRPSET
+	OBJTYPEMEMBER
+	OBJTYPEMOBDEV
+	OBJTYPEORGUNIT
+	OBJTYPEUSER
+)
+const (
+	// Service Types
+
+	// SRVTYPEADMIN is used to request admin service
+	SRVTYPEADMIN = iota
+	// SRVTYPEGRPSETTING is used to request sheet service
+	SRVTYPEGRPSETTING
+	// SRVTYPESHEET is used to request sheet service
+	SRVTYPESHEET
 )
 
 const (
-	// Special tokens
-
-	// ILLEGAL is an illegal character
-	ILLEGAL Token = iota
-	// EOS is end of string
-	EOS
-	// WS is whitespace
-	WS
-
-	// Literals
-
-	//IDENT is field name
-	IDENT
-
-	// Misc characters
-
-	// ASTERISK IS *
-	ASTERISK
-	// BSLASH is \
-	BSLASH
-	// CLOSEBRACK is )
-	CLOSEBRACK
-	// CLOSESQBRACK is ]
-	CLOSESQBRACK
-	// COLON is :
-	COLON
-	// COMMA is ,
-	COMMA
-	// EQUALS is =
-	EQUALS
-	// FSLASH is /
-	FSLASH
-	// GT is >
-	GT
-	// LT is <
-	LT
-	// OP is an operator
-	OP
-	// OPENBRACK is (
-	OPENBRACK
-	// OPENSQBRACK is [
-	OPENSQBRACK
-	// SINGLEQUOTE is '
-	SINGLEQUOTE
-	// TILDE is ~
-	TILDE
-	// UNDERSCORE is _
-	UNDERSCORE
-	// VALUE is query or input attribute value
-	VALUE
+	// QUIT is used for terminating commands
+	QUIT int = 99
+	// TIMEFORMAT is used to format timestamp
+	TIMEFORMAT string = "2006-01-02T15:04:05Z0700"
 )
 
 // EmptyValues is struct used to extract ForceSendFields from JSON
@@ -112,414 +95,28 @@ type EmptyValues struct {
 	ForceSendFields []string
 }
 
-// OutputAttrStr is a struct to hold list of output attribute string parts
-type OutputAttrStr struct {
-	Fields []string
+var globalFlagValues = []string{
+	"loglevel",
 }
 
-// QueryStr is a struct to hold list of query string parts
-type QueryStr struct {
-	Parts []string
-}
-
-// OutputAttrParser represents a parser of get and list attribute strings
-type OutputAttrParser struct {
-	oas *OutputAttrScanner
-}
-
-// Parse is the entry point for the parser
-func (oap *OutputAttrParser) Parse(attrMap map[string]string) (*OutputAttrStr, error) {
-	attrStr := &OutputAttrStr{}
-
-	for {
-		tok, lit := oap.scanIgnoreWhitespace()
-		if tok == EOS {
-			break
-		}
-
-		if tok != IDENT && tok != ASTERISK && tok != OPENBRACK && tok != CLOSEBRACK &&
-			tok != COMMA && tok != FSLASH && tok != TILDE {
-			return nil, fmt.Errorf("gmin: unexpected character %q found in attribute string", lit)
-		}
-
-		if tok == IDENT && oap.oas.bCustomSchema == false {
-			lowerLit := strings.ToLower(lit)
-			validAttr := attrMap[lowerLit]
-			if validAttr == "" {
-				err := fmt.Errorf("gmin: error - attribute %v is unrecognized", lit)
-				return nil, err
-			}
-			lit = validAttr
-			if validAttr == "customSchemas" {
-				oap.oas.bCustomSchema = true
-			}
-		}
-
-		if tok == TILDE {
-			lit = ","
-			oap.oas.bCustomSchema = false
-		}
-
-		attrStr.Fields = append(attrStr.Fields, lit)
-	}
-	return attrStr, nil
-}
-
-// scan returns the next token from the underlying OutputAttrScanner
-func (oap *OutputAttrParser) scan() (tok Token, lit string) {
-	// read the next token from the scanner
-	tok, lit = oap.oas.Scan()
-
-	return tok, lit
-}
-
-// scanIgnoreWhitespace scans the next non-whitespace token
-func (oap *OutputAttrParser) scanIgnoreWhitespace() (tok Token, lit string) {
-	tok, lit = oap.scan()
-	if tok == WS {
-		tok, lit = oap.scan()
-	}
-	return tok, lit
-}
-
-// OutputAttrScanner represents a lexical scanner for get and list attribute strings
-type OutputAttrScanner struct {
-	bCustomSchema bool
-	s             *Scanner
-}
-
-// Scan returns the next token and literal value from OutputAttrScanner
-func (oas *OutputAttrScanner) Scan() (tok Token, lit string) {
-	// Read the next rune
-	ch := oas.s.read()
-
-	// If we see whitespace then consume all contiguous whitespace
-	// If we see a letter then consume as an ident
-	if unicode.IsSpace(ch) {
-		oas.s.unread()
-		return oas.s.scanWhitespace()
-	} else if unicode.IsLetter(ch) || ch == underscore {
-		oas.s.unread()
-		return oas.s.scanIdent()
-	}
-
-	// Otherwise read the individual character
-	switch ch {
-	case eos:
-		return EOS, ""
-	case '*':
-		return ASTERISK, string(ch)
-	case ')':
-		return CLOSEBRACK, string(ch)
-	case ',':
-		return COMMA, string(ch)
-	case '/':
-		return FSLASH, string(ch)
-	case '(':
-		return OPENBRACK, string(ch)
-	case '~':
-		return TILDE, string(ch)
-	case '_':
-		return UNDERSCORE, string(ch)
-	}
-
-	return ILLEGAL, string(ch)
-}
-
-// QueryParser represents a parser of query strings
-type QueryParser struct {
-	qs *QueryScanner
-}
-
-// scan returns the next token from the underlying QueryScanner
-func (qp *QueryParser) scan() (tok Token, lit string) {
-	// read the next token from the scanner
-	tok, lit = qp.qs.Scan()
-
-	return tok, lit
-}
-
-// scanIgnoreWhitespace scans the next non-whitespace token for QueryParser
-func (qp *QueryParser) scanIgnoreWhitespace() (tok Token, lit string) {
-	tok, lit = qp.scan()
-	if tok == WS {
-		tok, lit = qp.scan()
-	}
-	return tok, lit
-}
-
-// Parse is the entry point for the QueryParser
-func (qp *QueryParser) Parse(qAttrMap map[string]string) (*QueryStr, error) {
-	qStr := &QueryStr{}
-	qp.qs.bConFieldName = true
-
-	for {
-		tok, lit := qp.scan()
-		if tok == EOS {
-			break
-		}
-
-		if tok != ASTERISK && tok != BSLASH && tok != COLON && tok != COMMA && tok != CLOSEBRACK &&
-			tok != CLOSESQBRACK && tok != FSLASH && tok != GT && tok != EQUALS && tok != IDENT && tok != LT &&
-			tok != OP && tok != OPENBRACK && tok != OPENSQBRACK && tok != TILDE && tok != VALUE {
-			return nil, fmt.Errorf("gmin: unexpected character %q found in query string", lit)
-		}
-
-		if tok == IDENT && !strings.Contains(lit, ".") {
-			lowerLit := strings.ToLower(lit)
-			validAttr := qAttrMap[lowerLit]
-			if validAttr == "" {
-				err := fmt.Errorf("gmin: error - query attribute %v is unrecognized", lit)
-				return nil, err
-			}
-			lit = validAttr
-		}
-
-		if tok == VALUE {
-			lowerLit := strings.ToLower(lit)
-			if lowerLit == "true" || lowerLit == "false" {
-				lit = lowerLit
-			}
-		}
-
-		if tok == TILDE {
-			lit = " "
-			qp.qs.bConFieldName = true
-		}
-
-		qStr.Parts = append(qStr.Parts, lit)
-	}
-	return qStr, nil
-}
-
-// QueryScanner represents a lexical scanner for query strings
-type QueryScanner struct {
-	bConFieldName bool
-	bConOperator  bool
-	bConValue     bool
-	s             *Scanner
-}
-
-// Scan returns the next token and literal value from QueryScanner
-func (qs *QueryScanner) Scan() (tok Token, lit string) {
-	// Read the next rune
-	ch := qs.s.read()
-
-	if qs.bConFieldName {
-		// If we see whitespace then consume all contiguous whitespace
-		// If we see a letter then consume as an ident
-		if unicode.IsSpace(ch) {
-			qs.s.unread()
-			return qs.s.scanWhitespace()
-		} else if unicode.IsLetter(ch) || ch == underscore {
-			qs.s.unread()
-			tok, lit := qs.scanIdent()
-			qs.bConFieldName = false
-			qs.bConOperator = true
-			return tok, lit
-		}
-	}
-
-	if qs.bConOperator {
-		qs.s.unread()
-		tok, lit := qs.scanOperator()
-		qs.bConOperator = false
-		qs.bConValue = true
-		return tok, lit
-	}
-
-	if qs.bConValue {
-		qs.s.unread()
-		tok, lit := qs.scanValue()
-		qs.bConValue = false
-		return tok, lit
-	}
-
-	// Otherwise read the individual character
-	switch ch {
-	case eos:
-		return EOS, ""
-	case '*':
-		return ASTERISK, string(ch)
-	case '\\':
-		return BSLASH, string(ch)
-	case ')':
-		return CLOSEBRACK, string(ch)
-	case ']':
-		return CLOSESQBRACK, string(ch)
-	case ':':
-		return COLON, string(ch)
-	case ',':
-		return COMMA, string(ch)
-	case '=':
-		return EQUALS, string(ch)
-	case '/':
-		return FSLASH, string(ch)
-	case '>':
-		return GT, string(ch)
-	case '<':
-		return LT, string(ch)
-	case '(':
-		return OPENBRACK, string(ch)
-	case '[':
-		return OPENSQBRACK, string(ch)
-	case '\'':
-		return SINGLEQUOTE, string(ch)
-	case '~':
-		return TILDE, string(ch)
-	}
-
-	return ILLEGAL, string(ch)
-}
-
-// scanIdent consumes the current rune and all contiguous ident runes for QueryScanner
-func (qs *QueryScanner) scanIdent() (tok Token, lit string) {
-	// Create a buffer and read the current character into it
-	var buf bytes.Buffer
-	buf.WriteRune(qs.s.read())
-
-	// Read every subsequent ident character into the buffer
-	// Non-ident characters and EOS will cause the loop to exit
-	for {
-		if ch := qs.s.read(); ch == eos {
-			break
-		} else if !unicode.IsLetter(ch) && !unicode.IsDigit(ch) && ch != '.' && ch != underscore {
-			qs.s.unread()
-			break
-		} else {
-			_, _ = buf.WriteRune(ch)
-		}
-	}
-
-	// Otherwise return as a regular identifier
-	return IDENT, buf.String()
-}
-
-// scanOperator consumes the current rune and all contiguous operator runes
-func (qs *QueryScanner) scanOperator() (tok Token, lit string) {
-	// Create a buffer and read the current character into it
-	var buf bytes.Buffer
-	buf.WriteRune(qs.s.read())
-
-	// Read every subsequent operator character into the buffer
-	// Non-operator characters and EOS will cause the loop to exit
-	for {
-		if ch := qs.s.read(); ch == eos {
-			break
-		} else if !isOperator(ch) {
-			qs.s.unread()
-			break
-		} else {
-			_, _ = buf.WriteRune(ch)
-		}
-	}
-
-	// Otherwise return as an operator
-	return OP, buf.String()
-}
-
-// scanValue consumes the current rune and all contiguous value runes
-func (qs *QueryScanner) scanValue() (tok Token, lit string) {
-	// Create a buffer and read the current character into it
-	var buf bytes.Buffer
-	buf.WriteRune(qs.s.read())
-
-	// Read every subsequent value character into the buffer
-	// Tilde character and EOS will cause the loop to exit
-	for {
-		if ch := qs.s.read(); ch == eos {
-			break
-		} else if ch == tilde {
-			qs.s.unread()
-			break
-		} else {
-			_, _ = buf.WriteRune(ch)
-		}
-	}
-
-	// Otherwise return as a value
-	return VALUE, buf.String()
-}
-
-// Scanner represents a lexical scanner
-type Scanner struct {
-	strbuf *bytes.Buffer
-}
-
-// read reads the next rune from the string
-func (s *Scanner) read() rune {
-	ch, _, err := s.strbuf.ReadRune()
-	if err != nil {
-		return eos
-	}
-	return ch
-}
-
-// scanIdent consumes the current rune and all contiguous ident runes
-func (s *Scanner) scanIdent() (tok Token, lit string) {
-	// Create a buffer and read the current character into it
-	var buf bytes.Buffer
-	buf.WriteRune(s.read())
-
-	// Read every subsequent ident character into the buffer
-	// Non-ident characters and EOS will cause the loop to exit
-	for {
-		if ch := s.read(); ch == eos {
-			break
-		} else if !unicode.IsLetter(ch) && !unicode.IsDigit(ch) && ch != underscore {
-			s.unread()
-			break
-		} else {
-			_, _ = buf.WriteRune(ch)
-		}
-	}
-
-	// Otherwise return as a regular identifier
-	return IDENT, buf.String()
-}
-
-// scanWhitespace consumes the current rune and all contiguous whitespace
-func (s *Scanner) scanWhitespace() (tok Token, lit string) {
-	// Create a buffer and read the current character into it
-	var buf bytes.Buffer
-	buf.WriteRune(s.read())
-
-	// Read every subsequent whitespace character into the buffer
-	// Non-whitespace characters and EOS will cause the loop to exit
-	for {
-		if ch := s.read(); ch == eos {
-			break
-		} else if !unicode.IsSpace(ch) {
-			s.unread()
-			break
-		} else {
-			buf.WriteRune(ch)
-		}
-	}
-
-	return WS, buf.String()
-}
-
-// unread places the previously read rune back on the reader
-func (s *Scanner) unread() { _ = s.strbuf.UnreadRune() }
-
-// Token represents a lexical token.
-type Token int
-
-// eos is end of string rune
-var eos = rune(0)
-
-// tilde is tilde rune
-var tilde = '~'
-
-// underscore is underscore rune
-var underscore = '_'
+// Logger passed from logging package
+var Logger *zap.SugaredLogger
 
 // ValidFileFormats provides valid file format strings
 var ValidFileFormats = []string{
 	"csv",
 	"gsheet",
 	"json",
+	"text",
+	"txt",
+}
+
+// validLogLevels provides valid log level strings
+var validLogLevels = []string{
+	"debug",
+	"error",
+	"info",
+	"warn",
 }
 
 // ValidSortOrders provides valid sort order strings
@@ -533,12 +130,17 @@ var ValidSortOrders = map[string]string{
 // ValidPrimaryShowArgs holds valid primary arguments for the show command
 var ValidPrimaryShowArgs = []string{
 	"cdev",
-	"chromeosdevice",
-	"crosdev",
-	"crosdevice",
+	"chromeos-device",
+	"cros-dev",
+	"cros-device",
 	"group",
 	"grp",
 	"group-alias",
+	"group-settings",
+	"grp-settings",
+	"grp-set",
+	"gsettings",
+	"gset",
 	"grp-alias",
 	"galias",
 	"ga",
@@ -548,9 +150,9 @@ var ValidPrimaryShowArgs = []string{
 	"gmember",
 	"gmem",
 	"mdev",
-	"mobdev",
-	"mobdevice",
-	"mobiledevice",
+	"mob-dev",
+	"mob-device",
+	"mobile-device",
 	"orgunit",
 	"ou",
 	"schema",
@@ -559,82 +161,56 @@ var ValidPrimaryShowArgs = []string{
 	"ualias",
 	"user",
 	"user-alias",
+	"usr",
 }
 
-// CreateDirectoryService function creates and returns Admin Service object
-func CreateDirectoryService(scope ...string) (*admin.Service, error) {
-	adminEmail, err := cfg.ReadConfigString("administrator")
+// CreateService function creates and returns a service object
+func CreateService(serviceType int, scope ...string) (interface{}, error) {
+	var srv interface{}
+
+	ctx, ts, err := oauthSetup(scope)
 	if err != nil {
 		return nil, err
 	}
 
-	credentialPath, err := cfg.ReadConfigString("credentialpath")
-	if err != nil {
-		return nil, err
+	// Admin service
+	if serviceType == SRVTYPEADMIN {
+		srv, err = admin.NewService(ctx, option.WithTokenSource(ts))
+		if err != nil {
+			err = fmt.Errorf(gmess.ERR_CREATEDIRECTORYSERVICE, err)
+			Logger.Error(err)
+			return nil, err
+		}
 	}
 
-	ctx := context.Background()
-
-	ServiceAccountFilePath := filepath.Join(filepath.ToSlash(credentialPath), cfg.CredentialFile)
-
-	jsonCredentials, err := ioutil.ReadFile(ServiceAccountFilePath)
-	if err != nil {
-		return nil, err
+	// Group Setting service
+	if serviceType == SRVTYPEGRPSETTING {
+		srv, err = gset.NewService(ctx, option.WithTokenSource(ts))
+		if err != nil {
+			err = fmt.Errorf(gmess.ERR_CREATEGRPSETTINGSERVICE, err)
+			Logger.Error(err)
+			return nil, err
+		}
 	}
 
-	config, err := google.JWTConfigFromJSON(jsonCredentials, scope...)
-	if err != nil {
-		return nil, fmt.Errorf("JWTConfigFromJSON: %v", err)
-	}
-	config.Subject = adminEmail
-
-	ts := config.TokenSource(ctx)
-
-	srv, err := admin.NewService(ctx, option.WithTokenSource(ts))
-	if err != nil {
-		return nil, fmt.Errorf("NewService: %v", err)
-	}
-	return srv, nil
-}
-
-// CreateSheetService function creates and returns Sheet Service object
-func CreateSheetService(scope ...string) (*sheet.Service, error) {
-	adminEmail, err := cfg.ReadConfigString("administrator")
-	if err != nil {
-		return nil, err
+	// Sheet service
+	if serviceType == SRVTYPESHEET {
+		srv, err = sheet.NewService(ctx, option.WithTokenSource(ts))
+		if err != nil {
+			err = fmt.Errorf(gmess.ERR_CREATESHEETSERVICE, err)
+			Logger.Error(err)
+			return nil, err
+		}
 	}
 
-	credentialPath, err := cfg.ReadConfigString("credentialpath")
-	if err != nil {
-		return nil, err
-	}
-
-	ctx := context.Background()
-
-	ServiceAccountFilePath := filepath.Join(filepath.ToSlash(credentialPath), cfg.CredentialFile)
-
-	jsonCredentials, err := ioutil.ReadFile(ServiceAccountFilePath)
-	if err != nil {
-		return nil, err
-	}
-
-	config, err := google.JWTConfigFromJSON(jsonCredentials, scope...)
-	if err != nil {
-		return nil, fmt.Errorf("JWTConfigFromJSON: %v", err)
-	}
-	config.Subject = adminEmail
-
-	ts := config.TokenSource(ctx)
-
-	srv, err := sheet.NewService(ctx, option.WithTokenSource(ts))
-	if err != nil {
-		return nil, fmt.Errorf("NewService: %v", err)
-	}
 	return srv, nil
 }
 
 // deDupeStrSlice gets rid of duplicate values in a slice
 func deDupeStrSlice(strSlice []string) []string {
+	Logger.Debugw("starting deDupeStrSlice()",
+		"strSlice", strSlice)
+	defer Logger.Debug("finished deDupeStrSlice()")
 
 	check := make(map[string]int)
 	res := make([]string, 0)
@@ -642,45 +218,52 @@ func deDupeStrSlice(strSlice []string) []string {
 		check[val] = 1
 	}
 
-	for s := range check {
-		res = append(res, s)
+	for str := range check {
+		res = append(res, str)
 	}
-
 	return res
 }
 
 // GminMessage constructs a message for output
 func GminMessage(msgTxt string) string {
-	return Timestamp() + msgTxt
+	Logger.Debugw("starting GminMessage()",
+		"msgTxt", msgTxt)
+	defer Logger.Debug("finished GminMessage()")
+	return Timestamp() + " gmin: " + msgTxt
 }
 
-// HashPassword creates a password hash
-func HashPassword(password string) (string, error) {
-	hasher := sha1.New()
+// Hostname gets machine hostname if possible
+func Hostname() string {
+	Logger.Debug("starting Hostname()")
+	defer Logger.Debug("finished Hostname()")
 
-	_, err := hasher.Write([]byte(password))
+	var hName string
+
+	hName, err := os.Hostname()
 	if err != nil {
-		return "", err
+		hName = "unavailable"
 	}
-
-	hashedBytes := hasher.Sum(nil)
-	hexSha1 := hex.EncodeToString(hashedBytes)
-
-	return hexSha1, nil
+	return hName
 }
 
 // InputFromStdIn checks to see if there is stdin data and sets up a scanner for it
 func InputFromStdIn(inputFile string) (*bufio.Scanner, error) {
+	Logger.Debugw("starting InputFromStdIn()",
+		"inputFile", inputFile)
+	defer Logger.Debug("finished InputFromStdIn()")
+
 	file := os.Stdin
 	input, err := file.Stat()
 	if err != nil {
+		Logger.Error(err)
 		return nil, err
 	}
 	if input.Mode()&os.ModeNamedPipe == 0 {
 		return nil, nil
 	}
 	if inputFile != "" {
-		err = errors.New("gmin: error - cannot provide input file when piping in input")
+		err = errors.New(gmess.ERR_PIPEINPUTFILECONFLICT)
+		Logger.Error(err)
 		return nil, err
 	}
 	scanner := bufio.NewScanner(os.Stdin)
@@ -688,8 +271,30 @@ func InputFromStdIn(inputFile string) (*bufio.Scanner, error) {
 	return scanner, nil
 }
 
+// IPAddress gets IP address of machine if possible
+func IPAddress() string {
+	Logger.Debug("starting IPAddress()")
+	defer Logger.Debug("finished IPAddress()")
+
+	var ip string
+
+	conn, err := net.Dial("udp", "8.8.8.8:80")
+	if err != nil {
+		ip = "unavailable"
+	}
+	defer conn.Close()
+
+	ip = conn.LocalAddr().String()
+
+	return ip
+}
+
 // IsErrRetryable checks to see whether Google API error should allow retry
 func IsErrRetryable(e error) bool {
+	Logger.Debugw("starting IsErrRetryable()",
+		"e", e)
+	defer Logger.Debug("finished IsErrRetryable()")
+
 	var retryable bool
 
 	gErr, ok := e.(*googleapi.Error)
@@ -711,66 +316,69 @@ func IsErrRetryable(e error) bool {
 	return retryable
 }
 
-// isOperator checks to see whether or not rune is an operator symbol
-func isOperator(ch rune) bool {
-	switch ch {
-	case '=':
-		return true
-	case ':':
-		return true
-	case '>':
-		return true
-	case '<':
-		return true
-	}
-
-	return false
-}
-
 // IsValidAttr checks to see whether or not an attribute is valid
 func IsValidAttr(attr string, attrMap map[string]string) (string, error) {
+	Logger.Debugw("starting IsValidAttr()",
+		"attr", attr,
+		"attrMap", attrMap)
+	defer Logger.Debug("finished IsValidAttr()")
+
 	lowerAttr := strings.ToLower(attr)
 
 	validAttr := attrMap[lowerAttr]
 	if validAttr == "" {
-		err := fmt.Errorf("gmin: error - attribute %v is unrecognized", attr)
+		err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, attr)
+		Logger.Error(err)
 		return "", err
 	}
 
 	return validAttr, nil
 }
 
-// NewOutputAttrParser returns a new instance of OutputAttrParser
-func NewOutputAttrParser(b *bytes.Buffer) *OutputAttrParser {
-	return &OutputAttrParser{oas: NewOutputAttrScanner(b)}
-}
+func oauthSetup(scope []string) (context.Context, oauth2.TokenSource, error) {
+	Logger.Debugw("starting oauthSetup()",
+		"scope", scope)
+	defer Logger.Debug("finished oauthSetup()")
 
-// NewOutputAttrScanner returns a new instance of OutputAttrScanner
-func NewOutputAttrScanner(b *bytes.Buffer) *OutputAttrScanner {
-	scanr := &Scanner{strbuf: b}
-	return &OutputAttrScanner{s: scanr}
-}
+	adminEmail, err := cfg.ReadConfigString(cfg.CONFIGADMIN)
+	if err != nil {
+		return nil, nil, err
+	}
 
-// NewQueryParser returns a new instance of QueryParser
-func NewQueryParser(b *bytes.Buffer) *QueryParser {
-	return &QueryParser{qs: NewQueryScanner(b)}
-}
+	credentialPath, err := cfg.ReadConfigString(cfg.CONFIGCREDPATH)
+	if err != nil {
+		return nil, nil, err
+	}
 
-// NewQueryScanner returns a new instance of QueryScanner
-func NewQueryScanner(b *bytes.Buffer) *QueryScanner {
-	scanr := &Scanner{strbuf: b}
-	return &QueryScanner{s: scanr}
-}
+	ctx := context.Background()
 
-// ParseCustomField parses custom schema names argument
-func ParseCustomField(cStr string) []string {
-	sArgs := strings.Split(cStr, "~")
+	ServiceAccountFilePath := filepath.Join(filepath.ToSlash(credentialPath), cfg.CREDENTIALFILE)
 
-	return sArgs
+	jsonCredentials, err := ioutil.ReadFile(ServiceAccountFilePath)
+	if err != nil {
+		Logger.Error(err)
+		return nil, nil, err
+	}
+
+	config, err := google.JWTConfigFromJSON(jsonCredentials, scope...)
+	if err != nil {
+		Logger.Error(err)
+		return nil, nil, fmt.Errorf(gmess.ERR_JWTCONFIGFROMJSON, err)
+	}
+	config.Subject = adminEmail
+
+	ts := config.TokenSource(ctx)
+
+	return ctx, ts, nil
 }
 
 // ParseForceSend parses force send fields arguments
 func ParseForceSend(fStr string, attrMap map[string]string) ([]string, error) {
+	Logger.Debugw("starting ParseForceSend()",
+		"fStr", fStr,
+		"attrMap", attrMap)
+	defer Logger.Debug("finished ParseForceSend()")
+
 	result := []string{}
 
 	fArgs := strings.Split(fStr, "~")
@@ -787,11 +395,15 @@ func ParseForceSend(fStr string, attrMap map[string]string) ([]string, error) {
 
 // ParseInputAttrs parses create and update JSON attribute strings
 func ParseInputAttrs(jsonBytes []byte) ([]string, error) {
+	Logger.Debug("starting ParseInputAttrs()")
+	defer Logger.Debug("finished ParseInputAttrs()")
+
 	m := map[string]interface{}{}
 	outStr := []string{}
 
 	err := json.Unmarshal(jsonBytes, &m)
 	if err != nil {
+		Logger.Error(err)
 		return nil, err
 	}
 	parseMap(m, &outStr)
@@ -800,6 +412,10 @@ func ParseInputAttrs(jsonBytes []byte) ([]string, error) {
 }
 
 func parseMap(attrMap map[string]interface{}, outStr *[]string) {
+	Logger.Debugw("starting parseMap()",
+		"attrMap", attrMap)
+	defer Logger.Debug("finished parseMap()")
+
 	for key, val := range attrMap {
 		if strings.ToLower(key) == "customschemas" {
 			*outStr = append(*outStr, key)
@@ -821,6 +437,10 @@ func parseMap(attrMap map[string]interface{}, outStr *[]string) {
 }
 
 func parseArray(anArray []interface{}, outStr *[]string) {
+	Logger.Debugw("starting parseArray()",
+		"anArray", anArray)
+	defer Logger.Debug("finished parseArray()")
+
 	for i, val := range anArray {
 		iStr := strconv.Itoa(i)
 		switch concreteVal := val.(type) {
@@ -839,6 +459,11 @@ func parseArray(anArray []interface{}, outStr *[]string) {
 }
 
 func parseVal(idx string, val interface{}, outStr *[]string) {
+	Logger.Debugw("starting parseVal()",
+		"idx", idx,
+		"val", val)
+	defer Logger.Debug("finished parseVal()")
+
 	switch v := val.(type) {
 	case int:
 		*outStr = append(*outStr, idx+strconv.Itoa(v))
@@ -851,51 +476,28 @@ func parseVal(idx string, val interface{}, outStr *[]string) {
 	}
 }
 
-// ParseOutputAttrs validates attributes string and formats it for Get and List calls
-func ParseOutputAttrs(attrs string, attrMap map[string]string) (string, error) {
-	bb := bytes.NewBufferString(attrs)
-
-	p := NewOutputAttrParser(bb)
-
-	as, err := p.Parse(attrMap)
-	if err != nil {
-		return "", err
-	}
-
-	outputStr := strings.Join(as.Fields, "")
-
-	return outputStr, nil
-}
-
-// ParseQuery validates query string and formats it for queries in list calls
-func ParseQuery(query string, qAttrMap map[string]string) (string, error) {
-	bb := bytes.NewBufferString(query)
-
-	p := NewQueryParser(bb)
-
-	qs, err := p.Parse(qAttrMap)
-	if err != nil {
-		return "", err
-	}
-
-	outputStr := strings.Join(qs.Parts, "")
-
-	return outputStr, nil
-}
-
 // ProcessHeader processes header column names
 func ProcessHeader(hdr []interface{}) map[int]string {
+	Logger.Debugw("starting ProcessHeader()",
+		"hdr", hdr)
+	defer Logger.Debug("finished ProcessHeader()")
+
 	hdrMap := make(map[int]string)
 	for idx, attr := range hdr {
 		strAttr := fmt.Sprintf("%v", attr)
 		hdrMap[idx] = strings.ToLower(strAttr)
 	}
-
 	return hdrMap
 }
 
 // ShowAttrs displays object attributes
 func ShowAttrs(attrSlice []string, attrMap map[string]string, filter string) {
+	Logger.Debugw("starting ShowAttrs()",
+		"attrSlice", attrSlice,
+		"attrMap", attrMap,
+		"filter", filter)
+	defer Logger.Debug("finished ShowAttrs()")
+
 	for _, a := range attrSlice {
 		s, _ := IsValidAttr(a, attrMap)
 
@@ -909,8 +511,77 @@ func ShowAttrs(attrSlice []string, attrMap map[string]string, filter string) {
 	}
 }
 
+// ShowAttrVals displays object attribute enumerated values or names of attributes that have them
+func ShowAttrVals(attrSlice []string, filter string) {
+	Logger.Debugw("starting ShowAttrVals()",
+		"attrSlice", attrSlice,
+		"filter", filter)
+	defer Logger.Debug("finished ShowAttrVals()")
+
+	for _, a := range attrSlice {
+		if filter == "" {
+			fmt.Println(a)
+			continue
+		}
+		if strings.Contains(strings.ToLower(a), strings.ToLower(filter)) {
+			fmt.Println(a)
+		}
+	}
+}
+
+// ShowFlagValues displays enumerated flag values
+func ShowFlagValues(flagSlice []string, filter string) {
+	Logger.Debugw("starting ShowFlagValues()",
+		"flagSlice", flagSlice,
+		"filter", filter)
+	defer Logger.Debug("finished ShowFlagValues()")
+
+	for _, value := range flagSlice {
+		if filter == "" {
+			fmt.Println(value)
+			continue
+		}
+		ok := strings.Contains(strings.ToLower(value), strings.ToLower(filter))
+		if ok {
+			fmt.Println(value)
+		}
+	}
+}
+
+// ShowGlobalFlagValues displays enumerated global flag values
+func ShowGlobalFlagValues(lenArgs int, args []string, filter string) error {
+	Logger.Debugw("starting ShowGlobalFlagValues()",
+		"lenArgs", lenArgs,
+		"args", args,
+		"filter", filter)
+	defer Logger.Debug("finished ShowGlobalFlagValues()")
+
+	if lenArgs == 1 {
+		ShowFlagValues(globalFlagValues, filter)
+	}
+
+	if lenArgs == 2 {
+		flag := strings.ToLower(args[1])
+
+		switch {
+		case flag == flgnm.FLG_LOGLEVEL:
+			ShowFlagValues(validLogLevels, filter)
+		default:
+			err := fmt.Errorf(gmess.ERR_FLAGNOTRECOGNIZED, args[1])
+			Logger.Error(err)
+			return err
+		}
+	}
+	return nil
+}
+
 // ShowQueryableAttrs displays user queryable attributes
 func ShowQueryableAttrs(filter string, qAttrMap map[string]string) {
+	Logger.Debugw("starting ShowQueryableAttrs()",
+		"filter", filter,
+		"qAttrMap", qAttrMap)
+	defer Logger.Debug("finished ShowQueryableAttrs()")
+
 	keys := make([]string, 0, len(qAttrMap))
 	for k := range qAttrMap {
 		keys = append(keys, k)
@@ -932,12 +603,16 @@ func ShowQueryableAttrs(filter string, qAttrMap map[string]string) {
 		if strings.Contains(v, strings.ToLower(filter)) {
 			fmt.Println(v)
 		}
-
 	}
 }
 
 // SliceContainsStr tells whether a slice contains a particular string
 func SliceContainsStr(strs []string, s string) bool {
+	Logger.Debugw("starting SliceContainsStr()",
+		"strs", strs,
+		"s", s)
+	defer Logger.Debug("finished SliceContainsStr()")
+
 	for _, sComp := range strs {
 		if s == sComp {
 			return true
@@ -949,11 +624,15 @@ func SliceContainsStr(strs []string, s string) bool {
 // Timestamp gets current formatted time
 func Timestamp() string {
 	t := time.Now()
-	return "[" + t.Format("2006-01-02 15:04:05") + "]"
+	return "[" + t.Format(TIMEFORMAT) + "]"
 }
 
 // UniqueStrSlice takes a slice with duplicate values and returns one with unique values
 func UniqueStrSlice(inSlice []string) []string {
+	Logger.Debugw("starting UniqueStrSlice()",
+		"inSlice", inSlice)
+	defer Logger.Debug("finished UniqueStrSlice()")
+
 	outSlice := []string{}
 	for _, val := range inSlice {
 		ok := SliceContainsStr(outSlice, val)
@@ -964,8 +643,31 @@ func UniqueStrSlice(inSlice []string) []string {
 	return outSlice
 }
 
+// Username gets username of current user if possible
+func Username() string {
+	Logger.Debug("starting Username()")
+	defer Logger.Debug("finished Username()")
+
+	var (
+		uName       string
+		currentUser *user.User
+	)
+
+	currentUser, err := user.Current()
+	if err != nil {
+		uName = "unavailable"
+	}
+	uName = currentUser.Username
+	return uName
+}
+
 // ValidateHeader validated header column names
 func ValidateHeader(hdr map[int]string, attrMap map[string]string) error {
+	Logger.Debugw("starting ValidateHeader()",
+		"hdr", hdr,
+		"attrMap", attrMap)
+	defer Logger.Debug("finished ValidateHeader()")
+
 	for idx, hdrAttr := range hdr {
 		correctVal, err := IsValidAttr(hdrAttr, attrMap)
 		if err != nil {
@@ -978,6 +680,11 @@ func ValidateHeader(hdr map[int]string, attrMap map[string]string) error {
 
 // ValidateInputAttrs validates JSON attribute string for create and update calls
 func ValidateInputAttrs(attrs []string, attrMap map[string]string) error {
+	Logger.Debugw("starting ValidateInputAttrs()",
+		"attrs", attrs,
+		"attrMap", attrMap)
+	defer Logger.Debug("finished ValidateInputAttrs()")
+
 	for _, elem := range attrs {
 		if strings.HasPrefix(elem, "Index") {
 			continue
@@ -991,7 +698,9 @@ func ValidateInputAttrs(attrs []string, attrMap map[string]string) error {
 		}
 
 		if s != attrName {
-			return fmt.Errorf("gmin: error - %v should be %v in attribute string", attrName, s)
+			err = fmt.Errorf(gmess.ERR_ATTRSHOULDBE, attrName, s)
+			Logger.Error(err)
+			return err
 		}
 	}
 	return nil
@@ -999,8 +708,14 @@ func ValidateInputAttrs(attrs []string, attrMap map[string]string) error {
 
 // ValidateRecoveryPhone validates recovery phone number
 func ValidateRecoveryPhone(phoneNo string) error {
+	Logger.Debugw("starting ValidateRecoveryPhone()",
+		"phoneNo", phoneNo)
+	defer Logger.Debug("finished ValidateRecoveryPhone()")
+
 	if string(phoneNo[0]) != "+" {
-		return fmt.Errorf("gmin: error - recovery phone number %v must start with '+' followed by country code", phoneNo)
+		err := fmt.Errorf(gmess.ERR_INVALIDRECOVERYPHONE, phoneNo)
+		Logger.Error(err)
+		return err
 	}
 	return nil
 }

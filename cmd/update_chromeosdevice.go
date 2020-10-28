@@ -23,79 +23,107 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 
 	cdevs "github.com/plusworx/gmin/utils/chromeosdevices"
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	lg "github.com/plusworx/gmin/utils/logging"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 )
 
 var updateCrOSDevCmd = &cobra.Command{
-	Use:     "chromeosdevice <device id>",
-	Aliases: []string{"crosdevice", "cdev"},
+	Use:     "chromeos-device <device id>",
+	Aliases: []string{"cros-device", "cros-dev", "cdev"},
 	Args:    cobra.ExactArgs(1),
-	Short:   "Updates a ChromeOS device",
-	Long: `Updates a ChromeOS device.
-	
-	Examples:	gmin update chromeosdevice 4cx07eba348f09b3 --location "Head Office"
-			gmin upd cdev 4cx07eba348f09b3 -u "Mark Zuckerberg"`,
-	RunE: doUpdateCrOSDev,
+	Example: `gmin update chromeos-device 4cx07eba348f09b3 --location "Head Office"
+gmin upd cdev 4cx07eba348f09b3 -u "Mark Zuckerberg"`,
+	Short: "Updates a ChromeOS device",
+	Long:  `Updates a ChromeOS device.`,
+	RunE:  doUpdateCrOSDev,
 }
 
 func doUpdateCrOSDev(cmd *cobra.Command, args []string) error {
+	lg.Debugw("starting doUpdateCrOSDev()",
+		"args", args)
+	defer lg.Debug("finished doUpdateCrOSDev()")
+
 	var crosdev = admin.ChromeOsDevice{}
 
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryDeviceChromeosScope)
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryDeviceChromeosScope)
+	if err != nil {
+		return err
+	}
+	ds := srv.(*admin.Service)
+
+	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {
 		return err
 	}
 
-	customerID, err := cfg.ReadConfigString("customerid")
+	flgAssetIDVal, err := cmd.Flags().GetString(flgnm.FLG_ASSETID)
 	if err != nil {
+		lg.Error(err)
 		return err
 	}
-
-	if assetID != "" {
-		crosdev.AnnotatedAssetId = assetID
+	if flgAssetIDVal != "" {
+		crosdev.AnnotatedAssetId = flgAssetIDVal
 	}
 
-	if location != "" {
-		crosdev.AnnotatedLocation = location
+	flgLocationVal, err := cmd.Flags().GetString(flgnm.FLG_LOCATION)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+	if flgLocationVal != "" {
+		crosdev.AnnotatedLocation = flgLocationVal
 	}
 
-	if notes != "" {
-		crosdev.Notes = notes
+	flgNotesVal, err := cmd.Flags().GetString(flgnm.FLG_NOTES)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+	if flgNotesVal != "" {
+		crosdev.Notes = flgNotesVal
 	}
 
-	if orgUnit != "" {
-		crosdev.OrgUnitPath = orgUnit
+	flgOUPathVal, err := cmd.Flags().GetString(flgnm.FLG_ORGUNITPATH)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+	if flgOUPathVal != "" {
+		crosdev.OrgUnitPath = flgOUPathVal
 	}
 
-	if userKey != "" {
-		crosdev.AnnotatedUser = userKey
+	flgUserKeyVal, err := cmd.Flags().GetString(flgnm.FLG_USERKEY)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+	if flgUserKeyVal != "" {
+		crosdev.AnnotatedUser = flgUserKeyVal
 	}
 
 	cduc := ds.Chromeosdevices.Update(customerID, args[0], &crosdev)
 
-	if attrs != "" {
-		updAttrs, err := cmn.ParseOutputAttrs(attrs, cdevs.CrOSDevAttrMap)
-		if err != nil {
-			return err
-		}
-		formattedAttrs := cdevs.StartChromeDevicesField + updAttrs + cdevs.EndField
-		updCall := cdevs.AddFields(cduc, formattedAttrs)
-		cduc = updCall.(*admin.ChromeosdevicesUpdateCall)
+	flgProjectionVal, err := cmd.Flags().GetString(flgnm.FLG_PROJECTION)
+	if err != nil {
+		lg.Error(err)
+		return err
 	}
-
-	if projection != "" {
-		proj := strings.ToLower(projection)
+	if flgProjectionVal != "" {
+		proj := strings.ToLower(flgProjectionVal)
 		ok := cmn.SliceContainsStr(cdevs.ValidProjections, proj)
 		if !ok {
-			return fmt.Errorf("gmin: error - %v is not a valid projection type", projection)
+			err = fmt.Errorf(gmess.ERR_INVALIDPROJECTIONTYPE, flgProjectionVal)
+			lg.Error(err)
+			return err
 		}
 
 		updCall := cdevs.AddProjection(cduc, proj)
@@ -104,17 +132,12 @@ func doUpdateCrOSDev(cmd *cobra.Command, args []string) error {
 
 	updCrOSDev, err := cduc.Do()
 	if err != nil {
+		lg.Error(err)
 		return err
 	}
 
-	fmt.Println(cmn.GminMessage("**** gmin: ChromeOS device " + updCrOSDev.DeviceId + " updated ****"))
-
-	jsonData, err := json.MarshalIndent(updCrOSDev, "", "    ")
-	if err != nil {
-		return err
-	}
-
-	fmt.Println(string(jsonData))
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_CDEVUPDATED, updCrOSDev.DeviceId)))
+	lg.Infof(gmess.INFO_CDEVUPDATED, updCrOSDev.DeviceId)
 
 	return nil
 }
@@ -122,11 +145,10 @@ func doUpdateCrOSDev(cmd *cobra.Command, args []string) error {
 func init() {
 	updateCmd.AddCommand(updateCrOSDevCmd)
 
-	updateCrOSDevCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required device attributes (separated by ~)")
-	updateCrOSDevCmd.Flags().StringVarP(&assetID, "assetid", "d", "", "device asset id")
-	updateCrOSDevCmd.Flags().StringVarP(&projection, "projection", "j", "", "type of projection")
-	updateCrOSDevCmd.Flags().StringVarP(&location, "location", "l", "", "device location")
-	updateCrOSDevCmd.Flags().StringVarP(&notes, "notes", "n", "", "notes about device")
-	updateCrOSDevCmd.Flags().StringVarP(&orgUnit, "orgunitpath", "t", "", "orgunit device belongs to")
-	updateCrOSDevCmd.Flags().StringVarP(&userKey, "user", "u", "", "device user")
+	updateCrOSDevCmd.Flags().StringVarP(&assetID, flgnm.FLG_ASSETID, "d", "", "device asset id")
+	updateCrOSDevCmd.Flags().StringVarP(&projection, flgnm.FLG_PROJECTION, "j", "", "type of projection")
+	updateCrOSDevCmd.Flags().StringVarP(&location, flgnm.FLG_LOCATION, "l", "", "device location")
+	updateCrOSDevCmd.Flags().StringVarP(&notes, flgnm.FLG_NOTES, "n", "", "notes about device")
+	updateCrOSDevCmd.Flags().StringVarP(&orgUnit, flgnm.FLG_ORGUNITPATH, "t", "", "orgunit device belongs to")
+	updateCrOSDevCmd.Flags().StringVarP(&userKey, flgnm.FLG_USERKEY, "u", "", "device user")
 }

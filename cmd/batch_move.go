@@ -23,13 +23,16 @@ THE SOFTWARE.
 package cmd
 
 import (
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	"github.com/spf13/cobra"
 )
 
 var batchMoveCmd = &cobra.Command{
 	Use:     "batch-move",
 	Aliases: []string{"bmove", "bmv"},
-	Short:   "Moves a batch of G Suite devices to another orgunit",
+	Args:    cobra.NoArgs,
+	Short:   "Moves a batch of Google Workspace devices to another orgunit",
+	Long:    "Moves a batch of Google Workspace devices to another orgunit.",
 	Run:     doBatchMove,
 }
 
@@ -39,4 +42,8 @@ func doBatchMove(cmd *cobra.Command, args []string) {
 
 func init() {
 	rootCmd.AddCommand(batchMoveCmd)
+	batchMoveCmd.PersistentFlags().BoolVar(&silent, flgnm.FLG_SILENT, false, "suppress console output")
+	batchMoveCmd.PersistentFlags().StringVar(&logLevel, flgnm.FLG_LOGLEVEL, "info", "log level (debug, info, error, warn)")
+
+	batchMoveCmd.PersistentPreRunE = preRun
 }

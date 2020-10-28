@@ -28,7 +28,13 @@ import (
 	"strings"
 
 	cdevs "github.com/plusworx/gmin/utils/chromeosdevices"
+	ca "github.com/plusworx/gmin/utils/commandaliases"
+	cmn "github.com/plusworx/gmin/utils/common"
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	grps "github.com/plusworx/gmin/utils/groups"
+	grpset "github.com/plusworx/gmin/utils/groupsettings"
+	lg "github.com/plusworx/gmin/utils/logging"
 	gmems "github.com/plusworx/gmin/utils/members"
 	mdevs "github.com/plusworx/gmin/utils/mobiledevices"
 	ous "github.com/plusworx/gmin/utils/orgunits"
@@ -40,66 +46,86 @@ var showFlagValsCmd = &cobra.Command{
 	Use:     "flag-values <object> [flag with predefined values]",
 	Aliases: []string{"flag-vals", "fvals"},
 	Args:    cobra.MinimumNArgs(1),
-	Short:   "Shows object flag predefined value information",
+	Example: `gmin show flag-values user projection
+gmin show fvals user orderby`,
+	Short: "Shows object flag predefined value information",
 	Long: `Shows object flag predefined value information.
 
-	Valid objects are:
-	chromeosdevice, crosdevice, crosdev, cdev
-	group, grp
-	group-member, grp-member, grp-mem, gmember, gmem
-	mobiledevice, mobdevice, mobdev, mdev
-	orgunit, ou
-	user
-	
-	Examples:	gmin show flag-values user projection
-			gmin show fvals user orderby`,
+Valid objects are:
+chromeos-device, cros-device, cros-dev, cdev
+global
+group, grp
+group-member, grp-member, grp-mem, gmember, gmem
+mobile-device, mob-device, mob-dev, mdev
+orgunit, ou
+user`,
 	RunE: doShowFlagVals,
 }
 
 func doShowFlagVals(cmd *cobra.Command, args []string) error {
+	lg.Debugw("starting doShowFlagVals()",
+		"args", args)
+	defer lg.Debug("finished doShowFlagVals()")
+
 	if len(args) > 2 {
-		return errors.New("gmin: error - exceeded maximum 2 arguments")
+		return errors.New(gmess.ERR_MAX2ARGSEXCEEDED)
 	}
 
-	obj := strings.ToLower(args[0])
+	object := strings.ToLower(args[0])
+
+	flgFilterVal, err := cmd.Flags().GetString(flgnm.FLG_FILTER)
+	if err != nil {
+		return err
+	}
 
 	switch {
-	case obj == "chromeosdevice" || obj == "crosdevice" || obj == "crosdev" || obj == "cdev":
-		err := cdevs.ShowFlagValues(len(args), args)
+	case cmn.SliceContainsStr(ca.CDevAliases, object):
+		err := cdevs.ShowFlagValues(len(args), args, flgFilterVal)
 		if err != nil {
 			return err
 		}
-	case obj == "group" || obj == "grp":
-		err := grps.ShowFlagValues(len(args), args)
+	case object == "global":
+		err := cmn.ShowGlobalFlagValues(len(args), args, flgFilterVal)
 		if err != nil {
 			return err
 		}
-	case obj == "group-member" || obj == "grp-member" || obj == "grp-mem" || obj == "gmember" || obj == "gmem":
-		err := gmems.ShowFlagValues(len(args), args)
+	case cmn.SliceContainsStr(ca.GroupAliases, object):
+		err := grps.ShowFlagValues(len(args), args, flgFilterVal)
 		if err != nil {
 			return err
 		}
-	case obj == "mobiledevice" || obj == "mobdevice" || obj == "mobdev" || obj == "mdev":
-		err := mdevs.ShowFlagValues(len(args), args)
+	case cmn.SliceContainsStr(ca.GMAliases, object):
+		err := gmems.ShowFlagValues(len(args), args, flgFilterVal)
 		if err != nil {
 			return err
 		}
-	case obj == "orgunit" || obj == "ou":
-		err := ous.ShowFlagValues(len(args), args)
+	case cmn.SliceContainsStr(ca.GSAliases, object):
+		err := grpset.ShowFlagValues(len(args), args, flgFilterVal)
 		if err != nil {
 			return err
 		}
-	case obj == "user":
-		err := usrs.ShowFlagValues(len(args), args)
+	case cmn.SliceContainsStr(ca.MDevAliases, object):
+		err := mdevs.ShowFlagValues(len(args), args, flgFilterVal)
+		if err != nil {
+			return err
+		}
+	case cmn.SliceContainsStr(ca.OUAliases, object):
+		err := ous.ShowFlagValues(len(args), args, flgFilterVal)
+		if err != nil {
+			return err
+		}
+	case cmn.SliceContainsStr(ca.UserAliases, object):
+		err := usrs.ShowFlagValues(len(args), args, flgFilterVal)
 		if err != nil {
 			return err
 		}
 	default:
-		return fmt.Errorf("gmin: error - %v is not recognized", args[0])
+		return fmt.Errorf(gmess.ERR_OBJECTNOTRECOGNIZED, args[0])
 	}
 	return nil
 }
 
 func init() {
 	showCmd.AddCommand(showFlagValsCmd)
+	showFlagValsCmd.Flags().StringVarP(&filter, flgnm.FLG_FILTER, "f", "", "string used to filter results")
 }

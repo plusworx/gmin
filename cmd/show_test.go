@@ -23,7 +23,11 @@ THE SOFTWARE.
 package cmd
 
 import (
+	"fmt"
 	"testing"
+
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	lg "github.com/plusworx/gmin/utils/logging"
 )
 
 func TestDoShowAttrs(t *testing.T) {
@@ -34,53 +38,53 @@ func TestDoShowAttrs(t *testing.T) {
 		queryable   bool
 	}{
 		{
-			args:        []string{"user", "name", "givenname", "anothername"},
-			expectedErr: "gmin: error - maximum of 3 arguments exceeded",
-		},
-		{
 			args:        []string{"grp"},
 			composite:   true,
 			queryable:   true,
-			expectedErr: "gmin: error - cannot provide both --composite and --queryable flags",
+			expectedErr: gmess.ERR_QUERYANDCOMPOSITEFLAGS,
 		},
 		{
 			args:        []string{"user-alias", "email"},
 			queryable:   true,
-			expectedErr: "gmin: error - only one argument is allowed with --queryable flag",
+			expectedErr: gmess.ERR_QUERYABLEFLAG1ARG,
 		},
 		{
 			args:        []string{"unrecognized"},
-			expectedErr: "gmin: error - unrecognized not found",
+			expectedErr: fmt.Sprintf(gmess.ERR_OBJECTNOTFOUND, "unrecognized"),
 		},
 		{
 			args:        []string{"schema", "fieldspec", "numericindexingspec"},
 			composite:   true,
-			expectedErr: "gmin: error - numericindexingspec does not have any composite attributes",
+			expectedErr: fmt.Sprintf(gmess.ERR_NOCOMPOSITEATTRS, "numericindexingspec"),
 		},
 		{
 			args:        []string{"group", "email", "id"},
-			expectedErr: "gmin: error - email does not have any composite attributes",
+			expectedErr: fmt.Sprintf(gmess.ERR_NOCOMPOSITEATTRS, "group"),
 		},
 		{
 			args:        []string{"cdev", "recentusers"},
 			composite:   true,
-			expectedErr: "gmin: error - recentusers does not have any composite attributes",
+			expectedErr: fmt.Sprintf(gmess.ERR_NOCOMPOSITEATTRS, "recentusers"),
 		},
 		{
 			args:        []string{"ou", "name"},
-			expectedErr: "gmin: error - ou does not have any composite attributes",
+			expectedErr: fmt.Sprintf(gmess.ERR_NOCOMPOSITEATTRS, "ou"),
 		},
 		{
 			args:        []string{"ga"},
 			queryable:   true,
-			expectedErr: "gmin: error - ga does not have any queryable attributes",
+			expectedErr: fmt.Sprintf(gmess.ERR_NOQUERYABLEATTRS, "ga"),
 		},
 		{
 			args:        []string{"gmem"},
 			composite:   true,
-			expectedErr: "gmin: error - group members do not have any composite attributes",
+			expectedErr: fmt.Sprintf(gmess.ERR_NOCOMPOSITEATTRS, "gmem"),
 		},
 	}
+
+	initConfig()
+
+	lg.InitLogging("info")
 
 	for _, c := range cases {
 		composite = c.composite

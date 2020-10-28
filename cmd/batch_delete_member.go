@@ -23,15 +23,19 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"bufio"
 	"errors"
 	"fmt"
-	"os"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
+	btch "github.com/plusworx/gmin/utils/batch"
 	cmn "github.com/plusworx/gmin/utils/common"
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	lg "github.com/plusworx/gmin/utils/logging"
+	mems "github.com/plusworx/gmin/utils/members"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 )
@@ -40,65 +44,108 @@ var batchDelMemberCmd = &cobra.Command{
 	Use:     "group-members <group email address or id> [-i input file path]",
 	Aliases: []string{"group-member", "grp-members", "grp-member", "gmembers", "gmember", "gmems", "gmem"},
 	Args:    cobra.ExactArgs(1),
-	Short:   "Deletes a batch of group members",
+	Example: `gmin batch-delete group-members somegroup@mycompany.com -i inputfile.txt
+gmin bdel gmems somegroup@mycompany.com -i inputfile.txt
+gmin ls gmem mygroup@mycompany.co.uk -a email | jq '.members[] | .email' -r | ./gmin bdel gmem mygroup@mycompany.co.uk`,
+	Short: "Deletes a batch of group members",
 	Long: `Deletes a batch of group members where group member details are provided in a text input file or through a pipe.
-	
-	Examples:	gmin batch-delete group-members somegroup@mycompany.com -i inputfile.txt
-			gmin bdel gmems somegroup@mycompany.com -i inputfile.txt
-			gmin ls gmem mygroup@mycompany.co.uk -a email | jq '.members[] | .email' -r | ./gmin bdel gmem mygroup@mycompany.co.uk
 			
-	The input should have the group member email addresses, aliases or ids to be deleted on separate lines like this:
-	
-	frank.castle@mycompany.com
-	bruce.wayne@mycompany.com
-	peter.parker@mycompany.com`,
+The input file or piped in data should provide the group member email addresses, aliases or ids to be deleted on separate lines like this:
+
+frank.castle@mycompany.com
+bruce.wayne@mycompany.com
+peter.parker@mycompany.com
+
+An input Google sheet must have a header row with the following column names being the only ones that are valid:
+
+memberKey [required]
+
+The column name is case insensitive.`,
 	RunE: doBatchDelMember,
 }
 
 func doBatchDelMember(cmd *cobra.Command, args []string) error {
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupMemberScope)
+	lg.Debugw("starting doBatchDelMember()",
+		"args", args)
+	defer lg.Debug("finished doBatchDelMember()")
+
+	var members []string
+
+	group := args[0]
+
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryGroupMemberScope)
+	if err != nil {
+		return err
+	}
+	ds := srv.(*admin.Service)
+
+	inputFlgVal, err := cmd.Flags().GetString(flgnm.FLG_INPUTFILE)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+
+	scanner, err := cmn.InputFromStdIn(inputFlgVal)
 	if err != nil {
 		return err
 	}
 
-	scanner, err := cmn.InputFromStdIn(inputFile)
+	if inputFlgVal == "" && scanner == nil {
+		err := errors.New(gmess.ERR_NOINPUTFILE)
+		lg.Error(err)
+		return err
+	}
+
+	formatFlgVal, err := cmd.Flags().GetString(flgnm.FLG_FORMAT)
 	if err != nil {
+		lg.Error(err)
+		return err
+	}
+	lwrFmt := strings.ToLower(formatFlgVal)
+
+	ok := cmn.SliceContainsStr(cmn.ValidFileFormats, lwrFmt)
+	if !ok {
+		err = fmt.Errorf(gmess.ERR_INVALIDFILEFORMAT, formatFlgVal)
+		lg.Error(err)
 		return err
 	}
 
-	if inputFile == "" && scanner == nil {
-		err := errors.New("gmin: error - must provide inputfile")
-		return err
-	}
-
-	if scanner == nil {
-		file, err := os.Open(inputFile)
+	switch {
+	case lwrFmt == "text":
+		members, err = btch.DeleteProcessTextFile(inputFlgVal, scanner)
 		if err != nil {
 			return err
 		}
-		defer file.Close()
+	case lwrFmt == "gsheet":
+		rangeFlgVal, err := cmd.Flags().GetString(flgnm.FLG_SHEETRANGE)
+		if err != nil {
+			return err
+		}
 
-		scanner = bufio.NewScanner(file)
+		members, err = btch.DeleteProcessGSheet(inputFlgVal, rangeFlgVal, mems.MemberAttrMap, mems.KEYNAME)
+		if err != nil {
+			return err
+		}
+	default:
+		err = fmt.Errorf(gmess.ERR_INVALIDFILEFORMAT, formatFlgVal)
+		lg.Error(err)
+		return err
 	}
 
-	group := args[0]
-	wg := new(sync.WaitGroup)
-
-	for scanner.Scan() {
-		member := scanner.Text()
-		mdc := ds.Members.Delete(group, member)
-
-		wg.Add(1)
-
-		go deleteMember(wg, mdc, member, group)
+	err = bdmProcessDeletion(ds, group, members)
+	if err != nil {
+		return err
 	}
-
-	wg.Wait()
 
 	return nil
 }
 
-func deleteMember(wg *sync.WaitGroup, mdc *admin.MembersDeleteCall, member string, group string) {
+func bdmDelete(wg *sync.WaitGroup, mdc *admin.MembersDeleteCall, member string, group string) {
+	lg.Debugw("starting bdmDelete()",
+		"group", group,
+		"member", member)
+	defer lg.Debug("finished bdmDelete()")
+
 	defer wg.Done()
 
 	b := backoff.NewExponentialBackOff()
@@ -108,22 +155,49 @@ func deleteMember(wg *sync.WaitGroup, mdc *admin.MembersDeleteCall, member strin
 		var err error
 		err = mdc.Do()
 		if err == nil {
-			fmt.Println(cmn.GminMessage("**** gmin: member " + member + " of group " + group + " deleted ****"))
+			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_MEMBERDELETED, member, group)))
+			lg.Infof(gmess.INFO_MEMBERDELETED, member, group)
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(errors.New(cmn.GminMessage("gmin: error - " + err.Error() + " " + member)))
+			return backoff.Permanent(fmt.Errorf(gmess.ERR_BATCHMEMBER, err.Error(), member, group))
 		}
-		return errors.New(cmn.GminMessage("gmin: error - " + err.Error() + " " + member))
+		lg.Warnw(err.Error(),
+			"retrying", b.GetElapsedTime().String(),
+			"group", group,
+			"member", member)
+		return fmt.Errorf(gmess.ERR_BATCHMEMBER, err.Error(), member, group)
 	}, b)
 	if err != nil {
-		fmt.Println(err)
+		// Log final error
+		lg.Error(err)
+		fmt.Println(cmn.GminMessage(err.Error()))
 	}
+}
+
+func bdmProcessDeletion(ds *admin.Service, group string, members []string) error {
+	lg.Debug("starting bdmProcessDeletion()")
+	defer lg.Debug("finished bdmProcessDeletion()")
+
+	wg := new(sync.WaitGroup)
+
+	for _, member := range members {
+		mdc := ds.Members.Delete(group, member)
+
+		wg.Add(1)
+
+		go bdmDelete(wg, mdc, member, group)
+	}
+
+	wg.Wait()
+
+	return nil
 }
 
 func init() {
 	batchDelCmd.AddCommand(batchDelMemberCmd)
 
-	batchDelMemberCmd.Flags().StringVarP(&inputFile, "inputfile", "i", "", "filepath to member data text file")
-	batchDelMemberCmd.MarkFlagRequired("inputfile")
+	batchDelMemberCmd.Flags().StringVarP(&inputFile, flgnm.FLG_INPUTFILE, "i", "", "filepath to member data text file")
+	batchDelMemberCmd.Flags().StringVarP(&delFormat, flgnm.FLG_FORMAT, "f", "text", "member data file format (text or gsheet)")
+	batchDelMemberCmd.Flags().StringVarP(&sheetRange, flgnm.FLG_SHEETRANGE, "s", "", "member data gsheet range")
 }

@@ -23,13 +23,16 @@ THE SOFTWARE.
 package cmd
 
 import (
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	"github.com/spf13/cobra"
 )
 
 var batchDelCmd = &cobra.Command{
 	Use:     "batch-delete",
 	Aliases: []string{"bdelete", "bdel"},
-	Short:   "Deletes a batch of G Suite entities",
+	Args:    cobra.NoArgs,
+	Short:   "Deletes a batch of Google Workspace entities",
+	Long:    "Deletes a batch of Google Workspace entities.",
 	Run:     doBatchDelete,
 }
 
@@ -39,4 +42,8 @@ func doBatchDelete(cmd *cobra.Command, args []string) {
 
 func init() {
 	rootCmd.AddCommand(batchDelCmd)
+	batchDelCmd.PersistentFlags().BoolVar(&silent, flgnm.FLG_SILENT, false, "suppress console output")
+	batchDelCmd.PersistentFlags().StringVar(&logLevel, flgnm.FLG_LOGLEVEL, "info", "log level (debug, info, error, warn)")
+
+	batchDelCmd.PersistentPreRunE = preRun
 }

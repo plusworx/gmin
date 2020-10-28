@@ -23,12 +23,15 @@ THE SOFTWARE.
 package cmd
 
 import (
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	"github.com/spf13/cobra"
 )
 
 var showCmd = &cobra.Command{
 	Use:   "show",
+	Args:  cobra.NoArgs,
 	Short: "Shows attribute names and valid values",
+	Long:  "Shows attribute names and valid values.",
 	Run:   doShow,
 }
 
@@ -38,4 +41,7 @@ func doShow(cmd *cobra.Command, args []string) {
 
 func init() {
 	rootCmd.AddCommand(showCmd)
+	showCmd.PersistentFlags().StringVar(&logLevel, flgnm.FLG_LOGLEVEL, "info", "log level (debug, info, error, warn)")
+
+	showCmd.PersistentPreRunE = preRunForDisplayCmds
 }

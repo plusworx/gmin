@@ -27,16 +27,32 @@ import (
 	"sort"
 	"strings"
 
+	cmn "github.com/plusworx/gmin/utils/common"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	lg "github.com/plusworx/gmin/utils/logging"
 	admin "google.golang.org/api/admin/directory/v1"
 	"google.golang.org/api/googleapi"
 )
 
 const (
-	// EndField is List call attribute string terminator
-	EndField string = ")"
-	// StartOrgUnitsField is List call attribute string prefix
-	StartOrgUnitsField string = "organizationUnits("
+	// ENDFIELD is List call attribute string terminator
+	ENDFIELD string = ")"
+	// KEYNAME is name of key for processing
+	KEYNAME string = "ouKey"
+	// STARTORGUNITSFIELD is List call attribute string prefix
+	STARTORGUNITSFIELD string = "organizationUnits("
 )
+
+// Key is struct used to extract ouKey
+type Key struct {
+	OUKey string
+}
+
+// OrgUnitParams holds group data for batch processing
+type OrgUnitParams struct {
+	OUKey   string
+	OrgUnit *admin.OrgUnit
+}
 
 var flagValues = []string{
 	"type",
@@ -52,7 +68,7 @@ var OrgUnitAttrMap = map[string]string{
 	"name":              "name",
 	"orgunitid":         "orgUnitId",
 	"orgunitpath":       "orgUnitPath",
-	"oukey":             "ouKey", // Used in batch update
+	"oukey":             "ouKey", // Used in batch commands
 	"parentorgunitid":   "parentOrgUnitId",
 	"parentorgunitpath": "parentOrgUnitPath",
 }
@@ -63,13 +79,12 @@ var ValidSearchTypes = []string{
 	"children",
 }
 
-// Key is struct used to extract ouKey
-type Key struct {
-	OUKey string
-}
-
 // AddFields adds fields to be returned to admin calls
 func AddFields(callObj interface{}, attrs string) interface{} {
+	lg.Debugw("starting AddFields()",
+		"attrs", attrs)
+	defer lg.Debug("finished AddFields()")
+
 	var fields googleapi.Field = googleapi.Field(attrs)
 
 	switch callObj.(type) {
@@ -92,6 +107,10 @@ func AddFields(callObj interface{}, attrs string) interface{} {
 
 // AddOUPath adds OrgUnitPath or ID to admin calls
 func AddOUPath(oulc *admin.OrgunitsListCall, path string) *admin.OrgunitsListCall {
+	lg.Debugw("starting AddOUPath()",
+		"path", path)
+	defer lg.Debug("finished AddOUPath()")
+
 	var newOULC *admin.OrgunitsListCall
 
 	newOULC = oulc.OrgUnitPath(path)
@@ -101,6 +120,10 @@ func AddOUPath(oulc *admin.OrgunitsListCall, path string) *admin.OrgunitsListCal
 
 // AddType adds Type to admin calls
 func AddType(oulc *admin.OrgunitsListCall, searchType string) *admin.OrgunitsListCall {
+	lg.Debugw("starting AddType()",
+		"searchType", searchType)
+	defer lg.Debug("finished AddType()")
+
 	var newOULC *admin.OrgunitsListCall
 
 	newOULC = oulc.Type(searchType)
@@ -110,8 +133,12 @@ func AddType(oulc *admin.OrgunitsListCall, searchType string) *admin.OrgunitsLis
 
 // DoGet calls the .Do() function on the admin.OrgunitsGetCall
 func DoGet(ougc *admin.OrgunitsGetCall) (*admin.OrgUnit, error) {
+	lg.Debug("starting DoGet()")
+	defer lg.Debug("finished DoGet()")
+
 	orgUnit, err := ougc.Do()
 	if err != nil {
+		lg.Error(err)
 		return nil, err
 	}
 
@@ -120,16 +147,114 @@ func DoGet(ougc *admin.OrgunitsGetCall) (*admin.OrgUnit, error) {
 
 // DoList calls the .Do() function on the admin.OrgunitsListCall
 func DoList(oulc *admin.OrgunitsListCall) (*admin.OrgUnits, error) {
+	lg.Debug("starting DoList()")
+	defer lg.Debug("finished DoList()")
+
 	orgunits, err := oulc.Do()
 	if err != nil {
+		lg.Error(err)
 		return nil, err
 	}
 
 	return orgunits, nil
 }
 
+// PopulateOrgUnit is used in batch processing
+func PopulateOrgUnit(orgunit *admin.OrgUnit, hdrMap map[int]string, objData []interface{}) error {
+	lg.Debugw("starting PopulateOrgUnit()",
+		"hdrMap", hdrMap)
+	defer lg.Debug("finished PopulateOrgUnit()")
+
+	for idx, attr := range objData {
+		attrName := hdrMap[idx]
+		attrVal := fmt.Sprintf("%v", attr)
+		lowerAttrVal := strings.ToLower(fmt.Sprintf("%v", attr))
+
+		switch {
+		case attrName == "blockInheritance":
+			if lowerAttrVal == "true" {
+				orgunit.BlockInheritance = true
+			}
+		case attrName == "description":
+			orgunit.Description = attrVal
+		case attrName == "name":
+			if attrVal == "" {
+				err := fmt.Errorf(gmess.ERR_EMPTYSTRING, attrName)
+				lg.Error(err)
+				return err
+			}
+			orgunit.Name = attrVal
+		case attrName == "parentOrgUnitPath":
+			if attrVal == "" {
+				err := fmt.Errorf(gmess.ERR_EMPTYSTRING, attrName)
+				lg.Error(err)
+				return err
+			}
+			orgunit.ParentOrgUnitPath = attrVal
+		default:
+			err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, attrName)
+			return err
+		}
+	}
+	return nil
+}
+
+// PopulateOrgUnitForUpdate is used in batch processing
+func PopulateOrgUnitForUpdate(ouParams *OrgUnitParams, hdrMap map[int]string, objData []interface{}) error {
+	lg.Debugw("starting PopulateOrgUnitForUpdate()",
+		"hdrMap", hdrMap)
+	defer lg.Debug("finished PopulateOrgUnitForUpdate()")
+
+	for idx, attr := range objData {
+		attrName := hdrMap[idx]
+		attrVal := fmt.Sprintf("%v", attr)
+		lowerAttrVal := strings.ToLower(fmt.Sprintf("%v", attr))
+
+		switch {
+		case attrName == "blockInheritance":
+			if lowerAttrVal == "true" {
+				ouParams.OrgUnit.BlockInheritance = true
+				break
+			}
+			ouParams.OrgUnit.BlockInheritance = false
+			ouParams.OrgUnit.ForceSendFields = append(ouParams.OrgUnit.ForceSendFields, "BlockInheritance")
+		case attrName == "description":
+			ouParams.OrgUnit.Description = attrVal
+			if attrVal == "" {
+				ouParams.OrgUnit.ForceSendFields = append(ouParams.OrgUnit.ForceSendFields, "Description")
+			}
+		case attrName == "name":
+			if attrVal == "" {
+				err := fmt.Errorf(gmess.ERR_EMPTYSTRING, attrName)
+				lg.Error(err)
+				return err
+			}
+			ouParams.OrgUnit.Name = attrVal
+		case attrName == "parentOrgUnitPath":
+			if attrVal == "" {
+				err := fmt.Errorf(gmess.ERR_EMPTYSTRING, attrName)
+				lg.Error(err)
+				return err
+			}
+			ouParams.OrgUnit.ParentOrgUnitPath = attrVal
+		case attrName == "ouKey":
+			if attrVal == "" {
+				err := fmt.Errorf(gmess.ERR_EMPTYSTRING, attrName)
+				lg.Error(err)
+				return err
+			}
+			ouParams.OUKey = attrVal
+		}
+	}
+	return nil
+}
+
 // ShowAttrs displays requested orgunit attributes
 func ShowAttrs(filter string) {
+	lg.Debug("starting ShowAttrs()",
+		"filter", filter)
+	defer lg.Debug("finished ShowAttrs()")
+
 	keys := make([]string, 0, len(OrgUnitAttrMap))
 	for k := range OrgUnitAttrMap {
 		keys = append(keys, k)
@@ -150,11 +275,15 @@ func ShowAttrs(filter string) {
 }
 
 // ShowFlagValues displays enumerated flag values
-func ShowFlagValues(lenArgs int, args []string) error {
+func ShowFlagValues(lenArgs int, args []string, filter string) error {
+	lg.Debug("starting ShowFlagValues()",
+		"lenArgs", lenArgs,
+		"args", args,
+		"filter", filter)
+	defer lg.Debug("finished ShowFlagValues()")
+
 	if lenArgs == 1 {
-		for _, v := range flagValues {
-			fmt.Println(v)
-		}
+		cmn.ShowFlagValues(flagValues, filter)
 	}
 
 	if lenArgs == 2 {
@@ -162,11 +291,11 @@ func ShowFlagValues(lenArgs int, args []string) error {
 
 		switch {
 		case flag == "type":
-			for _, t := range ValidSearchTypes {
-				fmt.Println(t)
-			}
+			cmn.ShowFlagValues(ValidSearchTypes, filter)
 		default:
-			return fmt.Errorf("gmin: error - %v flag not recognized", args[1])
+			err := fmt.Errorf(gmess.ERR_FLAGNOTRECOGNIZED, args[1])
+			lg.Error(err)
+			return err
 		}
 	}
 

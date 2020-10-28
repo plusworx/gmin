@@ -27,7 +27,10 @@ import (
 	"fmt"
 
 	cmn "github.com/plusworx/gmin/utils/common"
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
+	gpars "github.com/plusworx/gmin/utils/gminparsers"
 	grps "github.com/plusworx/gmin/utils/groups"
+	lg "github.com/plusworx/gmin/utils/logging"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 )
@@ -36,29 +39,38 @@ var getGroupCmd = &cobra.Command{
 	Use:     "group <email address or id>",
 	Aliases: []string{"grp"},
 	Args:    cobra.ExactArgs(1),
-	Short:   "Outputs information about a group",
-	Long: `Outputs information about a group.
-	
-	Examples:	gmin get group agroup@mydomain.org
-			gmin get grp 042yioqz3p5ulpk -a email`,
-	RunE: doGetGroup,
+	Example: `gmin get group agroup@mydomain.org
+gmin get grp 042yioqz3p5ulpk -a email`,
+	Short: "Outputs information about a group",
+	Long:  `Outputs information about a group.`,
+	RunE:  doGetGroup,
 }
 
 func doGetGroup(cmd *cobra.Command, args []string) error {
+	lg.Debugw("starting doGetGroup()",
+		"args", args)
+	defer lg.Debug("finished doGetGroup()")
+
 	var (
 		jsonData []byte
 		group    *admin.Group
 	)
 
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupReadonlyScope)
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryGroupReadonlyScope)
 	if err != nil {
 		return err
 	}
+	ds := srv.(*admin.Service)
 
 	ggc := ds.Groups.Get(args[0])
 
-	if attrs != "" {
-		formattedAttrs, err := cmn.ParseOutputAttrs(attrs, grps.GroupAttrMap)
+	flgAttrsVal, err := cmd.Flags().GetString(flgnm.FLG_ATTRIBUTES)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+	if flgAttrsVal != "" {
+		formattedAttrs, err := gpars.ParseOutputAttrs(flgAttrsVal, grps.GroupAttrMap)
 		if err != nil {
 			return err
 		}
@@ -74,6 +86,7 @@ func doGetGroup(cmd *cobra.Command, args []string) error {
 
 	jsonData, err = json.MarshalIndent(group, "", "    ")
 	if err != nil {
+		lg.Error(err)
 		return err
 	}
 
@@ -85,5 +98,5 @@ func doGetGroup(cmd *cobra.Command, args []string) error {
 func init() {
 	getCmd.AddCommand(getGroupCmd)
 
-	getGroupCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required group attributes (separated by ~)")
+	getGroupCmd.Flags().StringVarP(&attrs, flgnm.FLG_ATTRIBUTES, "a", "", "required group attributes (separated by ~)")
 }

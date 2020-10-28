@@ -25,65 +25,60 @@ package cmd
 import (
 	"fmt"
 
-	cdevs "github.com/plusworx/gmin/utils/chromeosdevices"
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	lg "github.com/plusworx/gmin/utils/logging"
 	"github.com/spf13/cobra"
 
 	admin "google.golang.org/api/admin/directory/v1"
 )
 
 var moveCrOSDevCmd = &cobra.Command{
-	Use:     "chromeosdevice <device id> <orgunitpath>",
-	Aliases: []string{"crosdevice", "crosdev", "cdev"},
+	Use:     "chromeos-device <device id> <orgunitpath>",
+	Aliases: []string{"cros-device", "cros-dev", "cdev"},
 	Args:    cobra.ExactArgs(2),
-	Short:   "Moves a ChromeOS device to another orgunit",
-	Long: `Moves a ChromeOS device to another orgunit.
-	
-	Examples:	gmin move chromeosdevice 4cx07eba348f09b3 /Sales
-			gmin mv cdev 4cx07eba348f09b3 /IT`,
-	RunE: doMoveCrOSDev,
+	Example: `gmin move chromeos-device 4cx07eba348f09b3 /Sales
+gmin mv cdev 4cx07eba348f09b3 /IT`,
+	Short: "Moves a ChromeOS device to another orgunit",
+	Long:  `Moves a ChromeOS device to another orgunit.`,
+	RunE:  doMoveCrOSDev,
 }
 
 func doMoveCrOSDev(cmd *cobra.Command, args []string) error {
+	lg.Debugw("starting doMoveCrOSDev()",
+		"args", args)
+	defer lg.Debug("finished doMoveCrOSDev()")
+
 	var move = admin.ChromeOsMoveDevicesToOu{}
 
-	customerID, err := cfg.ReadConfigString("customerid")
+	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {
 		return err
 	}
 
 	move.DeviceIds = append(move.DeviceIds, args[0])
 
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryDeviceChromeosScope)
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryDeviceChromeosScope)
 	if err != nil {
 		return err
 	}
+	ds := srv.(*admin.Service)
 
 	cdmc := ds.Chromeosdevices.MoveDevicesToOu(customerID, args[1], &move)
 
-	if attrs != "" {
-		moveAttrs, err := cmn.ParseOutputAttrs(attrs, cdevs.CrOSDevAttrMap)
-		if err != nil {
-			return err
-		}
-		formattedAttrs := cdevs.StartChromeDevicesField + moveAttrs + cdevs.EndField
-		moveCall := cdevs.AddFields(cdmc, formattedAttrs)
-		cdmc = moveCall.(*admin.ChromeosdevicesMoveDevicesToOuCall)
-	}
-
 	err = cdmc.Do()
 	if err != nil {
+		lg.Error(err)
 		return err
 	}
 
-	fmt.Println(cmn.GminMessage("**** gmin: ChromeOS device " + args[0] + " moved to " + args[1] + " ****"))
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_CDEVMOVEPERFORMED, args[0], args[1])))
+	lg.Infof(gmess.INFO_CDEVMOVEPERFORMED, args[0], args[1])
 
 	return nil
 }
 
 func init() {
 	moveCmd.AddCommand(moveCrOSDevCmd)
-
-	moveCrOSDevCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "device's attributes to display (separated by ~)")
 }

@@ -26,6 +26,9 @@ import (
 	"fmt"
 
 	cmn "github.com/plusworx/gmin/utils/common"
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	lg "github.com/plusworx/gmin/utils/logging"
 	mems "github.com/plusworx/gmin/utils/members"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
@@ -35,49 +38,67 @@ var createMemberCmd = &cobra.Command{
 	Use:     "group-member <user/group email address> <group email address or id>",
 	Aliases: []string{"grp-member", "grp-mem", "gmember", "gmem"},
 	Args:    cobra.ExactArgs(2),
-	Short:   "Makes a user a group member",
-	Long: `Makes a user a group member.
-	
-	Examples:	gmin create group-member another.user@mycompany.com  office@mycompany.com -d NONE
-			gmin crt gmem finance.person@mycompany.com finance@mycompany.com -r MEMBER`,
-	RunE: doCreateMember,
+	Example: `gmin create group-member another.user@mycompany.com  office@mycompany.com -d NONE
+gmin crt gmem finance.person@mycompany.com finance@mycompany.com -r MEMBER`,
+	Short: "Makes a user a group member",
+	Long:  `Makes a user a group member.`,
+	RunE:  doCreateMember,
 }
 
 func doCreateMember(cmd *cobra.Command, args []string) error {
+	lg.Debugw("starting doCreateMember()",
+		"args", args)
+	defer lg.Debug("finished doCreateMember()")
+
 	var member *admin.Member
 
 	member = new(admin.Member)
 
 	member.Email = args[0]
 
-	if deliverySetting != "" {
-		validDS, err := mems.ValidateDeliverySetting(deliverySetting)
+	flgDelSetVal, err := cmd.Flags().GetString(flgnm.FLG_DELIVERYSETTING)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+
+	if flgDelSetVal != "" {
+		validDS, err := mems.ValidateDeliverySetting(flgDelSetVal)
 		if err != nil {
 			return err
 		}
 		member.DeliverySettings = validDS
 	}
 
-	if role != "" {
-		validRole, err := mems.ValidateRole(role)
+	flgRoleVal, err := cmd.Flags().GetString(flgnm.FLG_ROLE)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+
+	if flgRoleVal != "" {
+		validRole, err := mems.ValidateRole(flgRoleVal)
 		if err != nil {
 			return err
 		}
 		member.Role = validRole
 	}
 
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupMemberScope)
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryGroupMemberScope)
 	if err != nil {
 		return err
 	}
+	ds := srv.(*admin.Service)
 
 	mic := ds.Members.Insert(args[1], member)
 	newMember, err := mic.Do()
 	if err != nil {
+		lg.Error(err)
 		return err
 	}
 
-	fmt.Println(cmn.GminMessage("**** gmin: member " + newMember.Email + " created in group " + args[1] + " ****"))
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_MEMBERCREATED, newMember.Email, args[1])))
+	lg.Infof(gmess.INFO_MEMBERCREATED, newMember.Email, args[1])
 
 	return nil
 }
@@ -85,6 +106,6 @@ func doCreateMember(cmd *cobra.Command, args []string) error {
 func init() {
 	createCmd.AddCommand(createMemberCmd)
 
-	createMemberCmd.Flags().StringVarP(&deliverySetting, "deliverysetting", "d", "", "member delivery setting")
-	createMemberCmd.Flags().StringVarP(&role, "role", "r", "", "member role")
+	createMemberCmd.Flags().StringVarP(&deliverySetting, flgnm.FLG_DELIVERYSETTING, "d", "", "member delivery setting")
+	createMemberCmd.Flags().StringVarP(&role, flgnm.FLG_ROLE, "r", "", "member role")
 }

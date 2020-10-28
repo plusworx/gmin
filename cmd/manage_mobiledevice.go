@@ -28,6 +28,8 @@ import (
 
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	lg "github.com/plusworx/gmin/utils/logging"
 	mdevs "github.com/plusworx/gmin/utils/mobiledevices"
 	"github.com/spf13/cobra"
 
@@ -35,21 +37,24 @@ import (
 )
 
 var manageMobDevCmd = &cobra.Command{
-	Use:     "mobiledevice <resource id> <action>",
-	Aliases: []string{"mobdevice", "mobdev", "mdev"},
+	Use:     "mobile-device <resource id> <action>",
+	Aliases: []string{"mob-device", "mob-dev", "mdev"},
 	Args:    cobra.ExactArgs(2),
-	Short:   "Performs an action on a mobile device",
-	Long: `Performs an action on a mobile device.
-	
-	Examples:	gmin manage mobiledevice 4cx07eba348f09b3 block
-			gmin mng mdev 4cx07eba348f09b3 admin_remote_wipe`,
-	RunE: doManageMobDev,
+	Example: `gmin manage mobile-device 4cx07eba348f09b3 block
+gmin mng mdev 4cx07eba348f09b3 admin_remote_wipe`,
+	Short: "Performs an action on a mobile device",
+	Long:  `Performs an action on a mobile device.`,
+	RunE:  doManageMobDev,
 }
 
 func doManageMobDev(cmd *cobra.Command, args []string) error {
+	lg.Debugw("starting doManageMobDev()",
+		"args", args)
+	defer lg.Debug("finished doManageMobDev()")
+
 	var devAction = admin.MobileDeviceAction{}
 
-	customerID, err := cfg.ReadConfigString("customerid")
+	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {
 		return err
 	}
@@ -57,40 +62,33 @@ func doManageMobDev(cmd *cobra.Command, args []string) error {
 	action := strings.ToLower(args[1])
 	ok := cmn.SliceContainsStr(mdevs.ValidActions, action)
 	if !ok {
-		return fmt.Errorf("gmin: error - %v is not a valid action type", args[1])
+		err = fmt.Errorf(gmess.ERR_INVALIDACTIONTYPE, args[1])
+		lg.Error(err)
+		return err
 	}
 
 	devAction.Action = action
 
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryDeviceMobileActionScope)
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryDeviceMobileActionScope)
 	if err != nil {
 		return err
 	}
+	ds := srv.(*admin.Service)
 
 	mdac := ds.Mobiledevices.Action(customerID, args[0], &devAction)
 
-	if attrs != "" {
-		manageAttrs, err := cmn.ParseOutputAttrs(attrs, mdevs.MobDevAttrMap)
-		if err != nil {
-			return err
-		}
-		formattedAttrs := mdevs.StartMobDevicesField + manageAttrs + mdevs.EndField
-		actionCall := mdevs.AddFields(mdac, formattedAttrs)
-		mdac = actionCall.(*admin.MobiledevicesActionCall)
-	}
-
 	err = mdac.Do()
 	if err != nil {
+		lg.Error(err)
 		return err
 	}
 
-	fmt.Println(cmn.GminMessage("**** gmin : " + args[1] + " successfully performed on mobile device " + args[0] + " ****"))
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_MDEVACTIONPERFORMED, args[1], args[0])))
+	lg.Infof(gmess.INFO_MDEVACTIONPERFORMED, args[1], args[0])
 
 	return nil
 }
 
 func init() {
 	manageCmd.AddCommand(manageMobDevCmd)
-
-	manageMobDevCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "device's attributes to display (separated by ~)")
 }

@@ -28,15 +28,17 @@ import (
 	"strings"
 
 	cmn "github.com/plusworx/gmin/utils/common"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	lg "github.com/plusworx/gmin/utils/logging"
 	admin "google.golang.org/api/admin/directory/v1"
 	"google.golang.org/api/googleapi"
 )
 
 const (
-	// EndField is List call attribute string terminator
-	EndField = ")"
-	// StartSchemasField is List call attribute string prefix
-	StartSchemasField = "schemas("
+	// ENDFIELD is List call attribute string terminator
+	ENDFIELD = ")"
+	// STARTSCHEMASFIELD is List call attribute string prefix
+	STARTSCHEMASFIELD = "schemas("
 )
 
 // SchemaAttrMap provides lowercase mappings to valid admin.Schema attributes
@@ -70,7 +72,7 @@ var schemaAttrs = []string{
 }
 
 var schemaCompAttrs = map[string]string{
-	"fields": "fieldSpec",
+	"fields": "fields",
 }
 
 var fieldSpecAttrs = []string{
@@ -97,6 +99,10 @@ var schemaFieldSpecNumIdxSpecAttrs = []string{
 
 // AddFields adds fields to be returned from admin calls
 func AddFields(callObj interface{}, attrs string) interface{} {
+	lg.Debugw("starting AddFields()",
+		"attrs", attrs)
+	defer lg.Debug("finished AddFields()")
+
 	var fields googleapi.Field = googleapi.Field(attrs)
 
 	switch callObj.(type) {
@@ -119,8 +125,12 @@ func AddFields(callObj interface{}, attrs string) interface{} {
 
 // DoGet calls the .Do() function on the admin.SchemasGetCall
 func DoGet(scgc *admin.SchemasGetCall) (*admin.Schema, error) {
+	lg.Debug("starting DoGet()")
+	defer lg.Debug("finished DoGet()")
+
 	schema, err := scgc.Do()
 	if err != nil {
+		lg.Error(err)
 		return nil, err
 	}
 
@@ -129,8 +139,12 @@ func DoGet(scgc *admin.SchemasGetCall) (*admin.Schema, error) {
 
 // DoList calls the .Do() function on the admin.SchemasListCall
 func DoList(sclc *admin.SchemasListCall) (*admin.Schemas, error) {
+	lg.Debug("starting DoList()")
+	defer lg.Debug("finished DoList()")
+
 	schemas, err := sclc.Do()
 	if err != nil {
+		lg.Error(err)
 		return nil, err
 	}
 
@@ -139,6 +153,10 @@ func DoList(sclc *admin.SchemasListCall) (*admin.Schemas, error) {
 
 // ShowAttrs displays requested user attributes
 func ShowAttrs(filter string) {
+	lg.Debugw("starting ShowAttrs()",
+		"filter", filter)
+	defer lg.Debug("finished ShowAttrs()")
+
 	for _, a := range schemaAttrs {
 		lwrA := strings.ToLower(a)
 		comp, _ := cmn.IsValidAttr(lwrA, schemaCompAttrs)
@@ -158,12 +176,15 @@ func ShowAttrs(filter string) {
 				fmt.Println(a)
 			}
 		}
-
 	}
 }
 
 // ShowCompAttrs displays schema composite attributes
 func ShowCompAttrs(filter string) {
+	lg.Debugw("starting ShowCompAttrs()",
+		"filter", filter)
+	defer lg.Debug("finished ShowCompAttrs()")
+
 	keys := make([]string, 0, len(schemaCompAttrs))
 	for k := range schemaCompAttrs {
 		keys = append(keys, k)
@@ -179,14 +200,21 @@ func ShowCompAttrs(filter string) {
 		if strings.Contains(k, strings.ToLower(filter)) {
 			fmt.Println(schemaCompAttrs[k])
 		}
-
 	}
 }
 
 // ShowSubCompAttrs displays schema field spec composite attributes
 func ShowSubCompAttrs(subAttr string, filter string) error {
-	if subAttr != "fieldspec" {
-		return fmt.Errorf("gmin: error - %v is not a valid schema composite attribute", subAttr)
+	lg.Debugw("starting ShowSubCompAttrs()",
+		"subAttr", subAttr,
+		"filter", filter)
+	defer lg.Debug("finished ShowSubCompAttrs()")
+
+	lwrSubAttr := strings.ToLower(subAttr)
+	if lwrSubAttr != "fields" {
+		err := fmt.Errorf(gmess.ERR_INVALIDSCHEMACOMPATTR, subAttr)
+		lg.Error(err)
+		return err
 	}
 
 	keys := make([]string, 0, len(schemaFieldSpecCompAttrs))
@@ -210,8 +238,16 @@ func ShowSubCompAttrs(subAttr string, filter string) error {
 
 // ShowSubAttrs displays attributes of composite attributes
 func ShowSubAttrs(subAttr string, filter string) error {
-	if strings.ToLower(subAttr) != "fieldspec" {
-		return fmt.Errorf("gmin: error - %v is not a composite attribute", subAttr)
+	lg.Debugw("starting ShowSubAttrs()",
+		"subAttr", subAttr,
+		"filter", filter)
+	defer lg.Debug("finished ShowSubAttrs()")
+
+	subAttrVal := strings.ToLower(subAttr)
+	if subAttrVal != "fields" {
+		err := fmt.Errorf(gmess.ERR_NOTCOMPOSITEATTR, subAttr)
+		lg.Error(err)
+		return err
 	}
 
 	for _, a := range fieldSpecAttrs {
@@ -233,15 +269,20 @@ func ShowSubAttrs(subAttr string, filter string) error {
 				fmt.Println(a)
 			}
 		}
-
 	}
 	return nil
 }
 
 // ShowSubSubAttrs displays attributes of composite attributes
 func ShowSubSubAttrs(subAttr string) error {
+	lg.Debugw("starting ShowSubSubAttrs()",
+		"subAttr", subAttr)
+	defer lg.Debug("finished ShowSubSubAttrs()")
+
 	if strings.ToLower(subAttr) != "numericindexingspec" {
-		return fmt.Errorf("gmin: error - %v is not a composite attribute", subAttr)
+		err := fmt.Errorf(gmess.ERR_NOTCOMPOSITEATTR, subAttr)
+		lg.Error(err)
+		return err
 	}
 
 	for _, a := range schemaFieldSpecNumIdxSpecAttrs {

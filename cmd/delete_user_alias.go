@@ -26,6 +26,8 @@ import (
 	"fmt"
 
 	cmn "github.com/plusworx/gmin/utils/common"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	lg "github.com/plusworx/gmin/utils/logging"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 )
@@ -34,28 +36,34 @@ var deleteUserAliasCmd = &cobra.Command{
 	Use:     "user-alias <alias email address> <user email address or id>",
 	Aliases: []string{"ualias", "ua"},
 	Args:    cobra.ExactArgs(2),
-	Short:   "Deletes user alias",
-	Long: `Deletes user alias.
-	
-	Examples:	gmin delete user-alias myalias@mycompany.com myuser@mycompany.com
-			gmin del ua myalias@mycompany.com myuser@mycompany.com`,
-	RunE: doDeleteUserAlias,
+	Example: `gmin delete user-alias myalias@mycompany.com myuser@mycompany.com
+gmin del ua myalias@mycompany.com myuser@mycompany.com`,
+	Short: "Deletes user alias",
+	Long:  `Deletes user alias.`,
+	RunE:  doDeleteUserAlias,
 }
 
 func doDeleteUserAlias(cmd *cobra.Command, args []string) error {
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserAliasScope)
+	lg.Debugw("starting doDeleteUserAlias()",
+		"args", args)
+	defer lg.Debug("finished doDeleteUserAlias()")
+
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryUserAliasScope)
 	if err != nil {
 		return err
 	}
+	ds := srv.(*admin.Service)
 
 	uadc := ds.Users.Aliases.Delete(args[1], args[0])
 
 	err = uadc.Do()
 	if err != nil {
+		lg.Error(err)
 		return err
 	}
 
-	fmt.Println(cmn.GminMessage("**** gmin: user alias " + args[0] + " for user " + args[1] + " deleted ****"))
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_USERALIASDELETED, args[0], args[1])))
+	lg.Infof(gmess.INFO_USERALIASDELETED, args[0], args[1])
 
 	return nil
 }

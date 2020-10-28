@@ -26,6 +26,8 @@ import (
 	"fmt"
 
 	cmn "github.com/plusworx/gmin/utils/common"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	lg "github.com/plusworx/gmin/utils/logging"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 )
@@ -34,28 +36,34 @@ var deleteMemberCmd = &cobra.Command{
 	Use:     "group-member <member email address or id> <group email address or id>",
 	Aliases: []string{"grp-member", "grp-mem", "gmember", "gmem"},
 	Args:    cobra.ExactArgs(2),
-	Short:   "Deletes member of a group",
-	Long: `Deletes member of a group.
-	
-	Examples:	gmin delete group-member mymember@mycompany.org mygroup@mycompany.org
-			gmin del gmem mymember@mycompany.org mygroup@mycompany.org`,
-	RunE: doDeleteMember,
+	Example: `gmin delete group-member mymember@mycompany.org mygroup@mycompany.org
+gmin del gmem mymember@mycompany.org mygroup@mycompany.org`,
+	Short: "Deletes member of a group",
+	Long:  `Deletes member of a group.`,
+	RunE:  doDeleteMember,
 }
 
 func doDeleteMember(cmd *cobra.Command, args []string) error {
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupMemberScope)
+	lg.Debugw("starting doDeleteMember()",
+		"args", args)
+	defer lg.Debug("finished doDeleteMember()")
+
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryGroupMemberScope)
 	if err != nil {
 		return err
 	}
+	ds := srv.(*admin.Service)
 
 	mdc := ds.Members.Delete(args[1], args[0])
 
 	err = mdc.Do()
 	if err != nil {
+		lg.Error(err)
 		return err
 	}
 
-	fmt.Println(cmn.GminMessage("**** gmin: member " + args[0] + " of group " + args[1] + " deleted ****"))
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_MEMBERDELETED, args[0], args[1])))
+	lg.Infof(gmess.INFO_MEMBERDELETED, args[0], args[1])
 
 	return nil
 }

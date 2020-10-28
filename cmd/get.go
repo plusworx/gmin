@@ -23,12 +23,15 @@ THE SOFTWARE.
 package cmd
 
 import (
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	"github.com/spf13/cobra"
 )
 
 var getCmd = &cobra.Command{
 	Use:   "get",
-	Short: "Outputs information about a G Suite entity",
+	Args:  cobra.NoArgs,
+	Short: "Outputs information about a Google Workspace entity",
+	Long:  "Outputs information about a Google Workspace entity.",
 	Run:   doGet,
 }
 
@@ -38,4 +41,7 @@ func doGet(cmd *cobra.Command, args []string) {
 
 func init() {
 	rootCmd.AddCommand(getCmd)
+	getCmd.PersistentFlags().StringVar(&logLevel, flgnm.FLG_LOGLEVEL, "info", "log level (debug, info, error, warn)")
+
+	getCmd.PersistentPreRunE = preRunForDisplayCmds
 }

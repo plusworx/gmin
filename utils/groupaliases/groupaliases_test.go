@@ -26,6 +26,7 @@ import (
 	"testing"
 
 	tsts "github.com/plusworx/gmin/tests"
+	lg "github.com/plusworx/gmin/utils/logging"
 	admin "google.golang.org/api/admin/directory/v1"
 )
 
@@ -37,6 +38,9 @@ func TestAddFields(t *testing.T) {
 			fields: "alias,id,primaryEmail",
 		},
 	}
+
+	tsts.InitConfig()
+	lg.InitLogging("info")
 
 	ds, err := tsts.DummyDirectoryService(admin.AdminDirectoryGroupReadonlyScope)
 	if err != nil {

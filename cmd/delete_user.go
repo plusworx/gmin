@@ -26,35 +26,44 @@ import (
 	"fmt"
 
 	cmn "github.com/plusworx/gmin/utils/common"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	lg "github.com/plusworx/gmin/utils/logging"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 )
 
 var deleteUserCmd = &cobra.Command{
-	Use:   "user <email address or id>",
-	Args:  cobra.ExactArgs(1),
+	Use:     "user <email address or id>",
+	Aliases: []string{"usr"},
+	Args:    cobra.ExactArgs(1),
+	Example: `gmin delete user myuser@mycompany.com
+gmin del user myuser@mycompany.com`,
 	Short: "Deletes user",
-	Long: `Deletes user.
-	
-	Examples:	gmin delete user myuser@mycompany.com
-			gmin del user myuser@mycompany.com`,
-	RunE: doDeleteUser,
+	Long:  `Deletes user.`,
+	RunE:  doDeleteUser,
 }
 
 func doDeleteUser(cmd *cobra.Command, args []string) error {
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserScope)
+	lg.Debugw("starting doDeleteUser()",
+		"args", args)
+	defer lg.Debug("finished doDeleteUser()")
+
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryUserScope)
 	if err != nil {
 		return err
 	}
+	ds := srv.(*admin.Service)
 
 	udc := ds.Users.Delete(args[0])
 
 	err = udc.Do()
 	if err != nil {
+		lg.Error(err)
 		return err
 	}
 
-	fmt.Println(cmn.GminMessage("**** gmin: user " + args[0] + " deleted ****"))
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_USERDELETED, args[0])))
+	lg.Infof(gmess.INFO_USERDELETED, args[0])
 
 	return nil
 }

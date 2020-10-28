@@ -28,6 +28,9 @@ import (
 	"fmt"
 
 	cmn "github.com/plusworx/gmin/utils/common"
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	lg "github.com/plusworx/gmin/utils/logging"
 	usrs "github.com/plusworx/gmin/utils/users"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -38,17 +41,20 @@ import (
 )
 
 var createUserCmd = &cobra.Command{
-	Use:   "user <user email address>",
-	Args:  cobra.ExactArgs(1),
+	Use:     "user <user email address>",
+	Aliases: []string{"usr"},
+	Args:    cobra.ExactArgs(1),
+	Example: `gmin create user another.user@mycompany.com  -f Another -l User -p strongpassword
+gmin crt user finance.person@mycompany.com -f Finance -l Person -p greatpassword -c`,
 	Short: "Creates a user",
-	Long: `Creates a user.
-	
-	Examples:	gmin create user another.user@mycompany.com  -f Another -l User -p strongpassword
-			gmin crt user finance.person@mycompany.com -f Finance -l Person -p greatpassword -c`,
-	RunE: doCreateUser,
+	Long:  `Creates a user.`,
+	RunE:  doCreateUser,
 }
 
 func doCreateUser(cmd *cobra.Command, args []string) error {
+	lg.Debugw("starting doCreateUser()",
+		"args", args)
+
 	var flagsPassed []string
 
 	user := new(admin.User)
@@ -56,7 +62,9 @@ func doCreateUser(cmd *cobra.Command, args []string) error {
 
 	ok := valid.IsEmail(args[0])
 	if !ok {
-		return errors.New("gmin: error - invalid email address")
+		err := fmt.Errorf(gmess.ERR_INVALIDEMAILADDRESS, args[0])
+		lg.Error(err)
+		return err
 	}
 
 	user.PrimaryEmail = args[0]
@@ -69,36 +77,49 @@ func doCreateUser(cmd *cobra.Command, args []string) error {
 	// Process command flags
 	err := processCrtUsrFlags(cmd, user, name, flagsPassed)
 	if err != nil {
+		lg.Error(err)
 		return err
 	}
 
 	user.Name = name
 
-	if attrs != "" {
+	flgAttrsVal, err := cmd.Flags().GetString(flgnm.FLG_ATTRIBUTES)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+
+	if flgAttrsVal != "" {
 		attrUser := new(admin.User)
 		emptyVals := cmn.EmptyValues{}
-		jsonBytes := []byte(attrs)
+		jsonBytes := []byte(flgAttrsVal)
 		if !json.Valid(jsonBytes) {
-			return errors.New("gmin: error - attribute string is not valid JSON")
+			err = errors.New(gmess.ERR_INVALIDJSONATTR)
+			lg.Error(err)
+			return err
 		}
 
 		outStr, err := cmn.ParseInputAttrs(jsonBytes)
 		if err != nil {
+			lg.Error(err)
 			return err
 		}
 
 		err = cmn.ValidateInputAttrs(outStr, usrs.UserAttrMap)
 		if err != nil {
+			lg.Error(err)
 			return err
 		}
 
 		err = json.Unmarshal(jsonBytes, &attrUser)
 		if err != nil {
+			lg.Error(err)
 			return err
 		}
 
 		err = json.Unmarshal(jsonBytes, &emptyVals)
 		if err != nil {
+			lg.Error(err)
 			return err
 		}
 		if len(emptyVals.ForceSendFields) > 0 {
@@ -106,108 +127,308 @@ func doCreateUser(cmd *cobra.Command, args []string) error {
 		}
 
 		if user.Password == "" && attrUser.Password != "" {
-			pwd, err := cmn.HashPassword(attrUser.Password)
+			pwd, err := usrs.HashPassword(attrUser.Password)
 			if err != nil {
+				lg.Error(err)
 				return err
 			}
 			attrUser.Password = pwd
-			attrUser.HashFunction = cmn.HashFunction
+			attrUser.HashFunction = usrs.HASHFUNCTION
 		}
 
 		err = mergo.Merge(user, attrUser)
 		if err != nil {
+			lg.Error(err)
 			return err
 		}
 	}
 
 	if user.Name.GivenName == "" || user.Name.FamilyName == "" || user.Password == "" {
-		return errors.New("gmin: error - firstname, lastname and password must all be provided")
+		err = errors.New(gmess.ERR_MISSINGUSERDATA)
+		lg.Error(err)
+		return err
 	}
 
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserScope)
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryUserScope)
 	if err != nil {
 		return err
 	}
+	ds := srv.(*admin.Service)
 
 	uic := ds.Users.Insert(user)
 	newUser, err := uic.Do()
 	if err != nil {
+		lg.Error(err)
 		return err
 	}
 
-	fmt.Println(cmn.GminMessage("**** gmin: user " + newUser.PrimaryEmail + " created ****"))
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_USERCREATED, newUser.PrimaryEmail)))
+	lg.Infof(gmess.INFO_USERCREATED, newUser.PrimaryEmail)
 
+	lg.Debug("finished doCreateUser()")
 	return nil
 }
 
 func init() {
 	createCmd.AddCommand(createUserCmd)
 
-	createUserCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "user's attributes as a JSON string")
-	createUserCmd.Flags().BoolVarP(&changePassword, "changepassword", "c", false, "user must change password on next login")
-	createUserCmd.Flags().StringVarP(&firstName, "firstname", "f", "", "user's first name")
-	createUserCmd.Flags().StringVarP(&forceSend, "force", "", "", "field list for ForceSendFields separated by (~)")
-	createUserCmd.Flags().StringVarP(&lastName, "lastname", "l", "", "user's last name")
-	createUserCmd.Flags().BoolVarP(&noGAL, "nogal", "n", false, "do not display user in Global Address List")
-	createUserCmd.Flags().StringVarP(&orgUnit, "orgunit", "o", "", "user's orgunit")
-	createUserCmd.Flags().StringVarP(&password, "password", "p", "", "user's password")
-	createUserCmd.Flags().StringVarP(&recoveryEmail, "recoveryemail", "z", "", "user's recovery email address")
-	createUserCmd.Flags().StringVarP(&recoveryPhone, "recoveryphone", "k", "", "user's recovery phone")
-	createUserCmd.Flags().BoolVarP(&suspended, "suspended", "s", false, "user is suspended")
+	createUserCmd.Flags().StringVarP(&attrs, flgnm.FLG_ATTRIBUTES, "a", "", "user's attributes as a JSON string")
+	createUserCmd.Flags().BoolVarP(&changePassword, flgnm.FLG_CHANGEPWD, "c", false, "user must change password on next login")
+	createUserCmd.Flags().StringVarP(&firstName, flgnm.FLG_FIRSTNAME, "f", "", "user's first name")
+	createUserCmd.Flags().StringVar(&forceSend, flgnm.FLG_FORCE, "", "field list for ForceSendFields separated by (~)")
+	createUserCmd.Flags().BoolVarP(&gal, flgnm.FLG_GAL, "g", false, "user is included in Global Address List")
+	createUserCmd.Flags().StringVarP(&lastName, flgnm.FLG_LASTNAME, "l", "", "user's last name")
+	createUserCmd.Flags().StringVarP(&orgUnit, flgnm.FLG_ORGUNIT, "o", "", "user's orgunit")
+	createUserCmd.Flags().StringVarP(&password, flgnm.FLG_PASSWORD, "p", "", "user's password")
+	createUserCmd.Flags().StringVarP(&recoveryEmail, flgnm.FLG_RECEMAIL, "z", "", "user's recovery email address")
+	createUserCmd.Flags().StringVarP(&recoveryPhone, flgnm.FLG_RECPHONE, "k", "", "user's recovery phone")
+	createUserCmd.Flags().BoolVarP(&suspended, flgnm.FLG_SUSPENDED, "s", false, "user is suspended")
 
-	createUserCmd.MarkFlagRequired("firstname")
-	createUserCmd.MarkFlagRequired("lastname")
-	createUserCmd.MarkFlagRequired("password")
+	createUserCmd.MarkFlagRequired(flgnm.FLG_FIRSTNAME)
+	createUserCmd.MarkFlagRequired(flgnm.FLG_LASTNAME)
+	createUserCmd.MarkFlagRequired(flgnm.FLG_PASSWORD)
+}
+
+func cuFirstnameFlag(name *admin.UserName, flagName string, flgVal string) error {
+	lg.Debugw("starting cuFirstnameFlag()",
+		"flagName", flagName)
+	if flgVal == "" {
+		err := fmt.Errorf(gmess.ERR_EMPTYSTRING, flagName)
+		if err != nil {
+			lg.Error(err)
+			return err
+		}
+	}
+	name.GivenName = flgVal
+	lg.Debug("finished cuFirstnameFlag()")
+	return nil
+}
+
+func cuForceFlag(forceSend string, user *admin.User) error {
+	lg.Debugw("starting cuForceFlag()",
+		"forceSend", forceSend)
+	fields, err := cmn.ParseForceSend(forceSend, usrs.UserAttrMap)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+	for _, fld := range fields {
+		user.ForceSendFields = append(user.ForceSendFields, fld)
+	}
+	lg.Debug("finished cuForceFlag()")
+	return nil
+}
+
+func cuGalFlag(user *admin.User, flgVal bool) {
+	if !flgVal {
+		user.IncludeInGlobalAddressList = false
+		user.ForceSendFields = append(user.ForceSendFields, "IncludeInGlobalAddressList")
+	}
+}
+
+func cuLastnameFlag(name *admin.UserName, flagName string, flgVal string) error {
+	lg.Debugw("starting cuLastnameFlag()",
+		"flagName", flagName)
+	if flgVal == "" {
+		err := fmt.Errorf(gmess.ERR_EMPTYSTRING, flagName)
+		if err != nil {
+			lg.Error(err)
+			return err
+		}
+	}
+	name.FamilyName = flgVal
+	lg.Debug("finished cuLastnameFlag()")
+	return nil
+}
+
+func cuOrgunitFlag(user *admin.User, flagName string, flgVal string) error {
+	lg.Debugw("starting cuOrgunitFlag()",
+		"flagName", flagName)
+	if flgVal == "" {
+		err := fmt.Errorf(gmess.ERR_EMPTYSTRING, flagName)
+		if err != nil {
+			lg.Error(err)
+			return err
+		}
+	}
+	user.OrgUnitPath = flgVal
+	lg.Debug("finished cuOrgunitFlag()")
+	return nil
+}
+
+func cuPasswordFlag(user *admin.User, flagName string, flgVal string) error {
+	lg.Debugw("starting cuPasswordFlag()",
+		"flagName", flagName)
+	if flgVal == "" {
+		err := fmt.Errorf(gmess.ERR_EMPTYSTRING, flagName)
+		lg.Error(err)
+		return err
+	}
+	pwd, err := usrs.HashPassword(flgVal)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+	user.Password = pwd
+	user.HashFunction = usrs.HASHFUNCTION
+	lg.Debug("finished cuPasswordFlag()")
+	return nil
+}
+
+func cuRecoveryEmailFlag(user *admin.User, flagName string, flgVal string) error {
+	lg.Debugw("starting cuRecoveryEmailFlag()",
+		"flagName", flagName)
+	if flgVal == "" {
+		err := fmt.Errorf(gmess.ERR_EMPTYSTRING, flagName)
+		lg.Error(err)
+		return err
+	}
+	ok := valid.IsEmail(flgVal)
+	if !ok {
+		err := fmt.Errorf(gmess.ERR_INVALIDEMAILADDRESS, flgVal)
+		lg.Error(err)
+		return err
+	}
+	user.RecoveryEmail = flgVal
+	lg.Debug("finished cuRecoveryEmailFlag()")
+	return nil
+}
+
+func cuRecoveryPhoneFlag(user *admin.User, flagName string, flgVal string) error {
+	lg.Debugw("starting cuRecoveryPhoneFlag()",
+		"flagName", flagName)
+	if flgVal == "" {
+		err := fmt.Errorf(gmess.ERR_EMPTYSTRING, flagName)
+		lg.Error(err)
+		return err
+	}
+	if string(recoveryPhone[0]) != "+" {
+		err := fmt.Errorf(gmess.ERR_INVALIDRECOVERYPHONE, flgVal)
+		lg.Error(err)
+		return err
+	}
+	user.RecoveryPhone = flgVal
+	lg.Debug("finished cuRecoveryPhoneFlag()")
+	return nil
 }
 
 func processCrtUsrFlags(cmd *cobra.Command, user *admin.User, name *admin.UserName, flagNames []string) error {
+	lg.Debugw("starting processCrtUsrFlags()",
+		"flagNames", flagNames)
 	for _, flName := range flagNames {
-		switch flName {
-		case "changepassword":
-			user.ChangePasswordAtNextLogin = true
-		case "firstname":
-			name.GivenName = firstName
-		case "forceSend":
-			fields, err := cmn.ParseForceSend(forceSend, usrs.UserAttrMap)
+		if flName == flgnm.FLG_CHANGEPWD {
+			flgChgPwdVal, err := cmd.Flags().GetBool(flName)
+			if err != nil {
+				lg.Error(err)
+				return err
+			}
+			if flgChgPwdVal {
+				user.ChangePasswordAtNextLogin = true
+			}
+		}
+		if flName == flgnm.FLG_FIRSTNAME {
+			flgFstNameVal, err := cmd.Flags().GetString(flName)
+			if err != nil {
+				lg.Error(err)
+				return err
+			}
+
+			err = cuFirstnameFlag(name, "--"+flName, flgFstNameVal)
 			if err != nil {
 				return err
 			}
-			for _, fld := range fields {
-				user.ForceSendFields = append(user.ForceSendFields, fld)
+		}
+		if flName == flgnm.FLG_FORCE {
+			flgForceVal, err := cmd.Flags().GetString(flName)
+			if err != nil {
+				lg.Error(err)
+				return err
 			}
-		case "lastname":
-			name.FamilyName = lastName
-		case "nogal":
-			user.IncludeInGlobalAddressList = false
-			user.ForceSendFields = append(user.ForceSendFields, "IncludeInGlobalAddressList")
-		case "orgunit":
-			user.OrgUnitPath = orgUnit
-		case "password":
-			if password == "" {
-				return errors.New("gmin: error - password cannot be empty string")
-			}
-			pwd, err := cmn.HashPassword(password)
+
+			err = cuForceFlag(flgForceVal, user)
 			if err != nil {
 				return err
 			}
-			user.Password = pwd
-			user.HashFunction = cmn.HashFunction
-		case "recoveryemail":
-			if recoveryEmail == "" {
-				return errors.New("gmin: error - recoveryemail cannot be empty string")
+		}
+		if flName == flgnm.FLG_GAL {
+			flgGalVal, err := cmd.Flags().GetBool(flName)
+			if err != nil {
+				lg.Error(err)
+				return err
 			}
-			user.RecoveryEmail = recoveryEmail
-		case "recoveryphone":
-			if recoveryPhone == "" {
-				return errors.New("gmin: error - recoveryphone cannot be empty string")
+			cuGalFlag(user, flgGalVal)
+		}
+		if flName == flgnm.FLG_LASTNAME {
+			flgLstNameVal, err := cmd.Flags().GetString(flName)
+			if err != nil {
+				lg.Error(err)
+				return err
 			}
-			if string(recoveryPhone[0]) != "+" {
-				return fmt.Errorf("gmin: error - recovery phone number %v must start with '+'", recoveryPhone)
+
+			err = cuLastnameFlag(name, "--"+flName, flgLstNameVal)
+			if err != nil {
+				return err
 			}
-			user.RecoveryPhone = recoveryPhone
-		case "suspended":
-			user.Suspended = true
+		}
+		if flName == flgnm.FLG_ORGUNIT {
+			flgOUVal, err := cmd.Flags().GetString(flName)
+			if err != nil {
+				lg.Error(err)
+				return err
+			}
+
+			err = cuOrgunitFlag(user, "--"+flName, flgOUVal)
+			if err != nil {
+				return err
+			}
+		}
+		if flName == flgnm.FLG_PASSWORD {
+			flgPwdVal, err := cmd.Flags().GetString(flName)
+			if err != nil {
+				lg.Error(err)
+				return err
+			}
+
+			err = cuPasswordFlag(user, "--"+flName, flgPwdVal)
+			if err != nil {
+				return err
+			}
+		}
+		if flName == flgnm.FLG_RECEMAIL {
+			flgRecEmailVal, err := cmd.Flags().GetString(flName)
+			if err != nil {
+				lg.Error(err)
+				return err
+			}
+
+			err = cuRecoveryEmailFlag(user, "--"+flName, flgRecEmailVal)
+			if err != nil {
+				return err
+			}
+		}
+		if flName == flgnm.FLG_RECPHONE {
+			flgRecPhoneVal, err := cmd.Flags().GetString(flName)
+			if err != nil {
+				lg.Error(err)
+				return err
+			}
+
+			err = cuRecoveryPhoneFlag(user, "--"+flName, flgRecPhoneVal)
+			if err != nil {
+				return err
+			}
+		}
+		if flName == flgnm.FLG_SUSPENDED {
+			flgSuspVal, err := cmd.Flags().GetBool(flName)
+			if err != nil {
+				lg.Error(err)
+				return err
+			}
+			if flgSuspVal {
+				user.Suspended = true
+			}
 		}
 	}
+	lg.Debug("finished processCrtUsrFlags()")
 	return nil
 }

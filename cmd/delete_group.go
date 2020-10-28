@@ -26,6 +26,8 @@ import (
 	"fmt"
 
 	cmn "github.com/plusworx/gmin/utils/common"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	lg "github.com/plusworx/gmin/utils/logging"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 )
@@ -34,28 +36,34 @@ var deleteGroupCmd = &cobra.Command{
 	Use:     "group <email address or id>",
 	Aliases: []string{"grp"},
 	Args:    cobra.ExactArgs(1),
-	Short:   "Deletes group",
-	Long: `Deletes group.
-	
-	Examples:	gmin delete group test@mycompany.com
-			gmin del grp test@mycompany.com`,
-	RunE: doDeleteGroup,
+	Example: `gmin delete group test@mycompany.com
+gmin del grp test@mycompany.com`,
+	Short: "Deletes group",
+	Long:  `Deletes group.`,
+	RunE:  doDeleteGroup,
 }
 
 func doDeleteGroup(cmd *cobra.Command, args []string) error {
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupScope)
+	lg.Debugw("starting doDeleteGroup()",
+		"args", args)
+	defer lg.Debug("finished doDeleteGroup()")
+
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryGroupScope)
 	if err != nil {
 		return err
 	}
+	ds := srv.(*admin.Service)
 
 	gdc := ds.Groups.Delete(args[0])
 
 	err = gdc.Do()
 	if err != nil {
+		lg.Error(err)
 		return err
 	}
 
-	fmt.Println(cmn.GminMessage("**** gmin: group " + args[0] + " deleted ****"))
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_GROUPDELETED, args[0])))
+	lg.Infof(gmess.INFO_GROUPDELETED, args[0])
 
 	return nil
 }

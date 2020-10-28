@@ -28,6 +28,9 @@ import (
 
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
+	gpars "github.com/plusworx/gmin/utils/gminparsers"
+	lg "github.com/plusworx/gmin/utils/logging"
 	scs "github.com/plusworx/gmin/utils/schemas"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
@@ -37,34 +40,43 @@ var getSchemaCmd = &cobra.Command{
 	Use:     "schema <schema name>",
 	Aliases: []string{"sc"},
 	Args:    cobra.ExactArgs(1),
-	Short:   "Outputs information about a schema",
-	Long: `Outputs information about a schema.
-	
-	Examples:	gmin get schema EmployeeInfo
-			gmin get sc EmployeeInfo -a displayName~schemaName`,
-	RunE: doGetSchema,
+	Example: `gmin get schema EmployeeInfo
+gmin get sc EmployeeInfo -a displayName~schemaName`,
+	Short: "Outputs information about a schema",
+	Long:  `Outputs information about a schema.`,
+	RunE:  doGetSchema,
 }
 
 func doGetSchema(cmd *cobra.Command, args []string) error {
+	lg.Debugw("starting doGetSchema()",
+		"args", args)
+	defer lg.Debug("finished doGetSchema()")
+
 	var (
 		jsonData []byte
 		schema   *admin.Schema
 	)
 
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserschemaReadonlyScope)
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryUserschemaReadonlyScope)
 	if err != nil {
 		return err
 	}
+	ds := srv.(*admin.Service)
 
-	customerID, err := cfg.ReadConfigString("customerid")
+	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {
 		return err
 	}
 
 	scgc := ds.Schemas.Get(customerID, args[0])
 
-	if attrs != "" {
-		formattedAttrs, err := cmn.ParseOutputAttrs(attrs, scs.SchemaAttrMap)
+	flgAttrsVal, err := cmd.Flags().GetString(flgnm.FLG_ATTRIBUTES)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+	if flgAttrsVal != "" {
+		formattedAttrs, err := gpars.ParseOutputAttrs(flgAttrsVal, scs.SchemaAttrMap)
 		if err != nil {
 			return err
 		}
@@ -79,6 +91,7 @@ func doGetSchema(cmd *cobra.Command, args []string) error {
 
 	jsonData, err = json.MarshalIndent(schema, "", "    ")
 	if err != nil {
+		lg.Error(err)
 		return err
 	}
 
@@ -90,5 +103,5 @@ func doGetSchema(cmd *cobra.Command, args []string) error {
 func init() {
 	getCmd.AddCommand(getSchemaCmd)
 
-	getSchemaCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required schema attributes (separated by ~)")
+	getSchemaCmd.Flags().StringVarP(&attrs, flgnm.FLG_ATTRIBUTES, "a", "", "required schema attributes (separated by ~)")
 }

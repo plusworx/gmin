@@ -26,6 +26,7 @@ import (
 	"testing"
 
 	tsts "github.com/plusworx/gmin/tests"
+	lg "github.com/plusworx/gmin/utils/logging"
 	admin "google.golang.org/api/admin/directory/v1"
 )
 
@@ -37,6 +38,9 @@ func TestAddFields(t *testing.T) {
 			fields: "name,orgUnitPath",
 		},
 	}
+
+	tsts.InitConfig()
+	lg.InitLogging("info")
 
 	ds, err := tsts.DummyDirectoryService(admin.AdminDirectoryOrgunitReadonlyScope)
 	if err != nil {
@@ -64,6 +68,9 @@ func TestAddOUPath(t *testing.T) {
 		},
 	}
 
+	tsts.InitConfig()
+	lg.InitLogging("info")
+
 	ds, err := tsts.DummyDirectoryService(admin.AdminDirectoryOrgunitReadonlyScope)
 	if err != nil {
 		t.Error("Error: failed to create dummy admin.Service")
@@ -89,6 +96,9 @@ func TestAddType(t *testing.T) {
 			searchType: "all",
 		},
 	}
+
+	tsts.InitConfig()
+	lg.InitLogging("info")
 
 	ds, err := tsts.DummyDirectoryService(admin.AdminDirectoryOrgunitReadonlyScope)
 	if err != nil {

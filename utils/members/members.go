@@ -23,21 +23,36 @@ THE SOFTWARE.
 package members
 
 import (
-	"errors"
 	"fmt"
 	"sort"
 	"strings"
 
+	cmn "github.com/plusworx/gmin/utils/common"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	lg "github.com/plusworx/gmin/utils/logging"
 	admin "google.golang.org/api/admin/directory/v1"
 	"google.golang.org/api/googleapi"
 )
 
 const (
-	// EndField is List call attribute string terminator
-	EndField string = ")"
-	// StartMembersField is List call attribute string prefix
-	StartMembersField string = "members("
+	// ENDFIELD is List call attribute string terminator
+	ENDFIELD string = ")"
+	// KEYNAME is name of key for processing
+	KEYNAME string = "memberKey"
+	// STARTMEMBERSFIELD is List call attribute string prefix
+	STARTMEMBERSFIELD string = "members("
 )
+
+// Key is struct used to extract memberKey
+type Key struct {
+	MemberKey string
+}
+
+// MemberParams holds group data for batch processing
+type MemberParams struct {
+	MemberKey string
+	Member    *admin.Member
+}
 
 var attrValues = []string{
 	"delivery_settings",
@@ -64,7 +79,7 @@ var MemberAttrMap = map[string]string{
 	"etag":              "etag",
 	"id":                "id",
 	"kind":              "kind",
-	"memberkey":         "memberKey", // used in batch update
+	"memberkey":         "memberKey", // used in batch commands
 	"role":              "role",
 	"status":            "status",
 	"type":              "type",
@@ -77,13 +92,12 @@ var RoleMap = map[string]string{
 	"member":  "MEMBER",
 }
 
-// Key is struct used to extract memberKey
-type Key struct {
-	MemberKey string
-}
-
 // AddFields adds fields to be returned to admin calls
 func AddFields(callObj interface{}, attrs string) interface{} {
+	lg.Debugw("starting AddFields()",
+		"attrs", attrs)
+	defer lg.Debug("finished AddFields()")
+
 	var fields googleapi.Field = googleapi.Field(attrs)
 
 	switch callObj.(type) {
@@ -106,6 +120,10 @@ func AddFields(callObj interface{}, attrs string) interface{} {
 
 // AddMaxResults adds MaxResults to admin calls
 func AddMaxResults(mlc *admin.MembersListCall, maxResults int64) *admin.MembersListCall {
+	lg.Debugw("starting AddMaxResults()",
+		"maxResults", maxResults)
+	defer lg.Debug("finished AddMaxResults()")
+
 	var newMLC *admin.MembersListCall
 
 	newMLC = mlc.MaxResults(maxResults)
@@ -115,6 +133,10 @@ func AddMaxResults(mlc *admin.MembersListCall, maxResults int64) *admin.MembersL
 
 // AddPageToken adds PageToken to admin calls
 func AddPageToken(mlc *admin.MembersListCall, token string) *admin.MembersListCall {
+	lg.Debugw("starting AddPageToken()",
+		"token", token)
+	defer lg.Debug("finished AddPageToken()")
+
 	var newMLC *admin.MembersListCall
 
 	newMLC = mlc.PageToken(token)
@@ -124,6 +146,10 @@ func AddPageToken(mlc *admin.MembersListCall, token string) *admin.MembersListCa
 
 // AddRoles adds Roles to admin calls
 func AddRoles(mlc *admin.MembersListCall, roles string) *admin.MembersListCall {
+	lg.Debugw("starting AddRoles()",
+		"roles", roles)
+	defer lg.Debug("finished AddRoles()")
+
 	var newMLC *admin.MembersListCall
 
 	newMLC = mlc.Roles(roles)
@@ -133,8 +159,12 @@ func AddRoles(mlc *admin.MembersListCall, roles string) *admin.MembersListCall {
 
 // DoGet calls the .Do() function on the admin.MembersGetCall
 func DoGet(mgc *admin.MembersGetCall) (*admin.Member, error) {
+	lg.Debug("starting DoGet()")
+	defer lg.Debug("finished DoGet()")
+
 	member, err := mgc.Do()
 	if err != nil {
+		lg.Error(err)
 		return nil, err
 	}
 
@@ -143,16 +173,100 @@ func DoGet(mgc *admin.MembersGetCall) (*admin.Member, error) {
 
 // DoList calls the .Do() function on the admin.MembersListCall
 func DoList(mlc *admin.MembersListCall) (*admin.Members, error) {
+	lg.Debug("starting DoList()")
+	defer lg.Debug("finished DoList()")
+
 	members, err := mlc.Do()
 	if err != nil {
+		lg.Error(err)
 		return nil, err
 	}
 
 	return members, nil
 }
 
+// PopulateMember is used in batch processing
+func PopulateMember(member *admin.Member, hdrMap map[int]string, objData []interface{}) error {
+	lg.Debugw("starting populateMember()",
+		"hdrMap", hdrMap)
+	defer lg.Debug("finished populateMember()")
+
+	for idx, attr := range objData {
+		attrName := hdrMap[idx]
+		attrVal := fmt.Sprintf("%v", attr)
+
+		switch {
+		case attrName == "delivery_settings":
+			validDS, err := ValidateDeliverySetting(attrVal)
+			if err != nil {
+				return err
+			}
+			member.DeliverySettings = validDS
+		case attrName == "email":
+			if attrVal == "" {
+				err := fmt.Errorf(gmess.ERR_EMPTYSTRING, attrName)
+				lg.Error(err)
+				return err
+			}
+			member.Email = attrVal
+		case attrName == "role":
+			validRole, err := ValidateRole(attrVal)
+			if err != nil {
+				return err
+			}
+			member.Role = validRole
+		default:
+			err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, attrName)
+			return err
+		}
+	}
+	return nil
+}
+
+// PopulateMemberForUpdate is used in batch processing
+func PopulateMemberForUpdate(memParam *MemberParams, hdrMap map[int]string, objData []interface{}) error {
+	lg.Debugw("starting PopulateMemberForUpdate()",
+		"hdrMap", hdrMap)
+	defer lg.Debug("finished PopulateMemberForUpdate()")
+
+	for idx, attr := range objData {
+		attrName := hdrMap[idx]
+		attrVal := fmt.Sprintf("%v", attr)
+
+		switch {
+		case attrName == "delivery_settings":
+			validDS, err := ValidateDeliverySetting(attrVal)
+			if err != nil {
+				return err
+			}
+			memParam.Member.DeliverySettings = validDS
+		case attrName == "role":
+			validRole, err := ValidateRole(attrVal)
+			if err != nil {
+				return err
+			}
+			memParam.Member.Role = validRole
+		case attrName == "memberKey":
+			if attrVal == "" {
+				err := fmt.Errorf(gmess.ERR_EMPTYSTRING, attrName)
+				lg.Error(err)
+				return err
+			}
+			memParam.MemberKey = attrVal
+		default:
+			err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, attrName)
+			return err
+		}
+	}
+	return nil
+}
+
 // ShowAttrs displays requested group member attributes
 func ShowAttrs(filter string) {
+	lg.Debugw("starting ShowAttrs()",
+		"filter", filter)
+	defer lg.Debug("finished ShowAttrs()")
+
 	keys := make([]string, 0, len(MemberAttrMap))
 	for k := range MemberAttrMap {
 		keys = append(keys, k)
@@ -173,15 +287,21 @@ func ShowAttrs(filter string) {
 }
 
 // ShowAttrValues displays enumerated attribute values
-func ShowAttrValues(lenArgs int, args []string) error {
+func ShowAttrValues(lenArgs int, args []string, filter string) error {
+	lg.Debugw("starting ShowAttrValues()",
+		"lenArgs", lenArgs,
+		"args", args,
+		"filter", filter)
+	defer lg.Debug("finished ShowAttrValues()")
+
 	if lenArgs > 2 {
-		return errors.New("gmin: error - too many arguments, group-member has maximum of 2")
+		err := fmt.Errorf(gmess.ERR_TOOMANYARGSMAX1, args[0])
+		lg.Error(err)
+		return err
 	}
 
 	if lenArgs == 1 {
-		for _, v := range attrValues {
-			fmt.Println(v)
-		}
+		cmn.ShowAttrVals(attrValues, filter)
 	}
 
 	if lenArgs == 2 {
@@ -193,34 +313,35 @@ func ShowAttrValues(lenArgs int, args []string) error {
 			for _, val := range deliverySettingMap {
 				values = append(values, val)
 			}
-			sort.Strings(values)
-			for _, s := range values {
-				fmt.Println(s)
-			}
 		case attr == "role":
 			for _, val := range RoleMap {
 				values = append(values, val)
 			}
-			sort.Strings(values)
-			for _, s := range values {
-				fmt.Println(s)
-			}
 		default:
-			return fmt.Errorf("gmin: error - %v attribute not recognized", args[1])
+			err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[1])
+			lg.Error(err)
+			return err
 		}
+
+		sort.Strings(values)
+		cmn.ShowAttrVals(values, filter)
 	}
 
 	return nil
 }
 
 // ShowFlagValues displays enumerated flag values
-func ShowFlagValues(lenArgs int, args []string) error {
+func ShowFlagValues(lenArgs int, args []string, filter string) error {
+	lg.Debugw("starting ShowFlagValues()",
+		"lenArgs", lenArgs,
+		"args", args,
+		"filter", filter)
+	defer lg.Debug("finished ShowFlagValues()")
+
 	values := []string{}
 
 	if lenArgs == 1 {
-		for _, v := range flagValues {
-			fmt.Println(v)
-		}
+		cmn.ShowFlagValues(flagValues, filter)
 	}
 
 	if lenArgs == 2 {
@@ -231,11 +352,11 @@ func ShowFlagValues(lenArgs int, args []string) error {
 				values = append(values, val)
 			}
 			sort.Strings(values)
-			for _, s := range values {
-				fmt.Println(s)
-			}
+			cmn.ShowFlagValues(values, filter)
 		} else {
-			return fmt.Errorf("gmin: error - %v flag not recognized", args[1])
+			err := fmt.Errorf(gmess.ERR_FLAGNOTRECOGNIZED, args[1])
+			lg.Error(err)
+			return err
 		}
 	}
 
@@ -244,11 +365,17 @@ func ShowFlagValues(lenArgs int, args []string) error {
 
 // ValidateDeliverySetting checks that a valid delivery setting has been provided
 func ValidateDeliverySetting(ds string) (string, error) {
+	lg.Debugw("starting ValidateDeliverySetting()",
+		"ds", ds)
+	defer lg.Debug("finished ValidateDeliverySetting()")
+
 	lowerDS := strings.ToLower(ds)
 
 	validSetting := deliverySettingMap[lowerDS]
 	if validSetting == "" {
-		return "", fmt.Errorf("gmin: error - %v is not a valid delivery setting", ds)
+		err := fmt.Errorf(gmess.ERR_INVALIDDELIVERYSETTING, ds)
+		lg.Error(err)
+		return "", err
 	}
 
 	return validSetting, nil
@@ -256,11 +383,15 @@ func ValidateDeliverySetting(ds string) (string, error) {
 
 // ValidateRole checks that a valid role has been provided
 func ValidateRole(role string) (string, error) {
+	lg.Debugw("starting ValidateRole()",
+		"role", role)
+	defer lg.Debug("finished ValidateRole()")
+
 	lowerRole := strings.ToLower(role)
 
 	validRole := RoleMap[lowerRole]
 	if validRole == "" {
-		return "", fmt.Errorf("gmin: error - %v is not a valid role", role)
+		return "", fmt.Errorf(gmess.ERR_INVALIDROLE, role)
 	}
 
 	return validRole, nil

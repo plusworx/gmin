@@ -26,7 +26,11 @@ import (
 	"fmt"
 
 	valid "github.com/asaskevich/govalidator"
+	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	lg "github.com/plusworx/gmin/utils/logging"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -34,47 +38,124 @@ import (
 var setConfigCmd = &cobra.Command{
 	Use:     "config",
 	Aliases: []string{"cfg"},
-	Short:   "Sets gmin configuration information",
-	Long: `Sets gmin configuration information.
+	Example: `gmin set config --admin my.admin@mycompany.org
+gmin set cfg -a my.admin@mycompany.org`,
+	Short: "Sets gmin configuration information in config file",
+	Long: `Sets gmin configuration information in config file.
 	
-	Examples:	gmin set config --admin my.admin@mycompany.org
-			gmin set cfg -a my.admin@mycompany.org`,
+N.B. This command does NOT set environment variables.`,
 	RunE: doSetConfig,
 }
 
 func doSetConfig(cmd *cobra.Command, args []string) error {
-	if customerID != "" {
-		viper.Set(cfg.ConfigCustID, customerID)
-		err := viper.WriteConfig()
-		if err != nil {
-			return err
-		}
-		fmt.Printf("**** gmin: customer id set to %v ****\n", customerID)
-	}
+	lg.Debugw("starting doSetConfig()",
+		"args", args)
+	defer lg.Debug("finished doSetConfig()")
 
-	if adminEmail != "" {
-		ok := valid.IsEmail(adminEmail)
+	flgAdminVal, err := cmd.Flags().GetString(flgnm.FLG_ADMIN)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+	if flgAdminVal != "" {
+		ok := valid.IsEmail(flgAdminVal)
 		if !ok {
-			return fmt.Errorf("gmin: error - %v is not a valid email address", adminEmail)
-		}
-		viper.Set(cfg.ConfigAdmin, adminEmail)
-		err := viper.WriteConfig()
-		if err != nil {
+			err = fmt.Errorf(gmess.ERR_INVALIDEMAILADDRESS, flgAdminVal)
+			lg.Error(err)
 			return err
 		}
-		fmt.Printf("**** gmin: administrator set to %v ****\n", adminEmail)
-	}
-
-	if credentialPath != "" {
-		viper.Set(cfg.ConfigCredPath, credentialPath)
+		viper.Set(cfg.CONFIGADMIN, flgAdminVal)
 		err := viper.WriteConfig()
 		if err != nil {
+			lg.Error(err)
 			return err
 		}
-		fmt.Printf("**** gmin: service account credential path set to %v ****\n", credentialPath)
+		fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_ADMINSET, flgAdminVal)))
+		lg.Infof(gmess.INFO_ADMINSET, flgAdminVal)
 	}
 
-	if adminEmail == "" && customerID == "" && credentialPath == "" {
+	flgCredPathVal, err := cmd.Flags().GetString(flgnm.FLG_CREDPATH)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+	if flgCredPathVal != "" {
+		viper.Set(cfg.CONFIGCREDPATH, flgCredPathVal)
+		err := viper.WriteConfig()
+		if err != nil {
+			lg.Error(err)
+			return err
+		}
+		fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_CREDENTIALPATHSET, flgCredPathVal)))
+		lg.Infof(gmess.INFO_CREDENTIALPATHSET, flgCredPathVal)
+	}
+
+	flgCustIDVal, err := cmd.Flags().GetString(flgnm.FLG_CUSTOMERID)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+	if flgCustIDVal != "" {
+		viper.Set(cfg.CONFIGCUSTID, flgCustIDVal)
+		err := viper.WriteConfig()
+		if err != nil {
+			lg.Error(err)
+			return err
+		}
+		fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_CUSTOMERIDSET, flgCustIDVal)))
+		lg.Infof(gmess.INFO_CUSTOMERIDSET, flgCustIDVal)
+	}
+
+	flgLogPathVal, err := cmd.Flags().GetString(flgnm.FLG_LOGPATH)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+	if flgLogPathVal != "" {
+		viper.Set(cfg.CONFIGLOGPATH, flgLogPathVal)
+		err := viper.WriteConfig()
+		if err != nil {
+			lg.Error(err)
+			return err
+		}
+		fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_LOGPATHSET, flgLogPathVal)))
+		lg.Infof(gmess.INFO_LOGPATHSET, flgLogPathVal)
+	}
+
+	flgLogRotCountVal, err := cmd.Flags().GetUint(flgnm.FLG_LOGROTATIONCOUNT)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+	if flgLogRotCountVal != 0 {
+		viper.Set(cfg.CONFIGLOGROTATIONCOUNT, flgLogRotCountVal)
+		err := viper.WriteConfig()
+		if err != nil {
+			lg.Error(err)
+			return err
+		}
+		fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_LOGROTATIONCOUNTSET, flgLogRotCountVal)))
+		lg.Infof(gmess.INFO_LOGROTATIONCOUNTSET, flgLogRotCountVal)
+	}
+
+	flgLogRotTimeVal, err := cmd.Flags().GetInt(flgnm.FLG_LOGROTATIONTIME)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+	if flgLogRotTimeVal != 0 {
+		viper.Set(cfg.CONFIGLOGROTATIONTIME, flgLogRotTimeVal)
+		err := viper.WriteConfig()
+		if err != nil {
+			lg.Error(err)
+			return err
+		}
+		fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_LOGROTATIONTIMESET, flgLogRotTimeVal)))
+		lg.Infof(gmess.INFO_LOGROTATIONTIMESET, flgLogRotTimeVal)
+	}
+
+	if flgAdminVal == "" && flgCustIDVal == "" && flgCredPathVal == "" && flgLogPathVal == "" &&
+		flgLogRotCountVal == 0 && flgLogRotTimeVal == 0 {
 		cmd.Help()
 	}
 
@@ -84,7 +165,11 @@ func doSetConfig(cmd *cobra.Command, args []string) error {
 func init() {
 	setCmd.AddCommand(setConfigCmd)
 
-	setConfigCmd.Flags().StringVarP(&adminEmail, "admin", "a", "", "administrator email address")
-	setConfigCmd.Flags().StringVarP(&customerID, "customerid", "c", "", "customer id for domain")
-	setConfigCmd.Flags().StringVarP(&credentialPath, "credentialpath", "p", "", "service account credential file path")
+	setConfigCmd.Flags().StringVarP(&adminEmail, flgnm.FLG_ADMIN, "a", "", "administrator email address")
+	setConfigCmd.Flags().StringVarP(&customerID, flgnm.FLG_CUSTOMERID, "c", "", "customer id for domain")
+	setConfigCmd.Flags().StringVarP(&logPath, flgnm.FLG_LOGPATH, "l", "", "log file path")
+	setConfigCmd.Flags().UintVarP(&logRotationCount, flgnm.FLG_LOGROTATIONCOUNT, "r", 0, "max number of retained log files")
+	setConfigCmd.Flags().IntVarP(&logRotationTime, flgnm.FLG_LOGROTATIONTIME, "t", 0, "time after which new log file created")
+	setConfigCmd.Flags().StringVarP(&credentialPath, flgnm.FLG_CREDPATH, "p", "", "service account credential file path")
+	setConfigCmd.PersistentFlags().BoolVar(&silent, flgnm.FLG_SILENT, false, "suppress console output")
 }

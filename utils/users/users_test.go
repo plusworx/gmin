@@ -26,6 +26,7 @@ import (
 	"testing"
 
 	tsts "github.com/plusworx/gmin/tests"
+	lg "github.com/plusworx/gmin/utils/logging"
 	admin "google.golang.org/api/admin/directory/v1"
 )
 
@@ -37,6 +38,9 @@ func TestAddCustomer(t *testing.T) {
 			customerID: "my_customer",
 		},
 	}
+
+	tsts.InitConfig()
+	lg.InitLogging("info")
 
 	ds, err := tsts.DummyDirectoryService(admin.AdminDirectoryUserReadonlyScope)
 	if err != nil {
@@ -64,6 +68,9 @@ func TestAddDomain(t *testing.T) {
 		},
 	}
 
+	tsts.InitConfig()
+	lg.InitLogging("info")
+
 	ds, err := tsts.DummyDirectoryService(admin.AdminDirectoryUserReadonlyScope)
 	if err != nil {
 		t.Error("Error: failed to create dummy admin.Service")
@@ -89,6 +96,9 @@ func TestAddFields(t *testing.T) {
 			fields: "name,primaryEmail,id",
 		},
 	}
+
+	tsts.InitConfig()
+	lg.InitLogging("info")
 
 	ds, err := tsts.DummyDirectoryService(admin.AdminDirectoryUserReadonlyScope)
 	if err != nil {
@@ -116,6 +126,9 @@ func TestAddMaxResults(t *testing.T) {
 		},
 	}
 
+	tsts.InitConfig()
+	lg.InitLogging("info")
+
 	ds, err := tsts.DummyDirectoryService(admin.AdminDirectoryUserReadonlyScope)
 	if err != nil {
 		t.Error("Error: failed to create dummy admin.Service")
@@ -141,6 +154,9 @@ func TestAddOrderBy(t *testing.T) {
 			orderBy: "givenName",
 		},
 	}
+
+	tsts.InitConfig()
+	lg.InitLogging("info")
 
 	ds, err := tsts.DummyDirectoryService(admin.AdminDirectoryUserReadonlyScope)
 	if err != nil {
@@ -168,6 +184,9 @@ func TestAddPageToken(t *testing.T) {
 		},
 	}
 
+	tsts.InitConfig()
+	lg.InitLogging("info")
+
 	ds, err := tsts.DummyDirectoryService(admin.AdminDirectoryUserReadonlyScope)
 	if err != nil {
 		t.Error("Error: failed to create dummy admin.Service")
@@ -193,6 +212,9 @@ func TestAddProjection(t *testing.T) {
 			projection: "basic",
 		},
 	}
+
+	tsts.InitConfig()
+	lg.InitLogging("info")
 
 	ds, err := tsts.DummyDirectoryService(admin.AdminDirectoryUserReadonlyScope)
 	if err != nil {
@@ -220,6 +242,9 @@ func TestAddQuery(t *testing.T) {
 		},
 	}
 
+	tsts.InitConfig()
+	lg.InitLogging("info")
+
 	ds, err := tsts.DummyDirectoryService(admin.AdminDirectoryUserReadonlyScope)
 	if err != nil {
 		t.Error("Error: failed to create dummy admin.Service")
@@ -238,6 +263,9 @@ func TestAddQuery(t *testing.T) {
 }
 
 func TestAddShowDeleted(t *testing.T) {
+	tsts.InitConfig()
+	lg.InitLogging("info")
+
 	ds, err := tsts.DummyDirectoryService(admin.AdminDirectoryUserReadonlyScope)
 	if err != nil {
 		t.Error("Error: failed to create dummy admin.Service")
@@ -260,6 +288,9 @@ func TestAddSortOrder(t *testing.T) {
 			sortOrder: "descending",
 		},
 	}
+
+	tsts.InitConfig()
+	lg.InitLogging("info")
 
 	ds, err := tsts.DummyDirectoryService(admin.AdminDirectoryUserReadonlyScope)
 	if err != nil {
@@ -287,6 +318,9 @@ func TestAddViewType(t *testing.T) {
 		},
 	}
 
+	tsts.InitConfig()
+	lg.InitLogging("info")
+
 	ds, err := tsts.DummyDirectoryService(admin.AdminDirectoryUserReadonlyScope)
 	if err != nil {
 		t.Error("Error: failed to create dummy admin.Service")
@@ -301,5 +335,18 @@ func TestAddViewType(t *testing.T) {
 		if newULC == nil {
 			t.Error("Error: failed to add ViewType to UsersListCall")
 		}
+	}
+}
+
+func TestHashPassword(t *testing.T) {
+	tsts.InitConfig()
+	lg.InitLogging("info")
+
+	pwd := "MySuperStrongPassword"
+
+	hashedPwd, _ := HashPassword(pwd)
+
+	if hashedPwd != "e1f7c050db42a86e4d358e8c1dcef57e3b4f2fc0" {
+		t.Errorf("Expected user.Password to be %v but got %v", "e1f7c050db42a86e4d358e8c1dcef57e3b4f2fc0", hashedPwd)
 	}
 }

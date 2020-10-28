@@ -26,6 +26,7 @@ import (
 	"testing"
 
 	tsts "github.com/plusworx/gmin/tests"
+	lg "github.com/plusworx/gmin/utils/logging"
 	admin "google.golang.org/api/admin/directory/v1"
 )
 
@@ -37,6 +38,9 @@ func TestAddCustomer(t *testing.T) {
 			customerID: "my_customer",
 		},
 	}
+
+	tsts.InitConfig()
+	lg.InitLogging("info")
 
 	ds, err := tsts.DummyDirectoryService(admin.AdminDirectoryGroupReadonlyScope)
 	if err != nil {
@@ -64,6 +68,9 @@ func TestAddDomain(t *testing.T) {
 		},
 	}
 
+	tsts.InitConfig()
+	lg.InitLogging("info")
+
 	ds, err := tsts.DummyDirectoryService(admin.AdminDirectoryGroupReadonlyScope)
 	if err != nil {
 		t.Error("Error: failed to create dummy admin.Service")
@@ -89,6 +96,9 @@ func TestAddFields(t *testing.T) {
 			fields: "name,email",
 		},
 	}
+
+	tsts.InitConfig()
+	lg.InitLogging("info")
 
 	ds, err := tsts.DummyDirectoryService(admin.AdminDirectoryGroupReadonlyScope)
 	if err != nil {
@@ -116,6 +126,9 @@ func TestAddMaxResults(t *testing.T) {
 		},
 	}
 
+	tsts.InitConfig()
+	lg.InitLogging("info")
+
 	ds, err := tsts.DummyDirectoryService(admin.AdminDirectoryGroupReadonlyScope)
 	if err != nil {
 		t.Error("Error: failed to create dummy admin.Service")
@@ -141,6 +154,9 @@ func TestAddOrderBy(t *testing.T) {
 			orderBy: "email",
 		},
 	}
+
+	tsts.InitConfig()
+	lg.InitLogging("info")
 
 	ds, err := tsts.DummyDirectoryService(admin.AdminDirectoryGroupReadonlyScope)
 	if err != nil {
@@ -168,6 +184,9 @@ func TestAddPageToken(t *testing.T) {
 		},
 	}
 
+	tsts.InitConfig()
+	lg.InitLogging("info")
+
 	ds, err := tsts.DummyDirectoryService(admin.AdminDirectoryGroupReadonlyScope)
 	if err != nil {
 		t.Error("Error: failed to create dummy admin.Service")
@@ -193,6 +212,9 @@ func TestAddQuery(t *testing.T) {
 			query: "name=test",
 		},
 	}
+
+	tsts.InitConfig()
+	lg.InitLogging("info")
 
 	ds, err := tsts.DummyDirectoryService(admin.AdminDirectoryGroupReadonlyScope)
 	if err != nil {
@@ -220,6 +242,9 @@ func TestAddSortOrder(t *testing.T) {
 		},
 	}
 
+	tsts.InitConfig()
+	lg.InitLogging("info")
+
 	ds, err := tsts.DummyDirectoryService(admin.AdminDirectoryGroupReadonlyScope)
 	if err != nil {
 		t.Error("Error: failed to create dummy admin.Service")
@@ -245,6 +270,9 @@ func TestAddUserKey(t *testing.T) {
 			key: "a.user@company.org",
 		},
 	}
+
+	tsts.InitConfig()
+	lg.InitLogging("info")
 
 	ds, err := tsts.DummyDirectoryService(admin.AdminDirectoryGroupReadonlyScope)
 	if err != nil {

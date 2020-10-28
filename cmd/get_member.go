@@ -27,6 +27,9 @@ import (
 	"fmt"
 
 	cmn "github.com/plusworx/gmin/utils/common"
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
+	gpars "github.com/plusworx/gmin/utils/gminparsers"
+	lg "github.com/plusworx/gmin/utils/logging"
 	mems "github.com/plusworx/gmin/utils/members"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
@@ -36,48 +39,64 @@ var getMemberCmd = &cobra.Command{
 	Use:     "group-member <member email address or id> <group email address or id>",
 	Aliases: []string{"grp-member", "grp-mem", "gmember", "gmem"},
 	Args:    cobra.ExactArgs(2),
-	Short:   "Outputs information about a member of a group",
-	Long: `Outputs information about a member of a group.
-	
-	Examples:	gmin get group-member 127987192327764327416 mygroup@mydomain.org -a email
-			gmin get gmem jack.black@mydomain.org mygroup@mydomain.org -a email`,
-	RunE: doGetMember,
+	Example: `gmin get group-member 127987192327764327416 mygroup@mydomain.org -a email
+gmin get gmem jack.black@mydomain.org mygroup@mydomain.org -a email`,
+	Short: "Outputs information about a member of a group",
+	Long:  `Outputs information about a member of a group.`,
+	RunE:  doGetMember,
 }
 
 func doGetMember(cmd *cobra.Command, args []string) error {
+	lg.Debugw("starting doGetMember()",
+		"args", args)
+
 	var jsonData []byte
 
-	jsonData, err := processGroupMember(args[0], attrs, args[1])
+	flgAttrsVal, err := cmd.Flags().GetString(flgnm.FLG_ATTRIBUTES)
 	if err != nil {
+		lg.Error(err)
+		return err
+	}
+
+	jsonData, err = processGroupMember(args[0], attrs, args[1], flgAttrsVal)
+	if err != nil {
+		lg.Error(err)
 		return err
 	}
 
 	fmt.Println(string(jsonData))
 
+	lg.Debug("finished doGetMember()")
 	return nil
 }
 
 func init() {
 	getCmd.AddCommand(getMemberCmd)
-
-	getMemberCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required group attributes (separated by ~)")
+	getMemberCmd.Flags().StringVarP(&attrs, flgnm.FLG_ATTRIBUTES, "a", "", "required group attributes (separated by ~)")
 }
 
-func processGroupMember(memID string, attrs string, groupEmail string) ([]byte, error) {
+func processGroupMember(memID string, attrs string, groupEmail string, flgAttrsVal string) ([]byte, error) {
+	lg.Debugw("starting processGroupMember()",
+		"flgAttrsVal", flgAttrsVal,
+		"groupEmail", groupEmail,
+		"memID", memID)
+	defer lg.Debug("finished processGroupMember()")
+
 	var (
 		jsonData []byte
 		member   *admin.Member
 	)
 
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupMemberReadonlyScope)
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryGroupMemberReadonlyScope)
 	if err != nil {
 		return nil, err
 	}
+	ds := srv.(*admin.Service)
 
 	mgc := ds.Members.Get(groupEmail, memID)
 
-	if attrs != "" {
-		formattedAttrs, err := cmn.ParseOutputAttrs(attrs, mems.MemberAttrMap)
+	if flgAttrsVal != "" {
+		formattedAttrs, err := gpars.ParseOutputAttrs(flgAttrsVal, mems.MemberAttrMap)
 		if err != nil {
 			return nil, err
 		}
@@ -93,6 +112,7 @@ func processGroupMember(memID string, attrs string, groupEmail string) ([]byte, 
 
 	jsonData, err = json.MarshalIndent(member, "", "    ")
 	if err != nil {
+		lg.Error(err)
 		return nil, err
 	}
 

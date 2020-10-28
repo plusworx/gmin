@@ -23,118 +23,142 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"bufio"
-	"encoding/csv"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"os"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
+	btch "github.com/plusworx/gmin/utils/batch"
 	cmn "github.com/plusworx/gmin/utils/common"
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	lg "github.com/plusworx/gmin/utils/logging"
 	usrs "github.com/plusworx/gmin/utils/users"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
-	sheet "google.golang.org/api/sheets/v4"
 )
 
 var batchUndelUserCmd = &cobra.Command{
 	Use:     "users -i <input file path>",
 	Aliases: []string{"user"},
-	Short:   "Undeletes a batch of users",
-	Long: `Undeletes a batch of users where user details are provided in a Google Sheet or CSV/JSON input file.
-	
-	Examples:	gmin batch-undelete users -i inputfile.json
-			gmin bund user -i inputfile.csv -f csv
-			gmin bund user -i 1odyAIp3jGspd3M4xeepxWD6aeQIUuHBgrZB2OHSu8MI -s 'Sheet1!A1:B25' -f gsheet
+	Example: `gmin batch-undelete users -i inputfile.json
+gmin bund user -i inputfile.csv -f csv
+gmin bund user -i 1odyAIp3jGspd3M4xeepxWD6aeQIUuHBgrZB2OHSu8MI -s 'Sheet1!A1:B25' -f gsheet`,
+	Short: "Undeletes a batch of users",
+	Long: `Undeletes a batch of users where user details are provided in a Google Sheet, CSV/JSON input file or piped JSON.
 			
-	The contents of a JSON file should look something like this:
-	
-	{"userKey":"417578192529765228417","orgUnitPath":"/Sales"}
-	{"userKey":"308127142904731923463","orgUnitPath":"/"}
-	{"userKey":"107967172367714327529","orgUnitPath":"/Engineering"}
+The contents of a JSON file or piped input should look something like this:
 
-	N.B. userKey must be the unique user id and NOT email address
-	
-	CSV and Google sheets must have a header row with the following column names being the only ones that are valid:
-	
-	orgUnitPath [required]
-	userKey [required]
-	
-	The column names are case insensitive and can be in any order.`,
+{"userKey":"417578192529765228417","orgUnitPath":"/Sales"}
+{"userKey":"308127142904731923463","orgUnitPath":"/"}
+{"userKey":"107967172367714327529","orgUnitPath":"/Engineering"}
+
+N.B. userKey must be the unique user id and NOT email address
+
+CSV and Google sheets must have a header row with the following column names being the only ones that are valid:
+
+orgUnitPath [required]
+userKey [required]
+
+The column names are case insensitive and can be in any order.`,
 	RunE: doBatchUndelUser,
 }
 
 func doBatchUndelUser(cmd *cobra.Command, args []string) error {
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserScope)
+	lg.Debugw("starting doBatchUndelUser()",
+		"args", args)
+	defer lg.Debug("finished doBatchUndelUser()")
+
+	var (
+		objs       []interface{}
+		undelUsers []usrs.UndeleteUser
+	)
+
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryUserScope)
+	if err != nil {
+		return err
+	}
+	ds := srv.(*admin.Service)
+
+	inputFlgVal, err := cmd.Flags().GetString(flgnm.FLG_INPUTFILE)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+
+	scanner, err := cmn.InputFromStdIn(inputFlgVal)
 	if err != nil {
 		return err
 	}
 
-	if inputFile == "" {
-		err := errors.New("gmin: error - must provide inputfile")
+	if inputFlgVal == "" && scanner == nil {
+		err := errors.New(gmess.ERR_NOINPUTFILE)
+		lg.Error(err)
 		return err
 	}
 
-	lwrFmt := strings.ToLower(format)
+	formatFlgVal, err := cmd.Flags().GetString(flgnm.FLG_FORMAT)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+	lwrFmt := strings.ToLower(formatFlgVal)
 
 	ok := cmn.SliceContainsStr(cmn.ValidFileFormats, lwrFmt)
 	if !ok {
-		return fmt.Errorf("gmin: error - %v is not a valid file format", format)
+		err = fmt.Errorf(gmess.ERR_INVALIDFILEFORMAT, formatFlgVal)
+		lg.Error(err)
+		return err
 	}
+
+	callParams := btch.CallParams{CallType: cmn.CALLTYPEUNDELETE, ObjectType: cmn.OBJTYPEUSER}
 
 	switch {
 	case lwrFmt == "csv":
-		err := btchUndelUsrProcessCSV(ds, inputFile)
+		objs, err = btch.ProcessCSVFile(callParams, inputFlgVal, usrs.UserAttrMap)
 		if err != nil {
 			return err
 		}
 	case lwrFmt == "json":
-		err := btchUndelUsrProcessJSON(ds, inputFile)
+		objs, err = btch.ProcessJSON(callParams, inputFlgVal, scanner, usrs.UserAttrMap)
 		if err != nil {
 			return err
 		}
 	case lwrFmt == "gsheet":
-		err := btchUndelUsrProcessSheet(ds, inputFile)
+		rangeFlgVal, err := cmd.Flags().GetString(flgnm.FLG_SHEETRANGE)
+		if err != nil {
+			lg.Error(err)
+			return err
+		}
+
+		objs, err = btch.ProcessGSheet(callParams, inputFlgVal, rangeFlgVal, usrs.UserAttrMap)
 		if err != nil {
 			return err
 		}
+	default:
+		err = fmt.Errorf(gmess.ERR_INVALIDFILEFORMAT, formatFlgVal)
+		lg.Error(err)
+		return err
+	}
+
+	for _, uuObj := range objs {
+		undelUsers = append(undelUsers, uuObj.(usrs.UndeleteUser))
+	}
+
+	err = bunduProcessObjects(ds, undelUsers)
+	if err != nil {
+		return err
 	}
 
 	return nil
 }
 
-func btchUndelJSONUser(ds *admin.Service, jsonData string) (usrs.UndeleteUser, error) {
-	undelUser := usrs.UndeleteUser{}
-	jsonBytes := []byte(jsonData)
+func bunduProcessObjects(ds *admin.Service, undelUsers []usrs.UndeleteUser) error {
+	lg.Debug("starting bunduProcessObjects()")
+	defer lg.Debug("finished bunduProcessObjects()")
 
-	if !json.Valid(jsonBytes) {
-		return undelUser, errors.New("gmin: error - attribute string is not valid JSON")
-	}
-
-	outStr, err := cmn.ParseInputAttrs(jsonBytes)
-	if err != nil {
-		return undelUser, err
-	}
-
-	err = cmn.ValidateInputAttrs(outStr, usrs.UserAttrMap)
-	if err != nil {
-		return undelUser, err
-	}
-
-	err = json.Unmarshal(jsonBytes, &undelUser)
-	if err != nil {
-		return undelUser, err
-	}
-
-	return undelUser, nil
-}
-
-func btchUndelUsers(ds *admin.Service, undelUsers []usrs.UndeleteUser) error {
 	wg := new(sync.WaitGroup)
 
 	for _, u := range undelUsers {
@@ -150,7 +174,7 @@ func btchUndelUsers(ds *admin.Service, undelUsers []usrs.UndeleteUser) error {
 
 		wg.Add(1)
 
-		go btchUsrUndelProcess(u.UserKey, wg, uuc)
+		go bunduUndelete(u.UserKey, wg, uuc)
 	}
 
 	wg.Wait()
@@ -158,7 +182,11 @@ func btchUndelUsers(ds *admin.Service, undelUsers []usrs.UndeleteUser) error {
 	return nil
 }
 
-func btchUsrUndelProcess(userKey string, wg *sync.WaitGroup, uuc *admin.UsersUndeleteCall) {
+func bunduUndelete(userKey string, wg *sync.WaitGroup, uuc *admin.UsersUndeleteCall) {
+	lg.Debugw("starting bunduUndelete()",
+		"userKey", userKey)
+	defer lg.Debug("finished bunduUndelete()")
+
 	defer wg.Done()
 
 	b := backoff.NewExponentialBackOff()
@@ -168,184 +196,30 @@ func btchUsrUndelProcess(userKey string, wg *sync.WaitGroup, uuc *admin.UsersUnd
 		var err error
 		err = uuc.Do()
 		if err == nil {
-			fmt.Println(cmn.GminMessage("**** gmin: user " + userKey + " undeleted ****"))
+			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_USERUNDELETED, userKey)))
+			lg.Infof(gmess.INFO_USERUNDELETED, userKey)
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(errors.New(cmn.GminMessage("gmin: error - " + err.Error() + " " + userKey)))
+			return backoff.Permanent(fmt.Errorf(gmess.ERR_BATCHUSER, err.Error(), userKey))
 		}
-		return errors.New(cmn.GminMessage("gmin: error - " + err.Error() + " " + userKey))
+		// Log the retries
+		lg.Warnw(err.Error(),
+			"retrying", b.GetElapsedTime().String(),
+			"user", userKey)
+		return fmt.Errorf(gmess.ERR_BATCHUSER, err.Error(), userKey)
 	}, b)
 	if err != nil {
-		fmt.Println(err)
+		// Log final error
+		lg.Error(err)
+		fmt.Println(cmn.GminMessage(err.Error()))
 	}
-}
-
-func btchUndelUsrProcessCSV(ds *admin.Service, filePath string) error {
-	var (
-		iSlice     []interface{}
-		hdrMap     = map[int]string{}
-		undelUsers []usrs.UndeleteUser
-	)
-
-	csvfile, err := os.Open(filePath)
-	if err != nil {
-		return err
-	}
-	defer csvfile.Close()
-
-	r := csv.NewReader(csvfile)
-
-	count := 0
-	for {
-		record, err := r.Read()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return err
-		}
-
-		if count == 0 {
-			iSlice = make([]interface{}, len(record))
-			for idx, value := range record {
-				iSlice[idx] = value
-			}
-			hdrMap = cmn.ProcessHeader(iSlice)
-			err = cmn.ValidateHeader(hdrMap, usrs.UserAttrMap)
-			if err != nil {
-				return err
-			}
-			count = count + 1
-			continue
-		}
-
-		for idx, value := range record {
-			iSlice[idx] = value
-		}
-
-		undelUserVar, err := btchUndelProcessUser(hdrMap, iSlice)
-		if err != nil {
-			fmt.Println(err.Error())
-		}
-
-		undelUsers = append(undelUsers, undelUserVar)
-
-		count = count + 1
-	}
-
-	err = btchUndelUsers(ds, undelUsers)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func btchUndelUsrProcessJSON(ds *admin.Service, filePath string) error {
-	var undelUsers []usrs.UndeleteUser
-
-	file, err := os.Open(filePath)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		jsonData := scanner.Text()
-
-		undelUserVar, err := btchUndelJSONUser(ds, jsonData)
-		if err != nil {
-			return err
-		}
-
-		undelUsers = append(undelUsers, undelUserVar)
-	}
-	err = scanner.Err()
-	if err != nil {
-		return err
-	}
-
-	err = btchUndelUsers(ds, undelUsers)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func btchUndelUsrProcessSheet(ds *admin.Service, sheetID string) error {
-	var undelUsers []usrs.UndeleteUser
-
-	if sheetRange == "" {
-		return errors.New("gmin: error - sheetrange must be provided")
-	}
-
-	ss, err := cmn.CreateSheetService(sheet.DriveReadonlyScope)
-	if err != nil {
-		return err
-	}
-
-	ssvgc := ss.Spreadsheets.Values.Get(sheetID, sheetRange)
-	sValRange, err := ssvgc.Do()
-	if err != nil {
-		return err
-	}
-
-	if len(sValRange.Values) == 0 {
-		return errors.New("gmin: error - no data found in sheet " + sheetID + " range: " + sheetRange)
-	}
-
-	hdrMap := cmn.ProcessHeader(sValRange.Values[0])
-	err = cmn.ValidateHeader(hdrMap, usrs.UserAttrMap)
-	if err != nil {
-		return err
-	}
-
-	for idx, row := range sValRange.Values {
-		if idx == 0 {
-			continue
-		}
-
-		undelUserVar, err := btchUndelProcessUser(hdrMap, row)
-		if err != nil {
-			return err
-		}
-
-		undelUsers = append(undelUsers, undelUserVar)
-	}
-
-	err = btchUndelUsers(ds, undelUsers)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func btchUndelProcessUser(hdrMap map[int]string, userData []interface{}) (usrs.UndeleteUser, error) {
-	undelUser := usrs.UndeleteUser{}
-
-	for idx, attr := range userData {
-		attrName := hdrMap[idx]
-
-		switch {
-		case attrName == "userKey":
-			undelUser.UserKey = fmt.Sprintf("%v", attr)
-		case attrName == "orgUnitPath":
-			undelUser.OrgUnitPath = fmt.Sprintf("%v", attr)
-		}
-	}
-
-	return undelUser, nil
 }
 
 func init() {
 	batchUndeleteCmd.AddCommand(batchUndelUserCmd)
 
-	batchUndelUserCmd.Flags().StringVarP(&inputFile, "inputfile", "i", "", "filepath to user data file or sheet id")
-	batchUndelUserCmd.Flags().StringVarP(&format, "format", "f", "json", "user data file format")
-	batchUndelUserCmd.Flags().StringVarP(&sheetRange, "sheetrange", "s", "", "user data gsheet range")
-
-	batchUndelUserCmd.MarkFlagRequired("inputfile")
+	batchUndelUserCmd.Flags().StringVarP(&inputFile, flgnm.FLG_INPUTFILE, "i", "", "filepath to user data file or sheet id")
+	batchUndelUserCmd.Flags().StringVarP(&format, flgnm.FLG_FORMAT, "f", "json", "user data file format")
+	batchUndelUserCmd.Flags().StringVarP(&sheetRange, flgnm.FLG_SHEETRANGE, "s", "", "user data gsheet range")
 }

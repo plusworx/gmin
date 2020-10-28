@@ -24,6 +24,8 @@ package cmd
 
 import (
 	"testing"
+
+	lg "github.com/plusworx/gmin/utils/logging"
 )
 
 func TestDoCreateUser(t *testing.T) {
@@ -42,13 +44,13 @@ func TestDoCreateUser(t *testing.T) {
 			lastname:      "Mouse",
 			password:      "VeryStrongPassword",
 			recoveryPhone: "988787686",
-			expectedErr:   "gmin: error - invalid email address",
+			expectedErr:   "invalid email address: mickey.mouse",
 		},
 		{
 			args:        []string{"mickey.mouse@disney.com"},
 			firstname:   "Mickey",
 			lastname:    "Mouse",
-			expectedErr: "gmin: error - firstname, lastname and password must all be provided",
+			expectedErr: "firstname, lastname and password must all be provided",
 		},
 		{
 			args:        []string{"mickey.mouse@disney.com"},
@@ -56,7 +58,7 @@ func TestDoCreateUser(t *testing.T) {
 			firstname:   "Mickey",
 			lastname:    "Mouse",
 			password:    "SuperStrongPassword",
-			expectedErr: "gmin: error - attribute string is not valid JSON",
+			expectedErr: "attribute string is not valid JSON",
 		},
 		{
 			args:        []string{"mickey.mouse@disney.com"},
@@ -64,7 +66,7 @@ func TestDoCreateUser(t *testing.T) {
 			firstname:   "Mickey",
 			lastname:    "Mouse",
 			password:    "SuperStrongPassword",
-			expectedErr: "gmin: error - attribute string is not valid JSON",
+			expectedErr: "attribute string is not valid JSON",
 		},
 	}
 
@@ -74,6 +76,9 @@ func TestDoCreateUser(t *testing.T) {
 		lastName = c.lastname
 		password = c.password
 		recoveryPhone = c.recoveryPhone
+
+		initConfig()
+		lg.InitLogging("info")
 
 		got := doCreateUser(createUserCmd, c.args)
 

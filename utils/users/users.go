@@ -23,22 +23,46 @@ THE SOFTWARE.
 package users
 
 import (
+	"crypto/sha1"
+	"encoding/hex"
 	"fmt"
 	"sort"
 	"strings"
 
 	cmn "github.com/plusworx/gmin/utils/common"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	lg "github.com/plusworx/gmin/utils/logging"
 	admin "google.golang.org/api/admin/directory/v1"
 	"google.golang.org/api/googleapi"
 )
 
 const (
-	// EndField is List call attribute string terminator
-	EndField = ")"
-	// StartUsersField is List call attribute string prefix
-	StartUsersField = "users("
-	startNameField  = "name("
+	// ENDFIELD is List call attribute string terminator
+	ENDFIELD = ")"
+	// HASHFUNCTION specifies password hash function
+	HASHFUNCTION string = "SHA-1"
+	// KEYNAME is name of key for processing
+	KEYNAME string = "userKey"
+	// STARTUSERSFIELD is List call users attribute string prefix
+	STARTUSERSFIELD = "users("
 )
+
+// Key is struct used to extract userKey
+type Key struct {
+	UserKey string
+}
+
+// UndeleteUser is struct to extract undelete data
+type UndeleteUser struct {
+	UserKey     string
+	OrgUnitPath string
+}
+
+// UserParams is used in batch processing
+type UserParams struct {
+	UserKey string
+	User    *admin.User
+}
 
 // addressAttrs contains names of all the addressable admin.UserAddress attributes
 var addressAttrs = []string{
@@ -88,10 +112,10 @@ var extIDAttrs = []string{
 }
 
 var flagValues = []string{
-	"orderby",
+	"order-by",
 	"projection",
-	"sortorder",
-	"viewtype",
+	"sort-order",
+	"view-type",
 }
 
 // genderAttrs contains names of all the addressable admin.UserGender attributes
@@ -346,7 +370,7 @@ var UserAttrMap = map[string]string{
 	"title":                      "title",
 	"type":                       "type",
 	"uid":                        "uid",
-	"userkey":                    "userKey", // Used in batch update
+	"userkey":                    "userKey", // Used in batch operations
 	"username":                   "username",
 	"value":                      "value",
 	"websites":                   "websites",
@@ -585,19 +609,12 @@ var validWebsiteTypes = []string{
 	"work",
 }
 
-// Key is struct used to extract userKey
-type Key struct {
-	UserKey string
-}
-
-// UndeleteUser is struct to extract undelete data
-type UndeleteUser struct {
-	UserKey     string
-	OrgUnitPath string
-}
-
 // AddCustomer adds Customer to admin calls
 func AddCustomer(ulc *admin.UsersListCall, customerID string) *admin.UsersListCall {
+	lg.Debugw("starting AddCustomer()",
+		"customerID", customerID)
+	defer lg.Debug("finished AddCustomer()")
+
 	var newULC *admin.UsersListCall
 
 	newULC = ulc.Customer(customerID)
@@ -607,6 +624,9 @@ func AddCustomer(ulc *admin.UsersListCall, customerID string) *admin.UsersListCa
 
 // AddCustomFieldMask adds CustomFieldMask to be used with get and list admin calls with custom projections
 func AddCustomFieldMask(callObj interface{}, attrs string) interface{} {
+	lg.Debugw("starting AddCustomFieldMask()",
+		"attrs", attrs)
+	defer lg.Debug("finished AddCustomFieldMask()")
 
 	switch callObj.(type) {
 	case *admin.UsersListCall:
@@ -628,6 +648,10 @@ func AddCustomFieldMask(callObj interface{}, attrs string) interface{} {
 
 // AddDomain adds domain to admin calls
 func AddDomain(ulc *admin.UsersListCall, domain string) *admin.UsersListCall {
+	lg.Debugw("starting AddDomain()",
+		"domain", domain)
+	defer lg.Debug("finished AddDomain()")
+
 	var newULC *admin.UsersListCall
 
 	newULC = ulc.Domain(domain)
@@ -637,6 +661,10 @@ func AddDomain(ulc *admin.UsersListCall, domain string) *admin.UsersListCall {
 
 // AddFields adds fields to be returned from admin calls
 func AddFields(callObj interface{}, attrs string) interface{} {
+	lg.Debugw("starting AddFields()",
+		"attrs", attrs)
+	defer lg.Debug("finished AddFields()")
+
 	var fields googleapi.Field = googleapi.Field(attrs)
 
 	switch callObj.(type) {
@@ -659,6 +687,10 @@ func AddFields(callObj interface{}, attrs string) interface{} {
 
 // AddMaxResults adds MaxResults to admin calls
 func AddMaxResults(ulc *admin.UsersListCall, maxResults int64) *admin.UsersListCall {
+	lg.Debugw("starting AddMaxResults()",
+		"maxResults", maxResults)
+	defer lg.Debug("finished AddMaxResults()")
+
 	var newULC *admin.UsersListCall
 
 	newULC = ulc.MaxResults(maxResults)
@@ -668,6 +700,10 @@ func AddMaxResults(ulc *admin.UsersListCall, maxResults int64) *admin.UsersListC
 
 // AddOrderBy adds OrderBy to admin calls
 func AddOrderBy(ulc *admin.UsersListCall, orderBy string) *admin.UsersListCall {
+	lg.Debugw("starting AddOrderBy()",
+		"orderBy", orderBy)
+	defer lg.Debug("finished AddOrderBy()")
+
 	var newULC *admin.UsersListCall
 
 	newULC = ulc.OrderBy(orderBy)
@@ -677,6 +713,10 @@ func AddOrderBy(ulc *admin.UsersListCall, orderBy string) *admin.UsersListCall {
 
 // AddPageToken adds PageToken to admin calls
 func AddPageToken(ulc *admin.UsersListCall, token string) *admin.UsersListCall {
+	lg.Debugw("starting AddPageToken()",
+		"token", token)
+	defer lg.Debug("finished AddPageToken()")
+
 	var newULC *admin.UsersListCall
 
 	newULC = ulc.PageToken(token)
@@ -686,6 +726,10 @@ func AddPageToken(ulc *admin.UsersListCall, token string) *admin.UsersListCall {
 
 // AddProjection adds Projection to admin calls
 func AddProjection(callObj interface{}, projection string) interface{} {
+	lg.Debugw("starting AddProjection()",
+		"projection", projection)
+	defer lg.Debug("finished AddProjection()")
+
 	switch callObj.(type) {
 	case *admin.UsersListCall:
 		var newULC *admin.UsersListCall
@@ -706,6 +750,10 @@ func AddProjection(callObj interface{}, projection string) interface{} {
 
 // AddQuery adds query to admin calls
 func AddQuery(ulc *admin.UsersListCall, query string) *admin.UsersListCall {
+	lg.Debugw("starting AddQuery()",
+		"query", query)
+	defer lg.Debug("finished AddQuery()")
+
 	var newULC *admin.UsersListCall
 
 	newULC = ulc.Query(query)
@@ -715,6 +763,9 @@ func AddQuery(ulc *admin.UsersListCall, query string) *admin.UsersListCall {
 
 // AddShowDeleted adds ShowDeleted to admin calls
 func AddShowDeleted(ulc *admin.UsersListCall) *admin.UsersListCall {
+	lg.Debug("starting AddShowDeleted()")
+	defer lg.Debug("finished AddShowDeleted()")
+
 	var newULC *admin.UsersListCall
 
 	newULC = ulc.ShowDeleted("true")
@@ -724,6 +775,10 @@ func AddShowDeleted(ulc *admin.UsersListCall) *admin.UsersListCall {
 
 // AddSortOrder adds SortOrder to admin calls
 func AddSortOrder(ulc *admin.UsersListCall, sortorder string) *admin.UsersListCall {
+	lg.Debugw("starting AddSortOrder()",
+		"sortorder", sortorder)
+	defer lg.Debug("finished AddSortOrder()")
+
 	var newULC *admin.UsersListCall
 
 	newULC = ulc.SortOrder(sortorder)
@@ -733,6 +788,10 @@ func AddSortOrder(ulc *admin.UsersListCall, sortorder string) *admin.UsersListCa
 
 // AddViewType adds ViewType to admin calls
 func AddViewType(callObj interface{}, viewType string) interface{} {
+	lg.Debugw("starting AddViewType()",
+		"viewType", viewType)
+	defer lg.Debug("finished AddViewType()")
+
 	switch callObj.(type) {
 	case *admin.UsersListCall:
 		var newULC *admin.UsersListCall
@@ -753,8 +812,12 @@ func AddViewType(callObj interface{}, viewType string) interface{} {
 
 // DoGet calls the .Do() function on the admin.UsersGetCall
 func DoGet(ugc *admin.UsersGetCall) (*admin.User, error) {
+	lg.Debug("starting DoGet()")
+	defer lg.Debug("finished DoGet()")
+
 	user, err := ugc.Do()
 	if err != nil {
+		lg.Error(err)
 		return nil, err
 	}
 
@@ -763,6 +826,9 @@ func DoGet(ugc *admin.UsersGetCall) (*admin.User, error) {
 
 // DoList calls the .Do() function on the admin.UsersListCall
 func DoList(ulc *admin.UsersListCall) (*admin.Users, error) {
+	lg.Debug("starting DoList()")
+	defer lg.Debug("finished DoList()")
+
 	users, err := ulc.Do()
 	if err != nil {
 		return nil, err
@@ -771,8 +837,244 @@ func DoList(ulc *admin.UsersListCall) (*admin.Users, error) {
 	return users, nil
 }
 
+// HashPassword creates a password hash
+func HashPassword(password string) (string, error) {
+	lg.Debugw("starting HashPassword()",
+		"password", password)
+	defer lg.Debug("finished HashPassword()")
+
+	hasher := sha1.New()
+
+	_, err := hasher.Write([]byte(password))
+	if err != nil {
+		lg.Error(err)
+		return "", err
+	}
+
+	hashedBytes := hasher.Sum(nil)
+	hexSha1 := hex.EncodeToString(hashedBytes)
+
+	return hexSha1, nil
+}
+
+// PopulateUndeleteUser is used in batch processing
+func PopulateUndeleteUser(undelUser *UndeleteUser, hdrMap map[int]string, objData []interface{}) error {
+	lg.Debugw("starting PopulateUndeleteUser()",
+		"hdrMap", hdrMap)
+	defer lg.Debug("finished PopulateUndeleteUser()")
+
+	for idx, attr := range objData {
+		attrName := hdrMap[idx]
+
+		switch {
+		case attrName == "userKey":
+			undelUser.UserKey = fmt.Sprintf("%v", attr)
+		case attrName == "orgUnitPath":
+			undelUser.OrgUnitPath = fmt.Sprintf("%v", attr)
+		default:
+			err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, attrName)
+			return err
+		}
+	}
+	return nil
+}
+
+// PopulateUser is used in batch processing
+func PopulateUser(user *admin.User, hdrMap map[int]string, objData []interface{}) error {
+	lg.Debugw("starting populateGroup()",
+		"hdrMap", hdrMap)
+	defer lg.Debug("finished populateGroup()")
+
+	name := new(admin.UserName)
+
+	for idx, attr := range objData {
+		attrName := hdrMap[idx]
+		attrVal := fmt.Sprintf("%v", attr)
+		lowerAttrVal := strings.ToLower(fmt.Sprintf("%v", attr))
+
+		if attrName == "changePasswordAtNextLogin" {
+			if lowerAttrVal == "true" {
+				user.ChangePasswordAtNextLogin = true
+			}
+		}
+		if attrName == "familyName" {
+			name.FamilyName = attrVal
+		}
+		if attrName == "givenName" {
+			name.GivenName = attrVal
+		}
+		if attrName == "includeInGlobalAddressList" {
+			if lowerAttrVal == "false" {
+				user.IncludeInGlobalAddressList = false
+				user.ForceSendFields = append(user.ForceSendFields, "IncludeInGlobalAddressList")
+			}
+		}
+		if attrName == "ipWhitelisted" {
+			if lowerAttrVal == "true" {
+				user.IpWhitelisted = true
+			}
+		}
+		if attrName == "orgUnitPath" {
+			user.OrgUnitPath = attrVal
+		}
+		if attrName == "password" {
+			if attrVal == "" {
+				err := fmt.Errorf(gmess.ERR_EMPTYSTRING, attrName)
+				lg.Error(err)
+				return err
+			}
+			pwd, err := HashPassword(attrVal)
+			if err != nil {
+				return err
+			}
+			user.Password = pwd
+			user.HashFunction = HASHFUNCTION
+		}
+		if attrName == "primaryEmail" {
+			if attrVal == "" {
+				err := fmt.Errorf(gmess.ERR_EMPTYSTRING, attrName)
+				lg.Error(err)
+				return err
+			}
+			user.PrimaryEmail = attrVal
+		}
+		if attrName == "recoveryEmail" {
+			user.RecoveryEmail = attrVal
+		}
+		if attrName == "recoveryPhone" {
+			if attrVal != "" {
+				err := cmn.ValidateRecoveryPhone(attrVal)
+				if err != nil {
+					return err
+				}
+				user.RecoveryPhone = attrVal
+			}
+		}
+		if attrName == "suspended" {
+			if lowerAttrVal == "true" {
+				user.Suspended = true
+			}
+		}
+	}
+	user.Name = name
+	return nil
+}
+
+// PopulateUserForUpdate is used in batch processing
+func PopulateUserForUpdate(userParams *UserParams, hdrMap map[int]string, objData []interface{}) error {
+	lg.Debugw("starting PopulateUserForUpdate()",
+		"hdrMap", hdrMap)
+	defer lg.Debug("finished PopulateUserForUpdate()")
+
+	name := new(admin.UserName)
+
+	for idx, attr := range objData {
+		attrName := hdrMap[idx]
+		attrVal := fmt.Sprintf("%v", attr)
+		lowerAttrVal := strings.ToLower(fmt.Sprintf("%v", attr))
+
+		if attrName == "changePasswordAtNextLogin" {
+			if lowerAttrVal == "true" {
+				userParams.User.ChangePasswordAtNextLogin = true
+			} else {
+				userParams.User.ChangePasswordAtNextLogin = false
+				userParams.User.ForceSendFields = append(userParams.User.ForceSendFields, "ChangePasswordAtNextLogin")
+			}
+		}
+		if attrName == "familyName" {
+			name.FamilyName = attrVal
+		}
+		if attrName == "givenName" {
+			name.GivenName = attrVal
+		}
+		if attrName == "includeInGlobalAddressList" {
+			if lowerAttrVal == "true" {
+				userParams.User.IncludeInGlobalAddressList = true
+			} else {
+				userParams.User.IncludeInGlobalAddressList = false
+				userParams.User.ForceSendFields = append(userParams.User.ForceSendFields, "IncludeInGlobalAddressList")
+			}
+		}
+		if attrName == "ipWhitelisted" {
+			if lowerAttrVal == "true" {
+				userParams.User.IpWhitelisted = true
+			} else {
+				userParams.User.IpWhitelisted = false
+				userParams.User.ForceSendFields = append(userParams.User.ForceSendFields, "IpWhitelisted")
+			}
+		}
+		if attrName == "orgUnitPath" {
+			if attrVal == "" {
+				err := fmt.Errorf(gmess.ERR_EMPTYSTRING, attrName)
+				return err
+			}
+			userParams.User.OrgUnitPath = attrVal
+		}
+		if attrName == "password" {
+			if attrVal != "" {
+				pwd, err := HashPassword(attrVal)
+				if err != nil {
+					return err
+				}
+				userParams.User.Password = pwd
+				userParams.User.HashFunction = HASHFUNCTION
+			}
+		}
+		if attrName == "primaryEmail" {
+			if attrVal == "" {
+				err := fmt.Errorf(gmess.ERR_EMPTYSTRING, attrName)
+				return err
+			}
+			userParams.User.PrimaryEmail = attrVal
+		}
+		if attrName == "recoveryEmail" {
+			userParams.User.RecoveryEmail = attrVal
+			if attrVal == "" {
+				userParams.User.ForceSendFields = append(userParams.User.ForceSendFields, "RecoveryEmail")
+			}
+		}
+		if attrName == "recoveryPhone" {
+			if attrVal != "" {
+				err := cmn.ValidateRecoveryPhone(attrVal)
+				if err != nil {
+					lg.Error(err)
+					return err
+				}
+			}
+			if attrVal == "" {
+				userParams.User.ForceSendFields = append(userParams.User.ForceSendFields, "RecoveryPhone")
+			}
+			userParams.User.RecoveryPhone = attrVal
+		}
+		if attrName == "suspended" {
+			if lowerAttrVal == "true" {
+				userParams.User.Suspended = true
+			} else {
+				userParams.User.Suspended = false
+				userParams.User.ForceSendFields = append(userParams.User.ForceSendFields, "Suspended")
+			}
+		}
+		if attrName == "userKey" {
+			if attrVal == "" {
+				err := fmt.Errorf(gmess.ERR_EMPTYSTRING, attrName)
+				return err
+			}
+			userParams.UserKey = attrVal
+		}
+	}
+
+	if name.FamilyName != "" || name.GivenName != "" || name.FullName != "" {
+		userParams.User.Name = name
+	}
+	return nil
+}
+
 // ShowAttrs displays requested user attributes
 func ShowAttrs(filter string) {
+	lg.Debugw("starting ShowAttrs()",
+		"filter", filter)
+	defer lg.Debug("finished ShowAttrs()")
+
 	for _, a := range userAttrs {
 		lwrA := strings.ToLower(a)
 		comp, _ := cmn.IsValidAttr(lwrA, userCompAttrs)
@@ -792,16 +1094,19 @@ func ShowAttrs(filter string) {
 				fmt.Println(a)
 			}
 		}
-
 	}
 }
 
 // ShowAttrValues displays enumerated attribute values
-func ShowAttrValues(lenArgs int, args []string) error {
+func ShowAttrValues(lenArgs int, args []string, filter string) error {
+	lg.Debugw("starting ShowAttrValues()",
+		"lenArgs", lenArgs,
+		"args", args,
+		"filter", filter)
+	defer lg.Debug("finished ShowAttrValues()")
+
 	if lenArgs == 1 {
-		for _, v := range attrValues {
-			fmt.Println(v)
-		}
+		cmn.ShowAttrVals(attrValues, filter)
 	}
 
 	if lenArgs == 2 {
@@ -818,7 +1123,9 @@ func ShowAttrValues(lenArgs int, args []string) error {
 		case attr == "posixaccount":
 			fmt.Println("operatingSystemType")
 		default:
-			return fmt.Errorf("gmin: error - %v attribute not recognized", args[1])
+			err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[1])
+			lg.Error(err)
+			return err
 		}
 	}
 
@@ -826,118 +1133,131 @@ func ShowAttrValues(lenArgs int, args []string) error {
 		attr2 := strings.ToLower(args[1])
 		attr3 := strings.ToLower(args[2])
 
-		switch {
-		case attr2 == "address":
+		if attr2 == "address" {
 			if attr3 == "type" {
-				for _, val := range validAddressTypes {
-					fmt.Println(val)
-				}
-			} else {
-				return fmt.Errorf("gmin: error - %v attribute not recognized", args[2])
+				cmn.ShowAttrVals(validAddressTypes, filter)
+				return nil
 			}
-		case attr2 == "email":
-			if attr3 == "type" {
-				for _, val := range validEmailTypes {
-					fmt.Println(val)
-				}
-			} else {
-				return fmt.Errorf("gmin: error - %v attribute not recognized", args[2])
-			}
-		case attr2 == "externalid":
-			if attr3 == "type" {
-				for _, val := range validExtIDTypes {
-					fmt.Println(val)
-				}
-			} else {
-				return fmt.Errorf("gmin: error - %v attribute not recognized", args[2])
-			}
-		case attr2 == "gender":
-			if attr3 == "type" {
-				for _, val := range validGenders {
-					fmt.Println(val)
-				}
-			} else {
-				return fmt.Errorf("gmin: error - %v attribute not recognized", args[2])
-			}
-		case attr2 == "keyword":
-			if attr3 == "type" {
-				for _, val := range validKeywordTypes {
-					fmt.Println(val)
-				}
-			} else {
-				return fmt.Errorf("gmin: error - %v attribute not recognized", args[2])
-			}
-		case attr2 == "location":
-			if attr3 == "type" {
-				for _, val := range validLocationTypes {
-					fmt.Println(val)
-				}
-			} else {
-				return fmt.Errorf("gmin: error - %v attribute not recognized", args[2])
-			}
-		case attr2 == "notes":
-			if attr3 == "type" {
-				for _, val := range validNotesContentTypes {
-					fmt.Println(val)
-				}
-			} else {
-				return fmt.Errorf("gmin: error - %v attribute not recognized", args[2])
-			}
-		case attr2 == "organization":
-			if attr3 == "type" {
-				for _, val := range validOrgTypes {
-					fmt.Println(val)
-				}
-			} else {
-				return fmt.Errorf("gmin: error - %v attribute not recognized", args[2])
-			}
-		case attr2 == "phone":
-			if attr3 == "type" {
-				for _, val := range validPhoneTypes {
-					fmt.Println(val)
-				}
-			} else {
-				return fmt.Errorf("gmin: error - %v attribute not recognized", args[2])
-			}
-		case attr2 == "posixaccount":
-			if attr3 == "operatingsystemtype" {
-				for _, val := range validOSTypes {
-					fmt.Println(val)
-				}
-			} else {
-				return fmt.Errorf("gmin: error - %v attribute not recognized", args[2])
-			}
-		case attr2 == "relation":
-			if attr3 == "type" {
-				for _, val := range validRelationTypes {
-					fmt.Println(val)
-				}
-			} else {
-				return fmt.Errorf("gmin: error - %v attribute not recognized", args[2])
-			}
-		case attr2 == "website":
-			if attr3 == "type" {
-				for _, val := range validWebsiteTypes {
-					fmt.Println(val)
-				}
-			} else {
-				return fmt.Errorf("gmin: error - %v attribute not recognized", args[2])
-			}
-		case attr2 == "im":
-			if attr3 == "protocol" {
-				for _, val := range validImProtocols {
-					fmt.Println(val)
-				}
-			} else if attr3 == "type" {
-				for _, val := range validImTypes {
-					fmt.Println(val)
-				}
-			} else {
-				return fmt.Errorf("gmin: error - %v attribute not recognized", args[2])
-			}
-		default:
-			return fmt.Errorf("gmin: error - %v attribute not recognized", args[1])
+			err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[2])
+			lg.Error(err)
+			return err
 		}
+		if attr2 == "email" {
+			if attr3 == "type" {
+				cmn.ShowAttrVals(validEmailTypes, filter)
+				return nil
+			}
+			err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[2])
+			lg.Error(err)
+			return err
+		}
+		if attr2 == "externalid" {
+			if attr3 == "type" {
+				cmn.ShowAttrVals(validExtIDTypes, filter)
+				return nil
+			}
+			err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[2])
+			lg.Error(err)
+			return err
+		}
+		if attr2 == "gender" {
+			if attr3 == "type" {
+				cmn.ShowAttrVals(validGenders, filter)
+				return nil
+			}
+			err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[2])
+			lg.Error(err)
+			return err
+		}
+		if attr2 == "keyword" {
+			if attr3 == "type" {
+				cmn.ShowAttrVals(validKeywordTypes, filter)
+				return nil
+			}
+			err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[2])
+			lg.Error(err)
+			return err
+		}
+		if attr2 == "location" {
+			if attr3 == "type" {
+				cmn.ShowAttrVals(validLocationTypes, filter)
+				return nil
+			}
+			err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[2])
+			lg.Error(err)
+			return err
+		}
+		if attr2 == "notes" {
+			if attr3 == "type" {
+				cmn.ShowAttrVals(validNotesContentTypes, filter)
+				return nil
+			}
+			err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[2])
+			lg.Error(err)
+			return err
+		}
+		if attr2 == "organization" {
+			if attr3 == "type" {
+				cmn.ShowAttrVals(validOrgTypes, filter)
+				return nil
+			}
+			err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[2])
+			lg.Error(err)
+			return err
+		}
+		if attr2 == "phone" {
+			if attr3 == "type" {
+				cmn.ShowAttrVals(validPhoneTypes, filter)
+				return nil
+			}
+			err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[2])
+			lg.Error(err)
+			return err
+		}
+		if attr2 == "posixaccount" {
+			if attr3 == "operatingsystemtype" {
+				cmn.ShowAttrVals(validOSTypes, filter)
+				return nil
+			}
+			err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[2])
+			lg.Error(err)
+			return err
+		}
+		if attr2 == "relation" {
+			if attr3 == "type" {
+				cmn.ShowAttrVals(validRelationTypes, filter)
+				return nil
+			}
+			err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[2])
+			lg.Error(err)
+			return err
+		}
+		if attr2 == "website" {
+			if attr3 == "type" {
+				cmn.ShowAttrVals(validWebsiteTypes, filter)
+				return nil
+			}
+			err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[2])
+			lg.Error(err)
+			return err
+		}
+		if attr2 == "im" {
+			if attr3 == "protocol" {
+				cmn.ShowAttrVals(validImProtocols, filter)
+				return nil
+			}
+			if attr3 == "type" {
+				cmn.ShowAttrVals(validImTypes, filter)
+				return nil
+			}
+			err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[2])
+			lg.Error(err)
+			return err
+		}
+		// Attribute not recognized
+		err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[1])
+		lg.Error(err)
+		return err
 	}
 
 	return nil
@@ -945,6 +1265,10 @@ func ShowAttrValues(lenArgs int, args []string) error {
 
 // ShowCompAttrs displays user composite attributes
 func ShowCompAttrs(filter string) {
+	lg.Debugw("starting ShowCompAttrs()",
+		"filter", filter)
+	defer lg.Debug("finished ShowCompAttrs()")
+
 	keys := make([]string, 0, len(userCompAttrs))
 	for k := range userCompAttrs {
 		keys = append(keys, k)
@@ -960,16 +1284,19 @@ func ShowCompAttrs(filter string) {
 		if strings.Contains(k, strings.ToLower(filter)) {
 			fmt.Println(userCompAttrs[k])
 		}
-
 	}
 }
 
 // ShowFlagValues displays enumerated flag values
-func ShowFlagValues(lenArgs int, args []string) error {
+func ShowFlagValues(lenArgs int, args []string, filter string) error {
+	lg.Debugw("starting ShowFlagValues()",
+		"lenArgs", lenArgs,
+		"args", args,
+		"filter", filter)
+	defer lg.Debug("finished ShowFlagValues()")
+
 	if lenArgs == 1 {
-		for _, v := range flagValues {
-			fmt.Println(v)
-		}
+		cmn.ShowFlagValues(flagValues, filter)
 	}
 
 	if lenArgs == 2 {
@@ -977,7 +1304,7 @@ func ShowFlagValues(lenArgs int, args []string) error {
 		valSlice := []string{}
 
 		switch {
-		case flag == "orderby":
+		case flag == "order-by":
 			for _, val := range ValidOrderByStrs {
 				s, _ := cmn.IsValidAttr(val, UserAttrMap)
 				if s == "" {
@@ -986,27 +1313,21 @@ func ShowFlagValues(lenArgs int, args []string) error {
 				valSlice = append(valSlice, s)
 			}
 			uniqueSlice := cmn.UniqueStrSlice(valSlice)
-			for _, ob := range uniqueSlice {
-				fmt.Println(ob)
-			}
+			cmn.ShowFlagValues(uniqueSlice, filter)
 		case flag == "projection":
-			for _, vp := range ValidProjections {
-				fmt.Println(vp)
-			}
-		case flag == "sortorder":
+			cmn.ShowFlagValues(ValidProjections, filter)
+		case flag == "sort-order":
 			for _, v := range cmn.ValidSortOrders {
 				valSlice = append(valSlice, v)
 			}
 			uniqueSlice := cmn.UniqueStrSlice(valSlice)
-			for _, so := range uniqueSlice {
-				fmt.Println(so)
-			}
-		case flag == "viewtype":
-			for _, vt := range ValidViewTypes {
-				fmt.Println(vt)
-			}
+			cmn.ShowFlagValues(uniqueSlice, filter)
+		case flag == "view-type":
+			cmn.ShowFlagValues(ValidViewTypes, filter)
 		default:
-			return fmt.Errorf("gmin: error - %v flag not recognized", args[1])
+			err := fmt.Errorf(gmess.ERR_FLAGNOTRECOGNIZED, args[1])
+			lg.Error(err)
+			return err
 		}
 	}
 
@@ -1015,6 +1336,11 @@ func ShowFlagValues(lenArgs int, args []string) error {
 
 // ShowSubAttrs displays attributes of composite attributes
 func ShowSubAttrs(compAttr string, filter string) error {
+	lg.Debugw("starting ShowSubAttrs()",
+		"compAttr", compAttr,
+		"filter", filter)
+	defer lg.Debug("finished ShowSubAttrs()")
+
 	lwrCompAttr := strings.ToLower(compAttr)
 	switch lwrCompAttr {
 	case "address":
@@ -1050,7 +1376,9 @@ func ShowSubAttrs(compAttr string, filter string) error {
 	case "website":
 		cmn.ShowAttrs(websiteAttrs, UserAttrMap, filter)
 	default:
-		return fmt.Errorf("gmin: error - %v is not a composite attribute", compAttr)
+		err := fmt.Errorf(gmess.ERR_NOTCOMPOSITEATTR, compAttr)
+		lg.Error(err)
+		return err
 	}
 
 	return nil

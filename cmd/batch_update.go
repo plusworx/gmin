@@ -23,13 +23,16 @@ THE SOFTWARE.
 package cmd
 
 import (
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	"github.com/spf13/cobra"
 )
 
 var batchUpdateCmd = &cobra.Command{
 	Use:     "batch-update",
 	Aliases: []string{"bupdate", "bupd"},
-	Short:   "Updates a batch of G Suite entities",
+	Args:    cobra.NoArgs,
+	Short:   "Updates a batch of Google Workspace entities",
+	Long:    "Updates a batch of Google Workspace entities.",
 	Run:     doBatchUpdate,
 }
 
@@ -39,4 +42,8 @@ func doBatchUpdate(cmd *cobra.Command, args []string) {
 
 func init() {
 	rootCmd.AddCommand(batchUpdateCmd)
+	batchUpdateCmd.PersistentFlags().BoolVar(&silent, flgnm.FLG_SILENT, false, "suppress console output")
+	batchUpdateCmd.PersistentFlags().StringVar(&logLevel, flgnm.FLG_LOGLEVEL, "info", "log level (debug, info, error, warn)")
+
+	batchUpdateCmd.PersistentPreRunE = preRun
 }

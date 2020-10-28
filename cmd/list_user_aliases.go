@@ -27,6 +27,9 @@ import (
 	"fmt"
 
 	cmn "github.com/plusworx/gmin/utils/common"
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
+	gpars "github.com/plusworx/gmin/utils/gminparsers"
+	lg "github.com/plusworx/gmin/utils/logging"
 	uas "github.com/plusworx/gmin/utils/useraliases"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
@@ -36,30 +39,39 @@ var listUserAliasesCmd = &cobra.Command{
 	Use:     "user-aliases <user email address or id>",
 	Aliases: []string{"user-alias", "ualiases", "ualias", "uas", "ua"},
 	Args:    cobra.ExactArgs(1),
-	Short:   "Outputs a list of user aliases",
-	Long: `Outputs a list of user aliases.
-	
-	Examples:	gmin list user-aliases myuser@mycompany.com
-			gmin ls uas myuser@mycompany.com`,
-	RunE: doListUserAliases,
+	Example: `gmin list user-aliases myuser@mycompany.com
+gmin ls uas myuser@mycompany.com`,
+	Short: "Outputs a list of user aliases",
+	Long:  `Outputs a list of user aliases.`,
+	RunE:  doListUserAliases,
 }
 
 func doListUserAliases(cmd *cobra.Command, args []string) error {
+	lg.Debugw("starting doListUserAliases()",
+		"args", args)
+	defer lg.Debug("finished doListUserAliases()")
+
 	var aliases *admin.Aliases
 
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserAliasReadonlyScope)
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryUserAliasReadonlyScope)
 	if err != nil {
 		return err
 	}
+	ds := srv.(*admin.Service)
 
 	ualc := ds.Users.Aliases.List(args[0])
 
-	if attrs != "" {
-		listAttrs, err := cmn.ParseOutputAttrs(attrs, uas.UserAliasAttrMap)
+	flgAttrsVal, err := cmd.Flags().GetString(flgnm.FLG_ATTRIBUTES)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+	if flgAttrsVal != "" {
+		listAttrs, err := gpars.ParseOutputAttrs(flgAttrsVal, uas.UserAliasAttrMap)
 		if err != nil {
 			return err
 		}
-		formattedAttrs := uas.StartAliasesField + listAttrs + uas.EndField
+		formattedAttrs := uas.STARTALIASESFIELD + listAttrs + uas.ENDFIELD
 
 		ualc = uas.AddFields(ualc, formattedAttrs)
 	}
@@ -71,6 +83,7 @@ func doListUserAliases(cmd *cobra.Command, args []string) error {
 
 	jsonData, err := json.MarshalIndent(aliases, "", "    ")
 	if err != nil {
+		lg.Error(err)
 		return err
 	}
 
@@ -82,5 +95,5 @@ func doListUserAliases(cmd *cobra.Command, args []string) error {
 func init() {
 	listCmd.AddCommand(listUserAliasesCmd)
 
-	listUserAliasesCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required user alias attributes (separated by ~)")
+	listUserAliasesCmd.Flags().StringVarP(&attrs, flgnm.FLG_ATTRIBUTES, "a", "", "required user alias attributes (separated by ~)")
 }

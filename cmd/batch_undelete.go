@@ -23,13 +23,16 @@ THE SOFTWARE.
 package cmd
 
 import (
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	"github.com/spf13/cobra"
 )
 
 var batchUndeleteCmd = &cobra.Command{
 	Use:     "batch-undelete",
 	Aliases: []string{"bundelete", "bund"},
-	Short:   "Undeletes a batch of G Suite users",
+	Args:    cobra.NoArgs,
+	Short:   "Undeletes a batch of Google Workspace users",
+	Long:    "Undeletes a batch of Google Workspace users.",
 	Run:     doBatchUndelete,
 }
 
@@ -39,4 +42,8 @@ func doBatchUndelete(cmd *cobra.Command, args []string) {
 
 func init() {
 	rootCmd.AddCommand(batchUndeleteCmd)
+	batchUndeleteCmd.PersistentFlags().BoolVar(&silent, flgnm.FLG_SILENT, false, "suppress console output")
+	batchUndeleteCmd.PersistentFlags().StringVar(&logLevel, flgnm.FLG_LOGLEVEL, "info", "log level (debug, info, error, warn)")
+
+	batchUndeleteCmd.PersistentPreRunE = preRun
 }

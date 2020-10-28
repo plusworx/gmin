@@ -28,6 +28,12 @@ import (
 	"strings"
 
 	cdevs "github.com/plusworx/gmin/utils/chromeosdevices"
+	ca "github.com/plusworx/gmin/utils/commandaliases"
+	cmn "github.com/plusworx/gmin/utils/common"
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	grpset "github.com/plusworx/gmin/utils/groupsettings"
+	lg "github.com/plusworx/gmin/utils/logging"
 	gmems "github.com/plusworx/gmin/utils/members"
 	mdevs "github.com/plusworx/gmin/utils/mobiledevices"
 	usrs "github.com/plusworx/gmin/utils/users"
@@ -37,55 +43,78 @@ import (
 var showAttrValsCmd = &cobra.Command{
 	Use:     "attribute-values <object> [field with predefined values]",
 	Aliases: []string{"attr-vals", "avals"},
-	Args:    cobra.MinimumNArgs(1),
-	Short:   "Shows object field predefined value information",
+	Args:    cobra.RangeArgs(1, 3),
+	Example: `gmin show attribute-values user email type
+gmin show avals user email type`,
+	Short: "Shows object field predefined value information",
 	Long: `Shows object field predefined value information.
 
-	Valid objects are:
-	chromeosdevice, crosdevice, crosdev, cdev
-	group-member, grp-member, grp-mem, gmember, gmem
-	mobiledevice, mobdevice, mobdev, mdev
-	user
-	
-	Examples:	gmin show attribute-values user email type
-			gmin show avals user email type`,
+Valid objects are:
+chromeos-device, cros-device, cros-dev, cdev
+group-member, grp-member, grp-mem, gmember, gmem
+group-settings, grp-settings, grp-set, gsettings, gset
+mobile-device, mob-device, mob-dev, mdev
+user, usr`,
 	RunE: doShowAttrVals,
 }
 
 func doShowAttrVals(cmd *cobra.Command, args []string) error {
-	if len(args) > 3 {
-		return errors.New("gmin: error - exceeded maximum 3 arguments")
+	lg.Debugw("starting doShowAttrVals()",
+		"args", args)
+	defer lg.Debug("finished doShowAttrVals")
+
+	lArgs := len(args)
+
+	flgFilterVal, err := cmd.Flags().GetString(flgnm.FLG_FILTER)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+	lowerFilter := strings.ToLower(flgFilterVal)
+
+	if lArgs > 3 {
+		err = errors.New(gmess.ERR_MAX3ARGSEXCEEDED)
+		lg.Error(err)
+		return err
 	}
 
-	obj := strings.ToLower(args[0])
+	object := strings.ToLower(args[0])
 
 	switch {
-	case obj == "chromeosdevice" || obj == "crosdevice" || obj == "crosdev" || obj == "cdev":
-		err := cdevs.ShowAttrValues(len(args), args)
+	case cmn.SliceContainsStr(ca.CDevAliases, object):
+		err := cdevs.ShowAttrValues(lArgs, args, lowerFilter)
 		if err != nil {
 			return err
 		}
-	case obj == "group-member" || obj == "grp-member" || obj == "grp-mem" || obj == "gmember" || obj == "gmem":
-		err := gmems.ShowAttrValues(len(args), args)
+	case cmn.SliceContainsStr(ca.GMAliases, object):
+		err := gmems.ShowAttrValues(lArgs, args, lowerFilter)
 		if err != nil {
 			return err
 		}
-	case obj == "mobiledevice" || obj == "mobdevice" || obj == "mobdev" || obj == "mdev":
-		err := mdevs.ShowAttrValues(len(args), args)
+	case cmn.SliceContainsStr(ca.GSAliases, object):
+		err := grpset.ShowAttrValues(lArgs, args, lowerFilter)
 		if err != nil {
 			return err
 		}
-	case obj == "user":
-		err := usrs.ShowAttrValues(len(args), args)
+	case cmn.SliceContainsStr(ca.MDevAliases, object):
+		err := mdevs.ShowAttrValues(lArgs, args, lowerFilter)
+		if err != nil {
+			return err
+		}
+	case cmn.SliceContainsStr(ca.UserAliases, object):
+		err := usrs.ShowAttrValues(lArgs, args, lowerFilter)
 		if err != nil {
 			return err
 		}
 	default:
-		return fmt.Errorf("gmin: error - %v is not recognized", args[0])
+		err = fmt.Errorf(gmess.ERR_OBJECTNOTRECOGNIZED, args[0])
+		lg.Error(err)
+		return err
 	}
 	return nil
 }
 
 func init() {
 	showCmd.AddCommand(showAttrValsCmd)
+	showAttrValsCmd.Flags().StringVarP(&filter, flgnm.FLG_FILTER, "f", "", "string used to filter results")
 }

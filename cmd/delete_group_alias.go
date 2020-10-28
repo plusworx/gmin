@@ -26,6 +26,8 @@ import (
 	"fmt"
 
 	cmn "github.com/plusworx/gmin/utils/common"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	lg "github.com/plusworx/gmin/utils/logging"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 )
@@ -34,28 +36,34 @@ var deleteGroupAliasCmd = &cobra.Command{
 	Use:     "group-alias <alias email address> <group email address or id>",
 	Aliases: []string{"grp-alias", "galias", "ga"},
 	Args:    cobra.ExactArgs(2),
-	Short:   "Deletes group alias",
-	Long: `Deletes group alias.
-	
-	Examples:	gmin delete group-alias my.alias@mycompany.com mygroup@mycompany.com
-			gmin del ga my.alias@mycompany.com mygroup@mycompany.com`,
-	RunE: doDeleteGroupAlias,
+	Example: `gmin delete group-alias my.alias@mycompany.com mygroup@mycompany.com
+gmin del ga my.alias@mycompany.com mygroup@mycompany.com`,
+	Short: "Deletes group alias",
+	Long:  `Deletes group alias.`,
+	RunE:  doDeleteGroupAlias,
 }
 
 func doDeleteGroupAlias(cmd *cobra.Command, args []string) error {
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupScope)
+	lg.Debugw("starting doDeleteGroupAlias()",
+		"args", args)
+	defer lg.Debug("finished doDeleteGroupAlias()")
+
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryGroupScope)
 	if err != nil {
 		return err
 	}
+	ds := srv.(*admin.Service)
 
 	gadc := ds.Groups.Aliases.Delete(args[1], args[0])
 
 	err = gadc.Do()
 	if err != nil {
+		lg.Error(err)
 		return err
 	}
 
-	fmt.Println(cmn.GminMessage("**** gmin: group alias " + args[0] + " for group " + args[1] + " deleted ****"))
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_GROUPALIASDELETED, args[0], args[1])))
+	lg.Infof(gmess.INFO_GROUPALIASDELETED, args[0], args[1])
 
 	return nil
 }

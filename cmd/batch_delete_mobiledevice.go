@@ -23,86 +23,126 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"bufio"
 	"errors"
 	"fmt"
-	"os"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
+	btch "github.com/plusworx/gmin/utils/batch"
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	lg "github.com/plusworx/gmin/utils/logging"
+	mdevs "github.com/plusworx/gmin/utils/mobiledevices"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 )
 
 var batchDelMobDevCmd = &cobra.Command{
-	Use:     "mobiledevices [-i input file path]",
-	Aliases: []string{"mobiledevice", "mobdevices", "mobdevice", "mobdevs", "mobdev", "mdevs", "mdev"},
-	Short:   "Deletes a batch of mobile devices",
+	Use:     "mobile-devices [-i input file path]",
+	Aliases: []string{"mobile-device", "mob-devices", "mob-device", "mob-devs", "mob-dev", "mdevs", "mdev"},
+	Example: `gmin batch-delete mobile-devices -i inputfile.txt
+	gmin bdel mdevs -i inputfile.txt
+	gmin ls mdevs -q user:William* -a resourceId | jq '.mobiledevices[] | .resourceId' -r | gmin bdel mdevs`,
+	Short: "Deletes a batch of mobile devices",
 	Long: `Deletes a batch of mobile devices where mobile device details are provided in a text input file or through a pipe.
-	
-	Examples:	gmin batch-delete mobiledevices -i inputfile.txt
-			gmin bdel mdevs -i inputfile.txt
-			gmin ls mdevs -q user:William* -a resourceId | jq '.mobiledevices[] | .resourceId' -r | gmin bdel mdevs
 			
-The input should have the mobile device resource ids to be deleted on separate lines like this:
+The input file or piped in data should provide the mobile device resource ids to be deleted on separate lines like this:
 
 4cx07eba348f09b3Yjklj93xjsol0kE30lkl
 Hkj98764yKK4jw8yyoyq9987js07q1hs7y98
-lkalkju9027ja98na65wqHaTBOOUgarTQKk9`,
+lkalkju9027ja98na65wqHaTBOOUgarTQKk9
+
+An input Google sheet must have a header row with the following column names being the only ones that are valid:
+
+resourceId [required]
+
+The column name is case insensitive.`,
 	RunE: doBatchDelMobDev,
 }
 
 func doBatchDelMobDev(cmd *cobra.Command, args []string) error {
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryDeviceMobileScope)
+	lg.Debugw("starting doBatchDelMobDev()",
+		"args", args)
+	defer lg.Debug("finished doBatchDelMobDev()")
+
+	var mobdevs []string
+
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryDeviceMobileScope)
+	if err != nil {
+		return err
+	}
+	ds := srv.(*admin.Service)
+
+	inputFlgVal, err := cmd.Flags().GetString(flgnm.FLG_INPUTFILE)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+
+	scanner, err := cmn.InputFromStdIn(inputFlgVal)
 	if err != nil {
 		return err
 	}
 
-	customerID, err := cfg.ReadConfigString("customerid")
+	if inputFlgVal == "" && scanner == nil {
+		err := errors.New(gmess.ERR_NOINPUTFILE)
+		lg.Error(err)
+		return err
+	}
+
+	formatFlgVal, err := cmd.Flags().GetString(flgnm.FLG_FORMAT)
 	if err != nil {
+		lg.Error(err)
+		return err
+	}
+	lwrFmt := strings.ToLower(formatFlgVal)
+
+	ok := cmn.SliceContainsStr(cmn.ValidFileFormats, lwrFmt)
+	if !ok {
+		err = fmt.Errorf(gmess.ERR_INVALIDFILEFORMAT, formatFlgVal)
+		lg.Error(err)
 		return err
 	}
 
-	scanner, err := cmn.InputFromStdIn(inputFile)
-	if err != nil {
-		return err
-	}
-
-	if inputFile == "" && scanner == nil {
-		err := errors.New("gmin: error - must provide inputfile")
-		return err
-	}
-
-	if scanner == nil {
-		file, err := os.Open(inputFile)
+	switch {
+	case lwrFmt == "text":
+		mobdevs, err = btch.DeleteProcessTextFile(inputFlgVal, scanner)
 		if err != nil {
 			return err
 		}
-		defer file.Close()
+	case lwrFmt == "gsheet":
+		rangeFlgVal, err := cmd.Flags().GetString(flgnm.FLG_SHEETRANGE)
+		if err != nil {
+			return err
+		}
 
-		scanner = bufio.NewScanner(file)
+		mobdevs, err = btch.DeleteProcessGSheet(inputFlgVal, rangeFlgVal, mdevs.MobDevAttrMap, mdevs.KEYNAME)
+		if err != nil {
+			return err
+		}
+	default:
+		err = fmt.Errorf(gmess.ERR_INVALIDFILEFORMAT, formatFlgVal)
+		lg.Error(err)
+		return err
 	}
 
-	wg := new(sync.WaitGroup)
-
-	for scanner.Scan() {
-		mobResID := scanner.Text()
-		mdc := ds.Mobiledevices.Delete(customerID, mobResID)
-
-		wg.Add(1)
-
-		go deleteMobDev(wg, mdc, mobResID)
+	err = bdmdProcessDeletion(ds, mobdevs)
+	if err != nil {
+		return err
 	}
-
-	wg.Wait()
 
 	return nil
 }
 
-func deleteMobDev(wg *sync.WaitGroup, mdc *admin.MobiledevicesDeleteCall, resourceID string) {
+func bdmdDelete(wg *sync.WaitGroup, mdc *admin.MobiledevicesDeleteCall, resourceID string) {
+	lg.Debugw("starting bdmdDelete()",
+		"resourceID", resourceID)
+	defer lg.Debug("finished bdmdDelete()")
+
 	defer wg.Done()
 
 	b := backoff.NewExponentialBackOff()
@@ -112,22 +152,55 @@ func deleteMobDev(wg *sync.WaitGroup, mdc *admin.MobiledevicesDeleteCall, resour
 		var err error
 		err = mdc.Do()
 		if err == nil {
-			fmt.Println(cmn.GminMessage("**** gmin: mobile device " + resourceID + " deleted ****"))
+			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_MDEVDELETED, resourceID)))
+			lg.Infof(gmess.INFO_MDEVDELETED, resourceID)
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(errors.New(cmn.GminMessage("gmin: error - " + err.Error() + " " + resourceID)))
+			return backoff.Permanent(fmt.Errorf(gmess.ERR_BATCHMOBILEDEVICE, err.Error(), resourceID))
 		}
-		return errors.New(cmn.GminMessage("gmin: error - " + err.Error() + " " + resourceID))
+		// Log the retries
+		lg.Warnw(err.Error(),
+			"retrying", b.GetElapsedTime().String(),
+			"mobile device", resourceID)
+		return fmt.Errorf(gmess.ERR_BATCHMOBILEDEVICE, err.Error(), resourceID)
 	}, b)
 	if err != nil {
-		fmt.Println(err)
+		// Log final error
+		lg.Error(err)
+		fmt.Println(cmn.GminMessage(err.Error()))
 	}
+}
+
+func bdmdProcessDeletion(ds *admin.Service, mobdevs []string) error {
+	lg.Debug("starting bdmdProcessDeletion()")
+	defer lg.Debug("finished bdmdProcessDeletion()")
+
+	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+
+	wg := new(sync.WaitGroup)
+
+	for _, mobResID := range mobdevs {
+		mdc := ds.Mobiledevices.Delete(customerID, mobResID)
+
+		wg.Add(1)
+
+		go bdmdDelete(wg, mdc, mobResID)
+	}
+
+	wg.Wait()
+
+	return nil
 }
 
 func init() {
 	batchDelCmd.AddCommand(batchDelMobDevCmd)
 
-	batchDelMobDevCmd.Flags().StringVarP(&inputFile, "inputfile", "i", "", "filepath to mobile device data text file")
-	batchDelMobDevCmd.MarkFlagRequired("inputfile")
+	batchDelMobDevCmd.Flags().StringVarP(&inputFile, flgnm.FLG_INPUTFILE, "i", "", "filepath to mobile device data text file")
+	batchDelMobDevCmd.Flags().StringVarP(&delFormat, flgnm.FLG_FORMAT, "f", "text", "mobile device data file format (text or gsheet)")
+	batchDelMobDevCmd.Flags().StringVarP(&sheetRange, flgnm.FLG_SHEETRANGE, "s", "", "mobile device data gsheet range")
 }

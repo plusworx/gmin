@@ -28,9 +28,14 @@ import (
 	"strings"
 
 	cdevs "github.com/plusworx/gmin/utils/chromeosdevices"
+	ca "github.com/plusworx/gmin/utils/commandaliases"
 	cmn "github.com/plusworx/gmin/utils/common"
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	gas "github.com/plusworx/gmin/utils/groupaliases"
 	grps "github.com/plusworx/gmin/utils/groups"
+	grpset "github.com/plusworx/gmin/utils/groupsettings"
+	lg "github.com/plusworx/gmin/utils/logging"
 	mems "github.com/plusworx/gmin/utils/members"
 	mdevs "github.com/plusworx/gmin/utils/mobiledevices"
 	ous "github.com/plusworx/gmin/utils/orgunits"
@@ -42,50 +47,137 @@ import (
 
 var showAttrsCmd = &cobra.Command{
 	Use:     "attributes <object> [composite attributes]",
-	Aliases: []string{"attrs"},
-	Args:    cobra.MinimumNArgs(1),
-	Short:   "Shows object attribute information",
+	Aliases: []string{"attrs", "attr"},
+	Args:    cobra.RangeArgs(1, 3),
+	Example: `gmin show attributes user -f pass
+gmin show attrs user name`,
+	Short: "Shows object attribute information",
 	Long: `Shows object attribute information.
 	
-	Valid objects are:
-	chromeosdevice, crosdevice, crosdev, cdev
-	group, grp
-	group-alias, grp-alias, galias, ga
-	group-member, grp-member, grp-mem, gmember, gmem
-	mobiledevice, mobdevice, mobdev, mdev
-	orgunit, ou
-	schema, sc
-	user
-	user-alias, ualias, ua
-
-	Examples:	gmin show attributes user -f pass
-			gmin show attrs user name`,
+Valid objects are:
+chromeos-device, cros-device, cros-dev, cdev
+group, grp
+group-alias, grp-alias, galias, ga
+group-member, grp-member, grp-mem, gmember, gmem
+group-settings,	grp-settings, grp-set, gsettings, gset
+mobile-device, mob-device, mob-dev, mdev
+orgunit, ou
+schema, sc
+user, usr
+user-alias, ualias, ua`,
 	RunE: doShowAttrs,
 }
 
 func doShowAttrs(cmd *cobra.Command, args []string) error {
+	lg.Debugw("starting doShowAttrs()",
+		"args", args)
+	defer lg.Debug("finished doShowAttrs()")
+
 	lArgs := len(args)
+	object := strings.ToLower(args[0])
 
-	if lArgs > 3 {
-		return fmt.Errorf("gmin: error - maximum of 3 arguments exceeded")
-	}
-
-	if composite && queryable {
-		return errors.New("gmin: error - cannot provide both --composite and --queryable flags")
-	}
-
-	if queryable && lArgs > 1 {
-		return errors.New("gmin: error - only one argument is allowed with --queryable flag")
-	}
-
-	ok := validateShowSlice(strings.ToLower(args[0]), cmn.ValidPrimaryShowArgs)
-	if !ok {
-		return fmt.Errorf("gmin: error - %v not found", args[0])
-	}
-
-	err := processShowArgs(args, lArgs)
+	flgFilterVal, err := cmd.Flags().GetString(flgnm.FLG_FILTER)
 	if err != nil {
+		lg.Error(err)
 		return err
+	}
+	lowerFilter := strings.ToLower(flgFilterVal)
+
+	flgQueryableVal, err := cmd.Flags().GetBool(flgnm.FLG_QUERYABLE)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+	if flgQueryableVal && lArgs > 1 {
+		err = errors.New(gmess.ERR_QUERYABLEFLAG1ARG)
+		lg.Error(err)
+		return err
+	}
+
+	flgCompositeVal, err := cmd.Flags().GetBool(flgnm.FLG_COMPOSITE)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+	if flgCompositeVal && flgQueryableVal {
+		err = errors.New(gmess.ERR_QUERYANDCOMPOSITEFLAGS)
+		return err
+	}
+
+	ok := cmn.SliceContainsStr(cmn.ValidPrimaryShowArgs, object)
+	if !ok {
+		err = fmt.Errorf(gmess.ERR_OBJECTNOTFOUND, args[0])
+		return err
+	}
+
+	if cmn.SliceContainsStr(ca.CDevAliases, object) {
+		err := saChromeOSDev(args, lArgs, args[0], lowerFilter, flgQueryableVal, flgCompositeVal)
+		if err != nil {
+			return err
+		}
+	}
+
+	if cmn.SliceContainsStr(ca.GroupAliases, object) {
+		err := saGroup(args, lArgs, args[0], lowerFilter, flgQueryableVal, flgCompositeVal)
+		if err != nil {
+			return err
+		}
+	}
+
+	if cmn.SliceContainsStr(ca.GAAliases, object) {
+		err := saGroupAlias(args, lArgs, args[0], lowerFilter, flgQueryableVal, flgCompositeVal)
+		if err != nil {
+			return err
+		}
+	}
+
+	if cmn.SliceContainsStr(ca.GMAliases, object) {
+		err := saGroupMember(args, lArgs, args[0], lowerFilter, flgQueryableVal, flgCompositeVal)
+		if err != nil {
+			return err
+		}
+	}
+
+	if cmn.SliceContainsStr(ca.GSAliases, object) {
+		err := saGroupSettings(args, lArgs, args[0], lowerFilter, flgQueryableVal, flgCompositeVal)
+		if err != nil {
+			return err
+		}
+	}
+
+	if cmn.SliceContainsStr(ca.MDevAliases, object) {
+		err := saMobileDev(args, lArgs, args[0], lowerFilter, flgQueryableVal, flgCompositeVal)
+		if err != nil {
+			return err
+		}
+	}
+
+	if cmn.SliceContainsStr(ca.OUAliases, object) {
+		err := saOrgUnit(args, lArgs, args[0], lowerFilter, flgQueryableVal, flgCompositeVal)
+		if err != nil {
+			return err
+		}
+	}
+
+	if cmn.SliceContainsStr(ca.SCAliases, object) {
+		err := saSchema(args, lArgs, args[0], lowerFilter, flgQueryableVal, flgCompositeVal)
+		if err != nil {
+			return err
+		}
+	}
+
+	if cmn.SliceContainsStr(ca.UserAliases, object) {
+		err := saUser(args, lArgs, args[0], lowerFilter, flgQueryableVal, flgCompositeVal)
+		if err != nil {
+			return err
+		}
+	}
+
+	if cmn.SliceContainsStr(ca.UAAliases, object) {
+		err := saUserAlias(args, lArgs, args[0], lowerFilter, flgQueryableVal, flgCompositeVal)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -94,174 +186,318 @@ func doShowAttrs(cmd *cobra.Command, args []string) error {
 func init() {
 	showCmd.AddCommand(showAttrsCmd)
 
-	showAttrsCmd.Flags().BoolVarP(&composite, "composite", "c", false, "show attributes that contain other attributes")
-	showAttrsCmd.Flags().StringVarP(&filter, "filter", "f", "", "string used to filter results")
-	showAttrsCmd.Flags().BoolVarP(&queryable, "queryable", "q", false, "show attributes that can be used in a query")
+	showAttrsCmd.Flags().BoolVarP(&composite, flgnm.FLG_COMPOSITE, "c", false, "show attributes that contain other attributes")
+	showAttrsCmd.Flags().StringVarP(&filter, flgnm.FLG_FILTER, "f", "", "string used to filter results")
+	showAttrsCmd.Flags().BoolVarP(&queryable, flgnm.FLG_QUERYABLE, "q", false, "show attributes that can be used in a query")
 }
 
-func processShowArgs(args []string, lArgs int) error {
-	switch {
-	case lArgs == 3:
-		err := threeArgs(args[0], args[1], args[2])
-		if err != nil {
-			return err
+func saChromeOSDev(args []string, lArgs int, objectName string, filter string, queryable bool, composite bool) error {
+	lg.Debugw("starting saChromeOSDev()",
+		"args", args,
+		"lArgs", lArgs,
+		"objectName", objectName)
+	defer lg.Debug("finished saChromeOSDev()")
+
+	if queryable {
+		cmn.ShowQueryableAttrs(filter, cdevs.QueryAttrMap)
+		return nil
+	}
+
+	if lArgs == 1 {
+		if composite {
+			cdevs.ShowCompAttrs(filter)
+			return nil
 		}
-	case lArgs == 2:
-		err := twoArgs(args[0], args[1])
-		if err != nil {
-			return err
+		cdevs.ShowAttrs(filter)
+		return nil
+	}
+
+	if lArgs == 2 {
+		if composite {
+			return fmt.Errorf(gmess.ERR_NOCOMPOSITEATTRS, args[lArgs-1])
 		}
-	default:
-		err := oneArg(args[0])
+		err := cdevs.ShowSubAttrs(args[lArgs-1], filter)
 		if err != nil {
 			return err
 		}
 	}
-	return nil
-}
 
-func threeArgs(arg1 string, arg2 string, arg3 string) error {
-	obj := strings.ToLower(arg1)
-	subAttr := strings.ToLower(arg3)
-
-	switch {
-	case obj == "schema" || obj == "sc":
-		if composite {
-			return fmt.Errorf("gmin: error - %v does not have any composite attributes", arg3)
-		}
-		err := scs.ShowSubSubAttrs(subAttr)
-		if err != nil {
-			return err
-		}
-	default:
-		return fmt.Errorf("gmin: error - %v does not have any composite attributes", arg2)
+	if lArgs > 2 {
+		return fmt.Errorf(gmess.ERR_NOCOMPOSITEATTRS, args[2])
 	}
 
 	return nil
 }
 
-func twoArgs(arg1 string, arg2 string) error {
-	obj := strings.ToLower(arg1)
-	switch {
-	case obj == "chromeosdevice" || obj == "crosdevice" || obj == "crosdev" || obj == "cdev":
+func saGroup(args []string, lArgs int, objectName string, filter string, queryable bool, composite bool) error {
+	lg.Debugw("starting saGroup()",
+		"args", args,
+		"lArgs", lArgs,
+		"objectName", objectName)
+	defer lg.Debug("finished saGroup()")
+
+	if queryable {
+		cmn.ShowQueryableAttrs(filter, grps.QueryAttrMap)
+		return nil
+	}
+
+	if lArgs == 1 {
 		if composite {
-			return fmt.Errorf("gmin: error - %v does not have any composite attributes", arg2)
+			return fmt.Errorf(gmess.ERR_NOCOMPOSITEATTRS, objectName)
 		}
-		err := cdevs.ShowSubAttrs(arg2, filter)
+		grps.ShowAttrs(filter)
+	}
+
+	if lArgs > 1 {
+		return fmt.Errorf(gmess.ERR_NOCOMPOSITEATTRS, objectName)
+	}
+
+	return nil
+}
+
+func saGroupAlias(args []string, lArgs int, objectName string, filter string, queryable bool, composite bool) error {
+	lg.Debugw("starting saGroupAlias()",
+		"args", args,
+		"lArgs", lArgs,
+		"objectName", objectName)
+	defer lg.Debug("finished saGroupAlias()")
+
+	if queryable {
+		return fmt.Errorf(gmess.ERR_NOQUERYABLEATTRS, objectName)
+	}
+
+	if lArgs == 1 {
+		if composite {
+			return fmt.Errorf(gmess.ERR_NOCOMPOSITEATTRS, objectName)
+		}
+		gas.ShowAttrs(filter)
+	}
+
+	if lArgs > 1 {
+		return fmt.Errorf(gmess.ERR_NOCOMPOSITEATTRS, objectName)
+	}
+
+	return nil
+}
+
+func saGroupMember(args []string, lArgs int, objectName string, filter string, queryable bool, composite bool) error {
+	lg.Debugw("starting saGroupMember()",
+		"args", args,
+		"lArgs", lArgs,
+		"objectName", objectName)
+	defer lg.Debug("finished saGroupMember()")
+
+	if queryable {
+		return fmt.Errorf(gmess.ERR_NOQUERYABLEATTRS, objectName)
+	}
+
+	if lArgs == 1 {
+		if composite {
+			return fmt.Errorf(gmess.ERR_NOCOMPOSITEATTRS, objectName)
+		}
+		mems.ShowAttrs(filter)
+	}
+
+	if lArgs > 1 {
+		return fmt.Errorf(gmess.ERR_NOCOMPOSITEATTRS, objectName)
+	}
+
+	return nil
+}
+
+func saGroupSettings(args []string, lArgs int, objectName string, filter string, queryable bool, composite bool) error {
+	lg.Debugw("starting saGroupSettings()",
+		"args", args,
+		"lArgs", lArgs,
+		"objectName", objectName)
+	defer lg.Debug("finished saGroupSettings()")
+
+	if queryable {
+		return fmt.Errorf(gmess.ERR_NOQUERYABLEATTRS, objectName)
+	}
+
+	if lArgs == 1 {
+		if composite {
+			return fmt.Errorf(gmess.ERR_NOCOMPOSITEATTRS, objectName)
+		}
+		grpset.ShowAttrs(filter)
+	}
+
+	if lArgs > 1 {
+		return fmt.Errorf(gmess.ERR_NOCOMPOSITEATTRS, objectName)
+	}
+
+	return nil
+}
+
+func saMobileDev(args []string, lArgs int, objectName string, filter string, queryable bool, composite bool) error {
+	lg.Debugw("starting saMobileDev()",
+		"args", args,
+		"lArgs", lArgs,
+		"objectName", objectName)
+	defer lg.Debug("finished saMobileDev()")
+
+	if queryable {
+		cmn.ShowQueryableAttrs(filter, mdevs.QueryAttrMap)
+		return nil
+	}
+
+	if lArgs == 1 {
+		if composite {
+			mdevs.ShowCompAttrs(filter)
+			return nil
+		}
+		mdevs.ShowAttrs(filter)
+		return nil
+	}
+
+	if lArgs == 2 {
+		if composite {
+			return fmt.Errorf(gmess.ERR_NOCOMPOSITEATTRS, args[lArgs-1])
+		}
+		err := mdevs.ShowSubAttrs(args[lArgs-1], filter)
 		if err != nil {
 			return err
 		}
-	case obj == "mobiledevice" || obj == "mobdevice" || obj == "mobdev" || obj == "mdev":
+	}
+
+	if lArgs > 2 {
+		return fmt.Errorf(gmess.ERR_NOCOMPOSITEATTRS, args[2])
+	}
+
+	return nil
+}
+
+func saOrgUnit(args []string, lArgs int, objectName string, filter string, queryable bool, composite bool) error {
+	lg.Debugw("starting saOrgUnit()",
+		"args", args,
+		"lArgs", lArgs,
+		"objectName", objectName)
+	defer lg.Debug("finished saOrgUnit()")
+
+	if queryable {
+		return fmt.Errorf(gmess.ERR_NOQUERYABLEATTRS, objectName)
+	}
+
+	if lArgs == 1 {
 		if composite {
-			return fmt.Errorf("gmin: error - %v does not have any composite attributes", arg2)
+			return fmt.Errorf(gmess.ERR_NOCOMPOSITEATTRS, objectName)
 		}
-		err := mdevs.ShowSubAttrs(arg2, filter)
-		if err != nil {
-			return err
-		}
-	case obj == "schema" || obj == "sc":
-		subAttr := strings.ToLower(arg2)
+		ous.ShowAttrs(filter)
+	}
+
+	if lArgs > 1 {
+		return fmt.Errorf(gmess.ERR_NOCOMPOSITEATTRS, objectName)
+	}
+
+	return nil
+}
+
+func saSchema(args []string, lArgs int, objectName string, filter string, queryable bool, composite bool) error {
+	lg.Debugw("starting saSchema()",
+		"args", args,
+		"lArgs", lArgs,
+		"objectName", objectName)
+	defer lg.Debug("finished saSchema()")
+
+	if queryable {
+		return fmt.Errorf(gmess.ERR_NOQUERYABLEATTRS, objectName)
+	}
+
+	if lArgs == 1 {
 		if composite {
-			err := scs.ShowSubCompAttrs(subAttr, filter)
+			scs.ShowCompAttrs(filter)
+			return nil
+		}
+		scs.ShowAttrs(filter)
+	}
+
+	if lArgs == 2 {
+		if composite {
+			err := scs.ShowSubCompAttrs(args[lArgs-1], filter)
 			if err != nil {
 				return err
 			}
-			break
+			return nil
 		}
-		err := scs.ShowSubAttrs(arg2, filter)
+		err := scs.ShowSubAttrs(args[lArgs-1], filter)
 		if err != nil {
 			return err
-		}
-	case obj == "user":
-		if composite {
-			return fmt.Errorf("gmin: error - %v does not have any composite attributes", arg2)
-		}
-		err := usrs.ShowSubAttrs(arg2, filter)
-		if err != nil {
-			return err
-		}
-	default:
-		return fmt.Errorf("gmin: error - %v does not have any composite attributes", arg1)
-	}
-
-	return nil
-}
-
-func oneArg(arg string) error {
-	obj := strings.ToLower(arg)
-
-	if queryable {
-		switch {
-		case obj == "chromeosdevice" || obj == "crosdevice" || obj == "crosdev" || obj == "cdev":
-			cmn.ShowQueryableAttrs(filter, cdevs.QueryAttrMap)
-		case obj == "group" || obj == "grp":
-			cmn.ShowQueryableAttrs(filter, grps.QueryAttrMap)
-		case obj == "mobiledevice" || obj == "mobdevice" || obj == "mobdev" || obj == "mdev":
-			cmn.ShowQueryableAttrs(filter, mdevs.QueryAttrMap)
-		case obj == "user":
-			cmn.ShowQueryableAttrs(filter, usrs.QueryAttrMap)
-		default:
-			return fmt.Errorf("gmin: error - %v does not have any queryable attributes", arg)
 		}
 		return nil
 	}
 
-	switch {
-	case obj == "chromeosdevice" || obj == "crosdevice" || obj == "crosdev" || obj == "cdev":
+	if lArgs == 3 {
 		if composite {
-			cdevs.ShowCompAttrs(filter)
-			break
+			return fmt.Errorf(gmess.ERR_NOCOMPOSITEATTRS, args[lArgs-1])
 		}
-		cdevs.ShowAttrs(filter)
-	case obj == "group" || obj == "grp":
-		if composite {
-			return errors.New("gmin: error - groups do not have any composite attributes")
+		err := scs.ShowSubSubAttrs(args[lArgs-1])
+		if err != nil {
+			return err
 		}
-		grps.ShowAttrs(filter)
-	case obj == "group-alias" || obj == "grp-alias" || obj == "galias" || obj == "ga":
-		if composite {
-			return errors.New("gmin: error - group aliases do not have any composite attributes")
-		}
-		gas.ShowAttrs(filter)
-	case obj == "group-member" || obj == "grp-member" || obj == "grp-mem" || obj == "gmember" || obj == "gmem":
-		if composite {
-			return errors.New("gmin: error - group members do not have any composite attributes")
-		}
-		mems.ShowAttrs(filter)
-	case obj == "mobiledevice" || obj == "mobdevice" || obj == "mobdev" || obj == "mdev":
-		if composite {
-			mdevs.ShowCompAttrs(filter)
-			break
-		}
-		mdevs.ShowAttrs(filter)
-	case obj == "orgunit" || obj == "ou":
-		if composite {
-			return errors.New("gmin: error - orgunits do not have any composite attributes")
-		}
-		ous.ShowAttrs(filter)
-	case obj == "schema" || obj == "sc":
-		if composite {
-			scs.ShowCompAttrs(filter)
-			break
-		}
-		scs.ShowAttrs(filter)
-	case obj == "user":
-		if composite {
-			usrs.ShowCompAttrs(filter)
-			break
-		}
-		usrs.ShowAttrs(filter)
-	case obj == "user-alias" || obj == "ualias" || obj == "ua":
-		if composite {
-			return errors.New("gmin: error - user aliases do not have any composite attributes")
-		}
-		uas.ShowAttrs(filter)
 	}
 
 	return nil
 }
 
-func validateShowSlice(arg string, attrSlice []string) bool {
-	ok := cmn.SliceContainsStr(attrSlice, arg)
-	return ok
+func saUser(args []string, lArgs int, objectName string, filter string, queryable bool, composite bool) error {
+	lg.Debugw("starting saUser()",
+		"args", args,
+		"lArgs", lArgs,
+		"objectName", objectName)
+	defer lg.Debug("finished saUser()")
+
+	if queryable {
+		cmn.ShowQueryableAttrs(filter, usrs.QueryAttrMap)
+		return nil
+	}
+
+	if lArgs == 1 {
+		if composite {
+			usrs.ShowCompAttrs(filter)
+			return nil
+		}
+		usrs.ShowAttrs(filter)
+	}
+
+	if lArgs == 2 {
+		if composite {
+			return fmt.Errorf(gmess.ERR_NOCOMPOSITEATTRS, args[lArgs-1])
+		}
+		err := usrs.ShowSubAttrs(args[lArgs-1], filter)
+		if err != nil {
+			return err
+		}
+	}
+
+	if lArgs > 2 {
+		return fmt.Errorf(gmess.ERR_NOCOMPOSITEATTRS, args[2])
+	}
+
+	return nil
+}
+
+func saUserAlias(args []string, lArgs int, objectName string, filter string, queryable bool, composite bool) error {
+	lg.Debugw("starting saUserAlias()",
+		"args", args,
+		"lArgs", lArgs,
+		"objectName", objectName)
+	defer lg.Debug("finished saUserAlias()")
+
+	if queryable {
+		return fmt.Errorf(gmess.ERR_NOQUERYABLEATTRS, objectName)
+	}
+
+	if lArgs == 1 {
+		if composite {
+			return fmt.Errorf(gmess.ERR_NOCOMPOSITEATTRS, objectName)
+		}
+		uas.ShowAttrs(filter)
+	}
+
+	if lArgs > 1 {
+		return fmt.Errorf(gmess.ERR_NOCOMPOSITEATTRS, objectName)
+	}
+
+	return nil
 }

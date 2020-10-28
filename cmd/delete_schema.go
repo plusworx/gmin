@@ -27,6 +27,8 @@ import (
 
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	lg "github.com/plusworx/gmin/utils/logging"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 )
@@ -35,21 +37,25 @@ var deleteSchemaCmd = &cobra.Command{
 	Use:     "schema <name or id>",
 	Aliases: []string{"sc"},
 	Args:    cobra.ExactArgs(1),
-	Short:   "Deletes schema",
-	Long: `Deletes schema.
-	
-	Examples:	gmin delete schema TestSchema
-			gmin del sc TestSchema`,
-	RunE: doDeleteSchema,
+	Example: `gmin delete schema TestSchema
+gmin del sc TestSchema`,
+	Short: "Deletes schema",
+	Long:  `Deletes schema.`,
+	RunE:  doDeleteSchema,
 }
 
 func doDeleteSchema(cmd *cobra.Command, args []string) error {
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserschemaScope)
+	lg.Debugw("starting doDeleteSchema()",
+		"args", args)
+	defer lg.Debug("finished doDeleteSchema()")
+
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryUserschemaScope)
 	if err != nil {
 		return err
 	}
+	ds := srv.(*admin.Service)
 
-	customerID, err := cfg.ReadConfigString("customerid")
+	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {
 		return err
 	}
@@ -58,10 +64,12 @@ func doDeleteSchema(cmd *cobra.Command, args []string) error {
 
 	err = scdc.Do()
 	if err != nil {
+		lg.Error(err)
 		return err
 	}
 
-	fmt.Println(cmn.GminMessage("**** gmin: schema " + args[0] + " deleted ****"))
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_SCHEMADELETED, args[0])))
+	lg.Infof(gmess.INFO_SCHEMADELETED, args[0])
 
 	return nil
 }

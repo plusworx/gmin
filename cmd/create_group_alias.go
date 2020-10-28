@@ -26,6 +26,8 @@ import (
 	"fmt"
 
 	cmn "github.com/plusworx/gmin/utils/common"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	lg "github.com/plusworx/gmin/utils/logging"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 )
@@ -34,33 +36,39 @@ var createGroupAliasCmd = &cobra.Command{
 	Use:     "group-alias <alias email address> <group email address or id>",
 	Aliases: []string{"galias", "ga"},
 	Args:    cobra.ExactArgs(2),
-	Short:   "Creates a group alias",
-	Long: `Creates a group alias.
-	
-	Examples:	gmin create group-alias group.alias@mycompany.com finance@mycompany.com
-			gmin crt ga group.alias@mycompany.com sales@mycompany.com`,
-	RunE: doCreateGroupAlias,
+	Example: `gmin create group-alias group.alias@mycompany.com finance@mycompany.com
+gmin crt ga group.alias@mycompany.com sales@mycompany.com`,
+	Short: "Creates a group alias",
+	Long:  `Creates a group alias.`,
+	RunE:  doCreateGroupAlias,
 }
 
 func doCreateGroupAlias(cmd *cobra.Command, args []string) error {
+	lg.Debugw("starting doCreateGroupAlias()",
+		"args", args)
+	defer lg.Debug("finished doCreateGroupAlias()")
+
 	var alias *admin.Alias
 
 	alias = new(admin.Alias)
 
 	alias.Alias = args[0]
 
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupScope)
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryGroupScope)
 	if err != nil {
 		return err
 	}
+	ds := srv.(*admin.Service)
 
 	gaic := ds.Groups.Aliases.Insert(args[1], alias)
 	newAlias, err := gaic.Do()
 	if err != nil {
+		lg.Error(err)
 		return err
 	}
 
-	fmt.Println(cmn.GminMessage("**** gmin: group alias " + newAlias.Alias + " created for group " + args[1] + " ****"))
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_GROUPALIASCREATED, newAlias.Alias, args[1])))
+	lg.Infof(gmess.INFO_GROUPALIASCREATED, newAlias.Alias, args[1])
 
 	return nil
 }

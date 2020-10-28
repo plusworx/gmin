@@ -23,168 +23,173 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"bufio"
-	"encoding/csv"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"os"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
+	btch "github.com/plusworx/gmin/utils/batch"
 	cmn "github.com/plusworx/gmin/utils/common"
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	lg "github.com/plusworx/gmin/utils/logging"
 	usrs "github.com/plusworx/gmin/utils/users"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
-	sheet "google.golang.org/api/sheets/v4"
 )
 
 var batchUpdUserCmd = &cobra.Command{
 	Use:     "users -i <input file path>",
 	Aliases: []string{"user"},
-	Short:   "Updates a batch of users",
-	Long: `Updates a batch of users where user details are provided in a Google Sheet or CSV/JSON input file.
-	
-	Examples:	gmin batch-update users -i inputfile.json
-			gmin bupd users -i inputfile.csv -f csv
-			gmin bupd user -i 1odyAIp3jGspd3M4xeepxWD6aeQIUuHBgrZB2OHSu8MI -s 'Sheet1!A1:K25' -f gsheet
+	Example: `gmin batch-update users -i inputfile.json
+gmin bupd users -i inputfile.csv -f csv
+gmin bupd user -i 1odyAIp3jGspd3M4xeepxWD6aeQIUuHBgrZB2OHSu8MI -s 'Sheet1!A1:K25' -f gsheet`,
+	Short: "Updates a batch of users",
+	Long: `Updates a batch of users where user details are provided in a Google Sheet,CSV/JSON input file or piped JSON.
 			  
-	The contents of the JSON file should look something like this:
-	
-	{"userKey":"stan.laurel@myorg.org","name":{"givenName":"Stanislav","familyName":"Laurelius"},"primaryEmail":"stanislav.laurelius@myorg.org","password":"SuperSuperSecretPassword","changePasswordAtNextLogin":true}
-	{"userKey":"oliver.hardy@myorg.org","name":{"givenName":"Oliviatus","familyName":"Hardium"},"primaryEmail":"oliviatus.hardium@myorg.org","password":"StealthySuperSecretPassword","changePasswordAtNextLogin":true}
-	{"userKey":"harold.lloyd@myorg.org","name":{"givenName":"Haroldus","familyName":"Lloydius"},"primaryEmail":"haroldus.lloydius@myorg.org","password":"MightySuperSecretPassword","changePasswordAtNextLogin":true}
-	
-	N.B. userKey (user email address, alias or id) must be provided.
-	
-	CSV and Google sheets must have a header row with the following column names being the only ones that are valid:
-	
-	changePasswordAtNextLogin [value true or false]
-	firstName
-	includeInGlobalAddressList [value true or false]
-	ipWhitelisted [value true or false]
-	lastName
-	orgUnitPath
-	password
-	primaryEmail
-	recoveryEmail
-	recoveryPhone [must start with '+' in E.164 format]
-	suspended [value true or false]
-	userKey [required]
-	
-	The column names are case insensitive and can be in any order. firstName can be replaced by givenName and lastName can be replaced by familyName.`,
+The contents of the JSON file or piped input should look something like this:
+
+{"userKey":"stan.laurel@myorg.org","name":{"givenName":"Stanislav","familyName":"Laurelius"},"primaryEmail":"stanislav.laurelius@myorg.org","password":"SuperSuperSecretPassword","changePasswordAtNextLogin":true}
+{"userKey":"oliver.hardy@myorg.org","name":{"givenName":"Oliviatus","familyName":"Hardium"},"primaryEmail":"oliviatus.hardium@myorg.org","password":"StealthySuperSecretPassword","changePasswordAtNextLogin":true}
+{"userKey":"harold.lloyd@myorg.org","name":{"givenName":"Haroldus","familyName":"Lloydius"},"primaryEmail":"haroldus.lloydius@myorg.org","password":"MightySuperSecretPassword","changePasswordAtNextLogin":true}
+
+N.B. userKey (user email address, alias or id) must be provided.
+
+CSV and Google sheets must have a header row with the following column names being the only ones that are valid:
+
+changePasswordAtNextLogin [value true or false]
+firstName
+includeInGlobalAddressList [value true or false]
+ipWhitelisted [value true or false]
+lastName
+orgUnitPath
+password
+primaryEmail
+recoveryEmail
+recoveryPhone [must start with '+' in E.164 format]
+suspended [value true or false]
+userKey [required]
+
+The column names are case insensitive and can be in any order. firstName can be replaced by givenName and lastName can be replaced by familyName.`,
 	RunE: doBatchUpdUser,
 }
 
 func doBatchUpdUser(cmd *cobra.Command, args []string) error {
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserScope)
+	lg.Debugw("starting doBatchUpdUser()",
+		"args", args)
+	defer lg.Debug("finished doBatchUpdUser()")
+
+	var (
+		userParams []usrs.UserParams
+		objs       []interface{}
+	)
+
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryUserScope)
 	if err != nil {
 		return err
 	}
+	ds := srv.(*admin.Service)
 
-	if inputFile == "" {
-		err := errors.New("gmin: error - must provide inputfile")
+	inputFlgVal, err := cmd.Flags().GetString(flgnm.FLG_INPUTFILE)
+	if err != nil {
+		lg.Error(err)
 		return err
 	}
 
-	lwrFmt := strings.ToLower(format)
+	scanner, err := cmn.InputFromStdIn(inputFlgVal)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+
+	if inputFlgVal == "" && scanner == nil {
+		err := errors.New(gmess.ERR_NOINPUTFILE)
+		lg.Error(err)
+		return err
+	}
+
+	formatFlgVal, err := cmd.Flags().GetString(flgnm.FLG_FORMAT)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+	lwrFmt := strings.ToLower(formatFlgVal)
 
 	ok := cmn.SliceContainsStr(cmn.ValidFileFormats, lwrFmt)
 	if !ok {
-		return fmt.Errorf("gmin: error - %v is not a valid file format", format)
+		err = fmt.Errorf(gmess.ERR_INVALIDFILEFORMAT, formatFlgVal)
+		lg.Error(err)
+		return err
 	}
+
+	callParams := btch.CallParams{CallType: cmn.CALLTYPEUPDATE, ObjectType: cmn.OBJTYPEUSER}
 
 	switch {
 	case lwrFmt == "csv":
-		err := btchUpdUsrProcessCSV(ds, inputFile)
+		objs, err = btch.ProcessCSVFile(callParams, inputFlgVal, usrs.UserAttrMap)
 		if err != nil {
 			return err
 		}
 	case lwrFmt == "json":
-		err := btchUpdUsrProcessJSON(ds, inputFile)
+		objs, err = btch.ProcessJSON(callParams, inputFlgVal, scanner, usrs.UserAttrMap)
 		if err != nil {
 			return err
 		}
 	case lwrFmt == "gsheet":
-		err := btchUpdUsrProcessSheet(ds, inputFile)
+		rangeFlgVal, err := cmd.Flags().GetString(flgnm.FLG_SHEETRANGE)
+		if err != nil {
+			lg.Error(err)
+			return err
+		}
+
+		objs, err = btch.ProcessGSheet(callParams, inputFlgVal, rangeFlgVal, usrs.UserAttrMap)
 		if err != nil {
 			return err
 		}
+	default:
+		err = fmt.Errorf(gmess.ERR_INVALIDFILEFORMAT, formatFlgVal)
+		lg.Error(err)
+		return err
+	}
+
+	for _, uObj := range objs {
+		userParams = append(userParams, uObj.(usrs.UserParams))
+	}
+
+	err = bupduProcessObjects(ds, userParams)
+	if err != nil {
+		lg.Error(err)
+		return err
 	}
 
 	return nil
 }
 
-func btchUpdJSONUser(ds *admin.Service, jsonData string) (*admin.User, string, error) {
-	var (
-		emptyVals = cmn.EmptyValues{}
-		user      *admin.User
-		usrKey    = usrs.Key{}
-	)
+func bupduProcessObjects(ds *admin.Service, userParams []usrs.UserParams) error {
+	lg.Debugw("starting bupduProcessObjects()",
+		"userParams", userParams)
+	defer lg.Debug("finished bupduProcessObjects()")
 
-	user = new(admin.User)
-	jsonBytes := []byte(jsonData)
-
-	if !json.Valid(jsonBytes) {
-		return nil, "", errors.New("gmin: error - attribute string is not valid JSON")
-	}
-
-	outStr, err := cmn.ParseInputAttrs(jsonBytes)
-	if err != nil {
-		return nil, "", err
-	}
-
-	err = cmn.ValidateInputAttrs(outStr, usrs.UserAttrMap)
-	if err != nil {
-		return nil, "", err
-	}
-
-	err = json.Unmarshal(jsonBytes, &usrKey)
-	if err != nil {
-		return nil, "", err
-	}
-
-	if usrKey.UserKey == "" {
-		return nil, "", errors.New("gmin: error - userKey must be included in the JSON input string")
-	}
-
-	err = json.Unmarshal(jsonBytes, &user)
-	if err != nil {
-		return nil, "", err
-	}
-
-	err = json.Unmarshal(jsonBytes, &emptyVals)
-	if err != nil {
-		return nil, "", err
-	}
-	if len(emptyVals.ForceSendFields) > 0 {
-		user.ForceSendFields = emptyVals.ForceSendFields
-	}
-
-	return user, usrKey.UserKey, nil
-}
-
-func btchUpdateUsers(ds *admin.Service, users []*admin.User, userKeys []string) error {
 	wg := new(sync.WaitGroup)
 
-	for idx, u := range users {
-		if u.Password != "" {
-			u.HashFunction = cmn.HashFunction
-			pwd, err := cmn.HashPassword(u.Password)
+	for _, up := range userParams {
+		if up.User.Password != "" {
+			up.User.HashFunction = usrs.HASHFUNCTION
+			pwd, err := usrs.HashPassword(up.User.Password)
 			if err != nil {
+				lg.Error(err)
 				return err
 			}
-			u.Password = pwd
+			up.User.Password = pwd
 		}
 
-		uuc := ds.Users.Update(userKeys[idx], u)
+		uuc := ds.Users.Update(up.UserKey, up.User)
 
 		wg.Add(1)
 
-		go btchUsrUpdateProcess(u, wg, uuc, userKeys[idx])
+		go bupduUpdate(up.User, wg, uuc, up.UserKey)
 	}
 
 	wg.Wait()
@@ -192,7 +197,11 @@ func btchUpdateUsers(ds *admin.Service, users []*admin.User, userKeys []string) 
 	return nil
 }
 
-func btchUsrUpdateProcess(user *admin.User, wg *sync.WaitGroup, uuc *admin.UsersUpdateCall, userKey string) {
+func bupduUpdate(user *admin.User, wg *sync.WaitGroup, uuc *admin.UsersUpdateCall, userKey string) {
+	lg.Debugw("starting bupduUpdate()",
+		"userKey", userKey)
+	defer lg.Debug("finished bupduUpdate()")
+
 	defer wg.Done()
 
 	b := backoff.NewExponentialBackOff()
@@ -202,267 +211,30 @@ func btchUsrUpdateProcess(user *admin.User, wg *sync.WaitGroup, uuc *admin.Users
 		var err error
 		_, err = uuc.Do()
 		if err == nil {
-			fmt.Println(cmn.GminMessage("**** gmin: user " + userKey + " updated ****"))
+			fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_USERUPDATED, userKey)))
+			lg.Infof(gmess.INFO_USERUPDATED, userKey)
 			return err
 		}
 		if !cmn.IsErrRetryable(err) {
-			return backoff.Permanent(errors.New(cmn.GminMessage("gmin: error - " + err.Error() + " " + userKey)))
+			return backoff.Permanent(fmt.Errorf(gmess.ERR_BATCHUSER, err.Error(), userKey))
 		}
-		return errors.New(cmn.GminMessage("gmin: error - " + err.Error() + " " + userKey))
+		// Log the retries
+		lg.Warnw(err.Error(),
+			"retrying", b.GetElapsedTime().String(),
+			"user", userKey)
+		return fmt.Errorf(gmess.ERR_BATCHUSER, err.Error(), userKey)
 	}, b)
 	if err != nil {
-		fmt.Println(err)
+		// Log final error
+		lg.Error(err)
+		fmt.Println(cmn.GminMessage(err.Error()))
 	}
-}
-
-func btchUpdUsrProcessCSV(ds *admin.Service, filePath string) error {
-	var (
-		iSlice   []interface{}
-		hdrMap   = map[int]string{}
-		userKeys []string
-		users    []*admin.User
-	)
-
-	csvfile, err := os.Open(filePath)
-	if err != nil {
-		return err
-	}
-	defer csvfile.Close()
-
-	r := csv.NewReader(csvfile)
-
-	count := 0
-	for {
-		record, err := r.Read()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return err
-		}
-
-		if count == 0 {
-			iSlice = make([]interface{}, len(record))
-			for idx, value := range record {
-				iSlice[idx] = value
-			}
-			hdrMap = cmn.ProcessHeader(iSlice)
-			err = cmn.ValidateHeader(hdrMap, usrs.UserAttrMap)
-			if err != nil {
-				return err
-			}
-			count = count + 1
-			continue
-		}
-
-		for idx, value := range record {
-			iSlice[idx] = value
-		}
-
-		userVar, userKey, err := btchUpdProcessUser(hdrMap, iSlice)
-		if err != nil {
-			fmt.Println(err.Error())
-		}
-
-		users = append(users, userVar)
-		userKeys = append(userKeys, userKey)
-
-		count = count + 1
-	}
-
-	err = btchUpdateUsers(ds, users, userKeys)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func btchUpdUsrProcessJSON(ds *admin.Service, filePath string) error {
-	var (
-		userKeys []string
-		users    []*admin.User
-	)
-
-	file, err := os.Open(filePath)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		jsonData := scanner.Text()
-
-		userVar, userKey, err := btchUpdJSONUser(ds, jsonData)
-		if err != nil {
-			return err
-		}
-
-		userKeys = append(userKeys, userKey)
-		users = append(users, userVar)
-	}
-	err = scanner.Err()
-	if err != nil {
-		return err
-	}
-
-	err = btchUpdateUsers(ds, users, userKeys)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func btchUpdUsrProcessSheet(ds *admin.Service, sheetID string) error {
-	var (
-		userKeys []string
-		users    []*admin.User
-	)
-
-	if sheetRange == "" {
-		return errors.New("gmin: error - sheetrange must be provided")
-	}
-
-	ss, err := cmn.CreateSheetService(sheet.DriveReadonlyScope)
-	if err != nil {
-		return err
-	}
-
-	ssvgc := ss.Spreadsheets.Values.Get(sheetID, sheetRange)
-	sValRange, err := ssvgc.Do()
-	if err != nil {
-		return err
-	}
-
-	if len(sValRange.Values) == 0 {
-		return errors.New("gmin: error - no data found in sheet " + sheetID + " range: " + sheetRange)
-	}
-
-	hdrMap := cmn.ProcessHeader(sValRange.Values[0])
-	err = cmn.ValidateHeader(hdrMap, usrs.UserAttrMap)
-	if err != nil {
-		return err
-	}
-
-	for idx, row := range sValRange.Values {
-		if idx == 0 {
-			continue
-		}
-
-		userVar, userKey, err := btchUpdProcessUser(hdrMap, row)
-		if err != nil {
-			return err
-		}
-
-		userKeys = append(userKeys, userKey)
-		users = append(users, userVar)
-	}
-
-	err = btchUpdateUsers(ds, users, userKeys)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func btchUpdProcessUser(hdrMap map[int]string, userData []interface{}) (*admin.User, string, error) {
-	var (
-		name    *admin.UserName
-		user    *admin.User
-		userKey string
-	)
-
-	name = new(admin.UserName)
-	user = new(admin.User)
-
-	for idx, attr := range userData {
-		attrName := hdrMap[idx]
-
-		switch {
-		case attrName == "changePasswordAtNextLogin":
-			lwrAttr := strings.ToLower(fmt.Sprintf("%v", attr))
-			if lwrAttr == "true" {
-				user.ChangePasswordAtNextLogin = true
-			}
-			if lwrAttr == "false" {
-				user.ChangePasswordAtNextLogin = false
-				user.ForceSendFields = append(user.ForceSendFields, "ChangePasswordAtNextLogin")
-			}
-		case attrName == "familyName":
-			name.FamilyName = fmt.Sprintf("%v", attr)
-		case attrName == "givenName":
-			name.GivenName = fmt.Sprintf("%v", attr)
-		case attrName == "includeInGlobalAddressList":
-			lwrAttr := strings.ToLower(fmt.Sprintf("%v", attr))
-			if lwrAttr == "true" {
-				user.IncludeInGlobalAddressList = true
-			}
-			if lwrAttr == "false" {
-				user.IncludeInGlobalAddressList = false
-				user.ForceSendFields = append(user.ForceSendFields, "IncludeInGlobalAddressList")
-			}
-		case attrName == "ipWhitelisted":
-			lwrAttr := strings.ToLower(fmt.Sprintf("%v", attr))
-			if lwrAttr == "true" {
-				user.IpWhitelisted = true
-			}
-			if lwrAttr == "false" {
-				user.IpWhitelisted = false
-				user.ForceSendFields = append(user.ForceSendFields, "IpWhitelisted")
-			}
-		case attrName == "orgUnitPath":
-			user.OrgUnitPath = fmt.Sprintf("%v", attr)
-		case attrName == "password":
-			user.Password = fmt.Sprintf("%v", attr)
-		case attrName == "primaryEmail":
-			user.PrimaryEmail = fmt.Sprintf("%v", attr)
-		case attrName == "recoveryEmail":
-			recEmail := fmt.Sprintf("%v", attr)
-			user.RecoveryEmail = recEmail
-			if recEmail == "" {
-				user.ForceSendFields = append(user.ForceSendFields, "RecoveryEmail")
-			}
-		case attrName == "recoveryPhone":
-			recPhone := fmt.Sprintf("%v", attr)
-			if recPhone != "" {
-				err := cmn.ValidateRecoveryPhone(recPhone)
-				if err != nil {
-					return nil, "", err
-				}
-			}
-			user.RecoveryPhone = recPhone
-			if recPhone == "" {
-				user.ForceSendFields = append(user.ForceSendFields, "RecoveryPhone")
-			}
-		case attrName == "suspended":
-			lwrAttr := strings.ToLower(fmt.Sprintf("%v", attr))
-			if lwrAttr == "true" {
-				user.Suspended = true
-			}
-			if lwrAttr == "false" {
-				user.Suspended = false
-				user.ForceSendFields = append(user.ForceSendFields, "Suspended")
-			}
-		case attrName == "userKey":
-			userKey = fmt.Sprintf("%v", attr)
-		}
-	}
-
-	if name.FamilyName != "" || name.GivenName != "" || name.FullName != "" {
-		user.Name = name
-	}
-
-	return user, userKey, nil
 }
 
 func init() {
 	batchUpdateCmd.AddCommand(batchUpdUserCmd)
 
-	batchUpdUserCmd.Flags().StringVarP(&inputFile, "inputfile", "i", "", "filepath to user data file or sheet id")
-	batchUpdUserCmd.Flags().StringVarP(&format, "format", "f", "json", "user data file format")
-	batchUpdUserCmd.Flags().StringVarP(&sheetRange, "sheetrange", "s", "", "user data gsheet range")
-
-	batchUpdUserCmd.MarkFlagRequired("inputfile")
+	batchUpdUserCmd.Flags().StringVarP(&inputFile, flgnm.FLG_INPUTFILE, "i", "", "filepath to user data file or sheet id")
+	batchUpdUserCmd.Flags().StringVarP(&format, flgnm.FLG_FORMAT, "f", "json", "user data file format")
+	batchUpdUserCmd.Flags().StringVarP(&sheetRange, flgnm.FLG_SHEETRANGE, "s", "", "user data gsheet range")
 }

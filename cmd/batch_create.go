@@ -23,13 +23,16 @@ THE SOFTWARE.
 package cmd
 
 import (
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	"github.com/spf13/cobra"
 )
 
 var batchCreateCmd = &cobra.Command{
 	Use:     "batch-create",
 	Aliases: []string{"bcreate", "bcrt"},
-	Short:   "Creates a batch of G Suite entities",
+	Args:    cobra.NoArgs,
+	Short:   "Creates a batch of Google Workspace entities",
+	Long:    "Creates a batch of Google Workspace entities.",
 	Run:     doBatchCreate,
 }
 
@@ -39,4 +42,8 @@ func doBatchCreate(cmd *cobra.Command, args []string) {
 
 func init() {
 	rootCmd.AddCommand(batchCreateCmd)
+	batchCreateCmd.PersistentFlags().BoolVar(&silent, flgnm.FLG_SILENT, false, "suppress console output")
+	batchCreateCmd.PersistentFlags().StringVar(&logLevel, flgnm.FLG_LOGLEVEL, "info", "log level (debug, info, error, warn)")
+
+	batchCreateCmd.PersistentPreRunE = preRun
 }

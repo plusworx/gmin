@@ -26,52 +26,65 @@ import (
 	"fmt"
 
 	cmn "github.com/plusworx/gmin/utils/common"
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	lg "github.com/plusworx/gmin/utils/logging"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 )
 
 var undeleteUserCmd = &cobra.Command{
-	Use:   "user <id>",
-	Args:  cobra.ExactArgs(1),
+	Use:  "user <id>",
+	Args: cobra.ExactArgs(1),
+	Example: `gmin undelete user 417578192529765228417
+gmin und user 308127142904731923463 -o /Marketing`,
 	Short: "Undeletes user",
 	Long: `Undeletes user and reinstates to specified orgunit.
-	
-	Examples:	gmin undelete user 417578192529765228417
-			gmin und user 308127142904731923463 -o /Marketing
 			  
-	N.B. Must use id and not email address.`,
+N.B. Must use id and not email address.`,
 	RunE: doUndeleteUser,
 }
 
 func doUndeleteUser(cmd *cobra.Command, args []string) error {
+	lg.Debugw("starting doUndeleteUser()",
+		"args", args)
+	defer lg.Debug("finished doUndeleteUser()")
+
 	var userUndelete *admin.UserUndelete
 	userUndelete = new(admin.UserUndelete)
 
-	if orgUnit == "" {
+	flgOUVal, err := cmd.Flags().GetString(flgnm.FLG_ORGUNIT)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+	if flgOUVal == "" {
 		userUndelete.OrgUnitPath = "/"
 	} else {
-		userUndelete.OrgUnitPath = orgUnit
+		userUndelete.OrgUnitPath = flgOUVal
 	}
 
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserScope)
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryUserScope)
 	if err != nil {
 		return err
 	}
+	ds := srv.(*admin.Service)
 
 	uuc := ds.Users.Undelete(args[0], userUndelete)
 
 	err = uuc.Do()
 	if err != nil {
+		lg.Error(err)
 		return err
 	}
 
-	fmt.Println(cmn.GminMessage("**** gmin: user " + args[0] + " undeleted ****"))
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_USERUNDELETED, args[0])))
+	lg.Infof(gmess.INFO_USERUNDELETED, args[0])
 
 	return nil
 }
 
 func init() {
 	undeleteCmd.AddCommand(undeleteUserCmd)
-
-	undeleteUserCmd.Flags().StringVarP(&orgUnit, "orgunit", "o", "", "path of orgunit to restore user to")
+	undeleteUserCmd.Flags().StringVarP(&orgUnit, flgnm.FLG_ORGUNIT, "o", "", "path of orgunit to restore user to")
 }

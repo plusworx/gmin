@@ -27,29 +27,35 @@ import (
 
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	lg "github.com/plusworx/gmin/utils/logging"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 )
 
 var deleteMobDevCmd = &cobra.Command{
-	Use:     "mobiledevice <resource id>",
-	Aliases: []string{"mobdevice", "mobdev", "mdev"},
+	Use:     "mobile-device <resource id>",
+	Aliases: []string{"mob-device", "mob-dev", "mdev"},
 	Args:    cobra.ExactArgs(1),
-	Short:   "Deletes a mobile device",
-	Long: `Deletes a mobile device.
-	
-	Examples:	gmin delete mobiledevice AFiQxQ83IZT4llDfTWPZt69JvwSJU0YECe1TVyVZC4x
-			gmin del mdev AFiQxQ83IZT4llDfTWPZt69JvwSJU0YECe1TVyVZC4x`,
-	RunE: doDeleteMobDev,
+	Example: `gmin delete mobile-device AFiQxQ83IZT4llDfTWPZt69JvwSJU0YECe1TVyVZC4x
+gmin del mdev AFiQxQ83IZT4llDfTWPZt69JvwSJU0YECe1TVyVZC4x`,
+	Short: "Deletes a mobile device",
+	Long:  `Deletes a mobile device.`,
+	RunE:  doDeleteMobDev,
 }
 
 func doDeleteMobDev(cmd *cobra.Command, args []string) error {
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryDeviceMobileScope)
+	lg.Debugw("starting doDeleteMobDev()",
+		"args", args)
+	defer lg.Debug("finished doDeleteMobDev()")
+
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryDeviceMobileScope)
 	if err != nil {
 		return err
 	}
+	ds := srv.(*admin.Service)
 
-	customerID, err := cfg.ReadConfigString("customerid")
+	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {
 		return err
 	}
@@ -57,10 +63,12 @@ func doDeleteMobDev(cmd *cobra.Command, args []string) error {
 
 	err = mdc.Do()
 	if err != nil {
+		lg.Error(err)
 		return err
 	}
 
-	fmt.Println(cmn.GminMessage("**** gmin: mobile device " + args[0] + " deleted ****"))
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_MDEVDELETED, args[0])))
+	lg.Infof(gmess.INFO_MDEVDELETED, args[0])
 
 	return nil
 }

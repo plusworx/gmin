@@ -31,6 +31,10 @@ import (
 
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	gpars "github.com/plusworx/gmin/utils/gminparsers"
+	lg "github.com/plusworx/gmin/utils/logging"
 	usrs "github.com/plusworx/gmin/utils/users"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
@@ -38,103 +42,157 @@ import (
 
 var listUsersCmd = &cobra.Command{
 	Use:     "users",
-	Aliases: []string{"user"},
+	Aliases: []string{"user", "usrs", "usr"},
 	Args:    cobra.NoArgs,
-	Short:   "Outputs a list of users",
-	Long: `Outputs a list of users.
-	
-	Examples:	gmin list users -a primaryemail~addresses
-			gmin ls user -q name:Fred`,
-	RunE: doListUsers,
+	Example: `gmin list users -a primaryemail~addresses
+gmin ls user -q name:Fred`,
+	Short: "Outputs a list of users",
+	Long:  `Outputs a list of users.`,
+	RunE:  doListUsers,
 }
 
 func doListUsers(cmd *cobra.Command, args []string) error {
+	lg.Debugw("starting doListUsers()",
+		"args", args)
+
 	var (
 		jsonData     []byte
 		users        *admin.Users
 		validOrderBy string
 	)
 
-	if strings.ToLower(projection) == "custom" && customField == "" {
-		return errors.New("gmin: error - must provide --customfieldmask for custom projection")
-	}
-
-	if customField != "" && strings.ToLower(projection) != "custom" {
-		return errors.New("gmin: error - must provide --projection custom to use --customfieldmask")
-	}
-
-	if query != "" && deleted {
-		return errors.New("gmin: error - cannot provide both --query and --deleted flags")
-	}
-
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserReadonlyScope)
+	flgCustFldMaskVal, err := cmd.Flags().GetString(flgnm.FLG_CUSTFLDMASK)
 	if err != nil {
+		lg.Error(err)
 		return err
 	}
 
+	flgProjectionVal, err := cmd.Flags().GetString(flgnm.FLG_PROJECTION)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+	if strings.ToLower(flgProjectionVal) == "custom" && flgCustFldMaskVal == "" {
+		err := errors.New(gmess.ERR_NOCUSTOMFIELDMASK)
+		lg.Error(err)
+		return err
+	}
+
+	if flgCustFldMaskVal != "" && strings.ToLower(flgProjectionVal) != "custom" {
+		err := errors.New(gmess.ERR_PROJECTIONFLAGNOTCUSTOM)
+		lg.Error(err)
+		return err
+	}
+
+	flgDeletedVal, err := cmd.Flags().GetBool(flgnm.FLG_DELETED)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+
+	flgQueryVal, err := cmd.Flags().GetString(flgnm.FLG_QUERY)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+	if flgQueryVal != "" && flgDeletedVal {
+		err := errors.New(gmess.ERR_QUERYANDDELETEDFLAGS)
+		lg.Error(err)
+		return err
+	}
+
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryUserReadonlyScope)
+	if err != nil {
+		return err
+	}
+	ds := srv.(*admin.Service)
+
 	ulc := ds.Users.List()
 
-	if attrs != "" {
-		listAttrs, err := cmn.ParseOutputAttrs(attrs, usrs.UserAttrMap)
+	flgAttrsVal, err := cmd.Flags().GetString(flgnm.FLG_ATTRIBUTES)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+	if flgAttrsVal != "" {
+		listAttrs, err := gpars.ParseOutputAttrs(flgAttrsVal, usrs.UserAttrMap)
 		if err != nil {
+			lg.Error(err)
 			return err
 		}
-		formattedAttrs := usrs.StartUsersField + listAttrs + usrs.EndField
+		formattedAttrs := usrs.STARTUSERSFIELD + listAttrs + usrs.ENDFIELD
 
 		listCall := usrs.AddFields(ulc, formattedAttrs)
 		ulc = listCall.(*admin.UsersListCall)
 	}
 
-	if deleted {
+	if flgDeletedVal {
 		ulc = usrs.AddShowDeleted(ulc)
 	}
 
-	if domain != "" {
-		ulc = usrs.AddDomain(ulc, domain)
+	flgDomainVal, err := cmd.Flags().GetString(flgnm.FLG_DOMAIN)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+	if flgDomainVal != "" {
+		ulc = usrs.AddDomain(ulc, flgDomainVal)
 	} else {
-		customerID, err := cfg.ReadConfigString("customerid")
+		customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 		if err != nil {
+			lg.Error(err)
 			return err
 		}
 		ulc = usrs.AddCustomer(ulc, customerID)
 	}
 
-	if projection != "" {
-		proj := strings.ToLower(projection)
+	if flgProjectionVal != "" {
+		proj := strings.ToLower(flgProjectionVal)
 		ok := cmn.SliceContainsStr(usrs.ValidProjections, proj)
 		if !ok {
-			return fmt.Errorf("gmin: error - %v is not a valid projection type", projection)
+			err = fmt.Errorf(gmess.ERR_INVALIDPROJECTIONTYPE, flgProjectionVal)
+			lg.Error(err)
+			return err
 		}
 
 		listCall := usrs.AddProjection(ulc, proj)
 		ulc = listCall.(*admin.UsersListCall)
 
 		if proj == "custom" {
-			if customField != "" {
-				cFields := cmn.ParseCustomField(customField)
+			if flgCustFldMaskVal != "" {
+				cFields := strings.Split(flgCustFldMaskVal, "~")
 				mask := strings.Join(cFields, ",")
 				listCall := usrs.AddCustomFieldMask(ulc, mask)
 				ulc = listCall.(*admin.UsersListCall)
 			} else {
-				return errors.New("gmin: error - please provide a custom field mask for custom projection")
+				err = errors.New(gmess.ERR_NOCUSTOMFIELDMASK)
+				lg.Error(err)
+				return err
 			}
 		}
 	}
 
-	if query != "" {
-		formattedQuery, err := cmn.ParseQuery(query, usrs.QueryAttrMap)
+	if flgQueryVal != "" {
+		formattedQuery, err := gpars.ParseQuery(flgQueryVal, usrs.QueryAttrMap)
 		if err != nil {
+			lg.Error(err)
 			return err
 		}
 
 		ulc = usrs.AddQuery(ulc, formattedQuery)
 	}
 
-	if orderBy != "" {
-		ob := strings.ToLower(orderBy)
+	flgOrderByVal, err := cmd.Flags().GetString(flgnm.FLG_ORDERBY)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+	if flgOrderByVal != "" {
+		ob := strings.ToLower(flgOrderByVal)
 		ok := cmn.SliceContainsStr(usrs.ValidOrderByStrs, ob)
 		if !ok {
-			err = fmt.Errorf("gmin: error - %v is not a valid order by field", orderBy)
+			err = fmt.Errorf(gmess.ERR_INVALIDORDERBY, flgOrderByVal)
+			lg.Error(err)
 			return err
 		}
 
@@ -143,16 +201,23 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 		if ob != "email" {
 			validOrderBy, err = cmn.IsValidAttr(ob, usrs.UserAttrMap)
 			if err != nil {
+				lg.Error(err)
 				return err
 			}
 		}
 
 		ulc = usrs.AddOrderBy(ulc, validOrderBy)
 
-		if sortOrder != "" {
-			so := strings.ToLower(sortOrder)
+		flgSrtOrdByVal, err := cmd.Flags().GetString(flgnm.FLG_SORTORDER)
+		if err != nil {
+			lg.Error(err)
+			return err
+		}
+		if flgSrtOrdByVal != "" {
+			so := strings.ToLower(flgSrtOrdByVal)
 			validSortOrder, err := cmn.IsValidAttr(so, cmn.ValidSortOrders)
 			if err != nil {
+				lg.Error(err)
 				return err
 			}
 
@@ -160,50 +225,79 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	if viewType != "" {
-		vt := strings.ToLower(viewType)
+	flgViewTypeVal, err := cmd.Flags().GetString(flgnm.FLG_VIEWTYPE)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+	if flgViewTypeVal != "" {
+		vt := strings.ToLower(flgViewTypeVal)
 		ok := cmn.SliceContainsStr(usrs.ValidViewTypes, vt)
 		if !ok {
-			return fmt.Errorf("gmin: error - %v is not a valid view type", viewType)
+			err = fmt.Errorf(gmess.ERR_INVALIDVIEWTYPE, flgViewTypeVal)
+			lg.Error(err)
+			return err
 		}
 
 		listCall := usrs.AddViewType(ulc, vt)
 		ulc = listCall.(*admin.UsersListCall)
 	}
 
-	ulc = usrs.AddMaxResults(ulc, maxResults)
+	flgMaxResultsVal, err := cmd.Flags().GetInt64(flgnm.FLG_MAXRESULTS)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+	ulc = usrs.AddMaxResults(ulc, flgMaxResultsVal)
 
 	users, err = usrs.DoList(ulc)
 	if err != nil {
+		lg.Error(err)
 		return err
 	}
 
-	if pages != "" {
-		err = doUserPages(ulc, users, pages)
+	flgPagesVal, err := cmd.Flags().GetString(flgnm.FLG_PAGES)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+	if flgPagesVal != "" {
+		err = doUserPages(ulc, users, flgPagesVal)
 		if err != nil {
+			lg.Error(err)
 			return err
 		}
 	}
 
 	jsonData, err = json.MarshalIndent(users, "", "    ")
 	if err != nil {
+		lg.Error(err)
 		return err
 	}
 
-	if count {
+	flgCountVal, err := cmd.Flags().GetBool(flgnm.FLG_COUNT)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+	if flgCountVal {
 		fmt.Println(len(users.Users))
 	} else {
 		fmt.Println(string(jsonData))
 	}
 
+	lg.Debug("finished doListUsers()")
 	return nil
 }
 
 func doUserAllPages(ulc *admin.UsersListCall, users *admin.Users) error {
+	lg.Debug("starting doUserAllPages()")
+
 	if users.NextPageToken != "" {
 		ulc = usrs.AddPageToken(ulc, users.NextPageToken)
 		nxtUsers, err := usrs.DoList(ulc)
 		if err != nil {
+			lg.Error(err)
 			return err
 		}
 		users.Users = append(users.Users, nxtUsers.Users...)
@@ -215,14 +309,19 @@ func doUserAllPages(ulc *admin.UsersListCall, users *admin.Users) error {
 		}
 	}
 
+	lg.Debug("finished doUserAllPages()")
 	return nil
 }
 
 func doUserNumPages(ulc *admin.UsersListCall, users *admin.Users, numPages int) error {
+	lg.Debugw("starting doUserNumPages()",
+		"numPages", numPages)
+
 	if users.NextPageToken != "" && numPages > 0 {
 		ulc = usrs.AddPageToken(ulc, users.NextPageToken)
 		nxtUsers, err := usrs.DoList(ulc)
 		if err != nil {
+			lg.Error(err)
 			return err
 		}
 		users.Users = append(users.Users, nxtUsers.Users...)
@@ -234,46 +333,55 @@ func doUserNumPages(ulc *admin.UsersListCall, users *admin.Users, numPages int) 
 		}
 	}
 
+	lg.Debug("finished doUserNumPages()")
 	return nil
 }
 
 func doUserPages(ulc *admin.UsersListCall, users *admin.Users, pages string) error {
+	lg.Debugw("starting doUserPages()",
+		"pages", pages)
+
 	if pages == "all" {
 		err := doUserAllPages(ulc, users)
 		if err != nil {
+			lg.Error(err)
 			return err
 		}
 	} else {
 		numPages, err := strconv.Atoi(pages)
 		if err != nil {
-			return errors.New("gmin: error - pages must be 'all' or a number")
+			err = errors.New(gmess.ERR_INVALIDPAGESARGUMENT)
+			lg.Error(err)
+			return err
 		}
 
 		if numPages > 1 {
 			err = doUserNumPages(ulc, users, numPages-1)
 			if err != nil {
+				lg.Error(err)
 				return err
 			}
 		}
 	}
 
+	lg.Debug("finished doUserPages()")
 	return nil
 }
 
 func init() {
 	listCmd.AddCommand(listUsersCmd)
 
-	listUsersCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required user attributes (separated by ~)")
-	listUsersCmd.Flags().BoolVarP(&count, "count", "", false, "count number of entities returned")
-	listUsersCmd.Flags().StringVarP(&customField, "customfieldmask", "c", "", "custom field mask schemas (separated by ~)")
-	listUsersCmd.Flags().StringVarP(&domain, "domain", "d", "", "domain from which to get users")
-	listUsersCmd.Flags().Int64VarP(&maxResults, "maxresults", "m", 500, "maximum number of results to return per page")
-	listUsersCmd.Flags().StringVarP(&orderBy, "orderby", "o", "", "field by which results will be ordered")
-	listUsersCmd.Flags().StringVarP(&pages, "pages", "p", "", "number of pages of results to be returned ('all' or a number)")
-	listUsersCmd.Flags().StringVarP(&projection, "projection", "j", "", "type of projection")
-	listUsersCmd.Flags().StringVarP(&query, "query", "q", "", "selection criteria to get users (separated by ~)")
-	listUsersCmd.Flags().StringVarP(&sortOrder, "sortorder", "s", "", "sort order of returned results")
-	listUsersCmd.Flags().StringVarP(&viewType, "viewtype", "v", "", "data view type")
-	listUsersCmd.Flags().BoolVarP(&deleted, "deleted", "x", false, "show deleted users")
+	listUsersCmd.Flags().StringVarP(&attrs, flgnm.FLG_ATTRIBUTES, "a", "", "required user attributes (separated by ~)")
+	listUsersCmd.Flags().BoolVarP(&count, flgnm.FLG_COUNT, "", false, "count number of entities returned")
+	listUsersCmd.Flags().StringVarP(&customField, flgnm.FLG_CUSTFLDMASK, "c", "", "custom field mask schemas (separated by ~)")
+	listUsersCmd.Flags().StringVarP(&domain, flgnm.FLG_DOMAIN, "d", "", "domain from which to get users")
+	listUsersCmd.Flags().Int64VarP(&maxResults, flgnm.FLG_MAXRESULTS, "m", 500, "maximum number of results to return per page")
+	listUsersCmd.Flags().StringVarP(&orderBy, flgnm.FLG_ORDERBY, "o", "", "field by which results will be ordered")
+	listUsersCmd.Flags().StringVarP(&pages, flgnm.FLG_PAGES, "p", "", "number of pages of results to be returned ('all' or a number)")
+	listUsersCmd.Flags().StringVarP(&projection, flgnm.FLG_PROJECTION, "j", "", "type of projection")
+	listUsersCmd.Flags().StringVarP(&query, flgnm.FLG_QUERY, "q", "", "selection criteria to get users (separated by ~)")
+	listUsersCmd.Flags().StringVarP(&sortOrder, flgnm.FLG_SORTORDER, "s", "", "sort order of returned results")
+	listUsersCmd.Flags().StringVarP(&viewType, flgnm.FLG_VIEWTYPE, "v", "", "data view type")
+	listUsersCmd.Flags().BoolVarP(&deleted, flgnm.FLG_DELETED, "x", false, "show deleted users")
 
 }

@@ -27,15 +27,16 @@ import (
 	"sort"
 	"strings"
 
+	lg "github.com/plusworx/gmin/utils/logging"
 	admin "google.golang.org/api/admin/directory/v1"
 	"google.golang.org/api/googleapi"
 )
 
 const (
-	// EndField is List call attribute string terminator
-	EndField string = ")"
-	// StartAliasesField is List call attribute string prefix
-	StartAliasesField string = "aliases("
+	// ENDFIELD is List call attribute string terminator
+	ENDFIELD string = ")"
+	// STARTALIASESFIELD is List call attribute string prefix
+	STARTALIASESFIELD string = "aliases("
 )
 
 // UserAliasAttrMap provides lowercase mappings to valid admin.Alias attributes
@@ -49,6 +50,10 @@ var UserAliasAttrMap = map[string]string{
 
 // AddFields adds Fields to admin calls
 func AddFields(ualc *admin.UsersAliasesListCall, attrs string) *admin.UsersAliasesListCall {
+	lg.Debugw("starting AddFields()",
+		"attrs", attrs)
+	defer lg.Debug("finished AddFields()")
+
 	var fields googleapi.Field = googleapi.Field(attrs)
 	var newUALC *admin.UsersAliasesListCall
 
@@ -59,8 +64,12 @@ func AddFields(ualc *admin.UsersAliasesListCall, attrs string) *admin.UsersAlias
 
 // DoList calls the .Do() function on the admin.UsersAliasesListCall
 func DoList(ualc *admin.UsersAliasesListCall) (*admin.Aliases, error) {
+	lg.Debug("starting DoList()")
+	defer lg.Debug("finished DoList()")
+
 	aliases, err := ualc.Do()
 	if err != nil {
+		lg.Error(err)
 		return nil, err
 	}
 
@@ -69,6 +78,10 @@ func DoList(ualc *admin.UsersAliasesListCall) (*admin.Aliases, error) {
 
 // ShowAttrs displays requested user alias attributes
 func ShowAttrs(filter string) {
+	lg.Debugw("starting ShowAttrs()",
+		"filter", filter)
+	defer lg.Debug("finished ShowAttrs()")
+
 	keys := make([]string, 0, len(UserAliasAttrMap))
 	for k := range UserAliasAttrMap {
 		keys = append(keys, k)
@@ -84,6 +97,5 @@ func ShowAttrs(filter string) {
 		if strings.Contains(k, strings.ToLower(filter)) {
 			fmt.Println(UserAliasAttrMap[k])
 		}
-
 	}
 }

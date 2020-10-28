@@ -29,15 +29,17 @@ import (
 	"strings"
 
 	cmn "github.com/plusworx/gmin/utils/common"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	lg "github.com/plusworx/gmin/utils/logging"
 	admin "google.golang.org/api/admin/directory/v1"
 	"google.golang.org/api/googleapi"
 )
 
 const (
-	// EndField is List call attribute string terminator
-	EndField string = ")"
-	// StartChromeDevicesField is List call attribute string prefix
-	StartChromeDevicesField string = "chromeosdevices("
+	// ENDFIELD is List call attribute string terminator
+	ENDFIELD string = ")"
+	// STARTCHROMEDEVICESFIELD is List call attribute string prefix
+	STARTCHROMEDEVICESFIELD string = "chromeosdevices("
 )
 
 // ManagedDevice is struct to extract device data
@@ -263,10 +265,10 @@ var crOSDevCompAttrs = map[string]string{
 }
 
 var flagValues = []string{
-	"orderby",
+	"order-by",
 	"projection",
 	"reason",
-	"sortorder",
+	"sort-order",
 }
 
 // ValidActions provide valid strings to be used for admin.ChromeosdevicesActionCall
@@ -303,6 +305,10 @@ var ValidProjections = []string{
 
 // AddFields adds fields to be returned from admin calls
 func AddFields(callObj interface{}, attrs string) interface{} {
+	lg.Debugw("starting AddFields()",
+		"attrs", attrs)
+	defer lg.Debug("finished AddFields()")
+
 	var fields googleapi.Field = googleapi.Field(attrs)
 
 	switch callObj.(type) {
@@ -342,6 +348,10 @@ func AddFields(callObj interface{}, attrs string) interface{} {
 
 // AddMaxResults adds MaxResults to admin calls
 func AddMaxResults(cdlc *admin.ChromeosdevicesListCall, maxResults int64) *admin.ChromeosdevicesListCall {
+	lg.Debugw("starting AddMaxResults()",
+		"maxResults", maxResults)
+	defer lg.Debug("finished AddMaxResults()")
+
 	var newCDLC *admin.ChromeosdevicesListCall
 
 	newCDLC = cdlc.MaxResults(maxResults)
@@ -351,6 +361,10 @@ func AddMaxResults(cdlc *admin.ChromeosdevicesListCall, maxResults int64) *admin
 
 // AddOrderBy adds OrderBy to admin calls
 func AddOrderBy(cdlc *admin.ChromeosdevicesListCall, orderBy string) *admin.ChromeosdevicesListCall {
+	lg.Debugw("starting AddOrderBy()",
+		"orderBy", orderBy)
+	defer lg.Debug("finished AddOrderBy()")
+
 	var newCDLC *admin.ChromeosdevicesListCall
 
 	newCDLC = cdlc.OrderBy(orderBy)
@@ -360,6 +374,10 @@ func AddOrderBy(cdlc *admin.ChromeosdevicesListCall, orderBy string) *admin.Chro
 
 // AddOrgUnitPath adds OrgUnitPath to admin calls
 func AddOrgUnitPath(cdlc *admin.ChromeosdevicesListCall, orgUnitPath string) *admin.ChromeosdevicesListCall {
+	lg.Debugw("starting AddOrgUnitPath()",
+		"orgUnitPath", orgUnitPath)
+	defer lg.Debug("finished AddOrgUnitPath()")
+
 	var newCDLC *admin.ChromeosdevicesListCall
 
 	newCDLC = cdlc.OrgUnitPath(orgUnitPath)
@@ -369,6 +387,10 @@ func AddOrgUnitPath(cdlc *admin.ChromeosdevicesListCall, orgUnitPath string) *ad
 
 // AddPageToken adds PageToken to admin calls
 func AddPageToken(cdlc *admin.ChromeosdevicesListCall, token string) *admin.ChromeosdevicesListCall {
+	lg.Debugw("starting AddPageToken()",
+		"token", token)
+	defer lg.Debug("finished AddPageToken()")
+
 	var newCDLC *admin.ChromeosdevicesListCall
 
 	newCDLC = cdlc.PageToken(token)
@@ -378,6 +400,10 @@ func AddPageToken(cdlc *admin.ChromeosdevicesListCall, token string) *admin.Chro
 
 // AddProjection adds Projection to admin calls
 func AddProjection(callObj interface{}, projection string) interface{} {
+	lg.Debugw("starting AddProjection()",
+		"projection", projection)
+	defer lg.Debug("finished AddProjection()")
+
 	switch callObj.(type) {
 	case *admin.ChromeosdevicesGetCall:
 		var newCDGC *admin.ChromeosdevicesGetCall
@@ -404,6 +430,10 @@ func AddProjection(callObj interface{}, projection string) interface{} {
 
 // AddQuery adds query to admin calls
 func AddQuery(cdlc *admin.ChromeosdevicesListCall, query string) *admin.ChromeosdevicesListCall {
+	lg.Debugw("starting AddQuery()",
+		"query", query)
+	defer lg.Debug("finished AddQuery()")
+
 	var newCDLC *admin.ChromeosdevicesListCall
 
 	newCDLC = cdlc.Query(query)
@@ -413,6 +443,10 @@ func AddQuery(cdlc *admin.ChromeosdevicesListCall, query string) *admin.Chromeos
 
 // AddSortOrder adds SortOrder to admin calls
 func AddSortOrder(cdlc *admin.ChromeosdevicesListCall, sortorder string) *admin.ChromeosdevicesListCall {
+	lg.Debugw("starting AddSortOrder()",
+		"sortorder", sortorder)
+	defer lg.Debug("finished AddSortOrder()")
+
 	var newCDLC *admin.ChromeosdevicesListCall
 
 	newCDLC = cdlc.SortOrder(sortorder)
@@ -422,8 +456,12 @@ func AddSortOrder(cdlc *admin.ChromeosdevicesListCall, sortorder string) *admin.
 
 // DoGet calls the .Do() function on the admin.ChromeosdevicesGetCall
 func DoGet(cdgc *admin.ChromeosdevicesGetCall) (*admin.ChromeOsDevice, error) {
+	lg.Debug("starting DoGet()")
+	defer lg.Debug("finished DoGet()")
+
 	crosdev, err := cdgc.Do()
 	if err != nil {
+		lg.Error(err)
 		return nil, err
 	}
 
@@ -432,16 +470,144 @@ func DoGet(cdgc *admin.ChromeosdevicesGetCall) (*admin.ChromeOsDevice, error) {
 
 // DoList calls the .Do() function on the admin.ChromeosdevicesListCall
 func DoList(cdlc *admin.ChromeosdevicesListCall) (*admin.ChromeOsDevices, error) {
+	lg.Debug("starting DoList()")
+	defer lg.Debug("finished DoList()")
+
 	crosdevs, err := cdlc.Do()
 	if err != nil {
+		lg.Error(err)
 		return nil, err
 	}
 
 	return crosdevs, nil
 }
 
+// PopulateCrOSDev is used in batch processing
+func PopulateCrOSDev(crosdev *admin.ChromeOsDevice, hdrMap map[int]string, objData []interface{}) error {
+	lg.Debugw("starting PopulateCrOSDev()",
+		"hdrMap", hdrMap)
+	defer lg.Debug("finished PopulateCrOSDev()")
+
+	for idx, attr := range objData {
+		attrName := hdrMap[idx]
+		attrVal := fmt.Sprintf("%v", attr)
+
+		switch {
+		case attrName == "annotatedAssetId":
+			crosdev.AnnotatedAssetId = attrVal
+			if attrVal == "" {
+				crosdev.ForceSendFields = append(crosdev.ForceSendFields, "AnnotatedAssetId")
+			}
+		case attrName == "annotatedLocation":
+			crosdev.AnnotatedLocation = attrVal
+			if attrVal == "" {
+				crosdev.ForceSendFields = append(crosdev.ForceSendFields, "AnnotatedLocation")
+			}
+		case attrName == "annotatedUser":
+			crosdev.AnnotatedUser = attrVal
+			if attrVal == "" {
+				crosdev.ForceSendFields = append(crosdev.ForceSendFields, "AnnotatedUser")
+			}
+		case attrName == "notes":
+			crosdev.Notes = attrVal
+			if attrVal == "" {
+				crosdev.ForceSendFields = append(crosdev.ForceSendFields, "Notes")
+			}
+		case attrName == "orgUnitPath":
+			crosdev.OrgUnitPath = attrVal
+		default:
+			err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, attrName)
+			return err
+		}
+	}
+	return nil
+}
+
+// PopulateManagedDev is used in batch processing
+func PopulateManagedDev(managedDev *ManagedDevice, hdrMap map[int]string, objData []interface{}) error {
+	lg.Debugw("starting PopulateManagedDev()",
+		"hdrMap", hdrMap)
+	defer lg.Debug("finished PopulateManagedDev()")
+
+	for idx, attr := range objData {
+		attrName := hdrMap[idx]
+		attrVal := fmt.Sprintf("%v", attr)
+		lowerAttrVal := strings.ToLower(fmt.Sprintf("%v", attr))
+
+		switch {
+		case attrName == "action":
+			ok := cmn.SliceContainsStr(ValidActions, lowerAttrVal)
+			if !ok {
+				err := fmt.Errorf(gmess.ERR_INVALIDACTIONTYPE, attrVal)
+				lg.Error(err)
+				return err
+			}
+			managedDev.Action = lowerAttrVal
+		case attrName == "deviceId":
+			managedDev.DeviceId = attrVal
+		case attrName == "deprovisionReason":
+			if lowerAttrVal != "" {
+				ok := cmn.SliceContainsStr(ValidDeprovisionReasons, lowerAttrVal)
+				if !ok {
+					err := fmt.Errorf(gmess.ERR_INVALIDDEPROVISIONREASON, attrVal)
+					lg.Error(err)
+					return err
+				}
+				managedDev.DeprovisionReason = lowerAttrVal
+			}
+		default:
+			err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, attrName)
+			return err
+		}
+	}
+	if managedDev.Action == "deprovision" && managedDev.DeprovisionReason == "" {
+		err := errors.New(gmess.ERR_NODEPROVISIONREASON)
+		lg.Error(err)
+		return err
+	}
+
+	return nil
+}
+
+// PopulateMovedDev is used in batch processing
+func PopulateMovedDev(movedDev *MovedDevice, hdrMap map[int]string, objData []interface{}) error {
+	lg.Debugw("starting PopulateManagedDev()",
+		"hdrMap", hdrMap)
+	defer lg.Debug("finished PopulateManagedDev()")
+
+	for idx, attr := range objData {
+		attrName := hdrMap[idx]
+		attrVal := fmt.Sprintf("%v", attr)
+
+		switch {
+		case attrName == "deviceId":
+			if attrVal == "" {
+				err := fmt.Errorf(gmess.ERR_EMPTYSTRING, attrName)
+				lg.Error(err)
+				return err
+			}
+			movedDev.DeviceId = attrVal
+		case attrName == "orgUnitPath":
+			if attrVal == "" {
+				err := fmt.Errorf(gmess.ERR_EMPTYSTRING, attrName)
+				lg.Error(err)
+				return err
+			}
+			movedDev.OrgUnitPath = attrVal
+		default:
+			err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, attrName)
+			return err
+		}
+	}
+	return nil
+}
+
 // ShowAttrs displays requested chromeOS device attributes
 func ShowAttrs(filter string) {
+	lg.Debugw("starting ShowAttrs()",
+		"filter", filter)
+	defer lg.Debug("finished ShowAttrs()")
+
 	for _, a := range crOSDevAttrs {
 		lwrA := strings.ToLower(a)
 		comp, _ := cmn.IsValidAttr(lwrA, crOSDevCompAttrs)
@@ -461,32 +627,36 @@ func ShowAttrs(filter string) {
 				fmt.Println(a)
 			}
 		}
-
 	}
 }
 
 // ShowAttrValues displays enumerated attribute values
-func ShowAttrValues(lenArgs int, args []string) error {
+func ShowAttrValues(lenArgs int, args []string, filter string) error {
+	lg.Debugw("starting ShowAttrValues()",
+		"lenArgs", lenArgs,
+		"args", args,
+		"filter", filter)
+	defer lg.Debug("finished ShowAttrValues()")
+
 	if lenArgs > 2 {
-		return errors.New("gmin: error - too many arguments, chromeosdevice has maximum of 2")
+		err := fmt.Errorf(gmess.ERR_TOOMANYARGSMAX1, args[0])
+		lg.Error(err)
+		return err
 	}
 
 	if lenArgs == 1 {
-		for _, v := range attrValues {
-			fmt.Println(v)
-		}
+		cmn.ShowAttrVals(attrValues, filter)
 	}
 
 	if lenArgs == 2 {
 		attr := strings.ToLower(args[1])
 
 		if attr == "action" {
-			for _, val := range ValidActions {
-				fmt.Println(val)
-			}
+			cmn.ShowAttrVals(ValidActions, filter)
 		} else {
-
-			return fmt.Errorf("gmin: error - %v attribute not recognized", args[1])
+			err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[1])
+			lg.Error(err)
+			return err
 		}
 	}
 
@@ -495,6 +665,10 @@ func ShowAttrValues(lenArgs int, args []string) error {
 
 // ShowCompAttrs displays chromeOS device composite attributes
 func ShowCompAttrs(filter string) {
+	lg.Debugw("starting ShowCompAttrs()",
+		"filter", filter)
+	defer lg.Debug("finished ShowCompAttrs()")
+
 	keys := make([]string, 0, len(crOSDevCompAttrs))
 	for k := range crOSDevCompAttrs {
 		keys = append(keys, k)
@@ -515,11 +689,15 @@ func ShowCompAttrs(filter string) {
 }
 
 // ShowFlagValues displays enumerated flag values
-func ShowFlagValues(lenArgs int, args []string) error {
+func ShowFlagValues(lenArgs int, args []string, filter string) error {
+	lg.Debugw("starting ShowFlagValues()",
+		"lenArgs", lenArgs,
+		"args", args,
+		"filter", filter)
+	defer lg.Debug("finished ShowFlagValues()")
+
 	if lenArgs == 1 {
-		for _, v := range flagValues {
-			fmt.Println(v)
-		}
+		cmn.ShowFlagValues(flagValues, filter)
 	}
 
 	if lenArgs == 2 {
@@ -527,7 +705,7 @@ func ShowFlagValues(lenArgs int, args []string) error {
 		valSlice := []string{}
 
 		switch {
-		case flag == "orderby":
+		case flag == "order-by":
 			for _, val := range ValidOrderByStrs {
 				s, _ := cmn.IsValidAttr(val, CrOSDevAttrMap)
 				if s == "" {
@@ -536,27 +714,21 @@ func ShowFlagValues(lenArgs int, args []string) error {
 				valSlice = append(valSlice, s)
 			}
 			uniqueSlice := cmn.UniqueStrSlice(valSlice)
-			for _, ob := range uniqueSlice {
-				fmt.Println(ob)
-			}
+			cmn.ShowFlagValues(uniqueSlice, filter)
 		case flag == "projection":
-			for _, vp := range ValidProjections {
-				fmt.Println(vp)
-			}
+			cmn.ShowFlagValues(ValidProjections, filter)
 		case flag == "reason":
-			for _, dr := range ValidDeprovisionReasons {
-				fmt.Println(dr)
-			}
-		case flag == "sortorder":
+			cmn.ShowFlagValues(ValidDeprovisionReasons, filter)
+		case flag == "sort-order":
 			for _, v := range cmn.ValidSortOrders {
 				valSlice = append(valSlice, v)
 			}
 			uniqueSlice := cmn.UniqueStrSlice(valSlice)
-			for _, so := range uniqueSlice {
-				fmt.Println(so)
-			}
+			cmn.ShowFlagValues(uniqueSlice, filter)
 		default:
-			return fmt.Errorf("gmin: error - %v flag not recognized", args[1])
+			err := fmt.Errorf(gmess.ERR_FLAGNOTRECOGNIZED, args[1])
+			lg.Error(err)
+			return err
 		}
 	}
 
@@ -565,6 +737,11 @@ func ShowFlagValues(lenArgs int, args []string) error {
 
 // ShowSubAttrs displays attributes of composite attributes
 func ShowSubAttrs(compAttr string, filter string) error {
+	lg.Debugw("starting ShowSubAttrs()",
+		"compAttr", compAttr,
+		"filter", filter)
+	defer lg.Debug("finished ShowSubAttrs()")
+
 	lwrCompAttr := strings.ToLower(compAttr)
 	switch lwrCompAttr {
 	case "activetimeranges":
@@ -584,7 +761,9 @@ func ShowSubAttrs(compAttr string, filter string) error {
 	case "tpmversioninfo":
 		cmn.ShowAttrs(crOsDevTpmVersionInfoAttrs, CrOSDevAttrMap, filter)
 	default:
-		return fmt.Errorf("gmin: error - %v is not a composite attribute", compAttr)
+		err := fmt.Errorf(gmess.ERR_NOTCOMPOSITEATTR, compAttr)
+		lg.Error(err)
+		return err
 	}
 
 	return nil

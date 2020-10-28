@@ -28,6 +28,9 @@ import (
 
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
+	gpars "github.com/plusworx/gmin/utils/gminparsers"
+	lg "github.com/plusworx/gmin/utils/logging"
 	scs "github.com/plusworx/gmin/utils/schemas"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
@@ -37,38 +40,47 @@ var listSchemasCmd = &cobra.Command{
 	Use:     "schemas",
 	Aliases: []string{"schema", "sc", "scs"},
 	Args:    cobra.NoArgs,
-	Short:   "Outputs a list of schemas",
-	Long: `Outputs a list of schemas.
-	
-	Examples:	gmin list schemas -a displayname~schemaname
-			gmin ls scs`,
-	RunE: doListSchemas,
+	Example: `gmin list schemas -a displayname~schemaname
+gmin ls scs`,
+	Short: "Outputs a list of schemas",
+	Long:  `Outputs a list of schemas.`,
+	RunE:  doListSchemas,
 }
 
 func doListSchemas(cmd *cobra.Command, args []string) error {
+	lg.Debugw("starting doListSchemas()",
+		"args", args)
+	defer lg.Debug("finished doListSchemas()")
+
 	var (
 		jsonData []byte
 		schemas  *admin.Schemas
 	)
 
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryUserschemaReadonlyScope)
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryUserschemaReadonlyScope)
 	if err != nil {
 		return err
 	}
+	ds := srv.(*admin.Service)
 
-	customerID, err := cfg.ReadConfigString("customerid")
+	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {
 		return err
 	}
 
 	sclc := ds.Schemas.List(customerID)
 
-	if attrs != "" {
-		listAttrs, err := cmn.ParseOutputAttrs(attrs, scs.SchemaAttrMap)
+	flgAttrsVal, err := cmd.Flags().GetString(flgnm.FLG_ATTRIBUTES)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+	if flgAttrsVal != "" {
+		listAttrs, err := gpars.ParseOutputAttrs(flgAttrsVal, scs.SchemaAttrMap)
 		if err != nil {
 			return err
 		}
-		formattedAttrs := scs.StartSchemasField + listAttrs + scs.EndField
+		formattedAttrs := scs.STARTSCHEMASFIELD + listAttrs + scs.ENDFIELD
 
 		listCall := scs.AddFields(sclc, formattedAttrs)
 		sclc = listCall.(*admin.SchemasListCall)
@@ -81,10 +93,16 @@ func doListSchemas(cmd *cobra.Command, args []string) error {
 
 	jsonData, err = json.MarshalIndent(schemas, "", "    ")
 	if err != nil {
+		lg.Error(err)
 		return err
 	}
 
-	if count {
+	flgCountVal, err := cmd.Flags().GetBool(flgnm.FLG_COUNT)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+	if flgCountVal {
 		fmt.Println(len(schemas.Schemas))
 	} else {
 		fmt.Println(string(jsonData))
@@ -96,6 +114,6 @@ func doListSchemas(cmd *cobra.Command, args []string) error {
 func init() {
 	listCmd.AddCommand(listSchemasCmd)
 
-	listSchemasCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required schema attributes separated by (~)")
-	listSchemasCmd.Flags().BoolVarP(&count, "count", "", false, "count number of entities returned")
+	listSchemasCmd.Flags().StringVarP(&attrs, flgnm.FLG_ATTRIBUTES, "a", "", "required schema attributes separated by (~)")
+	listSchemasCmd.Flags().BoolVarP(&count, flgnm.FLG_COUNT, "", false, "count number of entities returned")
 }

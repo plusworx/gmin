@@ -26,6 +26,9 @@ import (
 	"fmt"
 
 	cmn "github.com/plusworx/gmin/utils/common"
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	lg "github.com/plusworx/gmin/utils/logging"
 	mems "github.com/plusworx/gmin/utils/members"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
@@ -35,15 +38,18 @@ var updateMemberCmd = &cobra.Command{
 	Use:     "group-member <member email address, alias or id> <group email address, alias or id>",
 	Aliases: []string{"grp-member", "gmember", "gmem"},
 	Args:    cobra.ExactArgs(2),
-	Short:   "Updates a group member",
-	Long: `Updates a group member.
-	
-	Examples:	gmin update group-member another.user@mycompany.com office@mycompany.com -d DAILY
-			gmin upd gmem finance.person@mycompany.com finance@mycompany.com -r MEMBER`,
-	RunE: doUpdateMember,
+	Example: `gmin update group-member another.user@mycompany.com office@mycompany.com -d DAILY
+gmin upd gmem finance.person@mycompany.com finance@mycompany.com -r MEMBER`,
+	Short: "Updates a group member",
+	Long:  `Updates a group member.`,
+	RunE:  doUpdateMember,
 }
 
 func doUpdateMember(cmd *cobra.Command, args []string) error {
+	lg.Debugw("starting doUpdateMember()",
+		"args", args)
+	defer lg.Debug("finished doUpdateMember()")
+
 	var (
 		member    *admin.Member
 		memberKey string
@@ -52,34 +58,47 @@ func doUpdateMember(cmd *cobra.Command, args []string) error {
 	memberKey = args[0]
 	member = new(admin.Member)
 
-	if deliverySetting != "" {
-		validDS, err := mems.ValidateDeliverySetting(deliverySetting)
+	flgDelSettingVal, err := cmd.Flags().GetString(flgnm.FLG_DELIVERYSETTING)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+	if flgDelSettingVal != "" {
+		validDS, err := mems.ValidateDeliverySetting(flgDelSettingVal)
 		if err != nil {
 			return err
 		}
 		member.DeliverySettings = validDS
 	}
 
-	if role != "" {
-		validRole, err := mems.ValidateRole(role)
+	flgRoleVal, err := cmd.Flags().GetString(flgnm.FLG_ROLE)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+	if flgRoleVal != "" {
+		validRole, err := mems.ValidateRole(flgRoleVal)
 		if err != nil {
 			return err
 		}
 		member.Role = validRole
 	}
 
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryGroupMemberScope, admin.AdminDirectoryGroupScope)
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryGroupMemberScope, admin.AdminDirectoryGroupScope)
 	if err != nil {
 		return err
 	}
+	ds := srv.(*admin.Service)
 
 	muc := ds.Members.Update(args[1], memberKey, member)
 	_, err = muc.Do()
 	if err != nil {
+		lg.Error(err)
 		return err
 	}
 
-	fmt.Println(cmn.GminMessage("**** gmin: member " + memberKey + " updated in group " + args[1] + " ****"))
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_MEMBERUPDATED, memberKey, args[1])))
+	lg.Infof(gmess.INFO_MEMBERUPDATED, memberKey, args[1])
 
 	return nil
 }
@@ -87,6 +106,6 @@ func doUpdateMember(cmd *cobra.Command, args []string) error {
 func init() {
 	updateCmd.AddCommand(updateMemberCmd)
 
-	updateMemberCmd.Flags().StringVarP(&deliverySetting, "deliverysetting", "d", "", "member delivery setting")
-	updateMemberCmd.Flags().StringVarP(&role, "role", "r", "", "member role")
+	updateMemberCmd.Flags().StringVarP(&deliverySetting, flgnm.FLG_DELIVERYSETTING, "d", "", "member delivery setting")
+	updateMemberCmd.Flags().StringVarP(&role, flgnm.FLG_ROLE, "r", "", "member role")
 }

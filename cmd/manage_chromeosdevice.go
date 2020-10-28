@@ -30,27 +30,33 @@ import (
 	cdevs "github.com/plusworx/gmin/utils/chromeosdevices"
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	lg "github.com/plusworx/gmin/utils/logging"
 	"github.com/spf13/cobra"
 
 	admin "google.golang.org/api/admin/directory/v1"
 )
 
 var manageCrOSDevCmd = &cobra.Command{
-	Use:     "chromeosdevice <device id> <action>",
-	Aliases: []string{"crosdevice", "crosdev", "cdev"},
+	Use:     "chromeos-device <device id> <action>",
+	Aliases: []string{"cros-device", "cros-dev", "cdev"},
 	Args:    cobra.ExactArgs(2),
-	Short:   "Performs an action on a ChromeOS device",
-	Long: `Performs an action on a ChromeOS device.
-	
-	Examples:	gmin manage chromeosdevice 4cx07eba348f09b3 disable
-			gmin mng cdev 4cx07eba348f09b3 reenable`,
-	RunE: doManageCrOSDev,
+	Example: `gmin manage chromeos-device 4cx07eba348f09b3 disable
+gmin mng cdev 4cx07eba348f09b3 reenable`,
+	Short: "Performs an action on a ChromeOS device",
+	Long:  `Performs an action on a ChromeOS device.`,
+	RunE:  doManageCrOSDev,
 }
 
 func doManageCrOSDev(cmd *cobra.Command, args []string) error {
+	lg.Debugw("starting doManageCrOSDev()",
+		"args", args)
+	defer lg.Debug("finished doManageCrOSDev()")
+
 	var devAction = admin.ChromeOsDeviceAction{}
 
-	customerID, err := cfg.ReadConfigString("customerid")
+	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {
 		return err
 	}
@@ -58,40 +64,42 @@ func doManageCrOSDev(cmd *cobra.Command, args []string) error {
 	action := strings.ToLower(args[1])
 	ok := cmn.SliceContainsStr(cdevs.ValidActions, action)
 	if !ok {
-		return fmt.Errorf("gmin: error - %v is not a valid action type", args[1])
+		err = fmt.Errorf(gmess.ERR_INVALIDACTIONTYPE, args[1])
+		lg.Error(err)
+		return err
 	}
 
 	devAction.Action = action
 	if action == "deprovision" {
-		if reason == "" {
-			return errors.New("gmin: error - must provide a reason for deprovision")
+		flgReasonVal, err := cmd.Flags().GetString(flgnm.FLG_REASON)
+		if err != nil {
+			lg.Error(err)
+			return err
 		}
-		devAction.DeprovisionReason = reason
+		if flgReasonVal == "" {
+			err = errors.New(gmess.ERR_NODEPROVISIONREASON)
+			lg.Error(err)
+			return err
+		}
+		devAction.DeprovisionReason = flgReasonVal
 	}
 
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryDeviceChromeosScope)
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryDeviceChromeosScope)
 	if err != nil {
 		return err
 	}
+	ds := srv.(*admin.Service)
 
 	cdac := ds.Chromeosdevices.Action(customerID, args[0], &devAction)
 
-	if attrs != "" {
-		manageAttrs, err := cmn.ParseOutputAttrs(attrs, cdevs.CrOSDevAttrMap)
-		if err != nil {
-			return err
-		}
-		formattedAttrs := cdevs.StartChromeDevicesField + manageAttrs + cdevs.EndField
-		actionCall := cdevs.AddFields(cdac, formattedAttrs)
-		cdac = actionCall.(*admin.ChromeosdevicesActionCall)
-	}
-
 	err = cdac.Do()
 	if err != nil {
+		lg.Error(err)
 		return err
 	}
 
-	fmt.Println(cmn.GminMessage("**** gmin : " + args[1] + " successfully performed on ChromeOS device " + args[0] + " ****"))
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_CDEVACTIONPERFORMED, args[1], args[0])))
+	lg.Infof(gmess.INFO_CDEVACTIONPERFORMED, args[1], args[0])
 
 	return nil
 }
@@ -99,6 +107,5 @@ func doManageCrOSDev(cmd *cobra.Command, args []string) error {
 func init() {
 	manageCmd.AddCommand(manageCrOSDevCmd)
 
-	manageCrOSDevCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "device's attributes to display (separated by ~)")
-	manageCrOSDevCmd.Flags().StringVarP(&reason, "reason", "r", "", "device deprovision reason")
+	manageCrOSDevCmd.Flags().StringVarP(&reason, flgnm.FLG_REASON, "r", "", "device deprovision reason")
 }

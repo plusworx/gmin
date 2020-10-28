@@ -23,13 +23,16 @@ THE SOFTWARE.
 package cmd
 
 import (
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	"github.com/spf13/cobra"
 )
 
 var moveCmd = &cobra.Command{
 	Use:     "move",
 	Aliases: []string{"mv"},
-	Short:   "Moves G Suite device to another OU",
+	Args:    cobra.NoArgs,
+	Short:   "Moves Google Workspace device to another OU",
+	Long:    "Moves Google Workspace device to another OU.",
 	Run:     doMove,
 }
 
@@ -39,4 +42,8 @@ func doMove(cmd *cobra.Command, args []string) {
 
 func init() {
 	rootCmd.AddCommand(moveCmd)
+	moveCmd.PersistentFlags().BoolVar(&silent, flgnm.FLG_SILENT, false, "suppress console output")
+	moveCmd.PersistentFlags().StringVar(&logLevel, flgnm.FLG_LOGLEVEL, "info", "log level (debug, info, error, warn)")
+
+	moveCmd.PersistentPreRunE = preRun
 }

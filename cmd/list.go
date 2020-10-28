@@ -23,13 +23,16 @@ THE SOFTWARE.
 package cmd
 
 import (
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	"github.com/spf13/cobra"
 )
 
 var listCmd = &cobra.Command{
 	Use:     "list",
 	Aliases: []string{"ls"},
-	Short:   "Outputs list of G Suite entities",
+	Args:    cobra.NoArgs,
+	Short:   "Outputs list of Google Workspace entities",
+	Long:    "Outputs list of Google Workspace entities.",
 	Run:     doList,
 }
 
@@ -39,4 +42,7 @@ func doList(cmd *cobra.Command, args []string) {
 
 func init() {
 	rootCmd.AddCommand(listCmd)
+	listCmd.PersistentFlags().StringVar(&logLevel, flgnm.FLG_LOGLEVEL, "info", "log level (debug, info, error, warn)")
+
+	listCmd.PersistentPreRunE = preRunForDisplayCmds
 }

@@ -29,42 +29,55 @@ import (
 
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	gpars "github.com/plusworx/gmin/utils/gminparsers"
+	lg "github.com/plusworx/gmin/utils/logging"
 	mdevs "github.com/plusworx/gmin/utils/mobiledevices"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 )
 
 var getMobDevCmd = &cobra.Command{
-	Use:     "mobiledevice <resource id>",
-	Aliases: []string{"mobdevice", "mobdev", "mdev"},
+	Use:     "mobile-device <resource id>",
+	Aliases: []string{"mob-device", "mob-dev", "mdev"},
 	Args:    cobra.ExactArgs(1),
-	Short:   "Outputs information about a mobile device",
-	Long: `Outputs information about a mobile device.
-	
-	Examples:	gmin get mobiledevice AFiQxQ83IZT4llDfTWPZt69JvwSJU0YECe1TVyVZC4x
-			gmin get mdev AFiQxQ83IZT4llDfTWPZt69JvwSJU0YECe1TVyVZC4x -a serialnumber`,
-	RunE: doGetMobDev,
+	Example: `gmin get mobile-device AFiQxQ83IZT4llDfTWPZt69JvwSJU0YECe1TVyVZC4x
+gmin get mdev AFiQxQ83IZT4llDfTWPZt69JvwSJU0YECe1TVyVZC4x -a serialnumber`,
+	Short: "Outputs information about a mobile device",
+	Long:  `Outputs information about a mobile device.`,
+	RunE:  doGetMobDev,
 }
 
 func doGetMobDev(cmd *cobra.Command, args []string) error {
+	lg.Debugw("starting doGetMobDev()",
+		"args", args)
+	defer lg.Debug("finished doGetMobDev()")
+
 	var (
 		jsonData []byte
 		mobdev   *admin.MobileDevice
 	)
 
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryDeviceMobileReadonlyScope)
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryDeviceMobileReadonlyScope)
 	if err != nil {
 		return err
 	}
+	ds := srv.(*admin.Service)
 
-	customerID, err := cfg.ReadConfigString("customerid")
+	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {
 		return err
 	}
 	mdgc := ds.Mobiledevices.Get(customerID, args[0])
 
-	if attrs != "" {
-		formattedAttrs, err := cmn.ParseOutputAttrs(attrs, mdevs.MobDevAttrMap)
+	flgAttrsVal, err := cmd.Flags().GetString(flgnm.FLG_ATTRIBUTES)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+	if flgAttrsVal != "" {
+		formattedAttrs, err := gpars.ParseOutputAttrs(flgAttrsVal, mdevs.MobDevAttrMap)
 		if err != nil {
 			return err
 		}
@@ -73,11 +86,18 @@ func doGetMobDev(cmd *cobra.Command, args []string) error {
 		mdgc = getCall.(*admin.MobiledevicesGetCall)
 	}
 
-	if projection != "" {
-		proj := strings.ToLower(projection)
+	flgProjectionVal, err := cmd.Flags().GetString(flgnm.FLG_PROJECTION)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+	if flgProjectionVal != "" {
+		proj := strings.ToLower(flgProjectionVal)
 		ok := cmn.SliceContainsStr(mdevs.ValidProjections, proj)
 		if !ok {
-			return fmt.Errorf("gmin: error - %v is not a valid projection type", projection)
+			err = fmt.Errorf(gmess.ERR_INVALIDPROJECTIONTYPE, flgProjectionVal)
+			lg.Error(err)
+			return err
 		}
 
 		getCall := mdevs.AddProjection(mdgc, proj)
@@ -91,6 +111,7 @@ func doGetMobDev(cmd *cobra.Command, args []string) error {
 
 	jsonData, err = json.MarshalIndent(mobdev, "", "    ")
 	if err != nil {
+		lg.Error(err)
 		return err
 	}
 
@@ -102,6 +123,6 @@ func doGetMobDev(cmd *cobra.Command, args []string) error {
 func init() {
 	getCmd.AddCommand(getMobDevCmd)
 
-	getMobDevCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required device attributes (separated by ~)")
-	getMobDevCmd.Flags().StringVarP(&projection, "projection", "j", "", "type of projection")
+	getMobDevCmd.Flags().StringVarP(&attrs, flgnm.FLG_ATTRIBUTES, "a", "", "required device attributes (separated by ~)")
+	getMobDevCmd.Flags().StringVarP(&projection, flgnm.FLG_PROJECTION, "j", "", "type of projection")
 }

@@ -23,13 +23,16 @@ THE SOFTWARE.
 package cmd
 
 import (
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	"github.com/spf13/cobra"
 )
 
 var undeleteCmd = &cobra.Command{
 	Use:     "undelete",
 	Aliases: []string{"und"},
-	Short:   "Undeletes G Suite entities",
+	Args:    cobra.NoArgs,
+	Short:   "Undeletes Google Workspace entities",
+	Long:    "Undeletes Google Workspace entities.",
 	Run:     doUndelete,
 }
 
@@ -39,4 +42,8 @@ func doUndelete(cmd *cobra.Command, args []string) {
 
 func init() {
 	rootCmd.AddCommand(undeleteCmd)
+	undeleteCmd.PersistentFlags().BoolVar(&silent, flgnm.FLG_SILENT, false, "suppress console output")
+	undeleteCmd.PersistentFlags().StringVar(&logLevel, flgnm.FLG_LOGLEVEL, "info", "log level (debug, info, error, warn)")
+
+	undeleteCmd.PersistentPreRunE = preRun
 }

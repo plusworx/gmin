@@ -26,7 +26,11 @@ import (
 	"fmt"
 	"os"
 
+	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	lg "github.com/plusworx/gmin/utils/logging"
 	"github.com/spf13/cobra"
 )
 
@@ -39,22 +43,29 @@ var whoamiCmd = &cobra.Command{
 }
 
 func doWhoami(cmd *cobra.Command, args []string) error {
+	lg.Debugw("starting doWhoami()",
+		"args", args)
+	defer lg.Debug("finished doWhomai()")
+
 	var err error
 
-	email := os.Getenv(cfg.EnvPrefix + cfg.EnvVarAdmin)
+	email := os.Getenv(cfg.ENVPREFIX + cfg.ENVVARADMIN)
 
 	if email == "" {
-		email, err = cfg.ReadConfigString(cfg.ConfigAdmin)
+		email, err = cfg.ReadConfigString(cfg.CONFIGADMIN)
 		if err != nil {
 			return err
 		}
 	}
 
-	fmt.Println("gmin: admin is " + email)
+	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_ADMINIS, email)))
 
 	return nil
 }
 
 func init() {
 	rootCmd.AddCommand(whoamiCmd)
+	whoamiCmd.Flags().StringVar(&logLevel, flgnm.FLG_LOGLEVEL, "info", "log level (debug, info, error, warn)")
+
+	whoamiCmd.PreRunE = preRunForDisplayCmds
 }

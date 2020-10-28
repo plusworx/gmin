@@ -24,9 +24,13 @@ package cmd
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 
+	lg "github.com/plusworx/gmin/utils/logging"
+
 	cfg "github.com/plusworx/gmin/utils/config"
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -35,49 +39,61 @@ var showConfigCmd = &cobra.Command{
 	Use:     "config",
 	Aliases: []string{"cfg"},
 	Args:    cobra.NoArgs,
+	Example: `gmin show config`,
 	Short:   "Shows configuration information",
-	Long: `Shows configuration information.
-	
-	Example:	gmin show config`,
-	RunE: doShowConfig,
+	Long:    `Shows configuration information.`,
+	RunE:    doShowConfig,
 }
 
 func doShowConfig(cmd *cobra.Command, args []string) error {
-	fmt.Println("Configuration Information")
-	fmt.Println("=========================")
+	lg.Debug("starting doShowConfig()")
+	defer lg.Debug("finished doShowConfig()")
+
+	fmt.Println("gmin Configuration Information")
+	fmt.Println("==============================")
 	fmt.Println("Environment Variables")
 	fmt.Println("---------------------")
 
-	admin := os.Getenv(cfg.EnvPrefix + cfg.EnvVarAdmin)
+	admin := os.Getenv(cfg.ENVPREFIX + cfg.ENVVARADMIN)
+	credPath := os.Getenv(cfg.ENVPREFIX + cfg.ENVVARCREDPATH)
+	custID := os.Getenv(cfg.ENVPREFIX + cfg.ENVVARCUSTID)
+	logPath := os.Getenv(cfg.ENVPREFIX + cfg.ENVVARLOGPATH)
+	logRotationCount := os.Getenv(cfg.ENVPREFIX + cfg.ENVVARLOGROTATIONCOUNT)
+	logRotationTime := os.Getenv(cfg.ENVPREFIX + cfg.ENVVARLOGROTATIONTIME)
+
+	if admin == "" && credPath == "" && custID == "" && logPath == "" && logRotationCount == "" && logRotationTime == "" {
+		fmt.Println(gmess.INFO_ENVVARSNOTFOUND)
+	}
 	if admin != "" {
-		fmt.Println(cfg.EnvPrefix+cfg.EnvVarAdmin, ": ", admin)
+		fmt.Println(cfg.ENVPREFIX+cfg.ENVVARADMIN+":", admin)
 	}
-
-	credPath := os.Getenv(cfg.EnvPrefix + cfg.EnvVarCredPath)
 	if credPath != "" {
-		fmt.Println(cfg.EnvPrefix+cfg.EnvVarCredPath, ": ", credPath)
+		fmt.Println(cfg.ENVPREFIX+cfg.ENVVARCREDPATH+":", credPath)
 	}
-
-	custID := os.Getenv(cfg.EnvPrefix + cfg.EnvVarCustID)
 	if custID != "" {
-		fmt.Println(cfg.EnvPrefix+cfg.EnvVarCustID, ": ", custID)
+		fmt.Println(cfg.ENVPREFIX+cfg.ENVVARCUSTID+":", custID)
+	}
+	if logPath != "" {
+		fmt.Println(cfg.ENVPREFIX+cfg.ENVVARLOGPATH+":", logPath)
+	}
+	if logRotationCount != "" {
+		fmt.Println(cfg.ENVPREFIX+cfg.ENVVARLOGROTATIONCOUNT+":", logRotationCount)
+	}
+	if logRotationTime != "" {
+		fmt.Println(cfg.ENVPREFIX+cfg.ENVVARLOGROTATIONTIME+":", logRotationTime)
 	}
 
 	fmt.Println("")
 	fmt.Println("Config File")
 	fmt.Println("-----------")
-	cfgAdmin := viper.GetString(cfg.ConfigAdmin)
-	if cfgAdmin != "" {
-		fmt.Println(cfg.ConfigAdmin, ":\t\t", cfgAdmin)
+
+	cfgFilePath := viper.GetViper().ConfigFileUsed()
+	yamlFile, err := ioutil.ReadFile(cfgFilePath)
+	if err != nil {
+		fmt.Println(gmess.INFO_CONFIGFILENOTFOUND)
 	}
-	cfgCredPath := viper.GetString(cfg.ConfigCredPath)
-	if cfgCredPath != "" {
-		fmt.Println(cfg.ConfigCredPath, ":\t", cfgCredPath)
-	}
-	cfgCustID := viper.GetString(cfg.ConfigCustID)
-	if cfgCustID != "" {
-		fmt.Println(cfg.ConfigCustID, ":\t\t", cfgCustID)
-	}
+
+	fmt.Println(string(yamlFile))
 
 	return nil
 }

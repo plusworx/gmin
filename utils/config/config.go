@@ -25,49 +25,80 @@ package config
 import (
 	"fmt"
 
+	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	"github.com/spf13/viper"
+	"go.uber.org/zap"
 )
 
 const (
-	// ConfigAdmin is config file administrator variable name
-	ConfigAdmin string = "administrator"
-	// ConfigCustID is config file customer id variable name
-	ConfigCustID string = "customerid"
-	// ConfigCredPath is config file credential path variable name
-	ConfigCredPath string = "credentialpath"
-	// ConfigFileName is configuration file name
-	ConfigFileName string = ".gmin.yaml"
-	// ConfigFilePrefix is name of gmin config file without the .yaml suffix
-	ConfigFilePrefix string = ".gmin"
-	// CredentialFile holds service account credentials
-	CredentialFile string = "gmin_credentials"
-	// DefaultCustID is default customer id value
-	DefaultCustID string = "my_customer"
-	// EnvPrefix is prefix for gmin environment variables
-	EnvPrefix string = "GMIN"
-	// EnvVarAdmin is gmin administrator environment variable suffix
-	EnvVarAdmin string = "_ADMINISTRATOR"
-	// EnvVarCredPath is gmin credential path environment variable suffix
-	EnvVarCredPath string = "_CREDENTIALPATH"
-	// EnvVarCustID is gmin custormer id environment variable suffix
-	EnvVarCustID string = "_CUSTOMERID"
+	// CONFIGADMIN is config file administrator variable name
+	CONFIGADMIN string = "administrator"
+	// CONFIGCUSTID is config file customer id variable name
+	CONFIGCUSTID string = "customerid"
+	// CONFIGCREDPATH is config file credential path variable name
+	CONFIGCREDPATH string = "credentialpath"
+	// CONFIGFILENAME is configuration file name
+	CONFIGFILENAME string = ".gmin.yaml"
+	// CONFIGFILEPREFIX is name of gmin config file without the .yaml suffix
+	CONFIGFILEPREFIX string = ".gmin"
+	// CONFIGLOGPATH is config file log path variable name
+	CONFIGLOGPATH string = "logpath"
+	// CONFIGLOGROTATIONCOUNT is config file log rotation count variable name
+	CONFIGLOGROTATIONCOUNT string = "logrotationcount"
+	// CONFIGLOGROTATIONTIME is config file log rotation time variable name
+	CONFIGLOGROTATIONTIME string = "logrotationtime"
+	// CREDENTIALFILE service account credentials file name
+	CREDENTIALFILE string = "gmin_credentials"
+	// DEFAULTCUSTID is default customer id value
+	DEFAULTCUSTID string = "my_customer"
+	// DEFAULTLOGROTATIONCOUNT is default log rotation count value
+	DEFAULTLOGROTATIONCOUNT uint = 7
+	// DEFAULTLOGROTATIONTIME is default log rotation time value
+	DEFAULTLOGROTATIONTIME int = 86400
+	// ENVPREFIX is prefix for gmin environment variables
+	ENVPREFIX string = "GMIN"
+	// ENVVARADMIN is gmin administrator environment variable suffix
+	ENVVARADMIN string = "_ADMINISTRATOR"
+	// ENVVARCREDPATH is gmin credential path environment variable suffix
+	ENVVARCREDPATH string = "_CREDENTIALPATH"
+	// ENVVARCUSTID is gmin custormer id environment variable suffix
+	ENVVARCUSTID string = "_CUSTOMERID"
+	// ENVVARLOGPATH is gmin log path environment variable suffix
+	ENVVARLOGPATH string = "_LOGPATH"
+	// ENVVARLOGROTATIONCOUNT is number of log files that are kept
+	ENVVARLOGROTATIONCOUNT string = "_LOGROTATIONCOUNT"
+	// ENVVARLOGROTATIONTIME is amount of time (seconds) before a new log file is created
+	ENVVARLOGROTATIONTIME string = "_LOGROTATIONTIME"
+	// LOGFILE is default gmin log file name
+	LOGFILE string = "gmin-%d-%02d-%02d.log"
 )
 
 // File holds configuration data
 type File struct {
-	Administrator  string `yaml:"administrator"`
-	CredentialPath string `yaml:"credentialpath"`
-	CustomerID     string `yaml:"customerid"`
+	Administrator    string `yaml:"administrator"`
+	CredentialPath   string `yaml:"credentialpath"`
+	CustomerID       string `yaml:"customerid"`
+	LogPath          string `yaml:"logpath"`
+	LogRotationCount uint   `yaml:"logrotationcount"`
+	LogRotationTime  int    `yaml:"logrotationtime"`
 }
 
+// Logger passed from logging package
+var Logger *zap.SugaredLogger
+
 // ReadConfigString gets a string item from config file
-func ReadConfigString(s string) (string, error) {
+func ReadConfigString(key string) (string, error) {
+	Logger.Debugw("starting ReadConfigString()",
+		"key", key)
+	defer Logger.Debug("finished ReadConfigString()")
+
 	var err error
 
-	str := viper.GetString(s)
+	// Use viper directly here because logging may not be set up yet
+	str := viper.GetString(key)
 	if str == "" {
-		err = fmt.Errorf("gmin: error - %v not found in config file", s)
+		err = fmt.Errorf(gmess.ERR_NOTFOUNDINCONFIG, key)
+		Logger.Error(err)
 	}
-
 	return str, err
 }

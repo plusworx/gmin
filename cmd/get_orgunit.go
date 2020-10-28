@@ -28,6 +28,9 @@ import (
 
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
+	gpars "github.com/plusworx/gmin/utils/gminparsers"
+	lg "github.com/plusworx/gmin/utils/logging"
 	ous "github.com/plusworx/gmin/utils/orgunits"
 	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
@@ -37,26 +40,30 @@ var getOrgUnitCmd = &cobra.Command{
 	Use:     "orgunit <orgunit name>",
 	Aliases: []string{"ou"},
 	Args:    cobra.ExactArgs(1),
-	Short:   "Outputs information about an orgunit",
-	Long: `Outputs information about an orgunit.
-	
-	Examples:	gmin get orgunit Accounts
-			gmin get ou Marketing -a name~orgUnitId`,
-	RunE: doGetOrgUnit,
+	Example: `gmin get orgunit Accounts
+gmin get ou Marketing -a name~orgUnitId`,
+	Short: "Outputs information about an orgunit",
+	Long:  `Outputs information about an orgunit.`,
+	RunE:  doGetOrgUnit,
 }
 
 func doGetOrgUnit(cmd *cobra.Command, args []string) error {
+	lg.Debugw("starting doGetOrgUnit()",
+		"args", args)
+	defer lg.Debug("finished doGetOrgUnit()")
+
 	var (
 		jsonData []byte
 		orgUnit  *admin.OrgUnit
 	)
 
-	ds, err := cmn.CreateDirectoryService(admin.AdminDirectoryOrgunitReadonlyScope)
+	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryOrgunitReadonlyScope)
 	if err != nil {
 		return err
 	}
+	ds := srv.(*admin.Service)
 
-	customerID, err := cfg.ReadConfigString("customerid")
+	customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
 	if err != nil {
 		return err
 	}
@@ -67,10 +74,15 @@ func doGetOrgUnit(cmd *cobra.Command, args []string) error {
 		args[0] = ou
 	}
 
-	ougc := ds.Orgunits.Get(customerID, args)
+	ougc := ds.Orgunits.Get(customerID, args[0])
 
-	if attrs != "" {
-		formattedAttrs, err := cmn.ParseOutputAttrs(attrs, ous.OrgUnitAttrMap)
+	flgAttrsVal, err := cmd.Flags().GetString(flgnm.FLG_ATTRIBUTES)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+	if flgAttrsVal != "" {
+		formattedAttrs, err := gpars.ParseOutputAttrs(flgAttrsVal, ous.OrgUnitAttrMap)
 		if err != nil {
 			return err
 		}
@@ -85,6 +97,7 @@ func doGetOrgUnit(cmd *cobra.Command, args []string) error {
 
 	jsonData, err = json.MarshalIndent(orgUnit, "", "    ")
 	if err != nil {
+		lg.Error(err)
 		return err
 	}
 
@@ -96,5 +109,5 @@ func doGetOrgUnit(cmd *cobra.Command, args []string) error {
 func init() {
 	getCmd.AddCommand(getOrgUnitCmd)
 
-	getOrgUnitCmd.Flags().StringVarP(&attrs, "attributes", "a", "", "required orgunit attributes (separated by ~)")
+	getOrgUnitCmd.Flags().StringVarP(&attrs, flgnm.FLG_ATTRIBUTES, "a", "", "required orgunit attributes (separated by ~)")
 }
