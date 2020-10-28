@@ -391,6 +391,7 @@ func FromJSONFactory(callParam CallParams, jsonData string, attrMap map[string]s
 				lg.Error(err)
 				return nil, err
 			}
+			grpParams.GroupKey = grpKey.GroupKey
 
 			err = json.Unmarshal(jsonBytes, &grpParams.Group)
 			if err != nil {
