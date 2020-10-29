@@ -97,14 +97,9 @@ func createLogger(loglevel string) (*zap.Logger, error) {
 	}
 
 	// Configure log rotation
-	t := time.Now()
-
-	fmtLogName := fmt.Sprintf(cfg.LOGFILE,
-		t.Year(), t.Month(), t.Day())
-
 	rotator, err := rlogs.New(
 		// filepath.Join(filepath.ToSlash(logpath), cfg.LOGFILE),
-		filepath.Join(filepath.ToSlash(logpath), fmtLogName),
+		filepath.Join(filepath.ToSlash(logpath), cfg.LOGFILE),
 		rlogs.WithLinkName(filepath.Join(filepath.ToSlash(logpath), "current")),
 		rlogs.WithMaxAge(-1),
 		rlogs.WithRotationCount(logRotationCount),

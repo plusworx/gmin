@@ -132,7 +132,7 @@ written in Go. It provides tools that make Google Workspace administration from 
 command line more manageable.`,
 	SilenceErrors: true,
 	SilenceUsage:  true,
-	Version:       "v0.8.1",
+	Version:       "v0.8.2",
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.

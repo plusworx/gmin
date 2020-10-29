@@ -70,7 +70,7 @@ const (
 	// ENVVARLOGROTATIONTIME is amount of time (seconds) before a new log file is created
 	ENVVARLOGROTATIONTIME string = "_LOGROTATIONTIME"
 	// LOGFILE is default gmin log file name
-	LOGFILE string = "gmin-%d-%02d-%02d.log"
+	LOGFILE string = "gmin_log.%Y%m%d%H%M%S"
 )
 
 // File holds configuration data
