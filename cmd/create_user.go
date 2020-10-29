@@ -183,10 +183,6 @@ func init() {
 	createUserCmd.Flags().StringVarP(&recoveryEmail, flgnm.FLG_RECEMAIL, "z", "", "user's recovery email address")
 	createUserCmd.Flags().StringVarP(&recoveryPhone, flgnm.FLG_RECPHONE, "k", "", "user's recovery phone")
 	createUserCmd.Flags().BoolVarP(&suspended, flgnm.FLG_SUSPENDED, "s", false, "user is suspended")
-
-	createUserCmd.MarkFlagRequired(flgnm.FLG_FIRSTNAME)
-	createUserCmd.MarkFlagRequired(flgnm.FLG_LASTNAME)
-	createUserCmd.MarkFlagRequired(flgnm.FLG_PASSWORD)
 }
 
 func cuFirstnameFlag(name *admin.UserName, flagName string, flgVal string) error {
