@@ -42,7 +42,7 @@ import (
 
 var batchUndelUserCmd = &cobra.Command{
 	Use:     "users -i <input file path>",
-	Aliases: []string{"user"},
+	Aliases: []string{"user", "usrs", "usr"},
 	Example: `gmin batch-undelete users -i inputfile.json
 gmin bund user -i inputfile.csv -f csv
 gmin bund user -i 1odyAIp3jGspd3M4xeepxWD6aeQIUuHBgrZB2OHSu8MI -s 'Sheet1!A1:B25' -f gsheet`,

@@ -34,8 +34,9 @@ import (
 )
 
 var undeleteUserCmd = &cobra.Command{
-	Use:  "user <id>",
-	Args: cobra.ExactArgs(1),
+	Use:     "user <id>",
+	Aliases: []string{"usr"},
+	Args:    cobra.ExactArgs(1),
 	Example: `gmin undelete user 417578192529765228417
 gmin und user 308127142904731923463 -o /Marketing`,
 	Short: "Undeletes user",

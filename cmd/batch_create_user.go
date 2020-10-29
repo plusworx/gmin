@@ -42,7 +42,7 @@ import (
 
 var batchCrtUserCmd = &cobra.Command{
 	Use:     "users -i <input file path or google sheet id>",
-	Aliases: []string{"user"},
+	Aliases: []string{"user", "usrs", "usr"},
 	Example: `gmin batch-create users -i inputfile.json
 gmin bcrt user -i inputfile.csv -f csv
 gmin bcrt user -i 1odyAIp3jGspd3M4xeepxWD6aeQIUuHBgrZB2OHSu8MI -s 'Sheet1!A1:K25' -f gsheet`,

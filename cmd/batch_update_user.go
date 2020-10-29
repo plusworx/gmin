@@ -42,7 +42,7 @@ import (
 
 var batchUpdUserCmd = &cobra.Command{
 	Use:     "users -i <input file path>",
-	Aliases: []string{"user"},
+	Aliases: []string{"user", "usrs", "usr"},
 	Example: `gmin batch-update users -i inputfile.json
 gmin bupd users -i inputfile.csv -f csv
 gmin bupd user -i 1odyAIp3jGspd3M4xeepxWD6aeQIUuHBgrZB2OHSu8MI -s 'Sheet1!A1:K25' -f gsheet`,
