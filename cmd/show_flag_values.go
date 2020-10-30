@@ -58,7 +58,7 @@ group, grp
 group-member, grp-member, grp-mem, gmember, gmem
 mobile-device, mob-device, mob-dev, mdev
 orgunit, ou
-user`,
+user, usr`,
 	RunE: doShowFlagVals,
 }
 
