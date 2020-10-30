@@ -96,7 +96,7 @@ type EmptyValues struct {
 }
 
 var globalFlagValues = []string{
-	"loglevel",
+	flgnm.FLG_LOGLEVEL,
 }
 
 // Logger passed from logging package
