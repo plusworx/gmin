@@ -114,6 +114,6 @@ func doListSchemas(cmd *cobra.Command, args []string) error {
 func init() {
 	listCmd.AddCommand(listSchemasCmd)
 
-	listSchemasCmd.Flags().StringVarP(&attrs, flgnm.FLG_ATTRIBUTES, "a", "", "required schema attributes separated by (~)")
-	listSchemasCmd.Flags().BoolVarP(&count, flgnm.FLG_COUNT, "", false, "count number of entities returned")
+	listSchemasCmd.Flags().StringP(flgnm.FLG_ATTRIBUTES, "a", "", "required schema attributes separated by (~)")
+	listSchemasCmd.Flags().Bool(flgnm.FLG_COUNT, false, "count number of entities returned")
 }

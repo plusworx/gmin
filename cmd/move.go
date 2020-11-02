@@ -42,8 +42,8 @@ func doMove(cmd *cobra.Command, args []string) {
 
 func init() {
 	rootCmd.AddCommand(moveCmd)
-	moveCmd.PersistentFlags().BoolVar(&silent, flgnm.FLG_SILENT, false, "suppress console output")
-	moveCmd.PersistentFlags().StringVar(&logLevel, flgnm.FLG_LOGLEVEL, "info", "log level (debug, info, error, warn)")
+	moveCmd.PersistentFlags().Bool(flgnm.FLG_SILENT, false, "suppress console output")
+	moveCmd.PersistentFlags().String(flgnm.FLG_LOGLEVEL, "info", "log level (debug, info, error, warn)")
 
 	moveCmd.PersistentPreRunE = preRun
 }

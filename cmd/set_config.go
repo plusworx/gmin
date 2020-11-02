@@ -165,11 +165,11 @@ func doSetConfig(cmd *cobra.Command, args []string) error {
 func init() {
 	setCmd.AddCommand(setConfigCmd)
 
-	setConfigCmd.Flags().StringVarP(&adminEmail, flgnm.FLG_ADMIN, "a", "", "administrator email address")
-	setConfigCmd.Flags().StringVarP(&customerID, flgnm.FLG_CUSTOMERID, "c", "", "customer id for domain")
-	setConfigCmd.Flags().StringVarP(&logPath, flgnm.FLG_LOGPATH, "l", "", "log file path")
-	setConfigCmd.Flags().UintVarP(&logRotationCount, flgnm.FLG_LOGROTATIONCOUNT, "r", 0, "max number of retained log files")
-	setConfigCmd.Flags().IntVarP(&logRotationTime, flgnm.FLG_LOGROTATIONTIME, "t", 0, "time after which new log file created")
-	setConfigCmd.Flags().StringVarP(&credentialPath, flgnm.FLG_CREDPATH, "p", "", "service account credential file path")
-	setConfigCmd.PersistentFlags().BoolVar(&silent, flgnm.FLG_SILENT, false, "suppress console output")
+	setConfigCmd.Flags().StringP(flgnm.FLG_ADMIN, "a", "", "administrator email address")
+	setConfigCmd.Flags().StringP(flgnm.FLG_CUSTOMERID, "c", "", "customer id for domain")
+	setConfigCmd.Flags().StringP(flgnm.FLG_LOGPATH, "l", "", "log file path")
+	setConfigCmd.Flags().UintP(flgnm.FLG_LOGROTATIONCOUNT, "r", 0, "max number of retained log files")
+	setConfigCmd.Flags().IntP(flgnm.FLG_LOGROTATIONTIME, "t", 0, "time after which new log file created")
+	setConfigCmd.Flags().StringP(flgnm.FLG_CREDPATH, "p", "", "service account credential file path")
+	setConfigCmd.PersistentFlags().Bool(flgnm.FLG_SILENT, false, "suppress console output")
 }

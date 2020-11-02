@@ -123,6 +123,6 @@ func doGetCrOSDev(cmd *cobra.Command, args []string) error {
 func init() {
 	getCmd.AddCommand(getCrOSDevCmd)
 
-	getCrOSDevCmd.Flags().StringVarP(&attrs, flgnm.FLG_ATTRIBUTES, "a", "", "required device attributes (separated by ~)")
-	getCrOSDevCmd.Flags().StringVarP(&projection, flgnm.FLG_PROJECTION, "j", "", "type of projection")
+	getCrOSDevCmd.Flags().StringP(flgnm.FLG_ATTRIBUTES, "a", "", "required device attributes (separated by ~)")
+	getCrOSDevCmd.Flags().StringP(flgnm.FLG_PROJECTION, "j", "", "type of projection")
 }

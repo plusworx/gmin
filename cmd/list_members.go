@@ -217,9 +217,9 @@ func doMemPages(mlc *admin.MembersListCall, members *admin.Members, pages string
 func init() {
 	listCmd.AddCommand(listMembersCmd)
 
-	listMembersCmd.Flags().StringVarP(&attrs, flgnm.FLG_ATTRIBUTES, "a", "", "required member attributes (separated by ~)")
-	listMembersCmd.Flags().BoolVarP(&count, flgnm.FLG_COUNT, "", false, "count number of entities returned")
-	listMembersCmd.Flags().Int64VarP(&maxResults, flgnm.FLG_MAXRESULTS, "m", 200, "maximum number or results to return")
-	listMembersCmd.Flags().StringVarP(&pages, flgnm.FLG_PAGES, "p", "", "number of pages of results to be returned ('all' or a number)")
-	listMembersCmd.Flags().StringVarP(&role, flgnm.FLG_ROLES, "r", "", "roles to filter results by (separated by ~)")
+	listMembersCmd.Flags().StringP(flgnm.FLG_ATTRIBUTES, "a", "", "required member attributes (separated by ~)")
+	listMembersCmd.Flags().Bool(flgnm.FLG_COUNT, false, "count number of entities returned")
+	listMembersCmd.Flags().Int64P(flgnm.FLG_MAXRESULTS, "m", 200, "maximum number or results to return")
+	listMembersCmd.Flags().StringP(flgnm.FLG_PAGES, "p", "", "number of pages of results to be returned ('all' or a number)")
+	listMembersCmd.Flags().StringP(flgnm.FLG_ROLES, "r", "", "roles to filter results by (separated by ~)")
 }

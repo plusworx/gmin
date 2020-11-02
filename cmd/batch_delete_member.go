@@ -197,7 +197,7 @@ func bdmProcessDeletion(ds *admin.Service, group string, members []string) error
 func init() {
 	batchDelCmd.AddCommand(batchDelMemberCmd)
 
-	batchDelMemberCmd.Flags().StringVarP(&inputFile, flgnm.FLG_INPUTFILE, "i", "", "filepath to member data text file")
-	batchDelMemberCmd.Flags().StringVarP(&delFormat, flgnm.FLG_FORMAT, "f", "text", "member data file format (text or gsheet)")
-	batchDelMemberCmd.Flags().StringVarP(&sheetRange, flgnm.FLG_SHEETRANGE, "s", "", "member data gsheet range")
+	batchDelMemberCmd.Flags().StringP(flgnm.FLG_INPUTFILE, "i", "", "filepath to member data text file")
+	batchDelMemberCmd.Flags().StringP(flgnm.FLG_FORMAT, "f", "text", "member data file format (text or gsheet)")
+	batchDelMemberCmd.Flags().StringP(flgnm.FLG_SHEETRANGE, "s", "", "member data gsheet range")
 }

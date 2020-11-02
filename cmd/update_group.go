@@ -107,7 +107,7 @@ func doUpdateGroup(cmd *cobra.Command, args []string) error {
 func init() {
 	updateCmd.AddCommand(updateGroupCmd)
 
-	updateGroupCmd.Flags().StringVarP(&groupDesc, flgnm.FLG_DESCRIPTION, "d", "", "group description")
-	updateGroupCmd.Flags().StringVarP(&groupEmail, flgnm.FLG_EMAIL, "e", "", "group email")
-	updateGroupCmd.Flags().StringVarP(&groupName, flgnm.FLG_NAME, "n", "", "group name")
+	updateGroupCmd.Flags().StringP(flgnm.FLG_DESCRIPTION, "d", "", "group description")
+	updateGroupCmd.Flags().StringP(flgnm.FLG_EMAIL, "e", "", "group email")
+	updateGroupCmd.Flags().StringP(flgnm.FLG_NAME, "n", "", "group name")
 }

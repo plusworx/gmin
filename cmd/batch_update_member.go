@@ -219,7 +219,7 @@ func bumUpdate(member *admin.Member, groupKey string, wg *sync.WaitGroup, muc *a
 func init() {
 	batchUpdateCmd.AddCommand(batchUpdMemberCmd)
 
-	batchUpdMemberCmd.Flags().StringVarP(&inputFile, flgnm.FLG_INPUTFILE, "i", "", "filepath to group member data file or sheet id")
-	batchUpdMemberCmd.Flags().StringVarP(&format, flgnm.FLG_FORMAT, "f", "json", "user data file format")
-	batchUpdMemberCmd.Flags().StringVarP(&sheetRange, flgnm.FLG_SHEETRANGE, "s", "", "user data gsheet range")
+	batchUpdMemberCmd.Flags().StringP(flgnm.FLG_INPUTFILE, "i", "", "filepath to group member data file or sheet id")
+	batchUpdMemberCmd.Flags().StringP(flgnm.FLG_FORMAT, "f", "json", "user data file format")
+	batchUpdMemberCmd.Flags().StringP(flgnm.FLG_SHEETRANGE, "s", "", "user data gsheet range")
 }

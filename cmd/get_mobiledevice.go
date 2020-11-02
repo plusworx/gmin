@@ -123,6 +123,6 @@ func doGetMobDev(cmd *cobra.Command, args []string) error {
 func init() {
 	getCmd.AddCommand(getMobDevCmd)
 
-	getMobDevCmd.Flags().StringVarP(&attrs, flgnm.FLG_ATTRIBUTES, "a", "", "required device attributes (separated by ~)")
-	getMobDevCmd.Flags().StringVarP(&projection, flgnm.FLG_PROJECTION, "j", "", "type of projection")
+	getMobDevCmd.Flags().StringP(flgnm.FLG_ATTRIBUTES, "a", "", "required device attributes (separated by ~)")
+	getMobDevCmd.Flags().StringP(flgnm.FLG_PROJECTION, "j", "", "type of projection")
 }

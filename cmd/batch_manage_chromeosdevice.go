@@ -234,7 +234,7 @@ func bmngcProcessObjects(ds *admin.Service, managedDevs []cdevs.ManagedDevice) e
 func init() {
 	batchManageCmd.AddCommand(batchMngCrOSDevCmd)
 
-	batchMngCrOSDevCmd.Flags().StringVarP(&inputFile, flgnm.FLG_INPUTFILE, "i", "", "filepath to device data file")
-	batchMngCrOSDevCmd.Flags().StringVarP(&format, flgnm.FLG_FORMAT, "f", "json", "user data file format")
-	batchMngCrOSDevCmd.Flags().StringVarP(&sheetRange, flgnm.FLG_SHEETRANGE, "s", "", "user data gsheet range")
+	batchMngCrOSDevCmd.Flags().StringP(flgnm.FLG_INPUTFILE, "i", "", "filepath to device data file")
+	batchMngCrOSDevCmd.Flags().StringP(flgnm.FLG_FORMAT, "f", "json", "user data file format")
+	batchMngCrOSDevCmd.Flags().StringP(flgnm.FLG_SHEETRANGE, "s", "", "user data gsheet range")
 }

@@ -220,7 +220,7 @@ func bucUpdate(crosdev *admin.ChromeOsDevice, wg *sync.WaitGroup, cduc *admin.Ch
 func init() {
 	batchUpdateCmd.AddCommand(batchUpdCrOSDevCmd)
 
-	batchUpdCrOSDevCmd.Flags().StringVarP(&inputFile, flgnm.FLG_INPUTFILE, "i", "", "filepath to device data file or sheet id")
-	batchUpdCrOSDevCmd.Flags().StringVarP(&format, flgnm.FLG_FORMAT, "f", "json", "user data file format")
-	batchUpdCrOSDevCmd.Flags().StringVarP(&sheetRange, flgnm.FLG_SHEETRANGE, "s", "", "user data gsheet range")
+	batchUpdCrOSDevCmd.Flags().StringP(flgnm.FLG_INPUTFILE, "i", "", "filepath to device data file or sheet id")
+	batchUpdCrOSDevCmd.Flags().StringP(flgnm.FLG_FORMAT, "f", "json", "user data file format")
+	batchUpdCrOSDevCmd.Flags().StringP(flgnm.FLG_SHEETRANGE, "s", "", "user data gsheet range")
 }

@@ -145,10 +145,10 @@ func doUpdateCrOSDev(cmd *cobra.Command, args []string) error {
 func init() {
 	updateCmd.AddCommand(updateCrOSDevCmd)
 
-	updateCrOSDevCmd.Flags().StringVarP(&assetID, flgnm.FLG_ASSETID, "d", "", "device asset id")
-	updateCrOSDevCmd.Flags().StringVarP(&projection, flgnm.FLG_PROJECTION, "j", "", "type of projection")
-	updateCrOSDevCmd.Flags().StringVarP(&location, flgnm.FLG_LOCATION, "l", "", "device location")
-	updateCrOSDevCmd.Flags().StringVarP(&notes, flgnm.FLG_NOTES, "n", "", "notes about device")
-	updateCrOSDevCmd.Flags().StringVarP(&orgUnit, flgnm.FLG_ORGUNITPATH, "t", "", "orgunit device belongs to")
-	updateCrOSDevCmd.Flags().StringVarP(&userKey, flgnm.FLG_USERKEY, "u", "", "device user")
+	updateCrOSDevCmd.Flags().StringP(flgnm.FLG_ASSETID, "d", "", "device asset id")
+	updateCrOSDevCmd.Flags().StringP(flgnm.FLG_PROJECTION, "j", "", "type of projection")
+	updateCrOSDevCmd.Flags().StringP(flgnm.FLG_LOCATION, "l", "", "device location")
+	updateCrOSDevCmd.Flags().StringP(flgnm.FLG_NOTES, "n", "", "notes about device")
+	updateCrOSDevCmd.Flags().StringP(flgnm.FLG_ORGUNITPATH, "t", "", "orgunit device belongs to")
+	updateCrOSDevCmd.Flags().StringP(flgnm.FLG_USERKEY, "u", "", "device user")
 }

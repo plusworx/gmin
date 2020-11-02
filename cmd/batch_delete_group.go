@@ -194,7 +194,7 @@ func bdgProcessDeletion(ds *admin.Service, groups []string) error {
 func init() {
 	batchDelCmd.AddCommand(batchDelGroupCmd)
 
-	batchDelGroupCmd.Flags().StringVarP(&inputFile, flgnm.FLG_INPUTFILE, "i", "", "filepath to group data text file")
-	batchDelGroupCmd.Flags().StringVarP(&delFormat, flgnm.FLG_FORMAT, "f", "text", "group data file format (text or gsheet)")
-	batchDelGroupCmd.Flags().StringVarP(&sheetRange, flgnm.FLG_SHEETRANGE, "s", "", "group data gsheet range")
+	batchDelGroupCmd.Flags().StringP(flgnm.FLG_INPUTFILE, "i", "", "filepath to group data text file")
+	batchDelGroupCmd.Flags().StringP(flgnm.FLG_FORMAT, "f", "text", "group data file format (text or gsheet)")
+	batchDelGroupCmd.Flags().StringP(flgnm.FLG_SHEETRANGE, "s", "", "group data gsheet range")
 }

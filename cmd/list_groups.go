@@ -288,13 +288,13 @@ func doGrpPages(glc *admin.GroupsListCall, groups *admin.Groups, pages string) e
 func init() {
 	listCmd.AddCommand(listGroupsCmd)
 
-	listGroupsCmd.Flags().StringVarP(&attrs, flgnm.FLG_ATTRIBUTES, "a", "", "required group attributes (separated by ~)")
-	listGroupsCmd.Flags().BoolVarP(&count, flgnm.FLG_COUNT, "", false, "count number of entities returned")
-	listGroupsCmd.Flags().StringVarP(&domain, flgnm.FLG_DOMAIN, "d", "", "domain from which to get groups")
-	listGroupsCmd.Flags().Int64VarP(&maxResults, flgnm.FLG_MAXRESULTS, "m", 200, "maximum number of results to return per page")
-	listGroupsCmd.Flags().StringVarP(&orderBy, flgnm.FLG_ORDERBY, "o", "", "field by which results will be ordered")
-	listGroupsCmd.Flags().StringVarP(&pages, flgnm.FLG_PAGES, "p", "", "number of pages of results to be returned ('all' or a number)")
-	listGroupsCmd.Flags().StringVarP(&query, flgnm.FLG_QUERY, "q", "", "selection criteria to get groups (separated by ~)")
-	listGroupsCmd.Flags().StringVarP(&sortOrder, flgnm.FLG_SORTORDER, "s", "", "sort order of returned results")
-	listGroupsCmd.Flags().StringVarP(&userKey, flgnm.FLG_USERKEY, "u", "", "email address or id of user who belongs to returned groups")
+	listGroupsCmd.Flags().StringP(flgnm.FLG_ATTRIBUTES, "a", "", "required group attributes (separated by ~)")
+	listGroupsCmd.Flags().Bool(flgnm.FLG_COUNT, false, "count number of entities returned")
+	listGroupsCmd.Flags().StringP(flgnm.FLG_DOMAIN, "d", "", "domain from which to get groups")
+	listGroupsCmd.Flags().Int64P(flgnm.FLG_MAXRESULTS, "m", 200, "maximum number of results to return per page")
+	listGroupsCmd.Flags().StringP(flgnm.FLG_ORDERBY, "o", "", "field by which results will be ordered")
+	listGroupsCmd.Flags().StringP(flgnm.FLG_PAGES, "p", "", "number of pages of results to be returned ('all' or a number)")
+	listGroupsCmd.Flags().StringP(flgnm.FLG_QUERY, "q", "", "selection criteria to get groups (separated by ~)")
+	listGroupsCmd.Flags().StringP(flgnm.FLG_SORTORDER, "s", "", "sort order of returned results")
+	listGroupsCmd.Flags().StringP(flgnm.FLG_USERKEY, "u", "", "email address or id of user who belongs to returned groups")
 }

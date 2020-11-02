@@ -127,5 +127,5 @@ func doShowFlagVals(cmd *cobra.Command, args []string) error {
 
 func init() {
 	showCmd.AddCommand(showFlagValsCmd)
-	showFlagValsCmd.Flags().StringVarP(&filter, flgnm.FLG_FILTER, "f", "", "string used to filter results")
+	showFlagValsCmd.Flags().StringP(flgnm.FLG_FILTER, "f", "", "string used to filter results")
 }

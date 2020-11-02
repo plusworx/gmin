@@ -278,12 +278,12 @@ func doMobDevPages(mdlc *admin.MobiledevicesListCall, mobdevs *admin.MobileDevic
 func init() {
 	listCmd.AddCommand(listMobDevsCmd)
 
-	listMobDevsCmd.Flags().StringVarP(&attrs, flgnm.FLG_ATTRIBUTES, "a", "", "required device attributes (separated by ~)")
-	listMobDevsCmd.Flags().BoolVarP(&count, flgnm.FLG_COUNT, "", false, "count number of entities returned")
-	listMobDevsCmd.Flags().Int64VarP(&maxResults, flgnm.FLG_MAXRESULTS, "m", 100, "maximum number of results to return per page")
-	listMobDevsCmd.Flags().StringVarP(&orderBy, flgnm.FLG_ORDERBY, "o", "", "field by which results will be ordered")
-	listMobDevsCmd.Flags().StringVarP(&pages, flgnm.FLG_PAGES, "p", "", "number of pages of results to be returned ('all' or a number)")
-	listMobDevsCmd.Flags().StringVarP(&projection, flgnm.FLG_PROJECTION, "j", "", "type of projection")
-	listMobDevsCmd.Flags().StringVarP(&query, flgnm.FLG_QUERY, "q", "", "selection criteria to get devices (separated by ~)")
-	listMobDevsCmd.Flags().StringVarP(&sortOrder, flgnm.FLG_SORTORDER, "s", "", "sort order of returned results")
+	listMobDevsCmd.Flags().StringP(flgnm.FLG_ATTRIBUTES, "a", "", "required device attributes (separated by ~)")
+	listMobDevsCmd.Flags().Bool(flgnm.FLG_COUNT, false, "count number of entities returned")
+	listMobDevsCmd.Flags().Int64P(flgnm.FLG_MAXRESULTS, "m", 100, "maximum number of results to return per page")
+	listMobDevsCmd.Flags().StringP(flgnm.FLG_ORDERBY, "o", "", "field by which results will be ordered")
+	listMobDevsCmd.Flags().StringP(flgnm.FLG_PAGES, "p", "", "number of pages of results to be returned ('all' or a number)")
+	listMobDevsCmd.Flags().StringP(flgnm.FLG_PROJECTION, "j", "", "type of projection")
+	listMobDevsCmd.Flags().StringP(flgnm.FLG_QUERY, "q", "", "selection criteria to get devices (separated by ~)")
+	listMobDevsCmd.Flags().StringP(flgnm.FLG_SORTORDER, "s", "", "sort order of returned results")
 }

@@ -238,7 +238,7 @@ func bmnggProcessObjects(gss *gset.Service, grpParams []grpset.GroupParams) erro
 func init() {
 	batchManageCmd.AddCommand(batchMngGrpSettingsCmd)
 
-	batchMngGrpSettingsCmd.Flags().StringVarP(&inputFile, flgnm.FLG_INPUTFILE, "i", "", "filepath to device data file")
-	batchMngGrpSettingsCmd.Flags().StringVarP(&format, flgnm.FLG_FORMAT, "f", "json", "user data file format")
-	batchMngGrpSettingsCmd.Flags().StringVarP(&sheetRange, flgnm.FLG_SHEETRANGE, "s", "", "user data gsheet range")
+	batchMngGrpSettingsCmd.Flags().StringP(flgnm.FLG_INPUTFILE, "i", "", "filepath to device data file")
+	batchMngGrpSettingsCmd.Flags().StringP(flgnm.FLG_FORMAT, "f", "json", "user data file format")
+	batchMngGrpSettingsCmd.Flags().StringP(flgnm.FLG_SHEETRANGE, "s", "", "user data gsheet range")
 }

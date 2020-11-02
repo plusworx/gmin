@@ -200,7 +200,7 @@ func bdmdProcessDeletion(ds *admin.Service, mobdevs []string) error {
 func init() {
 	batchDelCmd.AddCommand(batchDelMobDevCmd)
 
-	batchDelMobDevCmd.Flags().StringVarP(&inputFile, flgnm.FLG_INPUTFILE, "i", "", "filepath to mobile device data text file")
-	batchDelMobDevCmd.Flags().StringVarP(&delFormat, flgnm.FLG_FORMAT, "f", "text", "mobile device data file format (text or gsheet)")
-	batchDelMobDevCmd.Flags().StringVarP(&sheetRange, flgnm.FLG_SHEETRANGE, "s", "", "mobile device data gsheet range")
+	batchDelMobDevCmd.Flags().StringP(flgnm.FLG_INPUTFILE, "i", "", "filepath to mobile device data text file")
+	batchDelMobDevCmd.Flags().StringP(flgnm.FLG_FORMAT, "f", "text", "mobile device data file format (text or gsheet)")
+	batchDelMobDevCmd.Flags().StringP(flgnm.FLG_SHEETRANGE, "s", "", "mobile device data gsheet range")
 }

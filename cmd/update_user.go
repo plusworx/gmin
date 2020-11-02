@@ -150,18 +150,18 @@ func doUpdateUser(cmd *cobra.Command, args []string) error {
 func init() {
 	updateCmd.AddCommand(updateUserCmd)
 
-	updateUserCmd.Flags().StringVarP(&attrs, flgnm.FLG_ATTRIBUTES, "a", "", "user's attributes as a JSON string")
-	updateUserCmd.Flags().BoolVarP(&changePassword, flgnm.FLG_CHANGEPWD, "c", false, "user must change password on next login")
-	updateUserCmd.Flags().StringVarP(&userEmail, flgnm.FLG_EMAIL, "e", "", "user's primary email address")
-	updateUserCmd.Flags().StringVarP(&firstName, flgnm.FLG_FIRSTNAME, "f", "", "user's first name")
-	updateUserCmd.Flags().StringVar(&forceSend, flgnm.FLG_FORCE, "", "field list for ForceSendFields separated by (~)")
-	updateUserCmd.Flags().BoolVarP(&gal, flgnm.FLG_GAL, "g", false, "display user in Global Address List")
-	updateUserCmd.Flags().StringVarP(&lastName, flgnm.FLG_LASTNAME, "l", "", "user's last name")
-	updateUserCmd.Flags().StringVarP(&orgUnit, flgnm.FLG_ORGUNIT, "o", "", "user's orgunit")
-	updateUserCmd.Flags().StringVarP(&password, flgnm.FLG_PASSWORD, "p", "", "user's password")
-	updateUserCmd.Flags().StringVarP(&recoveryEmail, flgnm.FLG_RECEMAIL, "z", "", "user's recovery email address")
-	updateUserCmd.Flags().StringVarP(&recoveryPhone, flgnm.FLG_RECPHONE, "k", "", "user's recovery phone")
-	updateUserCmd.Flags().BoolVarP(&suspended, flgnm.FLG_SUSPENDED, "s", false, "user is suspended")
+	updateUserCmd.Flags().StringP(flgnm.FLG_ATTRIBUTES, "a", "", "user's attributes as a JSON string")
+	updateUserCmd.Flags().BoolP(flgnm.FLG_CHANGEPWD, "c", false, "user must change password on next login")
+	updateUserCmd.Flags().StringP(flgnm.FLG_EMAIL, "e", "", "user's primary email address")
+	updateUserCmd.Flags().StringP(flgnm.FLG_FIRSTNAME, "f", "", "user's first name")
+	updateUserCmd.Flags().String(flgnm.FLG_FORCE, "", "field list for ForceSendFields separated by (~)")
+	updateUserCmd.Flags().BoolP(flgnm.FLG_GAL, "g", false, "display user in Global Address List")
+	updateUserCmd.Flags().StringP(flgnm.FLG_LASTNAME, "l", "", "user's last name")
+	updateUserCmd.Flags().StringP(flgnm.FLG_ORGUNIT, "o", "", "user's orgunit")
+	updateUserCmd.Flags().StringP(flgnm.FLG_PASSWORD, "p", "", "user's password")
+	updateUserCmd.Flags().StringP(flgnm.FLG_RECEMAIL, "z", "", "user's recovery email address")
+	updateUserCmd.Flags().StringP(flgnm.FLG_RECPHONE, "k", "", "user's recovery phone")
+	updateUserCmd.Flags().BoolP(flgnm.FLG_SUSPENDED, "s", false, "user is suspended")
 }
 
 func processUpdUsrFlags(cmd *cobra.Command, user *admin.User, name *admin.UserName, flagNames []string) error {
@@ -417,7 +417,7 @@ func uuRecoveryPhoneFlag(user *admin.User, flagName string, flgVal string) error
 		err := fmt.Errorf(gmess.ERR_EMPTYSTRING, flagName)
 		return err
 	}
-	if string(recoveryPhone[0]) != "+" {
+	if string(flgVal[0]) != "+" {
 		err := fmt.Errorf(gmess.ERR_INVALIDRECOVERYPHONE, flgVal)
 		return err
 	}

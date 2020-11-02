@@ -156,8 +156,8 @@ func doGetUser(cmd *cobra.Command, args []string) error {
 func init() {
 	getCmd.AddCommand(getUserCmd)
 
-	getUserCmd.Flags().StringVarP(&attrs, flgnm.FLG_ATTRIBUTES, "a", "", "required user attributes (separated by ~)")
-	getUserCmd.Flags().StringVarP(&customField, flgnm.FLG_CUSTFLDMASK, "c", "", "custom field mask schemas (separated by ~)")
-	getUserCmd.Flags().StringVarP(&projection, flgnm.FLG_PROJECTION, "j", "", "type of projection")
-	getUserCmd.Flags().StringVarP(&viewType, flgnm.FLG_VIEWTYPE, "v", "", "data view type")
+	getUserCmd.Flags().StringP(flgnm.FLG_ATTRIBUTES, "a", "", "required user attributes (separated by ~)")
+	getUserCmd.Flags().StringP(flgnm.FLG_CUSTFLDMASK, "c", "", "custom field mask schemas (separated by ~)")
+	getUserCmd.Flags().StringP(flgnm.FLG_PROJECTION, "j", "", "type of projection")
+	getUserCmd.Flags().StringP(flgnm.FLG_VIEWTYPE, "v", "", "data view type")
 }

@@ -186,9 +186,9 @@ func doShowAttrs(cmd *cobra.Command, args []string) error {
 func init() {
 	showCmd.AddCommand(showAttrsCmd)
 
-	showAttrsCmd.Flags().BoolVarP(&composite, flgnm.FLG_COMPOSITE, "c", false, "show attributes that contain other attributes")
-	showAttrsCmd.Flags().StringVarP(&filter, flgnm.FLG_FILTER, "f", "", "string used to filter results")
-	showAttrsCmd.Flags().BoolVarP(&queryable, flgnm.FLG_QUERYABLE, "q", false, "show attributes that can be used in a query")
+	showAttrsCmd.Flags().BoolP(flgnm.FLG_COMPOSITE, "c", false, "show attributes that contain other attributes")
+	showAttrsCmd.Flags().StringP(flgnm.FLG_FILTER, "f", "", "string used to filter results")
+	showAttrsCmd.Flags().BoolP(flgnm.FLG_QUERYABLE, "q", false, "show attributes that can be used in a query")
 }
 
 func saChromeOSDev(args []string, lArgs int, objectName string, filter string, queryable bool, composite bool) error {

@@ -98,5 +98,5 @@ func doGetGroupSettings(cmd *cobra.Command, args []string) error {
 func init() {
 	getCmd.AddCommand(getGroupSettingsCmd)
 
-	getGroupSettingsCmd.Flags().StringVarP(&attrs, flgnm.FLG_ATTRIBUTES, "a", "", "required group attributes (separated by ~)")
+	getGroupSettingsCmd.Flags().StringP(flgnm.FLG_ATTRIBUTES, "a", "", "required group attributes (separated by ~)")
 }

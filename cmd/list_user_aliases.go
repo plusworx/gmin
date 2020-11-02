@@ -95,5 +95,5 @@ func doListUserAliases(cmd *cobra.Command, args []string) error {
 func init() {
 	listCmd.AddCommand(listUserAliasesCmd)
 
-	listUserAliasesCmd.Flags().StringVarP(&attrs, flgnm.FLG_ATTRIBUTES, "a", "", "required user alias attributes (separated by ~)")
+	listUserAliasesCmd.Flags().StringP(flgnm.FLG_ATTRIBUTES, "a", "", "required user alias attributes (separated by ~)")
 }

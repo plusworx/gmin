@@ -106,6 +106,6 @@ func doUpdateMember(cmd *cobra.Command, args []string) error {
 func init() {
 	updateCmd.AddCommand(updateMemberCmd)
 
-	updateMemberCmd.Flags().StringVarP(&deliverySetting, flgnm.FLG_DELIVERYSETTING, "d", "", "member delivery setting")
-	updateMemberCmd.Flags().StringVarP(&role, flgnm.FLG_ROLE, "r", "", "member role")
+	updateMemberCmd.Flags().StringP(flgnm.FLG_DELIVERYSETTING, "d", "", "member delivery setting")
+	updateMemberCmd.Flags().StringP(flgnm.FLG_ROLE, "r", "", "member role")
 }

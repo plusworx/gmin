@@ -97,6 +97,6 @@ func doCreateGroup(cmd *cobra.Command, args []string) error {
 func init() {
 	createCmd.AddCommand(createGroupCmd)
 
-	createGroupCmd.Flags().StringVarP(&groupDesc, flgnm.FLG_DESCRIPTION, "d", "", "group description")
-	createGroupCmd.Flags().StringVarP(&groupName, flgnm.FLG_NAME, "n", "", "group name")
+	createGroupCmd.Flags().StringP(flgnm.FLG_DESCRIPTION, "d", "", "group description")
+	createGroupCmd.Flags().StringP(flgnm.FLG_NAME, "n", "", "group name")
 }

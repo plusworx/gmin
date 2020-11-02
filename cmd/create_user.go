@@ -172,17 +172,17 @@ func doCreateUser(cmd *cobra.Command, args []string) error {
 func init() {
 	createCmd.AddCommand(createUserCmd)
 
-	createUserCmd.Flags().StringVarP(&attrs, flgnm.FLG_ATTRIBUTES, "a", "", "user's attributes as a JSON string")
-	createUserCmd.Flags().BoolVarP(&changePassword, flgnm.FLG_CHANGEPWD, "c", false, "user must change password on next login")
-	createUserCmd.Flags().StringVarP(&firstName, flgnm.FLG_FIRSTNAME, "f", "", "user's first name")
-	createUserCmd.Flags().StringVar(&forceSend, flgnm.FLG_FORCE, "", "field list for ForceSendFields separated by (~)")
-	createUserCmd.Flags().BoolVarP(&gal, flgnm.FLG_GAL, "g", false, "user is included in Global Address List")
-	createUserCmd.Flags().StringVarP(&lastName, flgnm.FLG_LASTNAME, "l", "", "user's last name")
-	createUserCmd.Flags().StringVarP(&orgUnit, flgnm.FLG_ORGUNIT, "o", "", "user's orgunit")
-	createUserCmd.Flags().StringVarP(&password, flgnm.FLG_PASSWORD, "p", "", "user's password")
-	createUserCmd.Flags().StringVarP(&recoveryEmail, flgnm.FLG_RECEMAIL, "z", "", "user's recovery email address")
-	createUserCmd.Flags().StringVarP(&recoveryPhone, flgnm.FLG_RECPHONE, "k", "", "user's recovery phone")
-	createUserCmd.Flags().BoolVarP(&suspended, flgnm.FLG_SUSPENDED, "s", false, "user is suspended")
+	createUserCmd.Flags().StringP(flgnm.FLG_ATTRIBUTES, "a", "", "user's attributes as a JSON string")
+	createUserCmd.Flags().BoolP(flgnm.FLG_CHANGEPWD, "c", false, "user must change password on next login")
+	createUserCmd.Flags().StringP(flgnm.FLG_FIRSTNAME, "f", "", "user's first name")
+	createUserCmd.Flags().String(flgnm.FLG_FORCE, "", "field list for ForceSendFields separated by (~)")
+	createUserCmd.Flags().BoolP(flgnm.FLG_GAL, "g", false, "user is included in Global Address List")
+	createUserCmd.Flags().StringP(flgnm.FLG_LASTNAME, "l", "", "user's last name")
+	createUserCmd.Flags().StringP(flgnm.FLG_ORGUNIT, "o", "", "user's orgunit")
+	createUserCmd.Flags().StringP(flgnm.FLG_PASSWORD, "p", "", "user's password")
+	createUserCmd.Flags().StringP(flgnm.FLG_RECEMAIL, "z", "", "user's recovery email address")
+	createUserCmd.Flags().StringP(flgnm.FLG_RECPHONE, "k", "", "user's recovery phone")
+	createUserCmd.Flags().BoolP(flgnm.FLG_SUSPENDED, "s", false, "user is suspended")
 }
 
 func cuFirstnameFlag(name *admin.UserName, flagName string, flgVal string) error {
@@ -298,7 +298,7 @@ func cuRecoveryPhoneFlag(user *admin.User, flagName string, flgVal string) error
 		lg.Error(err)
 		return err
 	}
-	if string(recoveryPhone[0]) != "+" {
+	if string(flgVal[0]) != "+" {
 		err := fmt.Errorf(gmess.ERR_INVALIDRECOVERYPHONE, flgVal)
 		lg.Error(err)
 		return err

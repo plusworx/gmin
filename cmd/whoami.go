@@ -65,7 +65,7 @@ func doWhoami(cmd *cobra.Command, args []string) error {
 
 func init() {
 	rootCmd.AddCommand(whoamiCmd)
-	whoamiCmd.Flags().StringVar(&logLevel, flgnm.FLG_LOGLEVEL, "info", "log level (debug, info, error, warn)")
+	whoamiCmd.Flags().String(flgnm.FLG_LOGLEVEL, "info", "log level (debug, info, error, warn)")
 
 	whoamiCmd.PreRunE = preRunForDisplayCmds
 }

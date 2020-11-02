@@ -103,13 +103,18 @@ func doUpdateSchema(cmd *cobra.Command, args []string) error {
 
 	schema = new(admin.Schema)
 
-	if inputFile == "" {
+	flgInputVal, err := cmd.Flags().GetString(flgnm.FLG_INPUTFILE)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+	if flgInputVal == "" {
 		err := errors.New(gmess.ERR_NOINPUTFILE)
 		lg.Error(err)
 		return err
 	}
 
-	fileData, err := ioutil.ReadFile(inputFile)
+	fileData, err := ioutil.ReadFile(flgInputVal)
 	if err != nil {
 		lg.Error(err)
 		return err
@@ -164,6 +169,6 @@ func doUpdateSchema(cmd *cobra.Command, args []string) error {
 func init() {
 	updateCmd.AddCommand(updateSchemaCmd)
 
-	updateSchemaCmd.Flags().StringVarP(&inputFile, flgnm.FLG_INPUTFILE, "i", "", "filepath to schema data file")
+	updateSchemaCmd.Flags().StringP(flgnm.FLG_INPUTFILE, "i", "", "filepath to schema data file")
 	updateSchemaCmd.MarkFlagRequired(flgnm.FLG_INPUTFILE)
 }

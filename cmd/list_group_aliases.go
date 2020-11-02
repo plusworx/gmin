@@ -95,5 +95,5 @@ func doListGroupAliases(cmd *cobra.Command, args []string) error {
 func init() {
 	listCmd.AddCommand(listGroupAliasesCmd)
 
-	listGroupAliasesCmd.Flags().StringVarP(&attrs, flgnm.FLG_ATTRIBUTES, "a", "", "required group alias attributes (separated by ~)")
+	listGroupAliasesCmd.Flags().StringP(flgnm.FLG_ATTRIBUTES, "a", "", "required group alias attributes (separated by ~)")
 }

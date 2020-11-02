@@ -42,8 +42,8 @@ func doCreate(cmd *cobra.Command, args []string) {
 
 func init() {
 	rootCmd.AddCommand(createCmd)
-	createCmd.PersistentFlags().BoolVar(&silent, flgnm.FLG_SILENT, false, "suppress console output")
-	createCmd.PersistentFlags().StringVar(&logLevel, flgnm.FLG_LOGLEVEL, "info", "log level (debug, info, error, warn)")
+	createCmd.PersistentFlags().Bool(flgnm.FLG_SILENT, false, "suppress console output")
+	createCmd.PersistentFlags().String(flgnm.FLG_LOGLEVEL, "info", "log level (debug, info, error, warn)")
 
 	createCmd.PersistentPreRunE = preRun
 }

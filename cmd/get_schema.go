@@ -103,5 +103,5 @@ func doGetSchema(cmd *cobra.Command, args []string) error {
 func init() {
 	getCmd.AddCommand(getSchemaCmd)
 
-	getSchemaCmd.Flags().StringVarP(&attrs, flgnm.FLG_ATTRIBUTES, "a", "", "required schema attributes (separated by ~)")
+	getSchemaCmd.Flags().StringP(flgnm.FLG_ATTRIBUTES, "a", "", "required schema attributes (separated by ~)")
 }

@@ -98,10 +98,10 @@ func doUpdateOU(cmd *cobra.Command, args []string) error {
 func init() {
 	updateCmd.AddCommand(updateOUCmd)
 
-	updateOUCmd.Flags().BoolVarP(&blockInherit, flgnm.FLG_BLOCKINHERIT, "b", false, "block orgunit policy inheritance")
-	updateOUCmd.Flags().StringVarP(&orgUnitDesc, flgnm.FLG_DESCRIPTION, "d", "", "orgunit description")
-	updateOUCmd.Flags().StringVarP(&orgUnitName, flgnm.FLG_NAME, "n", "", "orgunit name")
-	updateOUCmd.Flags().StringVarP(&parentOUPath, flgnm.FLG_PARENTPATH, "p", "", "orgunit parent path")
+	updateOUCmd.Flags().BoolP(flgnm.FLG_BLOCKINHERIT, "b", false, "block orgunit policy inheritance")
+	updateOUCmd.Flags().StringP(flgnm.FLG_DESCRIPTION, "d", "", "orgunit description")
+	updateOUCmd.Flags().StringP(flgnm.FLG_NAME, "n", "", "orgunit name")
+	updateOUCmd.Flags().StringP(flgnm.FLG_PARENTPATH, "p", "", "orgunit parent path")
 }
 
 func processUpdOUFlags(cmd *cobra.Command, orgunit *admin.OrgUnit, flagNames []string) error {

@@ -42,8 +42,8 @@ func doBatchDelete(cmd *cobra.Command, args []string) {
 
 func init() {
 	rootCmd.AddCommand(batchDelCmd)
-	batchDelCmd.PersistentFlags().BoolVar(&silent, flgnm.FLG_SILENT, false, "suppress console output")
-	batchDelCmd.PersistentFlags().StringVar(&logLevel, flgnm.FLG_LOGLEVEL, "info", "log level (debug, info, error, warn)")
+	batchDelCmd.PersistentFlags().Bool(flgnm.FLG_SILENT, false, "suppress console output")
+	batchDelCmd.PersistentFlags().String(flgnm.FLG_LOGLEVEL, "info", "log level (debug, info, error, warn)")
 
 	batchDelCmd.PersistentPreRunE = preRun
 }

@@ -107,5 +107,5 @@ func doManageCrOSDev(cmd *cobra.Command, args []string) error {
 func init() {
 	manageCmd.AddCommand(manageCrOSDevCmd)
 
-	manageCrOSDevCmd.Flags().StringVarP(&reason, flgnm.FLG_REASON, "r", "", "device deprovision reason")
+	manageCrOSDevCmd.Flags().StringP(flgnm.FLG_REASON, "r", "", "device deprovision reason")
 }

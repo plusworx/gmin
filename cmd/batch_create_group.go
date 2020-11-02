@@ -214,7 +214,7 @@ func bcgProcessObjects(ds *admin.Service, groups []*admin.Group) error {
 func init() {
 	batchCreateCmd.AddCommand(batchCrtGroupCmd)
 
-	batchCrtGroupCmd.Flags().StringVarP(&inputFile, flgnm.FLG_INPUTFILE, "i", "", "filepath to group data file or sheet id")
-	batchCrtGroupCmd.Flags().StringVarP(&format, flgnm.FLG_FORMAT, "f", "json", "user data file format")
-	batchCrtGroupCmd.Flags().StringVarP(&sheetRange, flgnm.FLG_SHEETRANGE, "s", "", "user data gsheet range")
+	batchCrtGroupCmd.Flags().StringP(flgnm.FLG_INPUTFILE, "i", "", "filepath to group data file or sheet id")
+	batchCrtGroupCmd.Flags().StringP(flgnm.FLG_FORMAT, "f", "json", "user data file format")
+	batchCrtGroupCmd.Flags().StringP(flgnm.FLG_SHEETRANGE, "s", "", "user data gsheet range")
 }

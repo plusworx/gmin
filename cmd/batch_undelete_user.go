@@ -219,7 +219,7 @@ func bunduUndelete(userKey string, wg *sync.WaitGroup, uuc *admin.UsersUndeleteC
 func init() {
 	batchUndeleteCmd.AddCommand(batchUndelUserCmd)
 
-	batchUndelUserCmd.Flags().StringVarP(&inputFile, flgnm.FLG_INPUTFILE, "i", "", "filepath to user data file or sheet id")
-	batchUndelUserCmd.Flags().StringVarP(&format, flgnm.FLG_FORMAT, "f", "json", "user data file format")
-	batchUndelUserCmd.Flags().StringVarP(&sheetRange, flgnm.FLG_SHEETRANGE, "s", "", "user data gsheet range")
+	batchUndelUserCmd.Flags().StringP(flgnm.FLG_INPUTFILE, "i", "", "filepath to user data file or sheet id")
+	batchUndelUserCmd.Flags().StringP(flgnm.FLG_FORMAT, "f", "json", "user data file format")
+	batchUndelUserCmd.Flags().StringP(flgnm.FLG_SHEETRANGE, "s", "", "user data gsheet range")
 }

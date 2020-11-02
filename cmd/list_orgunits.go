@@ -140,8 +140,8 @@ func doListOUs(cmd *cobra.Command, args []string) error {
 func init() {
 	listCmd.AddCommand(listOUsCmd)
 
-	listOUsCmd.Flags().StringVarP(&attrs, flgnm.FLG_ATTRIBUTES, "a", "", "required orgunit attributes separated by (~)")
-	listOUsCmd.Flags().BoolVarP(&count, flgnm.FLG_COUNT, "", false, "count number of entities returned")
-	listOUsCmd.Flags().StringVarP(&orgUnit, flgnm.FLG_ORGUNITPATH, "o", "", "orgunitpath or id of starting orgunit")
-	listOUsCmd.Flags().StringVarP(&searchType, flgnm.FLG_SEARCHTYPE, "t", "children", "all sub-organizational units or only immediate children")
+	listOUsCmd.Flags().StringP(flgnm.FLG_ATTRIBUTES, "a", "", "required orgunit attributes separated by (~)")
+	listOUsCmd.Flags().Bool(flgnm.FLG_COUNT, false, "count number of entities returned")
+	listOUsCmd.Flags().StringP(flgnm.FLG_ORGUNITPATH, "o", "", "orgunitpath or id of starting orgunit")
+	listOUsCmd.Flags().StringP(flgnm.FLG_SEARCHTYPE, "t", "children", "all sub-organizational units or only immediate children")
 }

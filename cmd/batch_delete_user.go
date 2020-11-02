@@ -194,7 +194,7 @@ func bduProcessDeletion(ds *admin.Service, users []string) error {
 func init() {
 	batchDelCmd.AddCommand(batchDelUserCmd)
 
-	batchDelUserCmd.Flags().StringVarP(&inputFile, flgnm.FLG_INPUTFILE, "i", "", "filepath to user data text file")
-	batchDelUserCmd.Flags().StringVarP(&delFormat, flgnm.FLG_FORMAT, "f", "text", "user data file format (text or gsheet)")
-	batchDelUserCmd.Flags().StringVarP(&sheetRange, flgnm.FLG_SHEETRANGE, "s", "", "user data gsheet range")
+	batchDelUserCmd.Flags().StringP(flgnm.FLG_INPUTFILE, "i", "", "filepath to user data text file")
+	batchDelUserCmd.Flags().StringP(flgnm.FLG_FORMAT, "f", "text", "user data file format (text or gsheet)")
+	batchDelUserCmd.Flags().StringP(flgnm.FLG_SHEETRANGE, "s", "", "user data gsheet range")
 }

@@ -42,8 +42,8 @@ func doBatchMove(cmd *cobra.Command, args []string) {
 
 func init() {
 	rootCmd.AddCommand(batchMoveCmd)
-	batchMoveCmd.PersistentFlags().BoolVar(&silent, flgnm.FLG_SILENT, false, "suppress console output")
-	batchMoveCmd.PersistentFlags().StringVar(&logLevel, flgnm.FLG_LOGLEVEL, "info", "log level (debug, info, error, warn)")
+	batchMoveCmd.PersistentFlags().Bool(flgnm.FLG_SILENT, false, "suppress console output")
+	batchMoveCmd.PersistentFlags().String(flgnm.FLG_LOGLEVEL, "info", "log level (debug, info, error, warn)")
 
 	batchMoveCmd.PersistentPreRunE = preRun
 }

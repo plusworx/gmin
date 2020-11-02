@@ -58,7 +58,7 @@ func doGetMember(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	jsonData, err = processGroupMember(args[0], attrs, args[1], flgAttrsVal)
+	jsonData, err = processGroupMember(args[0], args[1], flgAttrsVal)
 	if err != nil {
 		lg.Error(err)
 		return err
@@ -72,10 +72,10 @@ func doGetMember(cmd *cobra.Command, args []string) error {
 
 func init() {
 	getCmd.AddCommand(getMemberCmd)
-	getMemberCmd.Flags().StringVarP(&attrs, flgnm.FLG_ATTRIBUTES, "a", "", "required group attributes (separated by ~)")
+	getMemberCmd.Flags().StringP(flgnm.FLG_ATTRIBUTES, "a", "", "required group attributes (separated by ~)")
 }
 
-func processGroupMember(memID string, attrs string, groupEmail string, flgAttrsVal string) ([]byte, error) {
+func processGroupMember(memID string, groupEmail string, flgAttrsVal string) ([]byte, error) {
 	lg.Debugw("starting processGroupMember()",
 		"flgAttrsVal", flgAttrsVal,
 		"groupEmail", groupEmail,

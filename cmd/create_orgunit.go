@@ -114,7 +114,7 @@ func doCreateOU(cmd *cobra.Command, args []string) error {
 func init() {
 	createCmd.AddCommand(createOUCmd)
 
-	createOUCmd.Flags().BoolVarP(&blockInherit, flgnm.FLG_BLOCKINHERIT, "b", false, "block orgunit policy inheritance")
-	createOUCmd.Flags().StringVarP(&orgUnitDesc, flgnm.FLG_DESCRIPTION, "d", "", "orgunit description")
-	createOUCmd.Flags().StringVarP(&parentOUPath, flgnm.FLG_PARENTPATH, "p", "", "orgunit parent path")
+	createOUCmd.Flags().BoolP(flgnm.FLG_BLOCKINHERIT, "b", false, "block orgunit policy inheritance")
+	createOUCmd.Flags().StringP(flgnm.FLG_DESCRIPTION, "d", "", "orgunit description")
+	createOUCmd.Flags().StringP(flgnm.FLG_PARENTPATH, "p", "", "orgunit parent path")
 }

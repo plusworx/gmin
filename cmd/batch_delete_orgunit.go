@@ -208,7 +208,7 @@ func bdoProcessDeletion(ds *admin.Service, orgunits []string) error {
 func init() {
 	batchDelCmd.AddCommand(batchDelOrgUnitCmd)
 
-	batchDelOrgUnitCmd.Flags().StringVarP(&inputFile, flgnm.FLG_INPUTFILE, "i", "", "filepath to orgunit data text file")
-	batchDelOrgUnitCmd.Flags().StringVarP(&delFormat, flgnm.FLG_FORMAT, "f", "text", "orgunit data file format (text or gsheet)")
-	batchDelOrgUnitCmd.Flags().StringVarP(&sheetRange, flgnm.FLG_SHEETRANGE, "s", "", "orgunit data gsheet range")
+	batchDelOrgUnitCmd.Flags().StringP(flgnm.FLG_INPUTFILE, "i", "", "filepath to orgunit data text file")
+	batchDelOrgUnitCmd.Flags().StringP(flgnm.FLG_FORMAT, "f", "text", "orgunit data file format (text or gsheet)")
+	batchDelOrgUnitCmd.Flags().StringP(flgnm.FLG_SHEETRANGE, "s", "", "orgunit data gsheet range")
 }

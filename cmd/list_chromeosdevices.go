@@ -287,13 +287,13 @@ func doCrOSDevPages(cdlc *admin.ChromeosdevicesListCall, crosdevs *admin.ChromeO
 func init() {
 	listCmd.AddCommand(listCrOSDevsCmd)
 
-	listCrOSDevsCmd.Flags().StringVarP(&attrs, flgnm.FLG_ATTRIBUTES, "a", "", "required device attributes (separated by ~)")
-	listCrOSDevsCmd.Flags().BoolVarP(&count, flgnm.FLG_COUNT, "", false, "count number of entities returned")
-	listCrOSDevsCmd.Flags().Int64VarP(&maxResults, flgnm.FLG_MAXRESULTS, "m", 200, "maximum number of results to return per page")
-	listCrOSDevsCmd.Flags().StringVarP(&orderBy, flgnm.FLG_ORDERBY, "o", "", "field by which results will be ordered")
-	listCrOSDevsCmd.Flags().StringVarP(&pages, flgnm.FLG_PAGES, "p", "", "number of pages of results to be returned ('all' or a number)")
-	listCrOSDevsCmd.Flags().StringVarP(&projection, flgnm.FLG_PROJECTION, "j", "", "type of projection")
-	listCrOSDevsCmd.Flags().StringVarP(&query, flgnm.FLG_QUERY, "q", "", "selection criteria to get devices (separated by ~)")
-	listCrOSDevsCmd.Flags().StringVarP(&sortOrder, flgnm.FLG_SORTORDER, "s", "", "sort order of returned results")
-	listCrOSDevsCmd.Flags().StringVarP(&orgUnit, flgnm.FLG_ORGUNITPATH, "t", "", "sets orgunit path that returned devices belong to")
+	listCrOSDevsCmd.Flags().StringP(flgnm.FLG_ATTRIBUTES, "a", "", "required device attributes (separated by ~)")
+	listCrOSDevsCmd.Flags().Bool(flgnm.FLG_COUNT, false, "count number of entities returned")
+	listCrOSDevsCmd.Flags().Int64P(flgnm.FLG_MAXRESULTS, "m", 200, "maximum number of results to return per page")
+	listCrOSDevsCmd.Flags().StringP(flgnm.FLG_ORDERBY, "o", "", "field by which results will be ordered")
+	listCrOSDevsCmd.Flags().StringP(flgnm.FLG_PAGES, "p", "", "number of pages of results to be returned ('all' or a number)")
+	listCrOSDevsCmd.Flags().StringP(flgnm.FLG_PROJECTION, "j", "", "type of projection")
+	listCrOSDevsCmd.Flags().StringP(flgnm.FLG_QUERY, "q", "", "selection criteria to get devices (separated by ~)")
+	listCrOSDevsCmd.Flags().StringP(flgnm.FLG_SORTORDER, "s", "", "sort order of returned results")
+	listCrOSDevsCmd.Flags().StringP(flgnm.FLG_ORGUNITPATH, "t", "", "sets orgunit path that returned devices belong to")
 }

@@ -42,8 +42,8 @@ func doBatchCreate(cmd *cobra.Command, args []string) {
 
 func init() {
 	rootCmd.AddCommand(batchCreateCmd)
-	batchCreateCmd.PersistentFlags().BoolVar(&silent, flgnm.FLG_SILENT, false, "suppress console output")
-	batchCreateCmd.PersistentFlags().StringVar(&logLevel, flgnm.FLG_LOGLEVEL, "info", "log level (debug, info, error, warn)")
+	batchCreateCmd.PersistentFlags().Bool(flgnm.FLG_SILENT, false, "suppress console output")
+	batchCreateCmd.PersistentFlags().String(flgnm.FLG_LOGLEVEL, "info", "log level (debug, info, error, warn)")
 
 	batchCreateCmd.PersistentPreRunE = preRun
 }
