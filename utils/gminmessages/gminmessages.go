@@ -115,6 +115,7 @@ const (
 	INFO_CREDENTIALSSET       string = "credentials set using: %v"
 	INFO_CUSTOMERIDSET        string = "customer ID set to: %v"
 	INFO_ENVVARSNOTFOUND      string = "No environment variables found"
+	INFO_GETSCOPESTERMINATED  string = "get scopes terminated"
 	INFO_GROUPCREATED         string = "group created: %s"
 	INFO_GROUPALIASCREATED    string = "group alias: %s created for group: %s"
 	INFO_GROUPALIASDELETED    string = "group alias: %s deleted for group: %s"
