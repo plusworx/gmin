@@ -70,10 +70,7 @@ func doBatchMoveCrOSDev(cmd *cobra.Command, args []string) error {
 		"args", args)
 	defer lg.Debug("finished doBatchMoveCrOSDev()")
 
-	var (
-		movedDevs []cdevs.MovedDevice
-		objs      []interface{}
-	)
+	var movedDevs []cdevs.MovedDevice
 
 	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryDeviceChromeosScope)
 	if err != nil {
@@ -98,6 +95,12 @@ func doBatchMoveCrOSDev(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	rangeFlgVal, err := cmd.Flags().GetString(flgnm.FLG_SHEETRANGE)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+
 	formatFlgVal, err := cmd.Flags().GetString(flgnm.FLG_FORMAT)
 	if err != nil {
 		lg.Error(err)
@@ -113,31 +116,16 @@ func doBatchMoveCrOSDev(cmd *cobra.Command, args []string) error {
 	}
 
 	callParams := btch.CallParams{CallType: cmn.CALLTYPEMOVE, ObjectType: cmn.OBJTYPECROSDEV}
+	inputParams := btch.ProcessInputParams{
+		Format:      lwrFmt,
+		InputFlgVal: inputFlgVal,
+		Scanner:     scanner,
+		SheetRange:  rangeFlgVal,
+	}
 
-	switch {
-	case lwrFmt == "csv":
-		objs, err = btch.ProcessCSVFile(callParams, inputFlgVal, cdevs.CrOSDevAttrMap)
-		if err != nil {
-			return err
-		}
-	case lwrFmt == "json":
-		objs, err = btch.ProcessJSON(callParams, inputFlgVal, scanner, cdevs.CrOSDevAttrMap)
-		if err != nil {
-			return err
-		}
-	case lwrFmt == "gsheet":
-		rangeFlgVal, err := cmd.Flags().GetString(flgnm.FLG_SHEETRANGE)
-		if err != nil {
-			lg.Error(err)
-			return err
-		}
-
-		objs, err = btch.ProcessGSheet(callParams, inputFlgVal, rangeFlgVal, cdevs.CrOSDevAttrMap)
-		if err != nil {
-			return err
-		}
-	default:
-		return fmt.Errorf(gmess.ERR_INVALIDFILEFORMAT, formatFlgVal)
+	objs, err := bmvcProcessInput(callParams, inputParams)
+	if err != nil {
+		return err
 	}
 
 	for _, cdevObj := range objs {
@@ -186,6 +174,40 @@ func bmvcPerformMove(deviceID string, ouPath string, wg *sync.WaitGroup, cdmc *a
 		lg.Error(err)
 		fmt.Println(cmn.GminMessage(err.Error()))
 	}
+}
+
+func bmvcProcessInput(callParams btch.CallParams, inputParams btch.ProcessInputParams) ([]interface{}, error) {
+	lg.Debug("starting bmvcProcessInput()")
+	defer lg.Debug("finished bmvcProcessInput()")
+
+	var (
+		err  error
+		objs []interface{}
+	)
+
+	switch inputParams.Format {
+	case "csv":
+		objs, err = btch.ProcessCSVFile(callParams, inputParams.InputFlgVal, cdevs.CrOSDevAttrMap)
+		if err != nil {
+			return nil, err
+		}
+	case "json":
+		objs, err = btch.ProcessJSON(callParams, inputParams.InputFlgVal, inputParams.Scanner, cdevs.CrOSDevAttrMap)
+		if err != nil {
+			return nil, err
+		}
+	case "gsheet":
+		objs, err = btch.ProcessGSheet(callParams, inputParams.InputFlgVal, inputParams.SheetRange, cdevs.CrOSDevAttrMap)
+		if err != nil {
+			return nil, err
+		}
+	default:
+		err = fmt.Errorf(gmess.ERR_INVALIDFILEFORMAT, inputParams.Format)
+		lg.Error(err)
+		return nil, err
+	}
+
+	return objs, nil
 }
 
 func bmvcProcessObjects(ds *admin.Service, movedDevs []cdevs.MovedDevice) error {

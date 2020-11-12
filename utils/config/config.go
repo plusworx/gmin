@@ -73,6 +73,17 @@ const (
 	LOGFILE string = "gmin_log.%Y%m%d%H%M%S"
 )
 
+// Answers holds answers to init command questions
+type Answers struct {
+	AdminEmail       string
+	ConfigPath       string
+	CredentialPath   string
+	CustomerID       string
+	LogPath          string
+	LogRotationCount uint
+	LogRotationTime  int
+}
+
 // File holds configuration data
 type File struct {
 	Administrator    string `yaml:"administrator"`

@@ -54,11 +54,13 @@ gmin crt user finance.person@mycompany.com -f Finance -l Person -p greatpassword
 func doCreateUser(cmd *cobra.Command, args []string) error {
 	lg.Debugw("starting doCreateUser()",
 		"args", args)
+	defer lg.Debug("finished doCreateUser()")
 
 	var flagsPassed []string
 
 	user := new(admin.User)
 	name := new(admin.UserName)
+	flagValueMap := map[string]interface{}{}
 
 	ok := valid.IsEmail(args[0])
 	if !ok {
@@ -74,8 +76,17 @@ func doCreateUser(cmd *cobra.Command, args []string) error {
 		flagsPassed = append(flagsPassed, f.Name)
 	})
 
+	// Populate flag value map
+	for _, flg := range flagsPassed {
+		val, err := usrs.GetFlagVal(cmd, flg)
+		if err != nil {
+			return err
+		}
+		flagValueMap[flg] = val
+	}
+
 	// Process command flags
-	err := processCrtUsrFlags(cmd, user, name, flagsPassed)
+	err := processCrtUsrFlags(cmd, user, name, flagValueMap)
 	if err != nil {
 		lg.Error(err)
 		return err
@@ -83,70 +94,19 @@ func doCreateUser(cmd *cobra.Command, args []string) error {
 
 	user.Name = name
 
-	flgAttrsVal, err := cmd.Flags().GetString(flgnm.FLG_ATTRIBUTES)
-	if err != nil {
-		lg.Error(err)
-		return err
-	}
-
-	if flgAttrsVal != "" {
-		attrUser := new(admin.User)
-		emptyVals := cmn.EmptyValues{}
-		jsonBytes := []byte(flgAttrsVal)
-		if !json.Valid(jsonBytes) {
-			err = errors.New(gmess.ERR_INVALIDJSONATTR)
-			lg.Error(err)
-			return err
-		}
-
-		outStr, err := cmn.ParseInputAttrs(jsonBytes)
-		if err != nil {
-			lg.Error(err)
-			return err
-		}
-
-		err = cmn.ValidateInputAttrs(outStr, usrs.UserAttrMap)
-		if err != nil {
-			lg.Error(err)
-			return err
-		}
-
-		err = json.Unmarshal(jsonBytes, &attrUser)
-		if err != nil {
-			lg.Error(err)
-			return err
-		}
-
-		err = json.Unmarshal(jsonBytes, &emptyVals)
-		if err != nil {
-			lg.Error(err)
-			return err
-		}
-		if len(emptyVals.ForceSendFields) > 0 {
-			attrUser.ForceSendFields = emptyVals.ForceSendFields
-		}
-
-		if user.Password == "" && attrUser.Password != "" {
-			pwd, err := usrs.HashPassword(attrUser.Password)
-			if err != nil {
-				lg.Error(err)
-				return err
-			}
-			attrUser.Password = pwd
-			attrUser.HashFunction = usrs.HASHFUNCTION
-		}
-
-		err = mergo.Merge(user, attrUser)
-		if err != nil {
-			lg.Error(err)
-			return err
-		}
-	}
-
 	if user.Name.GivenName == "" || user.Name.FamilyName == "" || user.Password == "" {
 		err = errors.New(gmess.ERR_MISSINGUSERDATA)
 		lg.Error(err)
 		return err
+	}
+
+	// Process attrs last to guarantee the order that flag processing happens
+	flgAttrsVal, attrsPresent := flagValueMap[flgnm.FLG_ATTRIBUTES]
+	if attrsPresent {
+		err = cuAttributeFlag(user, "--"+flgnm.FLG_ATTRIBUTES, fmt.Sprintf("%v", flgAttrsVal))
+		if err != nil {
+			return err
+		}
 	}
 
 	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryUserScope)
@@ -165,7 +125,6 @@ func doCreateUser(cmd *cobra.Command, args []string) error {
 	fmt.Println(cmn.GminMessage(fmt.Sprintf(gmess.INFO_USERCREATED, newUser.PrimaryEmail)))
 	lg.Infof(gmess.INFO_USERCREATED, newUser.PrimaryEmail)
 
-	lg.Debug("finished doCreateUser()")
 	return nil
 }
 
@@ -185,9 +144,85 @@ func init() {
 	createUserCmd.Flags().BoolP(flgnm.FLG_SUSPENDED, "s", false, "user is suspended")
 }
 
+func cuAttributeFlag(user *admin.User, flagName string, flgVal string) error {
+	if flgVal == "" {
+		return fmt.Errorf(gmess.ERR_EMPTYSTRING, flagName)
+	}
+
+	attrUser := new(admin.User)
+	emptyVals := cmn.EmptyValues{}
+	jsonBytes := []byte(flgVal)
+	if !json.Valid(jsonBytes) {
+		err := errors.New(gmess.ERR_INVALIDJSONATTR)
+		lg.Error(err)
+		return err
+	}
+
+	outStr, err := cmn.ParseInputAttrs(jsonBytes)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+
+	err = cmn.ValidateInputAttrs(outStr, usrs.UserAttrMap)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+
+	err = json.Unmarshal(jsonBytes, &attrUser)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+
+	err = json.Unmarshal(jsonBytes, &emptyVals)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+	if len(emptyVals.ForceSendFields) > 0 {
+		attrUser.ForceSendFields = emptyVals.ForceSendFields
+	}
+
+	if user.Password == "" && attrUser.Password != "" {
+		pwd, err := usrs.HashPassword(attrUser.Password)
+		if err != nil {
+			lg.Error(err)
+			return err
+		}
+		attrUser.Password = pwd
+		attrUser.HashFunction = usrs.HASHFUNCTION
+	}
+
+	err = mergo.Merge(user, attrUser)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+
+	return nil
+}
+
+func cuChangePasswordFlag(user *admin.User, flgVal bool) {
+	lg.Debugw("starting cuChangePasswordFlag()",
+		"flgVal", flgVal)
+	defer lg.Debug("finished cuChangePasswordFlag()")
+
+	if flgVal {
+		user.ChangePasswordAtNextLogin = true
+	} else {
+		user.ChangePasswordAtNextLogin = false
+		user.ForceSendFields = append(user.ForceSendFields, "ChangePasswordAtNextLogin")
+	}
+}
+
 func cuFirstnameFlag(name *admin.UserName, flagName string, flgVal string) error {
 	lg.Debugw("starting cuFirstnameFlag()",
-		"flagName", flagName)
+		"flagName", flagName,
+		"flgVal", flgVal)
+	defer lg.Debug("finished cuFirstnameFlag()")
+
 	if flgVal == "" {
 		err := fmt.Errorf(gmess.ERR_EMPTYSTRING, flagName)
 		if err != nil {
@@ -196,11 +231,10 @@ func cuFirstnameFlag(name *admin.UserName, flagName string, flgVal string) error
 		}
 	}
 	name.GivenName = flgVal
-	lg.Debug("finished cuFirstnameFlag()")
 	return nil
 }
 
-func cuForceFlag(forceSend string, user *admin.User) error {
+func cuForceFlag(user *admin.User, forceSend string) error {
 	lg.Debugw("starting cuForceFlag()",
 		"forceSend", forceSend)
 	fields, err := cmn.ParseForceSend(forceSend, usrs.UserAttrMap)
@@ -216,7 +250,9 @@ func cuForceFlag(forceSend string, user *admin.User) error {
 }
 
 func cuGalFlag(user *admin.User, flgVal bool) {
-	if !flgVal {
+	if flgVal {
+		user.IncludeInGlobalAddressList = true
+	} else {
 		user.IncludeInGlobalAddressList = false
 		user.ForceSendFields = append(user.ForceSendFields, "IncludeInGlobalAddressList")
 	}
@@ -308,123 +344,78 @@ func cuRecoveryPhoneFlag(user *admin.User, flagName string, flgVal string) error
 	return nil
 }
 
-func processCrtUsrFlags(cmd *cobra.Command, user *admin.User, name *admin.UserName, flagNames []string) error {
-	lg.Debugw("starting processCrtUsrFlags()",
-		"flagNames", flagNames)
-	for _, flName := range flagNames {
-		if flName == flgnm.FLG_CHANGEPWD {
-			flgChgPwdVal, err := cmd.Flags().GetBool(flName)
-			if err != nil {
-				lg.Error(err)
-				return err
-			}
-			if flgChgPwdVal {
-				user.ChangePasswordAtNextLogin = true
-			}
-		}
-		if flName == flgnm.FLG_FIRSTNAME {
-			flgFstNameVal, err := cmd.Flags().GetString(flName)
-			if err != nil {
-				lg.Error(err)
-				return err
-			}
+func cuSuspendedFlag(user *admin.User, flgVal bool) {
+	lg.Debugw("starting cuSuspendedFlag()",
+		"flgVal", flgVal)
+	defer lg.Debug("finished cuSuspendedFlag()")
 
-			err = cuFirstnameFlag(name, "--"+flName, flgFstNameVal)
-			if err != nil {
-				return err
-			}
-		}
-		if flName == flgnm.FLG_FORCE {
-			flgForceVal, err := cmd.Flags().GetString(flName)
-			if err != nil {
-				lg.Error(err)
-				return err
-			}
+	if flgVal {
+		user.Suspended = true
+	} else {
+		user.Suspended = false
+		user.ForceSendFields = append(user.ForceSendFields, "Suspended")
+	}
+}
 
-			err = cuForceFlag(flgForceVal, user)
-			if err != nil {
-				return err
-			}
-		}
-		if flName == flgnm.FLG_GAL {
-			flgGalVal, err := cmd.Flags().GetBool(flName)
-			if err != nil {
-				lg.Error(err)
-				return err
-			}
-			cuGalFlag(user, flgGalVal)
-		}
-		if flName == flgnm.FLG_LASTNAME {
-			flgLstNameVal, err := cmd.Flags().GetString(flName)
-			if err != nil {
-				lg.Error(err)
-				return err
-			}
+func processCrtUsrFlags(cmd *cobra.Command, user *admin.User, name *admin.UserName, flagValueMap map[string]interface{}) error {
+	lg.Debugw("starting processCrtUsrFlags()")
+	defer lg.Debug("finished processCrtUsrFlags()")
 
-			err = cuLastnameFlag(name, "--"+flName, flgLstNameVal)
-			if err != nil {
-				return err
-			}
-		}
-		if flName == flgnm.FLG_ORGUNIT {
-			flgOUVal, err := cmd.Flags().GetString(flName)
-			if err != nil {
-				lg.Error(err)
-				return err
-			}
+	usrCrtBoolFuncMap := map[string]func(*admin.User, bool){
+		flgnm.FLG_CHANGEPWD: cuChangePasswordFlag,
+		flgnm.FLG_GAL:       cuGalFlag,
+		flgnm.FLG_SUSPENDED: cuSuspendedFlag,
+	}
 
-			err = cuOrgunitFlag(user, "--"+flName, flgOUVal)
-			if err != nil {
-				return err
-			}
-		}
-		if flName == flgnm.FLG_PASSWORD {
-			flgPwdVal, err := cmd.Flags().GetString(flName)
-			if err != nil {
-				lg.Error(err)
-				return err
-			}
+	usrCrtNameFuncMap := map[string]func(*admin.UserName, string, string) error{
+		flgnm.FLG_FIRSTNAME: cuFirstnameFlag,
+		flgnm.FLG_LASTNAME:  cuLastnameFlag,
+	}
 
-			err = cuPasswordFlag(user, "--"+flName, flgPwdVal)
-			if err != nil {
-				return err
-			}
-		}
-		if flName == flgnm.FLG_RECEMAIL {
-			flgRecEmailVal, err := cmd.Flags().GetString(flName)
-			if err != nil {
-				lg.Error(err)
-				return err
-			}
+	usrCrtOneStrFuncMap := map[string]func(*admin.User, string) error{
+		flgnm.FLG_FORCE: cuForceFlag,
+	}
 
-			err = cuRecoveryEmailFlag(user, "--"+flName, flgRecEmailVal)
-			if err != nil {
-				return err
-			}
-		}
-		if flName == flgnm.FLG_RECPHONE {
-			flgRecPhoneVal, err := cmd.Flags().GetString(flName)
-			if err != nil {
-				lg.Error(err)
-				return err
-			}
+	usrCrtTwoStrFuncMap := map[string]func(*admin.User, string, string) error{
+		flgnm.FLG_ORGUNIT:  cuOrgunitFlag,
+		flgnm.FLG_PASSWORD: cuPasswordFlag,
+		flgnm.FLG_RECEMAIL: cuRecoveryEmailFlag,
+		flgnm.FLG_RECPHONE: cuRecoveryPhoneFlag,
+	}
 
-			err = cuRecoveryPhoneFlag(user, "--"+flName, flgRecPhoneVal)
+	for flName, flgVal := range flagValueMap {
+		nameFunc, nfExists := usrCrtNameFuncMap[flName]
+		if nfExists {
+			err := nameFunc(name, "--"+flName, fmt.Sprintf("%v", flgVal))
 			if err != nil {
 				return err
 			}
+			continue
 		}
-		if flName == flgnm.FLG_SUSPENDED {
-			flgSuspVal, err := cmd.Flags().GetBool(flName)
+
+		boolFunc, bfExists := usrCrtBoolFuncMap[flName]
+		if bfExists {
+			boolFunc(user, flgVal.(bool))
+			continue
+		}
+
+		strOneFunc, sf1Exists := usrCrtOneStrFuncMap[flName]
+		if sf1Exists {
+			err := strOneFunc(user, fmt.Sprintf("%v", flgVal))
 			if err != nil {
-				lg.Error(err)
 				return err
 			}
-			if flgSuspVal {
-				user.Suspended = true
+			continue
+		}
+
+		strTwoFunc, sf2Exists := usrCrtTwoStrFuncMap[flName]
+		if sf2Exists {
+			err := strTwoFunc(user, "--"+flName, fmt.Sprintf("%v", flgVal))
+			if err != nil {
+				return err
 			}
+			continue
 		}
 	}
-	lg.Debug("finished processCrtUsrFlags()")
 	return nil
 }

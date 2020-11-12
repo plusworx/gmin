@@ -71,10 +71,7 @@ func doBatchCrtMember(cmd *cobra.Command, args []string) error {
 		"args", args)
 	defer lg.Debug("finished doBatchCrtMember()")
 
-	var (
-		members []*admin.Member
-		objs    []interface{}
-	)
+	var members []*admin.Member
 
 	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryGroupMemberScope)
 	if err != nil {
@@ -99,6 +96,11 @@ func doBatchCrtMember(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	rangeFlgVal, err := cmd.Flags().GetString(flgnm.FLG_SHEETRANGE)
+	if err != nil {
+		return err
+	}
+
 	formatFlgVal, err := cmd.Flags().GetString(flgnm.FLG_FORMAT)
 	if err != nil {
 		lg.Error(err)
@@ -116,31 +118,15 @@ func doBatchCrtMember(cmd *cobra.Command, args []string) error {
 	groupKey := args[0]
 
 	callParams := btch.CallParams{CallType: cmn.CALLTYPECREATE, ObjectType: cmn.OBJTYPEMEMBER}
+	inputParams := btch.ProcessInputParams{
+		Format:      lwrFmt,
+		InputFlgVal: inputFlgVal,
+		Scanner:     scanner,
+		SheetRange:  rangeFlgVal,
+	}
 
-	switch {
-	case lwrFmt == "csv":
-		objs, err = btch.ProcessCSVFile(callParams, inputFlgVal, mems.MemberAttrMap)
-		if err != nil {
-			return err
-		}
-	case lwrFmt == "json":
-		objs, err = btch.ProcessJSON(callParams, inputFlgVal, scanner, mems.MemberAttrMap)
-		if err != nil {
-			return err
-		}
-	case lwrFmt == "gsheet":
-		rangeFlgVal, err := cmd.Flags().GetString(flgnm.FLG_SHEETRANGE)
-		if err != nil {
-			return err
-		}
-
-		objs, err = btch.ProcessGSheet(callParams, inputFlgVal, rangeFlgVal, mems.MemberAttrMap)
-		if err != nil {
-			return err
-		}
-	default:
-		err = fmt.Errorf(gmess.ERR_INVALIDFILEFORMAT, formatFlgVal)
-		lg.Error(err)
+	objs, err := bcmProcessInput(callParams, inputParams)
+	if err != nil {
 		return err
 	}
 
@@ -189,6 +175,40 @@ func bcmCreate(member *admin.Member, groupKey string, wg *sync.WaitGroup, mic *a
 		lg.Error(err)
 		fmt.Println(cmn.GminMessage(err.Error()))
 	}
+}
+
+func bcmProcessInput(callParams btch.CallParams, inputParams btch.ProcessInputParams) ([]interface{}, error) {
+	lg.Debug("starting bcmProcessInput()")
+	defer lg.Debug("finished bcmProcessInput()")
+
+	var (
+		err  error
+		objs []interface{}
+	)
+
+	switch inputParams.Format {
+	case "csv":
+		objs, err = btch.ProcessCSVFile(callParams, inputParams.InputFlgVal, mems.MemberAttrMap)
+		if err != nil {
+			return nil, err
+		}
+	case "json":
+		objs, err = btch.ProcessJSON(callParams, inputParams.InputFlgVal, inputParams.Scanner, mems.MemberAttrMap)
+		if err != nil {
+			return nil, err
+		}
+	case "gsheet":
+		objs, err = btch.ProcessGSheet(callParams, inputParams.InputFlgVal, inputParams.SheetRange, mems.MemberAttrMap)
+		if err != nil {
+			return nil, err
+		}
+	default:
+		err = fmt.Errorf(gmess.ERR_INVALIDFILEFORMAT, inputParams.Format)
+		lg.Error(err)
+		return nil, err
+	}
+
+	return objs, nil
 }
 
 func bcmProcessObjects(ds *admin.Service, groupKey string, members []*admin.Member) error {

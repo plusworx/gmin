@@ -250,6 +250,25 @@ func (qp *QueryParser) Parse(qAttrMap map[string]string) (*QueryStr, error) {
 		"qAttrMap", qAttrMap)
 	defer lg.Debug("finished Parse()")
 
+	validTokens := []Token{
+		ASTERISK,
+		BSLASH,
+		COLON,
+		COMMA,
+		CLOSEBRACK,
+		CLOSESQBRACK,
+		FSLASH,
+		GT,
+		EQUALS,
+		IDENT,
+		LT,
+		OP,
+		OPENBRACK,
+		OPENSQBRACK,
+		TILDE,
+		VALUE,
+	}
+
 	qStr := &QueryStr{}
 	qp.qs.bConFieldName = true
 
@@ -259,9 +278,7 @@ func (qp *QueryParser) Parse(qAttrMap map[string]string) (*QueryStr, error) {
 			break
 		}
 
-		if tok != ASTERISK && tok != BSLASH && tok != COLON && tok != COMMA && tok != CLOSEBRACK &&
-			tok != CLOSESQBRACK && tok != FSLASH && tok != GT && tok != EQUALS && tok != IDENT && tok != LT &&
-			tok != OP && tok != OPENBRACK && tok != OPENSQBRACK && tok != TILDE && tok != VALUE {
+		if !sliceContainsToken(validTokens, tok) {
 			err := fmt.Errorf(gmess.ERR_UNEXPECTEDQUERYCHAR, lit)
 			lg.Error(err)
 			return nil, err
@@ -308,6 +325,23 @@ func (qs *QueryScanner) Scan() (Token, string) {
 	lg.Debug("starting queryScanner Scan()")
 	defer lg.Debug("finished Scan()")
 
+	runeMap := map[rune]Token{
+		'*':  ASTERISK,
+		'\\': BSLASH,
+		')':  CLOSEBRACK,
+		']':  CLOSESQBRACK,
+		':':  COLON,
+		',':  COMMA,
+		'=':  EQUALS,
+		'/':  FSLASH,
+		'>':  GT,
+		'<':  LT,
+		'(':  OPENBRACK,
+		'[':  OPENSQBRACK,
+		'\'': SINGLEQUOTE,
+		'~':  TILDE,
+	}
+
 	// Read the next rune
 	ch := qs.scanr.read()
 
@@ -346,50 +380,12 @@ func (qs *QueryScanner) Scan() (Token, string) {
 	if ch == eos {
 		return EOS, ""
 	}
-	if ch == '*' {
-		return ASTERISK, string(ch)
-	}
-	if ch == '\\' {
-		return BSLASH, string(ch)
-	}
-	if ch == ')' {
-		return CLOSEBRACK, string(ch)
-	}
-	if ch == ']' {
-		return CLOSESQBRACK, string(ch)
-	}
-	if ch == ':' {
-		return COLON, string(ch)
-	}
-	if ch == ',' {
-		return COMMA, string(ch)
-	}
-	if ch == '=' {
-		return EQUALS, string(ch)
-	}
-	if ch == '/' {
-		return FSLASH, string(ch)
-	}
-	if ch == '>' {
-		return GT, string(ch)
-	}
-	if ch == '<' {
-		return LT, string(ch)
-	}
-	if ch == '(' {
-		return OPENBRACK, string(ch)
-	}
-	if ch == '[' {
-		return OPENSQBRACK, string(ch)
-	}
-	if ch == '\'' {
-		return SINGLEQUOTE, string(ch)
-	}
-	if ch == '~' {
-		return TILDE, string(ch)
-	}
 
-	return ILLEGAL, string(ch)
+	retTok, ok := runeMap[ch]
+	if !ok {
+		return ILLEGAL, string(ch)
+	}
+	return retTok, string(ch)
 }
 
 // scanIdent consumes the current rune and all contiguous ident runes for QueryScanner
@@ -674,4 +670,19 @@ func ParseQuery(query string, qAttrMap map[string]string) (string, error) {
 	outputStr := strings.Join(qs.Parts, "")
 
 	return outputStr, nil
+}
+
+// sliceContainsToken tells whether a slice contains a particular token
+func sliceContainsToken(toks []Token, tok Token) bool {
+	lg.Debugw("starting SliceContainsToken()",
+		"toks", toks,
+		"tok", tok)
+	defer lg.Debug("finished SliceContainsToken()")
+
+	for _, tokComp := range toks {
+		if tok == tokComp {
+			return true
+		}
+	}
+	return false
 }

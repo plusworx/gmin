@@ -98,6 +98,7 @@ const (
 	FLG_SORTORDER        string = "sort-order"
 	FLG_SPAMMOD          string = "spam-mod"
 	FLG_SUSPENDED        string = "suspended"
+	FLG_USER             string = "user"
 	FLG_USERKEY          string = "user-key"
 	FLG_VIEWGROUP        string = "view-group"
 	FLG_VIEWMEMSHIP      string = "view-membership"

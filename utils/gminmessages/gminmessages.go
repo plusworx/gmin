@@ -98,6 +98,7 @@ const (
 	ERR_QUERYABLEFLAG1ARG        string = "only one argument is allowed with --queryable flag"
 	ERR_QUERYANDCOMPOSITEFLAGS   string = "cannot provide both --composite and --queryable flags"
 	ERR_QUERYANDDELETEDFLAGS     string = "cannot provide both --query and --deleted flags"
+	ERR_TOOMANYARGS              string = "too many arguments"
 	ERR_TOOMANYARGSMAX1          string = "too many arguments, %v has maximum of 1"
 	ERR_TOOMANYARGSMAX2          string = "too many arguments, %v has maximum of 2"
 	ERR_UNEXPECTEDATTRCHAR       string = "unexpected character %v found in attribute string"

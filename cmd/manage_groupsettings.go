@@ -129,210 +129,94 @@ func processMngGrpSettingFlags(cmd *cobra.Command, grpSettings *gset.Groups, fla
 	defer lg.Debug("finished processMngGrpSettingFlags()")
 
 	var (
-		boolFlags = []string{
-			flgnm.FLG_ARCHIVED,
-			flgnm.FLG_ARCHIVEONLY,
-			flgnm.FLG_COLLABINBOX,
-			flgnm.FLG_EXTMEMBER,
-			flgnm.FLG_FOOTERON,
-			flgnm.FLG_GAL,
-			flgnm.FLG_NOTIFYDENY,
-			flgnm.FLG_POSTASGROUP,
-			flgnm.FLG_REPLIESONTOP,
-			flgnm.FLG_WEBPOSTING,
-		}
 		err     error
 		flgBVal bool
 		flgSVal string
 	)
 
+	boolFuncMap := map[string]func(*gset.Groups, bool){
+		flgnm.FLG_ARCHIVED:     mgsArchivedFlag,
+		flgnm.FLG_ARCHIVEONLY:  mgsArchiveOnlyFlag,
+		flgnm.FLG_COLLABINBOX:  mgsCollabInboxFlag,
+		flgnm.FLG_EXTMEMBER:    mgsExtMemberFlag,
+		flgnm.FLG_FOOTERON:     mgsFooterOnFlag,
+		flgnm.FLG_GAL:          mgsGalFlag,
+		flgnm.FLG_NOTIFYDENY:   mgsNotifyDenyFlag,
+		flgnm.FLG_POSTASGROUP:  mgsPostAsGroupFlag,
+		flgnm.FLG_REPLIESONTOP: mgsRepliesOnTopFlag,
+		flgnm.FLG_WEBPOSTING:   mgsWebPostingFlag,
+	}
+
+	oneStrFuncMap := map[string]func(*gset.Groups, string) error{
+		flgnm.FLG_DENYTEXT:   mgsDenyTextFlag,
+		flgnm.FLG_FOOTERTEXT: mgsFooterTextFlag,
+		flgnm.FLG_REPLYEMAIL: mgsReplyEmailFlag,
+	}
+
+	twoStrFuncMap := map[string]func(*gset.Groups, string, string) error{
+		flgnm.FLG_APPROVEMEM:    mgsApproveMemberFlag,
+		flgnm.FLG_ASSISTCONTENT: mgsAssistContentFlag,
+		flgnm.FLG_BANUSER:       mgsBanUserFlag,
+		flgnm.FLG_CONTACTOWNER:  mgsContactOwnerFlag,
+		flgnm.FLG_DISCGROUP:     mgsDiscoverGroupFlag,
+		flgnm.FLG_JOIN:          mgsJoinFlag,
+		flgnm.FLG_LANGUAGE:      mgsLanguageFlag,
+		flgnm.FLG_LEAVE:         mgsLeaveFlag,
+		flgnm.FLG_MESSAGEMOD:    mgsMessageModFlag,
+		flgnm.FLG_MODCONTENT:    mgsModContentFlag,
+		flgnm.FLG_MODMEMBER:     mgsModMemberFlag,
+		flgnm.FLG_POSTMESSAGE:   mgsPostMessageFlag,
+		flgnm.FLG_REPLYTO:       mgsReplyToFlag,
+		flgnm.FLG_SPAMMOD:       mgsSpamModFlag,
+		flgnm.FLG_VIEWGROUP:     mgsViewGroupFlag,
+		flgnm.FLG_VIEWMEMSHIP:   mgsViewMembershipFlag,
+	}
+
 	for _, flName := range flagNames {
-		ok := cmn.SliceContainsStr(boolFlags, flName)
-		if ok {
+		// Try boolFuncMap
+		bf, bExists := boolFuncMap[flName]
+		if bExists {
 			flgBVal, err = cmd.Flags().GetBool(flName)
 			if err != nil {
 				lg.Error(err)
 				return err
 			}
-		} else {
-			flgSVal, err = cmd.Flags().GetString(flName)
-			if err != nil {
-				lg.Error(err)
-				return err
-			}
+			bf(grpSettings, flgBVal)
+			continue
 		}
-		if flName == flgnm.FLG_APPROVEMEM {
-			err = mgsApproveMemberFlag(grpSettings, "--"+flName, flgSVal)
-			if err != nil {
-				return err
-			}
-			return nil
+
+		// Get string flag value because it's not a bool
+		flgSVal, err = cmd.Flags().GetString(flName)
+		if err != nil {
+			lg.Error(err)
+			return err
 		}
-		if flName == flgnm.FLG_ARCHIVED {
-			mgsArchivedFlag(grpSettings, flgBVal)
-			return nil
-		}
-		if flName == flgnm.FLG_ARCHIVEONLY {
-			mgsArchiveOnlyFlag(grpSettings, flgBVal)
-			return nil
-		}
-		if flName == flgnm.FLG_ASSISTCONTENT {
-			err := mgsAssistContentFlag(grpSettings, "--"+flName, flgSVal)
+
+		// Try oneStrFuncMap
+		osf, osExists := oneStrFuncMap[flName]
+		if osExists {
+			err := osf(grpSettings, flgSVal)
 			if err != nil {
 				return err
 			}
-			return nil
+			continue
 		}
-		if flName == flgnm.FLG_BANUSER {
-			err := mgsBanUserFlag(grpSettings, "--"+flName, flgSVal)
+
+		// Try twoStrFuncMap
+		tsf, tsExists := twoStrFuncMap[flName]
+		if tsExists {
+			err := tsf(grpSettings, "--"+flName, flgSVal)
 			if err != nil {
 				return err
 			}
-			return nil
+			continue
 		}
-		if flName == flgnm.FLG_COLLABINBOX {
-			mgsCollabInboxFlag(grpSettings, flgBVal)
-			return nil
-		}
-		if flName == flgnm.FLG_CONTACTOWNER {
-			err := mgsContactOwnerFlag(grpSettings, "--"+flName, flgSVal)
-			if err != nil {
-				return err
-			}
-			return nil
-		}
-		if flName == flgnm.FLG_DENYTEXT {
-			mgsDenyTextFlag(grpSettings, flgSVal)
-			return nil
-		}
-		if flName == flgnm.FLG_DISCGROUP {
-			err := mgsDiscoverGroupFlag(grpSettings, "--"+flName, flgSVal)
-			if err != nil {
-				return err
-			}
-			return nil
-		}
-		if flName == flgnm.FLG_EXTMEMBER {
-			mgsExtMemberFlag(grpSettings, flgBVal)
-			return nil
-		}
-		if flName == flgnm.FLG_FOOTERON {
-			mgsFooterOnFlag(grpSettings, flgBVal)
-			return nil
-		}
-		if flName == flgnm.FLG_FOOTERTEXT {
-			mgsFooterTextFlag(grpSettings, flgSVal)
-			return nil
-		}
-		if flName == flgnm.FLG_GAL {
-			mgsGalFlag(grpSettings, flgBVal)
-			return nil
-		}
-		if flName == flgnm.FLG_JOIN {
-			err := mgsJoinFlag(grpSettings, "--"+flName, flgSVal)
-			if err != nil {
-				return err
-			}
-			return nil
-		}
-		if flName == flgnm.FLG_LANGUAGE {
-			err := mgsLanguageFlag(grpSettings, "--"+flName, flgSVal)
-			if err != nil {
-				return err
-			}
-			return nil
-		}
-		if flName == flgnm.FLG_LEAVE {
-			err := mgsLeaveFlag(grpSettings, "--"+flName, flgSVal)
-			if err != nil {
-				return err
-			}
-			return nil
-		}
-		if flName == flgnm.FLG_MESSAGEMOD {
-			err := mgsMessageModFlag(grpSettings, "--"+flName, flgSVal)
-			if err != nil {
-				return err
-			}
-			return nil
-		}
-		if flName == flgnm.FLG_MODCONTENT {
-			err := mgsModContentFlag(grpSettings, "--"+flName, flgSVal)
-			if err != nil {
-				return err
-			}
-			return nil
-		}
-		if flName == flgnm.FLG_MODMEMBER {
-			err := mgsModMemberFlag(grpSettings, "--"+flName, flgSVal)
-			if err != nil {
-				return err
-			}
-			return nil
-		}
-		if flName == flgnm.FLG_NOTIFYDENY {
-			mgsNotifyDenyFlag(grpSettings, flgBVal)
-			return nil
-		}
-		if flName == flgnm.FLG_POSTASGROUP {
-			mgsPostAsGroupFlag(grpSettings, flgBVal)
-			return nil
-		}
-		if flName == flgnm.FLG_POSTMESSAGE {
-			err := mgsPostMessageFlag(grpSettings, "--"+flName, flgSVal)
-			if err != nil {
-				return err
-			}
-			return nil
-		}
-		if flName == flgnm.FLG_REPLIESONTOP {
-			mgsRepliesOnTopFlag(grpSettings, flgBVal)
-			return nil
-		}
-		if flName == flgnm.FLG_REPLYEMAIL {
-			err := mgsReplyEmailFlag(grpSettings, flgSVal)
-			if err != nil {
-				return err
-			}
-			return nil
-		}
-		if flName == flgnm.FLG_REPLYTO {
-			err := mgsReplyToFlag(grpSettings, "--"+flName, flgSVal)
-			if err != nil {
-				return err
-			}
-			return nil
-		}
-		if flName == flgnm.FLG_SPAMMOD {
-			err := mgsSpamModFlag(grpSettings, "--"+flName, flgSVal)
-			if err != nil {
-				return err
-			}
-			return nil
-		}
-		if flName == flgnm.FLG_VIEWGROUP {
-			err := mgsViewGroupFlag(grpSettings, "--"+flName, flgSVal)
-			if err != nil {
-				return err
-			}
-			return nil
-		}
-		if flName == flgnm.FLG_VIEWMEMSHIP {
-			err := mgsViewMembershipFlag(grpSettings, "--"+flName, flgSVal)
-			if err != nil {
-				return err
-			}
-			return nil
-		}
-		if flName == flgnm.FLG_WEBPOSTING {
-			mgsWebPostingFlag(grpSettings, flgBVal)
-			return nil
-		}
+		// Flag not recognized
+		err = fmt.Errorf(gmess.ERR_FLAGNOTRECOGNIZED, flName)
+		return err
 	}
 	return nil
 }
-
-// Process command flag input
 
 func mgsApproveMemberFlag(grpSettings *gset.Groups, flagName string, flagVal string) error {
 	lg.Debug("starting mgsApproveMemberFlag()")
@@ -418,7 +302,7 @@ func mgsContactOwnerFlag(grpSettings *gset.Groups, flagName string, flagVal stri
 	return nil
 }
 
-func mgsDenyTextFlag(grpSettings *gset.Groups, flagVal string) {
+func mgsDenyTextFlag(grpSettings *gset.Groups, flagVal string) error {
 	lg.Debug("starting mgsDenyTextFlag()")
 	defer lg.Debug("finished mgsDenyTextFlag()")
 
@@ -426,6 +310,7 @@ func mgsDenyTextFlag(grpSettings *gset.Groups, flagVal string) {
 		grpSettings.ForceSendFields = append(grpSettings.ForceSendFields, "DefaultMessageDenyNotificationText")
 	}
 	grpSettings.DefaultMessageDenyNotificationText = flagVal
+	return nil
 }
 
 func mgsDiscoverGroupFlag(grpSettings *gset.Groups, flagName string, flagVal string) error {
@@ -464,7 +349,7 @@ func mgsFooterOnFlag(grpSettings *gset.Groups, flagVal bool) {
 	}
 }
 
-func mgsFooterTextFlag(grpSettings *gset.Groups, flagVal string) {
+func mgsFooterTextFlag(grpSettings *gset.Groups, flagVal string) error {
 	lg.Debug("starting mgsFooterTextFlag()")
 	defer lg.Debug("finished mgsFooterTextFlag()")
 
@@ -472,6 +357,7 @@ func mgsFooterTextFlag(grpSettings *gset.Groups, flagVal string) {
 		grpSettings.ForceSendFields = append(grpSettings.ForceSendFields, "CustomFooterText")
 	}
 	grpSettings.CustomFooterText = flagVal
+	return nil
 }
 
 func mgsGalFlag(grpSettings *gset.Groups, flagVal bool) {

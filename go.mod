@@ -19,7 +19,7 @@ require (
 	github.com/tebeka/strftime v0.1.5 // indirect
 	go.uber.org/zap v1.16.0
 	golang.org/x/oauth2 v0.0.0-20200902213428-5d25da1a8d43
-	golang.org/x/sys v0.0.0-20201101102859-da207088b7d1 // indirect
+	golang.org/x/sys v0.0.0-20201106081118-db71ae66460a // indirect
 	google.golang.org/api v0.34.0
 	gopkg.in/yaml.v2 v2.3.0
 )

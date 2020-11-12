@@ -80,10 +80,7 @@ func doBatchMngMobDev(cmd *cobra.Command, args []string) error {
 		"args", args)
 	defer lg.Debug("finished doBatchMngMobDev()")
 
-	var (
-		managedDevs []mdevs.ManagedDevice
-		objs        []interface{}
-	)
+	var managedDevs []mdevs.ManagedDevice
 
 	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryDeviceMobileActionScope)
 	if err != nil {
@@ -108,6 +105,12 @@ func doBatchMngMobDev(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	rangeFlgVal, err := cmd.Flags().GetString(flgnm.FLG_SHEETRANGE)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+
 	formatFlgVal, err := cmd.Flags().GetString(flgnm.FLG_FORMAT)
 	if err != nil {
 		lg.Error(err)
@@ -123,32 +126,15 @@ func doBatchMngMobDev(cmd *cobra.Command, args []string) error {
 	}
 
 	callParams := btch.CallParams{CallType: cmn.CALLTYPEMANAGE, ObjectType: cmn.OBJTYPEMOBDEV}
+	inputParams := btch.ProcessInputParams{
+		Format:      lwrFmt,
+		InputFlgVal: inputFlgVal,
+		Scanner:     scanner,
+		SheetRange:  rangeFlgVal,
+	}
 
-	switch {
-	case lwrFmt == "csv":
-		objs, err = btch.ProcessCSVFile(callParams, inputFlgVal, mdevs.MobDevAttrMap)
-		if err != nil {
-			return err
-		}
-	case lwrFmt == "json":
-		objs, err = btch.ProcessJSON(callParams, inputFlgVal, scanner, mdevs.MobDevAttrMap)
-		if err != nil {
-			return err
-		}
-	case lwrFmt == "gsheet":
-		rangeFlgVal, err := cmd.Flags().GetString(flgnm.FLG_SHEETRANGE)
-		if err != nil {
-			lg.Error(err)
-			return err
-		}
-
-		objs, err = btch.ProcessGSheet(callParams, inputFlgVal, rangeFlgVal, mdevs.MobDevAttrMap)
-		if err != nil {
-			return err
-		}
-	default:
-		err = fmt.Errorf(gmess.ERR_INVALIDFILEFORMAT, formatFlgVal)
-		lg.Error(err)
+	objs, err := bmngmProcessInput(callParams, inputParams)
+	if err != nil {
 		return err
 	}
 
@@ -197,6 +183,40 @@ func bmngmPerformAction(resourceID string, action string, wg *sync.WaitGroup, md
 		lg.Error(err)
 		fmt.Println(cmn.GminMessage(err.Error()))
 	}
+}
+
+func bmngmProcessInput(callParams btch.CallParams, inputParams btch.ProcessInputParams) ([]interface{}, error) {
+	lg.Debug("starting bmngmProcessInput()")
+	defer lg.Debug("finished bmngmProcessInput()")
+
+	var (
+		err  error
+		objs []interface{}
+	)
+
+	switch inputParams.Format {
+	case "csv":
+		objs, err = btch.ProcessCSVFile(callParams, inputParams.InputFlgVal, mdevs.MobDevAttrMap)
+		if err != nil {
+			return nil, err
+		}
+	case "json":
+		objs, err = btch.ProcessJSON(callParams, inputParams.InputFlgVal, inputParams.Scanner, mdevs.MobDevAttrMap)
+		if err != nil {
+			return nil, err
+		}
+	case "gsheet":
+		objs, err = btch.ProcessGSheet(callParams, inputParams.InputFlgVal, inputParams.SheetRange, mdevs.MobDevAttrMap)
+		if err != nil {
+			return nil, err
+		}
+	default:
+		err = fmt.Errorf(gmess.ERR_INVALIDFILEFORMAT, inputParams.Format)
+		lg.Error(err)
+		return nil, err
+	}
+
+	return objs, nil
 }
 
 func bmngmProcessObjects(ds *admin.Service, managedDevs []mdevs.ManagedDevice) error {

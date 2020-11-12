@@ -31,6 +31,7 @@ import (
 	cmn "github.com/plusworx/gmin/utils/common"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	lg "github.com/plusworx/gmin/utils/logging"
+	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 	"google.golang.org/api/googleapi"
 )
@@ -480,6 +481,20 @@ func DoList(cdlc *admin.ChromeosdevicesListCall) (*admin.ChromeOsDevices, error)
 	}
 
 	return crosdevs, nil
+}
+
+// GetFlagVal returns chromeOS device command flag values
+func GetFlagVal(cmd *cobra.Command, flagName string) (interface{}, error) {
+	lg.Debugw("starting getFlagVal()",
+		"flagName", flagName)
+	defer lg.Debug("finished getFlagVal()")
+
+	sVal, err := cmd.Flags().GetString(flagName)
+	if err != nil {
+		lg.Error(err)
+		return nil, err
+	}
+	return sVal, nil
 }
 
 // PopulateCrOSDev is used in batch processing

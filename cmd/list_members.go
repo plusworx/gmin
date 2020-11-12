@@ -35,6 +35,7 @@ import (
 	lg "github.com/plusworx/gmin/utils/logging"
 	mems "github.com/plusworx/gmin/utils/members"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	admin "google.golang.org/api/admin/directory/v1"
 )
 
@@ -55,9 +56,26 @@ func doListMembers(cmd *cobra.Command, args []string) error {
 	defer lg.Debug("finished doListMembers()")
 
 	var (
-		jsonData []byte
-		members  *admin.Members
+		flagsPassed []string
+		jsonData    []byte
+		members     *admin.Members
 	)
+
+	flagValueMap := map[string]interface{}{}
+
+	// Collect names of command flags passed in
+	cmd.Flags().Visit(func(f *pflag.Flag) {
+		flagsPassed = append(flagsPassed, f.Name)
+	})
+
+	// Populate flag value map
+	for _, flg := range flagsPassed {
+		val, err := mems.GetFlagVal(cmd, flg)
+		if err != nil {
+			return err
+		}
+		flagValueMap[flg] = val
+	}
 
 	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryGroupMemberReadonlyScope)
 	if err != nil {
@@ -67,56 +85,28 @@ func doListMembers(cmd *cobra.Command, args []string) error {
 
 	mlc := ds.Members.List(args[0])
 
-	flgAttrsVal, err := cmd.Flags().GetString(flgnm.FLG_ATTRIBUTES)
+	err = lstMemProcessFlags(mlc, flagValueMap)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
-	if flgAttrsVal != "" {
-		listAttrs, err := gpars.ParseOutputAttrs(flgAttrsVal, mems.MemberAttrMap)
-		if err != nil {
-			return err
-		}
-		formattedAttrs := mems.STARTMEMBERSFIELD + listAttrs + mems.ENDFIELD
-
-		listCall := mems.AddFields(mlc, formattedAttrs)
-		mlc = listCall.(*admin.MembersListCall)
-	}
-
-	flgRolesVal, err := cmd.Flags().GetString(flgnm.FLG_ROLES)
-	if err != nil {
-		lg.Error(err)
-		return err
-	}
-	if flgRolesVal != "" {
-		formattedRoles, err := gpars.ParseOutputAttrs(flgRolesVal, mems.RoleMap)
-		if err != nil {
-			return err
-		}
-		mlc = mems.AddRoles(mlc, formattedRoles)
-	}
-
-	flgMaxResultsVal, err := cmd.Flags().GetInt64(flgnm.FLG_MAXRESULTS)
-	if err != nil {
-		lg.Error(err)
-		return err
-	}
-	mlc = mems.AddMaxResults(mlc, flgMaxResultsVal)
 
 	members, err = mems.DoList(mlc)
 	if err != nil {
 		return err
 	}
 
-	flgPagesVal, err := cmd.Flags().GetString(flgnm.FLG_PAGES)
+	err = lstMemPages(mlc, members, flagValueMap)
 	if err != nil {
 		lg.Error(err)
 		return err
 	}
-	if flgPagesVal != "" {
-		err = doMemPages(mlc, members, flgPagesVal)
-		if err != nil {
-			return err
+
+	flgCountVal, countPresent := flagValueMap[flgnm.FLG_COUNT]
+	if countPresent {
+		countVal := flgCountVal.(bool)
+		if countVal {
+			fmt.Println(len(members.Members))
+			return nil
 		}
 	}
 
@@ -125,17 +115,7 @@ func doListMembers(cmd *cobra.Command, args []string) error {
 		lg.Error(err)
 		return err
 	}
-
-	flgCountVal, err := cmd.Flags().GetBool(flgnm.FLG_COUNT)
-	if err != nil {
-		lg.Error(err)
-		return err
-	}
-	if flgCountVal {
-		fmt.Println(len(members.Members))
-	} else {
-		fmt.Println(string(jsonData))
-	}
+	fmt.Println(string(jsonData))
 
 	return nil
 }
@@ -222,4 +202,91 @@ func init() {
 	listMembersCmd.Flags().Int64P(flgnm.FLG_MAXRESULTS, "m", 200, "maximum number or results to return")
 	listMembersCmd.Flags().StringP(flgnm.FLG_PAGES, "p", "", "number of pages of results to be returned ('all' or a number)")
 	listMembersCmd.Flags().StringP(flgnm.FLG_ROLES, "r", "", "roles to filter results by (separated by ~)")
+}
+
+func lstMemAttributes(mlc *admin.MembersListCall, flagVal interface{}) error {
+	lg.Debug("starting lstMemAttributes()")
+	defer lg.Debug("finished lstMemAttributes()")
+
+	attrsVal := fmt.Sprintf("%v", flagVal)
+	if attrsVal != "" {
+		listAttrs, err := gpars.ParseOutputAttrs(attrsVal, mems.MemberAttrMap)
+		if err != nil {
+			return err
+		}
+		formattedAttrs := mems.STARTMEMBERSFIELD + listAttrs + mems.ENDFIELD
+
+		listCall := mems.AddFields(mlc, formattedAttrs)
+		mlc = listCall.(*admin.MembersListCall)
+	}
+
+	return nil
+}
+
+func lstMemMaxResults(mlc *admin.MembersListCall, flagVal interface{}) error {
+	lg.Debug("starting lstMemMaxResults()")
+	defer lg.Debug("finished lstMemMaxResults()")
+
+	flgMaxResultsVal := flagVal.(int64)
+
+	mlc = mems.AddMaxResults(mlc, flgMaxResultsVal)
+	return nil
+}
+
+func lstMemPages(mlc *admin.MembersListCall, members *admin.Members, flgValMap map[string]interface{}) error {
+	lg.Debug("starting lstMemPages()")
+	defer lg.Debug("finished lstMemPages()")
+
+	flgPagesVal, pagesPresent := flgValMap[flgnm.FLG_PAGES]
+	if !pagesPresent {
+		return nil
+	}
+	if flgPagesVal != "" {
+		pagesVal := fmt.Sprintf("%v", flgPagesVal)
+		err := doMemPages(mlc, members, pagesVal)
+		if err != nil {
+			lg.Error(err)
+			return err
+		}
+	}
+	return nil
+}
+
+func lstMemProcessFlags(mlc *admin.MembersListCall, flgValMap map[string]interface{}) error {
+	lg.Debug("starting lstMemProcessFlags()")
+	defer lg.Debug("finished lstMemProcessFlags()")
+
+	lstMemFuncMap := map[string]func(*admin.MembersListCall, interface{}) error{
+		flgnm.FLG_ATTRIBUTES: lstMemAttributes,
+		flgnm.FLG_MAXRESULTS: lstMemMaxResults,
+		flgnm.FLG_ROLES:      lstMemRoles,
+	}
+
+	// Cycle through flags that build the mlc excluding pages and count
+	for key, val := range flgValMap {
+		lmf, ok := lstMemFuncMap[key]
+		if !ok {
+			continue
+		}
+		err := lmf(mlc, val)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func lstMemRoles(mlc *admin.MembersListCall, flagVal interface{}) error {
+	lg.Debug("starting lstMemRoles()")
+	defer lg.Debug("finished lstMemRoles()")
+
+	flgRolesVal := fmt.Sprintf("%v", flagVal)
+	if flgRolesVal != "" {
+		formattedRoles, err := gpars.ParseOutputAttrs(flgRolesVal, mems.RoleMap)
+		if err != nil {
+			return err
+		}
+		mlc = mems.AddRoles(mlc, formattedRoles)
+	}
+	return nil
 }

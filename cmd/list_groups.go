@@ -32,11 +32,13 @@ import (
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
 	flgnm "github.com/plusworx/gmin/utils/flagnames"
+	gd "github.com/plusworx/gmin/utils/gendatastructs"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	gpars "github.com/plusworx/gmin/utils/gminparsers"
 	grps "github.com/plusworx/gmin/utils/groups"
 	lg "github.com/plusworx/gmin/utils/logging"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	admin "google.golang.org/api/admin/directory/v1"
 )
 
@@ -57,10 +59,26 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 	defer lg.Debug("finished doListGroups()")
 
 	var (
-		groups       *admin.Groups
-		jsonData     []byte
-		validOrderBy string
+		flagsPassed []string
+		groups      *admin.Groups
+		jsonData    []byte
 	)
+
+	flagValueMap := map[string]interface{}{}
+
+	// Collect names of command flags passed in
+	cmd.Flags().Visit(func(f *pflag.Flag) {
+		flagsPassed = append(flagsPassed, f.Name)
+	})
+
+	// Populate flag value map
+	for _, flg := range flagsPassed {
+		val, err := grps.GetFlagVal(cmd, flg)
+		if err != nil {
+			return err
+		}
+		flagValueMap[flg] = val
+	}
 
 	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryGroupReadonlyScope)
 	if err != nil {
@@ -70,124 +88,28 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 
 	glc := ds.Groups.List()
 
-	flgAttrsVal, err := cmd.Flags().GetString(flgnm.FLG_ATTRIBUTES)
+	err = lstGrpProcessFlags(glc, flagValueMap)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
-	if flgAttrsVal != "" {
-		listAttrs, err := gpars.ParseOutputAttrs(flgAttrsVal, grps.GroupAttrMap)
-		if err != nil {
-			return err
-		}
-		formattedAttrs := grps.STARTGROUPSFIELD + listAttrs + grps.ENDFIELD
-
-		listCall := grps.AddFields(glc, formattedAttrs)
-		glc = listCall.(*admin.GroupsListCall)
-	}
-
-	flgDomainVal, err := cmd.Flags().GetString(flgnm.FLG_DOMAIN)
-	if err != nil {
-		lg.Error(err)
-		return err
-	}
-	if flgDomainVal != "" {
-		glc = grps.AddDomain(glc, flgDomainVal)
-	} else {
-		customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
-		if err != nil {
-			return err
-		}
-		glc = grps.AddCustomer(glc, customerID)
-	}
-
-	flgQueryVal, err := cmd.Flags().GetString(flgnm.FLG_QUERY)
-	if err != nil {
-		lg.Error(err)
-		return err
-	}
-	if flgQueryVal != "" {
-		formattedQuery, err := gpars.ParseQuery(flgQueryVal, grps.QueryAttrMap)
-		if err != nil {
-			return err
-		}
-
-		glc = grps.AddQuery(glc, formattedQuery)
-	}
-
-	flgOrderByVal, err := cmd.Flags().GetString(flgnm.FLG_ORDERBY)
-	if err != nil {
-		lg.Error(err)
-		return err
-	}
-	if flgOrderByVal != "" {
-		ob := strings.ToLower(flgOrderByVal)
-		ok := cmn.SliceContainsStr(grps.ValidOrderByStrs, ob)
-		if !ok {
-			err = fmt.Errorf(gmess.ERR_INVALIDORDERBY, flgOrderByVal)
-			lg.Error(err)
-			return err
-		}
-
-		validOrderBy, err = cmn.IsValidAttr(ob, grps.GroupAttrMap)
-		if err != nil {
-			return err
-		}
-
-		glc = grps.AddOrderBy(glc, validOrderBy)
-
-		flgSrtOrdVal, err := cmd.Flags().GetString(flgnm.FLG_SORTORDER)
-		if err != nil {
-			lg.Error(err)
-			return err
-		}
-		if flgSrtOrdVal != "" {
-			so := strings.ToLower(flgSrtOrdVal)
-			validSortOrder, err := cmn.IsValidAttr(so, cmn.ValidSortOrders)
-			if err != nil {
-				return err
-			}
-
-			glc = grps.AddSortOrder(glc, validSortOrder)
-		}
-	}
-
-	flgUserKeyVal, err := cmd.Flags().GetString(flgnm.FLG_USERKEY)
-	if err != nil {
-		lg.Error(err)
-		return err
-	}
-	if flgUserKeyVal != "" {
-		if flgDomainVal != "" {
-			glc = grps.AddUserKey(glc, flgUserKeyVal)
-		} else {
-			err = errors.New(gmess.ERR_NODOMAINWITHUSERKEY)
-			lg.Error(err)
-			return err
-		}
-	}
-
-	flgMaxResultsVal, err := cmd.Flags().GetInt64(flgnm.FLG_MAXRESULTS)
-	if err != nil {
-		lg.Error(err)
-		return err
-	}
-	glc = grps.AddMaxResults(glc, flgMaxResultsVal)
 
 	groups, err = grps.DoList(glc)
 	if err != nil {
 		return err
 	}
 
-	flgPagesVal, err := cmd.Flags().GetString(flgnm.FLG_PAGES)
+	err = lstGrpPages(glc, groups, flagValueMap)
 	if err != nil {
 		lg.Error(err)
 		return err
 	}
-	if flgPagesVal != "" {
-		err = doGrpPages(glc, groups, flgPagesVal)
-		if err != nil {
-			return err
+
+	flgCountVal, countPresent := flagValueMap[flgnm.FLG_COUNT]
+	if countPresent {
+		countVal := flgCountVal.(bool)
+		if countVal {
+			fmt.Println(len(groups.Groups))
+			return nil
 		}
 	}
 
@@ -196,17 +118,7 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 		lg.Error(err)
 		return err
 	}
-
-	flgCountVal, err := cmd.Flags().GetBool(flgnm.FLG_COUNT)
-	if err != nil {
-		lg.Error(err)
-		return err
-	}
-	if flgCountVal {
-		fmt.Println(len(groups.Groups))
-	} else {
-		fmt.Println(string(jsonData))
-	}
+	fmt.Println(string(jsonData))
 
 	return nil
 }
@@ -297,4 +209,239 @@ func init() {
 	listGroupsCmd.Flags().StringP(flgnm.FLG_QUERY, "q", "", "selection criteria to get groups (separated by ~)")
 	listGroupsCmd.Flags().StringP(flgnm.FLG_SORTORDER, "s", "", "sort order of returned results")
 	listGroupsCmd.Flags().StringP(flgnm.FLG_USERKEY, "u", "", "email address or id of user who belongs to returned groups")
+}
+
+func lstGrpAttributes(glc *admin.GroupsListCall, flagVal interface{}) error {
+	lg.Debug("starting lstGrpAttributes()")
+	defer lg.Debug("finished lstGrpAttributes()")
+
+	attrsVal := fmt.Sprintf("%v", flagVal)
+	if attrsVal != "" {
+		listAttrs, err := gpars.ParseOutputAttrs(attrsVal, grps.GroupAttrMap)
+		if err != nil {
+			lg.Error(err)
+			return err
+		}
+		formattedAttrs := grps.STARTGROUPSFIELD + listAttrs + grps.ENDFIELD
+
+		listCall := grps.AddFields(glc, formattedAttrs)
+		glc = listCall.(*admin.GroupsListCall)
+	}
+	return nil
+}
+
+func lstGrpDomain(glc *admin.GroupsListCall, flagVal interface{}, userKey string) error {
+	lg.Debug("starting lstGrpDomain()")
+	defer lg.Debug("finished lstGrpDomain()")
+
+	domVal := fmt.Sprintf("%v", flagVal)
+
+	if domVal == "" {
+		return fmt.Errorf(gmess.ERR_EMPTYSTRING, flgnm.FLG_DOMAIN)
+	}
+
+	glc = grps.AddDomain(glc, domVal)
+
+	if userKey != "" {
+		glc = grps.AddUserKey(glc, userKey)
+	}
+
+	return nil
+}
+
+func lstGrpDomainUserKey(flgValMap map[string]interface{}) error {
+	lg.Debug("starting lstGrpDomainUserKey()")
+	defer lg.Debug("finished lstGrpDomainUserKey()")
+
+	_, keyPresent := flgValMap[flgnm.FLG_USERKEY]
+	if !keyPresent {
+		return nil
+	}
+
+	flgDomainVal, domainPresent := flgValMap[flgnm.FLG_DOMAIN]
+	if domainPresent {
+		domVal := fmt.Sprintf("%v", flgDomainVal)
+		if domVal != "" {
+			return nil
+		}
+	}
+
+	err := errors.New(gmess.ERR_NODOMAINWITHUSERKEY)
+	lg.Error(err)
+	return err
+}
+
+func lstGrpMaxResults(glc *admin.GroupsListCall, flagVal interface{}) error {
+	lg.Debug("starting lstGrpMaxResults()")
+	defer lg.Debug("finished lstGrpMaxResults()")
+
+	flgMaxResultsVal := flagVal.(int64)
+
+	glc = grps.AddMaxResults(glc, flgMaxResultsVal)
+	return nil
+}
+
+func lstGrpOrderBy(glc *admin.GroupsListCall, inData interface{}) error {
+	lg.Debug("starting lstGrpOrderBy()")
+	defer lg.Debug("finished lstGrpOrderBy()")
+
+	var (
+		err          error
+		validOrderBy string
+	)
+
+	inStruct := inData.(gd.TwoStrStruct)
+
+	orderVal := inStruct.Element1
+	if orderVal != "" {
+		ob := strings.ToLower(orderVal)
+		ok := cmn.SliceContainsStr(grps.ValidOrderByStrs, ob)
+		if !ok {
+			err := fmt.Errorf(gmess.ERR_INVALIDORDERBY, orderVal)
+			lg.Error(err)
+			return err
+		}
+
+		validOrderBy, err = cmn.IsValidAttr(ob, grps.GroupAttrMap)
+		if err != nil {
+			lg.Error(err)
+			return err
+		}
+		glc = grps.AddOrderBy(glc, validOrderBy)
+
+		flgSrtOrdByVal := inStruct.Element2
+		if flgSrtOrdByVal != "" {
+			so := strings.ToLower(flgSrtOrdByVal)
+			validSortOrder, err := cmn.IsValidAttr(so, cmn.ValidSortOrders)
+			if err != nil {
+				lg.Error(err)
+				return err
+			}
+
+			glc = grps.AddSortOrder(glc, validSortOrder)
+		}
+	}
+	return nil
+}
+
+func lstGrpPages(glc *admin.GroupsListCall, groups *admin.Groups, flgValMap map[string]interface{}) error {
+	lg.Debug("starting lstGrpPages()")
+	defer lg.Debug("finished lstGrpPages()")
+
+	flgPagesVal, pagesPresent := flgValMap[flgnm.FLG_PAGES]
+	if !pagesPresent {
+		return nil
+	}
+	if flgPagesVal != "" {
+		pagesVal := fmt.Sprintf("%v", flgPagesVal)
+		err := doGrpPages(glc, groups, pagesVal)
+		if err != nil {
+			lg.Error(err)
+			return err
+		}
+	}
+	return nil
+}
+
+func lstGrpProcessFlags(glc *admin.GroupsListCall, flgValMap map[string]interface{}) error {
+	lg.Debug("starting lstGrpProcessFlags()")
+	defer lg.Debug("finished lstGrpProcessFlags()")
+
+	var keyVal string
+
+	lstGrpFuncMap := map[string]func(*admin.GroupsListCall, interface{}) error{
+		flgnm.FLG_ATTRIBUTES: lstGrpAttributes,
+		flgnm.FLG_MAXRESULTS: lstGrpMaxResults,
+		flgnm.FLG_ORDERBY:    lstGrpOrderBy,
+		flgnm.FLG_QUERY:      lstGrpQuery,
+	}
+
+	// Get customer id if the domain flag is not present
+	_, domPresent := flgValMap[flgnm.FLG_DOMAIN]
+	if !domPresent {
+		customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
+		if err != nil {
+			lg.Error(err)
+			return err
+		}
+		glc = grps.AddCustomer(glc, customerID)
+	}
+
+	// Check that domain present if user key has been supplied
+	err := lstGrpDomainUserKey(flgValMap)
+	if err != nil {
+		return err
+	}
+
+	// Cycle through flags that build the ulc excluding pages and count
+	for key, val := range flgValMap {
+		// Do domain flag specific processing
+		if key == flgnm.FLG_DOMAIN {
+			flgUserKeyVal, usrKeyPresent := flgValMap[flgnm.FLG_USERKEY]
+			if usrKeyPresent {
+				keyVal = fmt.Sprintf("%v", flgUserKeyVal)
+			} else {
+				keyVal = ""
+			}
+			err := lstGrpDomain(glc, val, keyVal)
+			if err != nil {
+				return err
+			}
+			continue
+		}
+		// Order by has dependent sort order so deal with that
+		if key == flgnm.FLG_ORDERBY {
+			retStruct, err := lstGrpSortOrderBy(flgValMap)
+			if err != nil {
+				return err
+			}
+			val = retStruct
+		}
+
+		lgf, ok := lstGrpFuncMap[key]
+		if !ok {
+			continue
+		}
+		err := lgf(glc, val)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func lstGrpQuery(glc *admin.GroupsListCall, flagVal interface{}) error {
+	lg.Debug("starting lstGrpQuery()")
+	defer lg.Debug("finished lstGrpQuery()")
+
+	qryVal := fmt.Sprintf("%v", flagVal)
+	if qryVal != "" {
+		formattedQuery, err := gpars.ParseQuery(qryVal, grps.QueryAttrMap)
+		if err != nil {
+			lg.Error(err)
+			return err
+		}
+
+		glc = grps.AddQuery(glc, formattedQuery)
+	}
+	return nil
+}
+
+func lstGrpSortOrderBy(flgValMap map[string]interface{}) (gd.TwoStrStruct, error) {
+	lg.Debug("starting lstGrpSortOrderBy()")
+	defer lg.Debug("finished lstGrpSortOrderBy()")
+
+	outData := gd.TwoStrStruct{}
+
+	orderByVal := flgValMap[flgnm.FLG_ORDERBY]
+	sortOrderVal, sortOrderPresent := flgValMap[flgnm.FLG_SORTORDER]
+
+	outData.Element1 = fmt.Sprintf("%v", orderByVal)
+	if sortOrderPresent {
+		outData.Element2 = fmt.Sprintf("%v", sortOrderVal)
+	} else {
+		outData.Element2 = ""
+	}
+
+	return outData, nil
 }

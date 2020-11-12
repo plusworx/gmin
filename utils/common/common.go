@@ -280,7 +280,7 @@ func IPAddress() string {
 
 	conn, err := net.Dial("udp", "8.8.8.8:80")
 	if err != nil {
-		ip = "unavailable"
+		return "unavailable"
 	}
 	defer conn.Close()
 
@@ -325,8 +325,8 @@ func IsValidAttr(attr string, attrMap map[string]string) (string, error) {
 
 	lowerAttr := strings.ToLower(attr)
 
-	validAttr := attrMap[lowerAttr]
-	if validAttr == "" {
+	validAttr, attrExists := attrMap[lowerAttr]
+	if !attrExists {
 		err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, attr)
 		Logger.Error(err)
 		return "", err
@@ -655,7 +655,7 @@ func Username() string {
 
 	currentUser, err := user.Current()
 	if err != nil {
-		uName = "unavailable"
+		return "unavailable"
 	}
 	uName = currentUser.Username
 	return uName

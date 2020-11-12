@@ -208,104 +208,89 @@ func askForLogRotationTime() string {
 	return response
 }
 
+func doAdminEmail(ans *cfg.Answers) bool {
+	ans.AdminEmail = askForEmail()
+	if ans.AdminEmail == "q" {
+		fmt.Println(gmess.INFO_INITCANCELLED)
+		return true
+	}
+	return false
+}
+
+func doConfigPath(ans *cfg.Answers) bool {
+	ans.ConfigPath = askForConfigPath()
+	if ans.ConfigPath == "q" {
+		fmt.Println(gmess.INFO_INITCANCELLED)
+		return true
+	}
+	if ans.ConfigPath == "" {
+		hmDir, err := homedir.Dir()
+		if err != nil {
+			log.Fatal(err)
+		}
+		ans.ConfigPath = hmDir
+	}
+	return false
+}
+
+func doCredentialPath(ans *cfg.Answers) bool {
+	ans.CredentialPath = askForCredentialPath()
+	if ans.CredentialPath == "q" {
+		fmt.Println(gmess.INFO_INITCANCELLED)
+		return true
+	}
+	if ans.CredentialPath == "" {
+		hmDir, err := homedir.Dir()
+		if err != nil {
+			log.Fatal(err)
+		}
+		ans.CredentialPath = hmDir
+	}
+	return false
+}
+
+func doCustomerID(ans *cfg.Answers) bool {
+	ans.CustomerID = askForCustomerID()
+	if ans.CustomerID == "q" {
+		fmt.Println(gmess.INFO_INITCANCELLED)
+		return true
+	}
+	if ans.CustomerID == "" {
+		ans.CustomerID = cfg.DEFAULTCUSTID
+	}
+	return false
+}
+
 func doInit(cmd *cobra.Command, args []string) error {
-	answers := struct {
-		AdminEmail       string
-		ConfigPath       string
-		CredentialPath   string
-		CustomerID       string
-		LogPath          string
-		LogRotationCount uint
-		LogRotationTime  int
-	}{}
+	answers := new(cfg.Answers)
 
-	answers.AdminEmail = askForEmail()
-	if answers.AdminEmail == "q" {
-		fmt.Println(gmess.INFO_INITCANCELLED)
+	quit := doAdminEmail(answers)
+	if quit {
 		return nil
 	}
-	answers.ConfigPath = askForConfigPath()
-	if answers.ConfigPath == "q" {
-		fmt.Println(gmess.INFO_INITCANCELLED)
+	quit = doConfigPath(answers)
+	if quit {
 		return nil
 	}
-	answers.CredentialPath = askForCredentialPath()
-	if answers.CredentialPath == "q" {
-		fmt.Println(gmess.INFO_INITCANCELLED)
+	quit = doCredentialPath(answers)
+	if quit {
 		return nil
 	}
-	answers.CustomerID = askForCustomerID()
-	if answers.CustomerID == "q" {
-		fmt.Println(gmess.INFO_INITCANCELLED)
+	quit = doCustomerID(answers)
+	if quit {
 		return nil
 	}
-	answers.LogPath = askForLogPath()
-	if answers.LogPath == "q" {
-		fmt.Println(gmess.INFO_INITCANCELLED)
+	quit = doLogPath(answers)
+	if quit {
 		return nil
 	}
-	retVal := askForLogRotationCount()
-	if retVal == "q" {
-		fmt.Println(gmess.INFO_INITCANCELLED)
+	quit = doLogRotationCount(answers)
+	if quit {
 		return nil
 	}
-	if retVal == "" {
-		retVal = "0"
-	}
-	retInt, err := strconv.Atoi(retVal)
-	if err != nil {
-		return err
-	}
-	answers.LogRotationCount = uint(retInt)
-
-	retVal = askForLogRotationTime()
-	if retVal == "q" {
-		fmt.Println(gmess.INFO_INITCANCELLED)
+	quit = doLogRotationTime(answers)
+	if quit {
 		return nil
-	}
-	if retVal == "" {
-		retVal = "0"
-	}
-	retInt, err = strconv.Atoi(retVal)
-	if err != nil {
-		return err
-	}
-	answers.LogRotationTime = retInt
-
-	if answers.ConfigPath == "" {
-		hmDir, err := homedir.Dir()
-		if err != nil {
-			log.Fatal(err)
-		}
-		answers.ConfigPath = hmDir
-	}
-
-	if answers.CredentialPath == "" {
-		hmDir, err := homedir.Dir()
-		if err != nil {
-			log.Fatal(err)
-		}
-		answers.CredentialPath = hmDir
-	}
-
-	if answers.CustomerID == "" {
-		answers.CustomerID = cfg.DEFAULTCUSTID
-	}
-
-	if answers.LogPath == "" {
-		hmDir, err := homedir.Dir()
-		if err != nil {
-			log.Fatal(err)
-		}
-		answers.LogPath = hmDir
-	}
-
-	if answers.LogRotationCount == 0 {
-		answers.LogRotationCount = cfg.DEFAULTLOGROTATIONCOUNT
-	}
-
-	if answers.LogRotationTime == 0 {
-		answers.LogRotationTime = cfg.DEFAULTLOGROTATIONTIME
 	}
 
 	cfgFile := cfg.File{Administrator: answers.AdminEmail, CredentialPath: answers.CredentialPath,
@@ -326,6 +311,66 @@ func doInit(cmd *cobra.Command, args []string) error {
 	fmt.Println(gmess.INFO_INITCOMPLETED)
 
 	return nil
+}
+
+func doLogPath(ans *cfg.Answers) bool {
+	ans.LogPath = askForLogPath()
+	if ans.LogPath == "q" {
+		fmt.Println(gmess.INFO_INITCANCELLED)
+		return true
+	}
+	if ans.LogPath == "" {
+		hmDir, err := homedir.Dir()
+		if err != nil {
+			log.Fatal(err)
+		}
+		ans.LogPath = hmDir
+	}
+	return false
+}
+
+func doLogRotationCount(ans *cfg.Answers) bool {
+	retVal := askForLogRotationCount()
+	if retVal == "q" {
+		fmt.Println(gmess.INFO_INITCANCELLED)
+		return true
+	}
+	if retVal == "" {
+		retVal = "0"
+	}
+	retInt, err := strconv.Atoi(retVal)
+	if err != nil {
+		log.Fatal(err)
+	}
+	ans.LogRotationCount = uint(retInt)
+
+	if ans.LogRotationCount == 0 {
+		ans.LogRotationCount = cfg.DEFAULTLOGROTATIONCOUNT
+	}
+
+	return false
+}
+
+func doLogRotationTime(ans *cfg.Answers) bool {
+	retVal := askForLogRotationTime()
+	if retVal == "q" {
+		fmt.Println(gmess.INFO_INITCANCELLED)
+		return true
+	}
+	if retVal == "" {
+		retVal = "0"
+	}
+	retInt, err := strconv.Atoi(retVal)
+	if err != nil {
+		log.Fatal(err)
+	}
+	ans.LogRotationTime = retInt
+
+	if ans.LogRotationTime == 0 {
+		ans.LogRotationTime = cfg.DEFAULTLOGROTATIONTIME
+	}
+
+	return false
 }
 
 func init() {

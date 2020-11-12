@@ -71,10 +71,7 @@ func doBatchUndelUser(cmd *cobra.Command, args []string) error {
 		"args", args)
 	defer lg.Debug("finished doBatchUndelUser()")
 
-	var (
-		objs       []interface{}
-		undelUsers []usrs.UndeleteUser
-	)
+	var undelUsers []usrs.UndeleteUser
 
 	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryUserScope)
 	if err != nil {
@@ -99,6 +96,12 @@ func doBatchUndelUser(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	rangeFlgVal, err := cmd.Flags().GetString(flgnm.FLG_SHEETRANGE)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
+
 	formatFlgVal, err := cmd.Flags().GetString(flgnm.FLG_FORMAT)
 	if err != nil {
 		lg.Error(err)
@@ -114,32 +117,15 @@ func doBatchUndelUser(cmd *cobra.Command, args []string) error {
 	}
 
 	callParams := btch.CallParams{CallType: cmn.CALLTYPEUNDELETE, ObjectType: cmn.OBJTYPEUSER}
+	inputParams := btch.ProcessInputParams{
+		Format:      lwrFmt,
+		InputFlgVal: inputFlgVal,
+		Scanner:     scanner,
+		SheetRange:  rangeFlgVal,
+	}
 
-	switch {
-	case lwrFmt == "csv":
-		objs, err = btch.ProcessCSVFile(callParams, inputFlgVal, usrs.UserAttrMap)
-		if err != nil {
-			return err
-		}
-	case lwrFmt == "json":
-		objs, err = btch.ProcessJSON(callParams, inputFlgVal, scanner, usrs.UserAttrMap)
-		if err != nil {
-			return err
-		}
-	case lwrFmt == "gsheet":
-		rangeFlgVal, err := cmd.Flags().GetString(flgnm.FLG_SHEETRANGE)
-		if err != nil {
-			lg.Error(err)
-			return err
-		}
-
-		objs, err = btch.ProcessGSheet(callParams, inputFlgVal, rangeFlgVal, usrs.UserAttrMap)
-		if err != nil {
-			return err
-		}
-	default:
-		err = fmt.Errorf(gmess.ERR_INVALIDFILEFORMAT, formatFlgVal)
-		lg.Error(err)
+	objs, err := bunduProcessInput(callParams, inputParams)
+	if err != nil {
 		return err
 	}
 
@@ -153,6 +139,40 @@ func doBatchUndelUser(cmd *cobra.Command, args []string) error {
 	}
 
 	return nil
+}
+
+func bunduProcessInput(callParams btch.CallParams, inputParams btch.ProcessInputParams) ([]interface{}, error) {
+	lg.Debug("starting bunduProcessInput()")
+	defer lg.Debug("finished bunduProcessInput()")
+
+	var (
+		err  error
+		objs []interface{}
+	)
+
+	switch inputParams.Format {
+	case "csv":
+		objs, err = btch.ProcessCSVFile(callParams, inputParams.InputFlgVal, usrs.UserAttrMap)
+		if err != nil {
+			return nil, err
+		}
+	case "json":
+		objs, err = btch.ProcessJSON(callParams, inputParams.InputFlgVal, inputParams.Scanner, usrs.UserAttrMap)
+		if err != nil {
+			return nil, err
+		}
+	case "gsheet":
+		objs, err = btch.ProcessGSheet(callParams, inputParams.InputFlgVal, inputParams.SheetRange, usrs.UserAttrMap)
+		if err != nil {
+			return nil, err
+		}
+	default:
+		err = fmt.Errorf(gmess.ERR_INVALIDFILEFORMAT, inputParams.Format)
+		lg.Error(err)
+		return nil, err
+	}
+
+	return objs, nil
 }
 
 func bunduProcessObjects(ds *admin.Service, undelUsers []usrs.UndeleteUser) error {

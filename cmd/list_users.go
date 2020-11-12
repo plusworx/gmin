@@ -32,11 +32,13 @@ import (
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
 	flgnm "github.com/plusworx/gmin/utils/flagnames"
+	gd "github.com/plusworx/gmin/utils/gendatastructs"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	gpars "github.com/plusworx/gmin/utils/gminparsers"
 	lg "github.com/plusworx/gmin/utils/logging"
 	usrs "github.com/plusworx/gmin/utils/users"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	admin "google.golang.org/api/admin/directory/v1"
 )
 
@@ -54,51 +56,28 @@ gmin ls user -q name:Fred`,
 func doListUsers(cmd *cobra.Command, args []string) error {
 	lg.Debugw("starting doListUsers()",
 		"args", args)
+	defer lg.Debug("finished doListUsers()")
 
 	var (
-		jsonData     []byte
-		users        *admin.Users
-		validOrderBy string
+		flagsPassed []string
+		jsonData    []byte
+		users       *admin.Users
 	)
 
-	flgCustFldMaskVal, err := cmd.Flags().GetString(flgnm.FLG_CUSTFLDMASK)
-	if err != nil {
-		lg.Error(err)
-		return err
-	}
+	flagValueMap := map[string]interface{}{}
 
-	flgProjectionVal, err := cmd.Flags().GetString(flgnm.FLG_PROJECTION)
-	if err != nil {
-		lg.Error(err)
-		return err
-	}
-	if strings.ToLower(flgProjectionVal) == "custom" && flgCustFldMaskVal == "" {
-		err := errors.New(gmess.ERR_NOCUSTOMFIELDMASK)
-		lg.Error(err)
-		return err
-	}
+	// Collect names of command flags passed in
+	cmd.Flags().Visit(func(f *pflag.Flag) {
+		flagsPassed = append(flagsPassed, f.Name)
+	})
 
-	if flgCustFldMaskVal != "" && strings.ToLower(flgProjectionVal) != "custom" {
-		err := errors.New(gmess.ERR_PROJECTIONFLAGNOTCUSTOM)
-		lg.Error(err)
-		return err
-	}
-
-	flgDeletedVal, err := cmd.Flags().GetBool(flgnm.FLG_DELETED)
-	if err != nil {
-		lg.Error(err)
-		return err
-	}
-
-	flgQueryVal, err := cmd.Flags().GetString(flgnm.FLG_QUERY)
-	if err != nil {
-		lg.Error(err)
-		return err
-	}
-	if flgQueryVal != "" && flgDeletedVal {
-		err := errors.New(gmess.ERR_QUERYANDDELETEDFLAGS)
-		lg.Error(err)
-		return err
+	// Populate flag value map
+	for _, flg := range flagsPassed {
+		val, err := usrs.GetFlagVal(cmd, flg)
+		if err != nil {
+			return err
+		}
+		flagValueMap[flg] = val
 	}
 
 	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryUserReadonlyScope)
@@ -109,146 +88,10 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 
 	ulc := ds.Users.List()
 
-	flgAttrsVal, err := cmd.Flags().GetString(flgnm.FLG_ATTRIBUTES)
+	err = lstUsrProcessFlags(ulc, flagValueMap)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
-	if flgAttrsVal != "" {
-		listAttrs, err := gpars.ParseOutputAttrs(flgAttrsVal, usrs.UserAttrMap)
-		if err != nil {
-			lg.Error(err)
-			return err
-		}
-		formattedAttrs := usrs.STARTUSERSFIELD + listAttrs + usrs.ENDFIELD
-
-		listCall := usrs.AddFields(ulc, formattedAttrs)
-		ulc = listCall.(*admin.UsersListCall)
-	}
-
-	if flgDeletedVal {
-		ulc = usrs.AddShowDeleted(ulc)
-	}
-
-	flgDomainVal, err := cmd.Flags().GetString(flgnm.FLG_DOMAIN)
-	if err != nil {
-		lg.Error(err)
-		return err
-	}
-	if flgDomainVal != "" {
-		ulc = usrs.AddDomain(ulc, flgDomainVal)
-	} else {
-		customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
-		if err != nil {
-			lg.Error(err)
-			return err
-		}
-		ulc = usrs.AddCustomer(ulc, customerID)
-	}
-
-	if flgProjectionVal != "" {
-		proj := strings.ToLower(flgProjectionVal)
-		ok := cmn.SliceContainsStr(usrs.ValidProjections, proj)
-		if !ok {
-			err = fmt.Errorf(gmess.ERR_INVALIDPROJECTIONTYPE, flgProjectionVal)
-			lg.Error(err)
-			return err
-		}
-
-		listCall := usrs.AddProjection(ulc, proj)
-		ulc = listCall.(*admin.UsersListCall)
-
-		if proj == "custom" {
-			if flgCustFldMaskVal != "" {
-				cFields := strings.Split(flgCustFldMaskVal, "~")
-				mask := strings.Join(cFields, ",")
-				listCall := usrs.AddCustomFieldMask(ulc, mask)
-				ulc = listCall.(*admin.UsersListCall)
-			} else {
-				err = errors.New(gmess.ERR_NOCUSTOMFIELDMASK)
-				lg.Error(err)
-				return err
-			}
-		}
-	}
-
-	if flgQueryVal != "" {
-		formattedQuery, err := gpars.ParseQuery(flgQueryVal, usrs.QueryAttrMap)
-		if err != nil {
-			lg.Error(err)
-			return err
-		}
-
-		ulc = usrs.AddQuery(ulc, formattedQuery)
-	}
-
-	flgOrderByVal, err := cmd.Flags().GetString(flgnm.FLG_ORDERBY)
-	if err != nil {
-		lg.Error(err)
-		return err
-	}
-	if flgOrderByVal != "" {
-		ob := strings.ToLower(flgOrderByVal)
-		ok := cmn.SliceContainsStr(usrs.ValidOrderByStrs, ob)
-		if !ok {
-			err = fmt.Errorf(gmess.ERR_INVALIDORDERBY, flgOrderByVal)
-			lg.Error(err)
-			return err
-		}
-
-		validOrderBy = ob
-
-		if ob != "email" {
-			validOrderBy, err = cmn.IsValidAttr(ob, usrs.UserAttrMap)
-			if err != nil {
-				lg.Error(err)
-				return err
-			}
-		}
-
-		ulc = usrs.AddOrderBy(ulc, validOrderBy)
-
-		flgSrtOrdByVal, err := cmd.Flags().GetString(flgnm.FLG_SORTORDER)
-		if err != nil {
-			lg.Error(err)
-			return err
-		}
-		if flgSrtOrdByVal != "" {
-			so := strings.ToLower(flgSrtOrdByVal)
-			validSortOrder, err := cmn.IsValidAttr(so, cmn.ValidSortOrders)
-			if err != nil {
-				lg.Error(err)
-				return err
-			}
-
-			ulc = usrs.AddSortOrder(ulc, validSortOrder)
-		}
-	}
-
-	flgViewTypeVal, err := cmd.Flags().GetString(flgnm.FLG_VIEWTYPE)
-	if err != nil {
-		lg.Error(err)
-		return err
-	}
-	if flgViewTypeVal != "" {
-		vt := strings.ToLower(flgViewTypeVal)
-		ok := cmn.SliceContainsStr(usrs.ValidViewTypes, vt)
-		if !ok {
-			err = fmt.Errorf(gmess.ERR_INVALIDVIEWTYPE, flgViewTypeVal)
-			lg.Error(err)
-			return err
-		}
-
-		listCall := usrs.AddViewType(ulc, vt)
-		ulc = listCall.(*admin.UsersListCall)
-	}
-
-	flgMaxResultsVal, err := cmd.Flags().GetInt64(flgnm.FLG_MAXRESULTS)
-	if err != nil {
-		lg.Error(err)
-		return err
-	}
-	ulc = usrs.AddMaxResults(ulc, flgMaxResultsVal)
 
 	users, err = usrs.DoList(ulc)
 	if err != nil {
@@ -256,16 +99,18 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	flgPagesVal, err := cmd.Flags().GetString(flgnm.FLG_PAGES)
+	err = lstUsrPages(ulc, users, flagValueMap)
 	if err != nil {
 		lg.Error(err)
 		return err
 	}
-	if flgPagesVal != "" {
-		err = doUserPages(ulc, users, flgPagesVal)
-		if err != nil {
-			lg.Error(err)
-			return err
+
+	flgCountVal, countPresent := flagValueMap[flgnm.FLG_COUNT]
+	if countPresent {
+		countVal := flgCountVal.(bool)
+		if countVal {
+			fmt.Println(len(users.Users))
+			return nil
 		}
 	}
 
@@ -274,24 +119,14 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 		lg.Error(err)
 		return err
 	}
+	fmt.Println(string(jsonData))
 
-	flgCountVal, err := cmd.Flags().GetBool(flgnm.FLG_COUNT)
-	if err != nil {
-		lg.Error(err)
-		return err
-	}
-	if flgCountVal {
-		fmt.Println(len(users.Users))
-	} else {
-		fmt.Println(string(jsonData))
-	}
-
-	lg.Debug("finished doListUsers()")
 	return nil
 }
 
 func doUserAllPages(ulc *admin.UsersListCall, users *admin.Users) error {
 	lg.Debug("starting doUserAllPages()")
+	defer lg.Debug("finished doUserAllPages()")
 
 	if users.NextPageToken != "" {
 		ulc = usrs.AddPageToken(ulc, users.NextPageToken)
@@ -309,13 +144,13 @@ func doUserAllPages(ulc *admin.UsersListCall, users *admin.Users) error {
 		}
 	}
 
-	lg.Debug("finished doUserAllPages()")
 	return nil
 }
 
 func doUserNumPages(ulc *admin.UsersListCall, users *admin.Users, numPages int) error {
 	lg.Debugw("starting doUserNumPages()",
 		"numPages", numPages)
+	defer lg.Debug("finished doUserNumPages()")
 
 	if users.NextPageToken != "" && numPages > 0 {
 		ulc = usrs.AddPageToken(ulc, users.NextPageToken)
@@ -333,13 +168,13 @@ func doUserNumPages(ulc *admin.UsersListCall, users *admin.Users, numPages int) 
 		}
 	}
 
-	lg.Debug("finished doUserNumPages()")
 	return nil
 }
 
 func doUserPages(ulc *admin.UsersListCall, users *admin.Users, pages string) error {
 	lg.Debugw("starting doUserPages()",
 		"pages", pages)
+	defer lg.Debug("finished doUserPages()")
 
 	if pages == "all" {
 		err := doUserAllPages(ulc, users)
@@ -364,7 +199,6 @@ func doUserPages(ulc *admin.UsersListCall, users *admin.Users, pages string) err
 		}
 	}
 
-	lg.Debug("finished doUserPages()")
 	return nil
 }
 
@@ -384,4 +218,335 @@ func init() {
 	listUsersCmd.Flags().StringP(flgnm.FLG_VIEWTYPE, "v", "", "data view type")
 	listUsersCmd.Flags().BoolP(flgnm.FLG_DELETED, "x", false, "show deleted users")
 
+}
+
+func lstUsrAttributes(ulc *admin.UsersListCall, flagVal interface{}) error {
+	lg.Debug("starting lstUsrAttributes()")
+	defer lg.Debug("finished lstUsrAttributes()")
+
+	attrsVal := fmt.Sprintf("%v", flagVal)
+	if attrsVal != "" {
+		listAttrs, err := gpars.ParseOutputAttrs(attrsVal, usrs.UserAttrMap)
+		if err != nil {
+			lg.Error(err)
+			return err
+		}
+		formattedAttrs := usrs.STARTUSERSFIELD + listAttrs + usrs.ENDFIELD
+
+		listCall := usrs.AddFields(ulc, formattedAttrs)
+		ulc = listCall.(*admin.UsersListCall)
+	}
+	return nil
+}
+
+func lstUsrCustomProjection(flgValMap map[string]interface{}) (gd.TwoStrStruct, error) {
+	lg.Debug("starting lstUsrCustomProjection()")
+	defer lg.Debug("finished lstUsrCustomProjection()")
+
+	var retMaskVal string
+
+	projVal := flgValMap[flgnm.FLG_PROJECTION]
+	custFldMaskVal, maskPresent := flgValMap[flgnm.FLG_CUSTFLDMASK]
+
+	lowerProjVal := strings.ToLower(fmt.Sprintf("%v", projVal))
+
+	if lowerProjVal == "custom" && !maskPresent {
+		err := errors.New(gmess.ERR_NOCUSTOMFIELDMASK)
+		lg.Error(err)
+		return gd.TwoStrStruct{}, err
+	}
+
+	if maskPresent && lowerProjVal != "custom" {
+		err := errors.New(gmess.ERR_PROJECTIONFLAGNOTCUSTOM)
+		lg.Error(err)
+		return gd.TwoStrStruct{}, err
+	}
+
+	if maskPresent {
+		retMaskVal = fmt.Sprintf("%v", custFldMaskVal)
+	} else {
+		retMaskVal = ""
+	}
+
+	retStruct := gd.TwoStrStruct{Element1: lowerProjVal, Element2: retMaskVal}
+	return retStruct, nil
+}
+
+func lstUsrDeleted(ulc *admin.UsersListCall, flagVal interface{}) error {
+	lg.Debug("starting lstUsrDeleted()")
+	defer lg.Debug("finished lstUsrDeleted()")
+
+	delVal := flagVal.(bool)
+	if delVal {
+		ulc = usrs.AddShowDeleted(ulc)
+	}
+	return nil
+}
+
+func lstUsrDeletedQuery(flgValMap map[string]interface{}) error {
+	lg.Debug("starting lstUsrDeletedQuery()")
+	defer lg.Debug("finished lstUsrDeletedQuery()")
+
+	flgDeletedVal, deletedPresent := flgValMap[flgnm.FLG_DELETED]
+	flgQueryVal, queryPresent := flgValMap[flgnm.FLG_QUERY]
+
+	if !deletedPresent || !queryPresent {
+		return nil
+	}
+
+	dVal := flgDeletedVal.(bool)
+	qVal := fmt.Sprintf("%v", flgQueryVal)
+
+	if qVal != "" && dVal {
+		err := errors.New(gmess.ERR_QUERYANDDELETEDFLAGS)
+		lg.Error(err)
+		return err
+	}
+
+	return nil
+}
+
+func lstUsrDomain(ulc *admin.UsersListCall, flagVal interface{}) error {
+	lg.Debug("starting lstUsrDomain()")
+	defer lg.Debug("finished lstUsrDomain()")
+
+	domVal := fmt.Sprintf("%v", flagVal)
+
+	if domVal == "" {
+		return fmt.Errorf(gmess.ERR_EMPTYSTRING, flgnm.FLG_DOMAIN)
+	}
+
+	ulc = usrs.AddDomain(ulc, domVal)
+	return nil
+}
+
+func lstUsrMaxResults(ulc *admin.UsersListCall, flagVal interface{}) error {
+	lg.Debug("starting lstUsrMaxResults()")
+	defer lg.Debug("finished lstUsrMaxResults()")
+
+	flgMaxResultsVal := flagVal.(int64)
+
+	ulc = usrs.AddMaxResults(ulc, flgMaxResultsVal)
+	return nil
+}
+
+func lstUsrOrderBy(ulc *admin.UsersListCall, inData interface{}) error {
+	lg.Debug("starting lstUsrOrderBy()")
+	defer lg.Debug("finished lstUsrOrderBy()")
+
+	var (
+		err          error
+		validOrderBy string
+	)
+
+	inStruct := inData.(gd.TwoStrStruct)
+
+	orderVal := inStruct.Element1
+	if orderVal != "" {
+		ob := strings.ToLower(orderVal)
+		ok := cmn.SliceContainsStr(usrs.ValidOrderByStrs, ob)
+		if !ok {
+			err := fmt.Errorf(gmess.ERR_INVALIDORDERBY, orderVal)
+			lg.Error(err)
+			return err
+		}
+
+		if ob == "email" {
+			validOrderBy = ob
+		} else {
+			validOrderBy, err = cmn.IsValidAttr(ob, usrs.UserAttrMap)
+			if err != nil {
+				lg.Error(err)
+				return err
+			}
+		}
+
+		ulc = usrs.AddOrderBy(ulc, validOrderBy)
+
+		flgSrtOrdByVal := inStruct.Element2
+		if flgSrtOrdByVal != "" {
+			so := strings.ToLower(flgSrtOrdByVal)
+			validSortOrder, err := cmn.IsValidAttr(so, cmn.ValidSortOrders)
+			if err != nil {
+				lg.Error(err)
+				return err
+			}
+
+			ulc = usrs.AddSortOrder(ulc, validSortOrder)
+		}
+	}
+	return nil
+}
+
+func lstUsrPages(ulc *admin.UsersListCall, users *admin.Users, flgValMap map[string]interface{}) error {
+	lg.Debug("starting lstUsrPages()")
+	defer lg.Debug("finished lstUsrPages()")
+
+	flgPagesVal, pagesPresent := flgValMap[flgnm.FLG_PAGES]
+	if !pagesPresent {
+		return nil
+	}
+	if flgPagesVal != "" {
+		pagesVal := fmt.Sprintf("%v", flgPagesVal)
+		err := doUserPages(ulc, users, pagesVal)
+		if err != nil {
+			lg.Error(err)
+			return err
+		}
+	}
+	return nil
+}
+
+func lstUsrProcessFlags(ulc *admin.UsersListCall, flgValMap map[string]interface{}) error {
+	lg.Debug("starting lstUsrProcessFlags()")
+	defer lg.Debug("finished lstUsrProcessFlags()")
+
+	lstUsrFuncMap := map[string]func(*admin.UsersListCall, interface{}) error{
+		flgnm.FLG_ATTRIBUTES: lstUsrAttributes,
+		flgnm.FLG_DELETED:    lstUsrDeleted,
+		flgnm.FLG_DOMAIN:     lstUsrDomain,
+		flgnm.FLG_MAXRESULTS: lstUsrMaxResults,
+		flgnm.FLG_ORDERBY:    lstUsrOrderBy,
+		flgnm.FLG_PROJECTION: lstUsrProjection,
+		flgnm.FLG_QUERY:      lstUsrQuery,
+		flgnm.FLG_VIEWTYPE:   lstUsrViewType,
+	}
+
+	// Get customer id if the domain flag is not present
+	_, domPresent := flgValMap[flgnm.FLG_DOMAIN]
+	if !domPresent {
+		customerID, err := cfg.ReadConfigString(cfg.CONFIGCUSTID)
+		if err != nil {
+			lg.Error(err)
+			return err
+		}
+		ulc = usrs.AddCustomer(ulc, customerID)
+	}
+
+	// Check that deleted and query flags are not both present
+	err := lstUsrDeletedQuery(flgValMap)
+	if err != nil {
+		return err
+	}
+
+	// Cycle through flags that build the ulc excluding pages and count
+	for key, val := range flgValMap {
+		// Order by has dependent sort order so deal with that
+		if key == flgnm.FLG_ORDERBY {
+			retStruct, err := lstUsrSortOrderBy(flgValMap)
+			if err != nil {
+				return err
+			}
+			val = retStruct
+		}
+		// Projection has dependent custom field mask so deal with that
+		if key == flgnm.FLG_PROJECTION {
+			retStruct, err := lstUsrCustomProjection(flgValMap)
+			if err != nil {
+				return err
+			}
+			val = retStruct
+		}
+
+		luf, ok := lstUsrFuncMap[key]
+		if !ok {
+			continue
+		}
+		err := luf(ulc, val)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func lstUsrProjection(ulc *admin.UsersListCall, inData interface{}) error {
+	lg.Debug("starting lstUsrProjection()")
+	defer lg.Debug("finished lstUsrProjection()")
+
+	inStruct := inData.(gd.TwoStrStruct)
+	projVal := inStruct.Element1
+
+	if projVal != "" {
+		ok := cmn.SliceContainsStr(usrs.ValidProjections, projVal)
+		if !ok {
+			err := fmt.Errorf(gmess.ERR_INVALIDPROJECTIONTYPE, projVal)
+			lg.Error(err)
+			return err
+		}
+
+		listCall := usrs.AddProjection(ulc, projVal)
+		ulc = listCall.(*admin.UsersListCall)
+
+		if projVal == "custom" {
+			custVal := inStruct.Element2
+			if custVal != "" {
+				cFields := strings.Split(custVal, "~")
+				mask := strings.Join(cFields, ",")
+				listCall := usrs.AddCustomFieldMask(ulc, mask)
+				ulc = listCall.(*admin.UsersListCall)
+			} else {
+				err := errors.New(gmess.ERR_NOCUSTOMFIELDMASK)
+				lg.Error(err)
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func lstUsrQuery(ulc *admin.UsersListCall, flagVal interface{}) error {
+	lg.Debug("starting lstUsrQuery()")
+	defer lg.Debug("finished lstUsrQuery()")
+
+	qryVal := fmt.Sprintf("%v", flagVal)
+	if qryVal != "" {
+		formattedQuery, err := gpars.ParseQuery(qryVal, usrs.QueryAttrMap)
+		if err != nil {
+			lg.Error(err)
+			return err
+		}
+
+		ulc = usrs.AddQuery(ulc, formattedQuery)
+	}
+	return nil
+}
+
+func lstUsrSortOrderBy(flgValMap map[string]interface{}) (gd.TwoStrStruct, error) {
+	lg.Debug("starting lstUsrSortOrderBy()")
+	defer lg.Debug("finished lstUsrSortOrderBy()")
+
+	outData := gd.TwoStrStruct{}
+
+	orderByVal := flgValMap[flgnm.FLG_ORDERBY]
+	sortOrderVal, sortOrderPresent := flgValMap[flgnm.FLG_SORTORDER]
+
+	outData.Element1 = fmt.Sprintf("%v", orderByVal)
+	if sortOrderPresent {
+		outData.Element2 = fmt.Sprintf("%v", sortOrderVal)
+	} else {
+		outData.Element2 = ""
+	}
+
+	return outData, nil
+}
+
+func lstUsrViewType(ulc *admin.UsersListCall, flagVal interface{}) error {
+	lg.Debug("starting lstUsrViewType()")
+	defer lg.Debug("finished lstUsrViewType()")
+
+	vtVal := fmt.Sprintf("%v", flagVal)
+	if vtVal != "" {
+		lowerVt := strings.ToLower(vtVal)
+		ok := cmn.SliceContainsStr(usrs.ValidViewTypes, lowerVt)
+		if !ok {
+			err := fmt.Errorf(gmess.ERR_INVALIDVIEWTYPE, vtVal)
+			lg.Error(err)
+			return err
+		}
+
+		listCall := usrs.AddViewType(ulc, lowerVt)
+		ulc = listCall.(*admin.UsersListCall)
+	}
+	return nil
 }

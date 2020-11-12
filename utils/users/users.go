@@ -30,8 +30,10 @@ import (
 	"strings"
 
 	cmn "github.com/plusworx/gmin/utils/common"
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	lg "github.com/plusworx/gmin/utils/logging"
+	"github.com/spf13/cobra"
 	admin "google.golang.org/api/admin/directory/v1"
 	"google.golang.org/api/googleapi"
 )
@@ -837,6 +839,47 @@ func DoList(ulc *admin.UsersListCall) (*admin.Users, error) {
 	return users, nil
 }
 
+// GetFlagVal returns user command flag values
+func GetFlagVal(cmd *cobra.Command, flagName string) (interface{}, error) {
+	lg.Debugw("starting getFlagVal()",
+		"flagName", flagName)
+	defer lg.Debug("finished getFlagVal()")
+
+	boolFlags := []string{
+		flgnm.FLG_CHANGEPWD,
+		flgnm.FLG_COUNT,
+		flgnm.FLG_DELETED,
+		flgnm.FLG_GAL,
+		flgnm.FLG_SUSPENDED,
+	}
+
+	if flagName == flgnm.FLG_MAXRESULTS {
+		iVal, err := cmd.Flags().GetInt64(flagName)
+		if err != nil {
+			lg.Error(err)
+			return nil, err
+		}
+		return iVal, nil
+	}
+
+	ok := cmn.SliceContainsStr(boolFlags, flagName)
+	if ok {
+		bVal, err := cmd.Flags().GetBool(flagName)
+		if err != nil {
+			lg.Error(err)
+			return nil, err
+		}
+		return bVal, nil
+	}
+
+	sVal, err := cmd.Flags().GetString(flagName)
+	if err != nil {
+		lg.Error(err)
+		return nil, err
+	}
+	return sVal, nil
+}
+
 // HashPassword creates a password hash
 func HashPassword(password string) (string, error) {
 	lg.Debugw("starting HashPassword()",
@@ -881,9 +924,9 @@ func PopulateUndeleteUser(undelUser *UndeleteUser, hdrMap map[int]string, objDat
 
 // PopulateUser is used in batch processing
 func PopulateUser(user *admin.User, hdrMap map[int]string, objData []interface{}) error {
-	lg.Debugw("starting populateGroup()",
+	lg.Debugw("starting PopulateUser()",
 		"hdrMap", hdrMap)
-	defer lg.Debug("finished populateGroup()")
+	defer lg.Debug("finished PopulateUser()")
 
 	name := new(admin.UserName)
 
@@ -1097,6 +1140,205 @@ func ShowAttrs(filter string) {
 	}
 }
 
+func showAttrAddress(attr string, filter string) error {
+	lg.Debugw("starting showAttrAddress()",
+		"attr", attr,
+		"filter", filter)
+	lg.Debug("finished showAttrAddress()")
+
+	if attr == "type" {
+		cmn.ShowAttrVals(validAddressTypes, filter)
+		return nil
+	}
+	err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, attr)
+	lg.Error(err)
+	return err
+}
+
+func showAttrEmail(attr string, filter string) error {
+	lg.Debugw("starting showAttrEmail()",
+		"attr", attr,
+		"filter", filter)
+	lg.Debug("finished showAttrEmail()")
+
+	if attr == "type" {
+		cmn.ShowAttrVals(validEmailTypes, filter)
+		return nil
+	}
+	err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, attr)
+	lg.Error(err)
+	return err
+}
+
+func showAttrExtID(attr string, filter string) error {
+	lg.Debugw("starting showAttrExtID()",
+		"attr", attr,
+		"filter", filter)
+	lg.Debug("finished showAttrExtID()")
+
+	if attr == "type" {
+		cmn.ShowAttrVals(validExtIDTypes, filter)
+		return nil
+	}
+	err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, attr)
+	lg.Error(err)
+	return err
+}
+
+func showAttrGender(attr string, filter string) error {
+	lg.Debugw("starting showAttrGender()",
+		"attr", attr,
+		"filter", filter)
+	lg.Debug("finished showAttrGender()")
+
+	if attr == "type" {
+		cmn.ShowAttrVals(validGenders, filter)
+		return nil
+	}
+	err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, attr)
+	lg.Error(err)
+	return err
+}
+
+func showAttrKeyword(attr string, filter string) error {
+	lg.Debugw("starting showAttrKeyword()",
+		"attr", attr,
+		"filter", filter)
+	lg.Debug("finished showAttrKeyword()")
+
+	if attr == "type" {
+		cmn.ShowAttrVals(validKeywordTypes, filter)
+		return nil
+	}
+	err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, attr)
+	lg.Error(err)
+	return err
+}
+
+func showAttrLocation(attr string, filter string) error {
+	lg.Debugw("starting showAttrLocation()",
+		"attr", attr,
+		"filter", filter)
+	lg.Debug("finished showAttrLocation()")
+	if attr == "type" {
+		cmn.ShowAttrVals(validLocationTypes, filter)
+		return nil
+	}
+	err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, attr)
+	lg.Error(err)
+	return err
+}
+
+func showAttrNotes(attr string, filter string) error {
+	lg.Debugw("starting showAttrNotes()",
+		"attr", attr,
+		"filter", filter)
+	lg.Debug("finished showAttrNotes()")
+
+	if attr == "type" {
+		cmn.ShowAttrVals(validNotesContentTypes, filter)
+		return nil
+	}
+	err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, attr)
+	lg.Error(err)
+	return err
+}
+
+func showAttrOrg(attr string, filter string) error {
+	lg.Debugw("starting showAttrOrg()",
+		"attr", attr,
+		"filter", filter)
+	lg.Debug("finished showAttrOrg()")
+
+	if attr == "type" {
+		cmn.ShowAttrVals(validOrgTypes, filter)
+		return nil
+	}
+	err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, attr)
+	lg.Error(err)
+	return err
+}
+
+func showAttrPhone(attr string, filter string) error {
+	lg.Debugw("starting showAttrPhone()",
+		"attr", attr,
+		"filter", filter)
+	lg.Debug("finished showAttrPhone()")
+
+	if attr == "type" {
+		cmn.ShowAttrVals(validPhoneTypes, filter)
+		return nil
+	}
+	err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, attr)
+	lg.Error(err)
+	return err
+}
+
+func showAttrPxAcct(attr string, filter string) error {
+	lg.Debugw("starting showAttrPxAcct()",
+		"attr", attr,
+		"filter", filter)
+	lg.Debug("finished showAttrPxAcct()")
+
+	if attr == "operatingsystemtype" {
+		cmn.ShowAttrVals(validOSTypes, filter)
+		return nil
+	}
+	err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, attr)
+	lg.Error(err)
+	return err
+}
+
+func showAttrRelation(attr string, filter string) error {
+	lg.Debugw("starting showAttrRelation()",
+		"attr", attr,
+		"filter", filter)
+	lg.Debug("finished showAttrRelation()")
+
+	if attr == "type" {
+		cmn.ShowAttrVals(validRelationTypes, filter)
+		return nil
+	}
+	err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, attr)
+	lg.Error(err)
+	return err
+}
+
+func showAttrWebsite(attr string, filter string) error {
+	lg.Debugw("starting showAttrWebsite()",
+		"attr", attr,
+		"filter", filter)
+	lg.Debug("finished showAttrWebsite()")
+
+	if attr == "type" {
+		cmn.ShowAttrVals(validWebsiteTypes, filter)
+		return nil
+	}
+	err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, attr)
+	lg.Error(err)
+	return err
+}
+
+func showAttrIm(attr string, filter string) error {
+	lg.Debugw("starting showAttrIm()",
+		"attr", attr,
+		"filter", filter)
+	lg.Debug("finished showAttrIm()")
+
+	if attr == "protocol" {
+		cmn.ShowAttrVals(validImProtocols, filter)
+		return nil
+	}
+	if attr == "type" {
+		cmn.ShowAttrVals(validImTypes, filter)
+		return nil
+	}
+	err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, attr)
+	lg.Error(err)
+	return err
+
+}
+
 // ShowAttrValues displays enumerated attribute values
 func ShowAttrValues(lenArgs int, args []string, filter string) error {
 	lg.Debugw("starting ShowAttrValues()",
@@ -1105,17 +1347,46 @@ func ShowAttrValues(lenArgs int, args []string, filter string) error {
 		"filter", filter)
 	defer lg.Debug("finished ShowAttrValues()")
 
+	attrNames := []string{
+		"address",
+		"email",
+		"externalid",
+		"gender",
+		"keyword",
+		"location",
+		"notes",
+		"organization",
+		"phone",
+		"relation",
+		"website",
+	}
+
+	showFuncMap := map[string]func(string, string) error{
+		"address":      showAttrAddress,
+		"email":        showAttrEmail,
+		"externalid":   showAttrExtID,
+		"gender":       showAttrGender,
+		"im":           showAttrIm,
+		"keyword":      showAttrKeyword,
+		"location":     showAttrLocation,
+		"notes":        showAttrNotes,
+		"organization": showAttrOrg,
+		"phone":        showAttrPhone,
+		"posixaccount": showAttrPxAcct,
+		"relation":     showAttrRelation,
+		"website":      showAttrWebsite,
+	}
+
 	if lenArgs == 1 {
 		cmn.ShowAttrVals(attrValues, filter)
+		return nil
 	}
 
 	if lenArgs == 2 {
 		attr := strings.ToLower(args[1])
 
 		switch {
-		case attr == "address" || attr == "email" || attr == "externalid" || attr == "gender" ||
-			attr == "keyword" || attr == "location" || attr == "notes" || attr == "organization" || attr == "phone" ||
-			attr == "relation" || attr == "website":
+		case cmn.SliceContainsStr(attrNames, attr):
 			fmt.Println("type")
 		case attr == "im":
 			fmt.Println("protocol")
@@ -1127,139 +1398,23 @@ func ShowAttrValues(lenArgs int, args []string, filter string) error {
 			lg.Error(err)
 			return err
 		}
+		return nil
 	}
 
-	if lenArgs == 3 {
-		attr2 := strings.ToLower(args[1])
-		attr3 := strings.ToLower(args[2])
+	attr2 := strings.ToLower(args[1])
+	attr3 := strings.ToLower(args[2])
 
-		if attr2 == "address" {
-			if attr3 == "type" {
-				cmn.ShowAttrVals(validAddressTypes, filter)
-				return nil
-			}
-			err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[2])
-			lg.Error(err)
-			return err
-		}
-		if attr2 == "email" {
-			if attr3 == "type" {
-				cmn.ShowAttrVals(validEmailTypes, filter)
-				return nil
-			}
-			err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[2])
-			lg.Error(err)
-			return err
-		}
-		if attr2 == "externalid" {
-			if attr3 == "type" {
-				cmn.ShowAttrVals(validExtIDTypes, filter)
-				return nil
-			}
-			err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[2])
-			lg.Error(err)
-			return err
-		}
-		if attr2 == "gender" {
-			if attr3 == "type" {
-				cmn.ShowAttrVals(validGenders, filter)
-				return nil
-			}
-			err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[2])
-			lg.Error(err)
-			return err
-		}
-		if attr2 == "keyword" {
-			if attr3 == "type" {
-				cmn.ShowAttrVals(validKeywordTypes, filter)
-				return nil
-			}
-			err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[2])
-			lg.Error(err)
-			return err
-		}
-		if attr2 == "location" {
-			if attr3 == "type" {
-				cmn.ShowAttrVals(validLocationTypes, filter)
-				return nil
-			}
-			err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[2])
-			lg.Error(err)
-			return err
-		}
-		if attr2 == "notes" {
-			if attr3 == "type" {
-				cmn.ShowAttrVals(validNotesContentTypes, filter)
-				return nil
-			}
-			err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[2])
-			lg.Error(err)
-			return err
-		}
-		if attr2 == "organization" {
-			if attr3 == "type" {
-				cmn.ShowAttrVals(validOrgTypes, filter)
-				return nil
-			}
-			err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[2])
-			lg.Error(err)
-			return err
-		}
-		if attr2 == "phone" {
-			if attr3 == "type" {
-				cmn.ShowAttrVals(validPhoneTypes, filter)
-				return nil
-			}
-			err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[2])
-			lg.Error(err)
-			return err
-		}
-		if attr2 == "posixaccount" {
-			if attr3 == "operatingsystemtype" {
-				cmn.ShowAttrVals(validOSTypes, filter)
-				return nil
-			}
-			err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[2])
-			lg.Error(err)
-			return err
-		}
-		if attr2 == "relation" {
-			if attr3 == "type" {
-				cmn.ShowAttrVals(validRelationTypes, filter)
-				return nil
-			}
-			err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[2])
-			lg.Error(err)
-			return err
-		}
-		if attr2 == "website" {
-			if attr3 == "type" {
-				cmn.ShowAttrVals(validWebsiteTypes, filter)
-				return nil
-			}
-			err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[2])
-			lg.Error(err)
-			return err
-		}
-		if attr2 == "im" {
-			if attr3 == "protocol" {
-				cmn.ShowAttrVals(validImProtocols, filter)
-				return nil
-			}
-			if attr3 == "type" {
-				cmn.ShowAttrVals(validImTypes, filter)
-				return nil
-			}
-			err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[2])
-			lg.Error(err)
-			return err
-		}
-		// Attribute not recognized
-		err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[1])
+	fAttr, ok := showFuncMap[attr2]
+	if !ok {
+		err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, attr2)
 		lg.Error(err)
 		return err
 	}
 
+	err := fAttr(attr3, filter)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -1342,44 +1497,33 @@ func ShowSubAttrs(compAttr string, filter string) error {
 	defer lg.Debug("finished ShowSubAttrs()")
 
 	lwrCompAttr := strings.ToLower(compAttr)
-	switch lwrCompAttr {
-	case "address":
-		cmn.ShowAttrs(addressAttrs, UserAttrMap, filter)
-	case "email":
-		cmn.ShowAttrs(emailAttrs, UserAttrMap, filter)
-	case "externalid":
-		cmn.ShowAttrs(extIDAttrs, UserAttrMap, filter)
-	case "gender":
-		cmn.ShowAttrs(genderAttrs, UserAttrMap, filter)
-	case "im":
-		cmn.ShowAttrs(imAttrs, UserAttrMap, filter)
-	case "keyword":
-		cmn.ShowAttrs(keywordAttrs, UserAttrMap, filter)
-	case "language":
-		cmn.ShowAttrs(languageAttrs, UserAttrMap, filter)
-	case "location":
-		cmn.ShowAttrs(locationAttrs, UserAttrMap, filter)
-	case "name":
-		cmn.ShowAttrs(nameAttrs, UserAttrMap, filter)
-	case "notes":
-		cmn.ShowAttrs(notesAttrs, UserAttrMap, filter)
-	case "organization":
-		cmn.ShowAttrs(organizationAttrs, UserAttrMap, filter)
-	case "phone":
-		cmn.ShowAttrs(phoneAttrs, UserAttrMap, filter)
-	case "posixaccount":
-		cmn.ShowAttrs(posAcctAttrs, UserAttrMap, filter)
-	case "relation":
-		cmn.ShowAttrs(relationAttrs, UserAttrMap, filter)
-	case "sshpublickey":
-		cmn.ShowAttrs(sshPubKeyAttrs, UserAttrMap, filter)
-	case "website":
-		cmn.ShowAttrs(websiteAttrs, UserAttrMap, filter)
-	default:
-		err := fmt.Errorf(gmess.ERR_NOTCOMPOSITEATTR, compAttr)
-		lg.Error(err)
-		return err
+
+	attrMatchMap := map[string][]string{
+		"address":      addressAttrs,
+		"email":        emailAttrs,
+		"externalid":   extIDAttrs,
+		"gender":       genderAttrs,
+		"im":           imAttrs,
+		"keyword":      keywordAttrs,
+		"language":     languageAttrs,
+		"location":     locationAttrs,
+		"name":         nameAttrs,
+		"notes":        notesAttrs,
+		"organization": organizationAttrs,
+		"phone":        phoneAttrs,
+		"posixaccount": posAcctAttrs,
+		"relation":     relationAttrs,
+		"sshpublickey": sshPubKeyAttrs,
+		"website":      websiteAttrs,
 	}
 
-	return nil
+	attrMap, isCompAttr := attrMatchMap[lwrCompAttr]
+	if isCompAttr {
+		cmn.ShowAttrs(attrMap, UserAttrMap, filter)
+		return nil
+	}
+
+	err := fmt.Errorf(gmess.ERR_NOTCOMPOSITEATTR, compAttr)
+	lg.Error(err)
+	return err
 }

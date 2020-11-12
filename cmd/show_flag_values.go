@@ -67,6 +67,27 @@ func doShowFlagVals(cmd *cobra.Command, args []string) error {
 		"args", args)
 	defer lg.Debug("finished doShowFlagVals()")
 
+	aliasSlice := [][]string{
+		ca.CDevAliases,
+		ca.GroupAliases,
+		ca.GMAliases,
+		ca.GSAliases,
+		ca.MDevAliases,
+		ca.OUAliases,
+		ca.UserAliases,
+	}
+
+	// Functions are mapped to inex values governed by aliasSlice
+	flagFuncMap := map[int]func(int, []string, string) error{
+		0: cdevs.ShowFlagValues,
+		1: grps.ShowFlagValues,
+		2: gmems.ShowFlagValues,
+		3: grpset.ShowFlagValues,
+		4: mdevs.ShowFlagValues,
+		5: ous.ShowFlagValues,
+		6: usrs.ShowFlagValues,
+	}
+
 	if len(args) > 2 {
 		return errors.New(gmess.ERR_MAX2ARGSEXCEEDED)
 	}
@@ -78,51 +99,27 @@ func doShowFlagVals(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	switch {
-	case cmn.SliceContainsStr(ca.CDevAliases, object):
-		err := cdevs.ShowFlagValues(len(args), args, flgFilterVal)
-		if err != nil {
-			return err
-		}
-	case object == "global":
+	if object == "global" {
 		err := cmn.ShowGlobalFlagValues(len(args), args, flgFilterVal)
 		if err != nil {
 			return err
 		}
-	case cmn.SliceContainsStr(ca.GroupAliases, object):
-		err := grps.ShowFlagValues(len(args), args, flgFilterVal)
-		if err != nil {
-			return err
-		}
-	case cmn.SliceContainsStr(ca.GMAliases, object):
-		err := gmems.ShowFlagValues(len(args), args, flgFilterVal)
-		if err != nil {
-			return err
-		}
-	case cmn.SliceContainsStr(ca.GSAliases, object):
-		err := grpset.ShowFlagValues(len(args), args, flgFilterVal)
-		if err != nil {
-			return err
-		}
-	case cmn.SliceContainsStr(ca.MDevAliases, object):
-		err := mdevs.ShowFlagValues(len(args), args, flgFilterVal)
-		if err != nil {
-			return err
-		}
-	case cmn.SliceContainsStr(ca.OUAliases, object):
-		err := ous.ShowFlagValues(len(args), args, flgFilterVal)
-		if err != nil {
-			return err
-		}
-	case cmn.SliceContainsStr(ca.UserAliases, object):
-		err := usrs.ShowFlagValues(len(args), args, flgFilterVal)
-		if err != nil {
-			return err
-		}
-	default:
-		return fmt.Errorf(gmess.ERR_OBJECTNOTRECOGNIZED, args[0])
+		return nil
 	}
-	return nil
+
+	for idx, alSlice := range aliasSlice {
+		exists := cmn.SliceContainsStr(alSlice, object)
+		if exists {
+			showFunc := flagFuncMap[idx]
+			err := showFunc(len(args), args, flgFilterVal)
+			if err != nil {
+				return err
+			}
+			return nil
+		}
+	}
+
+	return fmt.Errorf(gmess.ERR_OBJECTNOTRECOGNIZED, args[0])
 }
 
 func init() {

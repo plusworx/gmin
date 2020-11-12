@@ -33,6 +33,7 @@ import (
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	lg "github.com/plusworx/gmin/utils/logging"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	admin "google.golang.org/api/admin/directory/v1"
 )
 
@@ -52,7 +53,31 @@ func doUpdateCrOSDev(cmd *cobra.Command, args []string) error {
 		"args", args)
 	defer lg.Debug("finished doUpdateCrOSDev()")
 
-	var crosdev = admin.ChromeOsDevice{}
+	var flagsPassed []string
+
+	crosdev := new(admin.ChromeOsDevice)
+	flagValueMap := map[string]interface{}{}
+
+	// Collect names of command flags passed in
+	cmd.Flags().Visit(func(f *pflag.Flag) {
+		flagsPassed = append(flagsPassed, f.Name)
+	})
+
+	// Populate flag value map
+	for _, flg := range flagsPassed {
+		val, err := cdevs.GetFlagVal(cmd, flg)
+		if err != nil {
+			return err
+		}
+		flagValueMap[flg] = val
+	}
+
+	// Process command flags
+	err := processUpdCrOSDevFlags(cmd, crosdev, flagValueMap)
+	if err != nil {
+		lg.Error(err)
+		return err
+	}
 
 	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryDeviceChromeosScope)
 	if err != nil {
@@ -65,69 +90,11 @@ func doUpdateCrOSDev(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	flgAssetIDVal, err := cmd.Flags().GetString(flgnm.FLG_ASSETID)
-	if err != nil {
-		lg.Error(err)
-		return err
-	}
-	if flgAssetIDVal != "" {
-		crosdev.AnnotatedAssetId = flgAssetIDVal
-	}
+	cduc := ds.Chromeosdevices.Update(customerID, args[0], crosdev)
 
-	flgLocationVal, err := cmd.Flags().GetString(flgnm.FLG_LOCATION)
-	if err != nil {
-		lg.Error(err)
-		return err
-	}
-	if flgLocationVal != "" {
-		crosdev.AnnotatedLocation = flgLocationVal
-	}
-
-	flgNotesVal, err := cmd.Flags().GetString(flgnm.FLG_NOTES)
-	if err != nil {
-		lg.Error(err)
-		return err
-	}
-	if flgNotesVal != "" {
-		crosdev.Notes = flgNotesVal
-	}
-
-	flgOUPathVal, err := cmd.Flags().GetString(flgnm.FLG_ORGUNITPATH)
-	if err != nil {
-		lg.Error(err)
-		return err
-	}
-	if flgOUPathVal != "" {
-		crosdev.OrgUnitPath = flgOUPathVal
-	}
-
-	flgUserKeyVal, err := cmd.Flags().GetString(flgnm.FLG_USERKEY)
-	if err != nil {
-		lg.Error(err)
-		return err
-	}
-	if flgUserKeyVal != "" {
-		crosdev.AnnotatedUser = flgUserKeyVal
-	}
-
-	cduc := ds.Chromeosdevices.Update(customerID, args[0], &crosdev)
-
-	flgProjectionVal, err := cmd.Flags().GetString(flgnm.FLG_PROJECTION)
-	if err != nil {
-		lg.Error(err)
-		return err
-	}
-	if flgProjectionVal != "" {
-		proj := strings.ToLower(flgProjectionVal)
-		ok := cmn.SliceContainsStr(cdevs.ValidProjections, proj)
-		if !ok {
-			err = fmt.Errorf(gmess.ERR_INVALIDPROJECTIONTYPE, flgProjectionVal)
-			lg.Error(err)
-			return err
-		}
-
-		updCall := cdevs.AddProjection(cduc, proj)
-		cduc = updCall.(*admin.ChromeosdevicesUpdateCall)
+	projFlgVal, projFlgExists := flagValueMap[flgnm.FLG_PROJECTION]
+	if projFlgExists {
+		ucdProjectionFlag(cduc, "--"+flgnm.FLG_PROJECTION, fmt.Sprintf("%v", projFlgVal))
 	}
 
 	updCrOSDev, err := cduc.Do()
@@ -150,5 +117,118 @@ func init() {
 	updateCrOSDevCmd.Flags().StringP(flgnm.FLG_LOCATION, "l", "", "device location")
 	updateCrOSDevCmd.Flags().StringP(flgnm.FLG_NOTES, "n", "", "notes about device")
 	updateCrOSDevCmd.Flags().StringP(flgnm.FLG_ORGUNITPATH, "t", "", "orgunit device belongs to")
-	updateCrOSDevCmd.Flags().StringP(flgnm.FLG_USERKEY, "u", "", "device user")
+	updateCrOSDevCmd.Flags().StringP(flgnm.FLG_USER, "u", "", "device user")
+}
+
+func processUpdCrOSDevFlags(cmd *cobra.Command, crosdev *admin.ChromeOsDevice, flagValueMap map[string]interface{}) error {
+	lg.Debug("starting processUpdCrOSDevFlags()")
+	defer lg.Debug("finished processUpdCrOSDevFlags()")
+
+	cdevUpdOneStrFuncMap := map[string]func(*admin.ChromeOsDevice, string){
+		flgnm.FLG_LOCATION: ucdLocationFlag,
+		flgnm.FLG_NOTES:    ucdNotesFlag,
+		flgnm.FLG_USER:     ucdUserFlag,
+	}
+
+	cdevUpdTwoStrFuncMap := map[string]func(*admin.ChromeOsDevice, string, string) error{
+		flgnm.FLG_ASSETID:     ucdAssetIDFlag,
+		flgnm.FLG_ORGUNITPATH: ucdOrgUnitPathFlag,
+	}
+
+	for flName, flgVal := range flagValueMap {
+		strOneFunc, sf1Exists := cdevUpdOneStrFuncMap[flName]
+		if sf1Exists {
+			strOneFunc(crosdev, fmt.Sprintf("%v", flgVal))
+			continue
+		}
+
+		strTwoFunc, sf2Exists := cdevUpdTwoStrFuncMap[flName]
+		if sf2Exists {
+			err := strTwoFunc(crosdev, "--"+flName, fmt.Sprintf("%v", flgVal))
+			if err != nil {
+				return err
+			}
+			continue
+		}
+	}
+	return nil
+}
+
+func ucdAssetIDFlag(crosdev *admin.ChromeOsDevice, flgName string, flgVal string) error {
+	lg.Debugw("starting ucdAssetIDFlag()",
+		"flgVal", flgVal)
+	defer lg.Debug("finished ucdAssetIDFlag()")
+
+	if flgVal == "" {
+		err := fmt.Errorf(gmess.ERR_EMPTYSTRING, flgName)
+		lg.Error(err)
+		return err
+	}
+	crosdev.AnnotatedAssetId = flgVal
+
+	return nil
+}
+
+func ucdLocationFlag(crosdev *admin.ChromeOsDevice, flgVal string) {
+	lg.Debugw("starting ucdLocationFlag()",
+		"flgVal", flgVal)
+	defer lg.Debug("finished ucdLocationFlag()")
+
+	crosdev.AnnotatedLocation = flgVal
+}
+
+func ucdNotesFlag(crosdev *admin.ChromeOsDevice, flgVal string) {
+	lg.Debugw("starting ucdNotesFlag()",
+		"flgVal", flgVal)
+	defer lg.Debug("finished ucdNotesFlag()")
+
+	crosdev.Notes = flgVal
+}
+
+func ucdOrgUnitPathFlag(crosdev *admin.ChromeOsDevice, flgName string, flgVal string) error {
+	lg.Debugw("starting ucdOrgUnitPathFlag()",
+		"flgVal", flgVal)
+	defer lg.Debug("finished ucdOrgUnitPathFlag()")
+
+	if flgVal == "" {
+		err := fmt.Errorf(gmess.ERR_EMPTYSTRING, flgName)
+		lg.Error(err)
+		return err
+	}
+	crosdev.OrgUnitPath = flgVal
+
+	return nil
+}
+
+func ucdProjectionFlag(cduc *admin.ChromeosdevicesUpdateCall, flgName string, flgVal string) error {
+	lg.Debugw("starting ucdProjectionFlag()",
+		"flgVal", flgVal)
+	defer lg.Debug("finished ucdProjectionFlag()")
+
+	if flgVal == "" {
+		err := fmt.Errorf(gmess.ERR_EMPTYSTRING, flgName)
+		lg.Error(err)
+		return err
+	}
+
+	proj := strings.ToLower(flgVal)
+	ok := cmn.SliceContainsStr(cdevs.ValidProjections, proj)
+	if !ok {
+		err := fmt.Errorf(gmess.ERR_INVALIDPROJECTIONTYPE, flgVal)
+		lg.Error(err)
+		return err
+	}
+
+	updCall := cdevs.AddProjection(cduc, proj)
+	cduc = updCall.(*admin.ChromeosdevicesUpdateCall)
+
+	return nil
+}
+
+func ucdUserFlag(crosdev *admin.ChromeOsDevice, flgVal string) {
+	lg.Debugw("starting ucdUserFlag()",
+		"flgVal", flgVal)
+	defer lg.Debug("finished ucdUserFlag()")
+
+	crosdev.AnnotatedUser = flgVal
 }

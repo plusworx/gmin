@@ -30,11 +30,13 @@ import (
 
 	cmn "github.com/plusworx/gmin/utils/common"
 	flgnm "github.com/plusworx/gmin/utils/flagnames"
+	gd "github.com/plusworx/gmin/utils/gendatastructs"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	gpars "github.com/plusworx/gmin/utils/gminparsers"
 	lg "github.com/plusworx/gmin/utils/logging"
 	usrs "github.com/plusworx/gmin/utils/users"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	admin "google.golang.org/api/admin/directory/v1"
 )
 
@@ -52,11 +54,27 @@ gmin get user 114361578941906491576 -a primaryEmail~name`,
 func doGetUser(cmd *cobra.Command, args []string) error {
 	lg.Debugw("starting doGetUser()",
 		"args", args)
+	defer lg.Debug("finished doGetUser()")
 
 	var (
-		jsonData []byte
-		user     *admin.User
+		flagsPassed []string
+		jsonData    []byte
+		user        *admin.User
 	)
+
+	flagValueMap := map[string]interface{}{}
+
+	cmd.Flags().Visit(func(f *pflag.Flag) {
+		flagsPassed = append(flagsPassed, f.Name)
+	})
+
+	for _, flg := range flagsPassed {
+		val, err := usrs.GetFlagVal(cmd, flg)
+		if err != nil {
+			return err
+		}
+		flagValueMap[flg] = val
+	}
 
 	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryUserReadonlyScope)
 	if err != nil {
@@ -66,74 +84,9 @@ func doGetUser(cmd *cobra.Command, args []string) error {
 
 	ugc := ds.Users.Get(args[0])
 
-	flgAttrsVal, err := cmd.Flags().GetString(flgnm.FLG_ATTRIBUTES)
+	err = getUsrProcessFlags(ugc, flagValueMap)
 	if err != nil {
-		lg.Error(err)
 		return err
-	}
-	if flgAttrsVal != "" {
-		formattedAttrs, err := gpars.ParseOutputAttrs(flgAttrsVal, usrs.UserAttrMap)
-		if err != nil {
-			lg.Error(err)
-			return err
-		}
-
-		getCall := usrs.AddFields(ugc, formattedAttrs)
-		ugc = getCall.(*admin.UsersGetCall)
-	}
-
-	flgProjectionVal, err := cmd.Flags().GetString(flgnm.FLG_PROJECTION)
-	if err != nil {
-		lg.Error(err)
-		return err
-	}
-	if flgProjectionVal != "" {
-		proj := strings.ToLower(flgProjectionVal)
-		ok := cmn.SliceContainsStr(usrs.ValidProjections, proj)
-		if !ok {
-			err = fmt.Errorf(gmess.ERR_INVALIDPROJECTIONTYPE, flgProjectionVal)
-			lg.Error(err)
-			return err
-		}
-
-		getCall := usrs.AddProjection(ugc, proj)
-		ugc = getCall.(*admin.UsersGetCall)
-
-		if proj == "custom" {
-			flgCustFldVal, err := cmd.Flags().GetString(flgnm.FLG_CUSTFLDMASK)
-			if err != nil {
-				lg.Error(err)
-				return err
-			}
-			if flgCustFldVal != "" {
-				cFields := strings.Split(flgCustFldVal, "~")
-				mask := strings.Join(cFields, ",")
-				getCall := usrs.AddCustomFieldMask(ugc, mask)
-				ugc = getCall.(*admin.UsersGetCall)
-			} else {
-				err = errors.New(gmess.ERR_NOCUSTOMFIELDMASK)
-				lg.Error(err)
-				return err
-			}
-		}
-	}
-
-	flgViewTypeVal, err := cmd.Flags().GetString(flgnm.FLG_VIEWTYPE)
-	if err != nil {
-		lg.Error(err)
-		return err
-	}
-	if flgViewTypeVal != "" {
-		vt := strings.ToLower(flgViewTypeVal)
-		ok := cmn.SliceContainsStr(usrs.ValidViewTypes, vt)
-		if !ok {
-			err = fmt.Errorf(gmess.ERR_INVALIDVIEWTYPE, flgViewTypeVal)
-			lg.Error(err)
-			return err
-		}
-
-		getCall := usrs.AddViewType(ugc, vt)
-		ugc = getCall.(*admin.UsersGetCall)
 	}
 
 	user, err = usrs.DoGet(ugc)
@@ -149,7 +102,145 @@ func doGetUser(cmd *cobra.Command, args []string) error {
 
 	fmt.Println(string(jsonData))
 
-	lg.Debug("finished doGetUser()")
+	return nil
+}
+
+func getUsrAttributes(ugc *admin.UsersGetCall, flagVal interface{}) error {
+	lg.Debug("starting getUsrAttributes()")
+	defer lg.Debug("finished getUsrAttributes()")
+
+	attrsVal := fmt.Sprintf("%v", flagVal)
+	if attrsVal != "" {
+		getAttrs, err := gpars.ParseOutputAttrs(attrsVal, usrs.UserAttrMap)
+		if err != nil {
+			lg.Error(err)
+			return err
+		}
+
+		getCall := usrs.AddFields(ugc, getAttrs)
+		ugc = getCall.(*admin.UsersGetCall)
+	}
+	return nil
+}
+
+func getUsrCustomProjection(flgValMap map[string]interface{}) (gd.TwoStrStruct, error) {
+	lg.Debug("starting getUsrCustomProjection()")
+	defer lg.Debug("finished getUsrCustomProjection()")
+
+	var retMaskVal string
+
+	projVal := flgValMap[flgnm.FLG_PROJECTION]
+	custFldMaskVal, maskPresent := flgValMap[flgnm.FLG_CUSTFLDMASK]
+
+	lowerProjVal := strings.ToLower(fmt.Sprintf("%v", projVal))
+
+	if lowerProjVal == "custom" && !maskPresent {
+		err := errors.New(gmess.ERR_NOCUSTOMFIELDMASK)
+		lg.Error(err)
+		return gd.TwoStrStruct{}, err
+	}
+
+	if maskPresent && lowerProjVal != "custom" {
+		err := errors.New(gmess.ERR_PROJECTIONFLAGNOTCUSTOM)
+		lg.Error(err)
+		return gd.TwoStrStruct{}, err
+	}
+
+	if maskPresent {
+		retMaskVal = fmt.Sprintf("%v", custFldMaskVal)
+	} else {
+		retMaskVal = ""
+	}
+
+	retStruct := gd.TwoStrStruct{Element1: lowerProjVal, Element2: retMaskVal}
+	return retStruct, nil
+}
+
+func getUsrProcessFlags(ugc *admin.UsersGetCall, flgValMap map[string]interface{}) error {
+	lg.Debug("starting getUsrProcessFlags()")
+	defer lg.Debug("finished getUsrProcessFlags()")
+
+	getUsrFuncMap := map[string]func(*admin.UsersGetCall, interface{}) error{
+		flgnm.FLG_ATTRIBUTES: getUsrAttributes,
+		flgnm.FLG_PROJECTION: getUsrProjection,
+		flgnm.FLG_VIEWTYPE:   getUsrViewType,
+	}
+
+	// Cycle through flags that build the ugc
+	for key, val := range flgValMap {
+		// Projection has dependent custom field mask so deal with that
+		if key == flgnm.FLG_PROJECTION {
+			retStruct, err := getUsrCustomProjection(flgValMap)
+			if err != nil {
+				return err
+			}
+			val = retStruct
+		}
+
+		guf, ok := getUsrFuncMap[key]
+		if !ok {
+			continue
+		}
+		err := guf(ugc, val)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func getUsrProjection(ugc *admin.UsersGetCall, inData interface{}) error {
+	lg.Debug("starting getUsrProjection()")
+	defer lg.Debug("finished getUsrProjection()")
+
+	inStruct := inData.(gd.TwoStrStruct)
+	projVal := inStruct.Element1
+
+	if projVal != "" {
+		ok := cmn.SliceContainsStr(usrs.ValidProjections, projVal)
+		if !ok {
+			err := fmt.Errorf(gmess.ERR_INVALIDPROJECTIONTYPE, projVal)
+			lg.Error(err)
+			return err
+		}
+
+		getCall := usrs.AddProjection(ugc, projVal)
+		ugc = getCall.(*admin.UsersGetCall)
+
+		if projVal == "custom" {
+			custVal := inStruct.Element2
+			if custVal != "" {
+				cFields := strings.Split(custVal, "~")
+				mask := strings.Join(cFields, ",")
+				getCall := usrs.AddCustomFieldMask(ugc, mask)
+				ugc = getCall.(*admin.UsersGetCall)
+			} else {
+				err := errors.New(gmess.ERR_NOCUSTOMFIELDMASK)
+				lg.Error(err)
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func getUsrViewType(ugc *admin.UsersGetCall, flagVal interface{}) error {
+	lg.Debug("starting getUsrViewType()")
+	defer lg.Debug("finished getUsrViewType()")
+
+	vtVal := fmt.Sprintf("%v", flagVal)
+	if vtVal != "" {
+		lowerVt := strings.ToLower(vtVal)
+		ok := cmn.SliceContainsStr(usrs.ValidViewTypes, lowerVt)
+		if !ok {
+			err := fmt.Errorf(gmess.ERR_INVALIDVIEWTYPE, vtVal)
+			lg.Error(err)
+			return err
+		}
+
+		getCall := usrs.AddViewType(ugc, lowerVt)
+		ugc = getCall.(*admin.UsersGetCall)
+	}
 	return nil
 }
 

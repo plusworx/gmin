@@ -29,6 +29,7 @@ import (
 
 	valid "github.com/asaskevich/govalidator"
 	cmn "github.com/plusworx/gmin/utils/common"
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	lg "github.com/plusworx/gmin/utils/logging"
 	"google.golang.org/api/googleapi"
@@ -61,6 +62,25 @@ var AssistContentMap = map[string]string{
 	"none":                "NONE",
 	"owners_and_managers": "OWNERS_AND_MANAGERS",
 	"owners_only":         "OWNERS_ONLY",
+}
+
+var attrLookupMap = map[string]map[string]string{
+	"messagemoderationlevel": MessageModMap,
+	"primarylanguage":        LanguageMap,
+	"replyto":                ReplyToMap,
+	"spammoderationlevel":    SpamModMap,
+	"whocanapprovemembers":   ApproveMemberMap,
+	"whocanassistcontent":    AssistContentMap,
+	"whocanbanusers":         BanUserMap,
+	"whocancontactowner":     ContactOwnerMap,
+	"whocandiscovergroup":    DiscoverGroupMap,
+	"whocanjoin":             JoinMap,
+	"whocanleavegroup":       LeaveMap,
+	"whocanmoderatecontent":  ModContentMap,
+	"whocanmoderatemembers":  ModMemberMap,
+	"whocanpostmessage":      PostMessageMap,
+	"whocanviewgroup":        ViewGroupMap,
+	"whocanviewmembership":   ViewMembershipMap,
 }
 
 var attrValues = []string{
@@ -103,6 +123,25 @@ var DiscoverGroupMap = map[string]string{
 	"anyone_can_discover":        "ANYONE_CAN_DISCOVER",
 	"all_in_domain_can_discover": "ALL_IN_DOMAIN_CAN_DISCOVER",
 	"all_members_can_discover":   "ALL_MEMBERS_CAN_DISCOVER",
+}
+
+var flagLookupMap = map[string]map[string]string{
+	flgnm.FLG_APPROVEMEM:    ApproveMemberMap,
+	flgnm.FLG_ASSISTCONTENT: AssistContentMap,
+	flgnm.FLG_BANUSER:       BanUserMap,
+	flgnm.FLG_CONTACTOWNER:  ContactOwnerMap,
+	flgnm.FLG_DISCGROUP:     DiscoverGroupMap,
+	flgnm.FLG_JOIN:          JoinMap,
+	flgnm.FLG_LANGUAGE:      LanguageMap,
+	flgnm.FLG_LEAVE:         LeaveMap,
+	flgnm.FLG_MESSAGEMOD:    MessageModMap,
+	flgnm.FLG_MODCONTENT:    ModContentMap,
+	flgnm.FLG_MODMEMBER:     ModMemberMap,
+	flgnm.FLG_POSTMESSAGE:   PostMessageMap,
+	flgnm.FLG_REPLYTO:       ReplyToMap,
+	flgnm.FLG_SPAMMOD:       SpamModMap,
+	flgnm.FLG_VIEWGROUP:     ViewGroupMap,
+	flgnm.FLG_VIEWMEMSHIP:   ViewMembershipMap,
 }
 
 var flagValues = []string{
@@ -280,6 +319,37 @@ var ModMemberMap = map[string]string{
 	"owners_only":         "OWNERS_ONLY",
 }
 
+var populateFuncMap = map[string]func(*gset.Groups, string, string) error{
+	"allowexternalmembers":               allowExtMemVal,
+	"allowwebposting":                    allowWebPostingVal,
+	"archiveonly":                        archiveOnlyVal,
+	"customfootertext":                   customFooterVal,
+	"customreplyto":                      replyEmailVal,
+	"defaultmessagedenynotificationtext": denyNotificationVal,
+	"enablecollaborativeinbox":           enableCollabVal,
+	"favoriterepliesontop":               favRepliesVal,
+	"includecustomfooter":                includeFooterVal,
+	"isarchived":                         isArchivedVal,
+	"memberscanpostasthegroup":           memPostVal,
+	"messagemoderationlevel":             messageModVal,
+	"primarylanguage":                    languageVal,
+	"replyto":                            replyToVal,
+	"sendmessagedenynotification":        sendMessDenyVal,
+	"spammoderationlevel":                spamModVal,
+	"whocanapprovemembers":               approveMemberVal,
+	"whocanassistcontent":                assistContentVal,
+	"whocanbanusers":                     banUserVal,
+	"whocancontactowner":                 contactOwnerVal,
+	"whocandiscovergroup":                discoverGroupVal,
+	"whocanjoin":                         joinVal,
+	"whocanleavegroup":                   leaveVal,
+	"whocanmoderatecontent":              modContentVal,
+	"whocanmoderatemembers":              modMemberVal,
+	"whocanpostmessage":                  postMessageVal,
+	"whocanviewgroup":                    viewGroupVal,
+	"whocanviewmembership":               viewMembershipVal,
+}
+
 // PostMessageMap holds valid post-message flag values
 var PostMessageMap = map[string]string{
 	"all_in_domain_can_post": "ALL_IN_DOMAIN_CAN_POST",
@@ -338,6 +408,32 @@ func AddFields(gsgc *gset.GroupsGetCall, attrs string) interface{} {
 	return newGSGC
 }
 
+func allowExtMemVal(grpSettings *gset.Groups, attrName string, attrValue string) error {
+	lg.Debug("starting allowExtMemVal()")
+	defer lg.Debug("finished allowExtMemVal()")
+
+	if strings.ToLower(attrValue) == "true" {
+		grpSettings.AllowExternalMembers = "true"
+	} else {
+		grpSettings.AllowExternalMembers = "false"
+		grpSettings.ForceSendFields = append(grpSettings.ForceSendFields, "AllowExternalMembers")
+	}
+	return nil
+}
+
+func allowWebPostingVal(grpSettings *gset.Groups, attrName string, attrValue string) error {
+	lg.Debug("starting allowWebPostingVal()")
+	defer lg.Debug("finished allowWebPostingVal()")
+
+	if strings.ToLower(attrValue) == "true" {
+		grpSettings.AllowWebPosting = "true"
+	} else {
+		grpSettings.AllowWebPosting = "false"
+		grpSettings.ForceSendFields = append(grpSettings.ForceSendFields, "AllowWebPosting")
+	}
+	return nil
+}
+
 func approveMemberVal(grpSetting *gset.Groups, attrName string, attrValue string) error {
 	lg.Debug("starting approveMemberVal()")
 	defer lg.Debug("finished approveMemberVal()")
@@ -347,6 +443,19 @@ func approveMemberVal(grpSetting *gset.Groups, attrName string, attrValue string
 		return err
 	}
 	grpSetting.WhoCanApproveMembers = validTxt
+	return nil
+}
+
+func archiveOnlyVal(grpSettings *gset.Groups, attrName string, attrValue string) error {
+	lg.Debug("starting archiveOnlyVal()")
+	defer lg.Debug("finished archiveOnlyVal()")
+
+	if strings.ToLower(attrValue) == "true" {
+		grpSettings.ArchiveOnly = "true"
+	} else {
+		grpSettings.ArchiveOnly = "false"
+		grpSettings.ForceSendFields = append(grpSettings.ForceSendFields, "ArchiveOnly")
+	}
 	return nil
 }
 
@@ -386,6 +495,28 @@ func contactOwnerVal(grpSetting *gset.Groups, attrName string, attrValue string)
 	return nil
 }
 
+func customFooterVal(grpSettings *gset.Groups, attrName string, attrValue string) error {
+	lg.Debug("starting customFooterVal()")
+	defer lg.Debug("finished customFooterVal()")
+
+	if attrValue == "" {
+		grpSettings.ForceSendFields = append(grpSettings.ForceSendFields, "CustomFooterText")
+	}
+	grpSettings.CustomFooterText = attrValue
+	return nil
+}
+
+func denyNotificationVal(grpSettings *gset.Groups, attrName string, attrValue string) error {
+	lg.Debug("starting denyNotificationVal()")
+	defer lg.Debug("finished denyNotificationVal()")
+
+	if attrValue == "" {
+		grpSettings.ForceSendFields = append(grpSettings.ForceSendFields, "DefaultMessageDenyNotificationText")
+	}
+	grpSettings.DefaultMessageDenyNotificationText = attrValue
+	return nil
+}
+
 func discoverGroupVal(grpSettings *gset.Groups, attrName string, attrValue string) error {
 	lg.Debug("starting discoverGroupVal()")
 	defer lg.Debug("finished discoverGroupVal()")
@@ -409,6 +540,58 @@ func DoGet(gsgc *gset.GroupsGetCall) (*gset.Groups, error) {
 		return nil, err
 	}
 	return groups, nil
+}
+
+func enableCollabVal(grpSettings *gset.Groups, attrName string, attrValue string) error {
+	lg.Debug("starting enableCollabVal()")
+	defer lg.Debug("finished enableCollabVal()")
+
+	if strings.ToLower(attrValue) == "true" {
+		grpSettings.EnableCollaborativeInbox = "true"
+	} else {
+		grpSettings.EnableCollaborativeInbox = "false"
+		grpSettings.ForceSendFields = append(grpSettings.ForceSendFields, "EnableCollaborativeInbox")
+	}
+	return nil
+}
+
+func favRepliesVal(grpSettings *gset.Groups, attrName string, attrValue string) error {
+	lg.Debug("starting favRepliesVal()")
+	defer lg.Debug("finished favRepliesVal()")
+
+	if strings.ToLower(attrValue) == "true" {
+		grpSettings.FavoriteRepliesOnTop = "true"
+	} else {
+		grpSettings.FavoriteRepliesOnTop = "false"
+		grpSettings.ForceSendFields = append(grpSettings.ForceSendFields, "FavoriteRepliesOnTop")
+	}
+	return nil
+}
+
+func includeFooterVal(grpSettings *gset.Groups, attrName string, attrValue string) error {
+	lg.Debug("starting includeFooterVal()")
+	defer lg.Debug("finished includeFooterVal()")
+
+	if strings.ToLower(attrValue) == "true" {
+		grpSettings.IncludeCustomFooter = "true"
+	} else {
+		grpSettings.IncludeCustomFooter = "false"
+		grpSettings.ForceSendFields = append(grpSettings.ForceSendFields, "IncludeCustomFooter")
+	}
+	return nil
+}
+
+func isArchivedVal(grpSettings *gset.Groups, attrName string, attrValue string) error {
+	lg.Debug("starting isArchivedVal()")
+	defer lg.Debug("finished isArchivedVal()")
+
+	if strings.ToLower(attrValue) == "true" {
+		grpSettings.IsArchived = "true"
+	} else {
+		grpSettings.IsArchived = "false"
+		grpSettings.ForceSendFields = append(grpSettings.ForceSendFields, "IsArchived")
+	}
+	return nil
 }
 
 func joinVal(grpSetting *gset.Groups, attrName string, attrValue string) error {
@@ -444,6 +627,37 @@ func leaveVal(grpSetting *gset.Groups, attrName string, attrValue string) error 
 		return err
 	}
 	grpSetting.WhoCanLeaveGroup = validTxt
+	return nil
+}
+
+func lookupAttrValue(attr string) ([]string, error) {
+	lg.Debug("starting lookupAttrValue()")
+	defer lg.Debug("finished lookupAttrValue()")
+
+	values := []string{}
+
+	lkMap, ok := attrLookupMap[attr]
+	if !ok {
+		err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, attr)
+		lg.Error(err)
+		return nil, err
+	}
+	for _, val := range lkMap {
+		values = append(values, val)
+	}
+	return values, nil
+}
+
+func memPostVal(grpSettings *gset.Groups, attrName string, attrValue string) error {
+	lg.Debug("starting memPostVal()")
+	defer lg.Debug("finished memPostVal()")
+
+	if strings.ToLower(attrValue) == "true" {
+		grpSettings.MembersCanPostAsTheGroup = "true"
+	} else {
+		grpSettings.MembersCanPostAsTheGroup = "false"
+		grpSettings.ForceSendFields = append(grpSettings.ForceSendFields, "MembersCanPostAsTheGroup")
+	}
 	return nil
 }
 
@@ -493,66 +707,7 @@ func PopulateGroupSettings(grpParams *GroupParams, hdrMap map[int]string, objDat
 		attrName := hdrMap[idx]
 		attrVal := fmt.Sprintf("%v", attr)
 		lowerAttrName := strings.ToLower(hdrMap[idx])
-		lowerAttrVal := strings.ToLower(fmt.Sprintf("%v", attr))
 
-		if lowerAttrName == "allowexternalmembers" {
-			if lowerAttrVal == "true" {
-				grpParams.Settings.AllowExternalMembers = "true"
-			} else {
-				grpParams.Settings.AllowExternalMembers = "false"
-				grpParams.Settings.ForceSendFields = append(grpParams.Settings.ForceSendFields, "AllowExternalMembers")
-			}
-		}
-		if lowerAttrName == "allowwebposting" {
-			if lowerAttrVal == "true" {
-				grpParams.Settings.AllowWebPosting = "true"
-			} else {
-				grpParams.Settings.AllowWebPosting = "false"
-				grpParams.Settings.ForceSendFields = append(grpParams.Settings.ForceSendFields, "AllowWebPosting")
-			}
-		}
-		if lowerAttrName == "archiveonly" {
-			if lowerAttrVal == "true" {
-				grpParams.Settings.ArchiveOnly = "true"
-			} else {
-				grpParams.Settings.ArchiveOnly = "false"
-				grpParams.Settings.ForceSendFields = append(grpParams.Settings.ForceSendFields, "ArchiveOnly")
-			}
-		}
-		if lowerAttrName == "customfootertext" {
-			if attrVal == "" {
-				grpParams.Settings.ForceSendFields = append(grpParams.Settings.ForceSendFields, "CustomFooterText")
-			}
-			grpParams.Settings.CustomFooterText = attrVal
-		}
-		if lowerAttrName == "customreplyto" {
-			err := replyEmailVal(grpParams.Settings, attrVal)
-			if err != nil {
-				return err
-			}
-		}
-		if lowerAttrName == "defaultmessagedenynotificationtext" {
-			if attrVal == "" {
-				grpParams.Settings.ForceSendFields = append(grpParams.Settings.ForceSendFields, "DefaultMessageDenyNotificationText")
-			}
-			grpParams.Settings.DefaultMessageDenyNotificationText = attrVal
-		}
-		if lowerAttrName == "enablecollaborativeinbox" {
-			if lowerAttrVal == "true" {
-				grpParams.Settings.EnableCollaborativeInbox = "true"
-			} else {
-				grpParams.Settings.EnableCollaborativeInbox = "false"
-				grpParams.Settings.ForceSendFields = append(grpParams.Settings.ForceSendFields, "EnableCollaborativeInbox")
-			}
-		}
-		if lowerAttrName == "favoriterepliesontop" {
-			if lowerAttrVal == "true" {
-				grpParams.Settings.FavoriteRepliesOnTop = "true"
-			} else {
-				grpParams.Settings.FavoriteRepliesOnTop = "false"
-				grpParams.Settings.ForceSendFields = append(grpParams.Settings.ForceSendFields, "FavoriteRepliesOnTop")
-			}
-		}
 		if lowerAttrName == "groupkey" {
 			if attrVal == "" {
 				err := fmt.Errorf(gmess.ERR_EMPTYSTRING, attrName)
@@ -560,137 +715,23 @@ func PopulateGroupSettings(grpParams *GroupParams, hdrMap map[int]string, objDat
 				return err
 			}
 			grpParams.GroupKey = attrVal
+			continue
 		}
-		if lowerAttrName == "includecustomfooter" {
-			if lowerAttrVal == "true" {
-				grpParams.Settings.IncludeCustomFooter = "true"
-			} else {
-				grpParams.Settings.IncludeCustomFooter = "false"
-				grpParams.Settings.ForceSendFields = append(grpParams.Settings.ForceSendFields, "IncludeCustomFooter")
-			}
-		}
-		if lowerAttrName == "isarchived" {
-			if lowerAttrVal == "true" {
-				grpParams.Settings.IsArchived = "true"
-			} else {
-				grpParams.Settings.IsArchived = "false"
-				grpParams.Settings.ForceSendFields = append(grpParams.Settings.ForceSendFields, "IsArchived")
-			}
-		}
-		if lowerAttrName == "memberscanpostasthegroup" {
-			if attrVal == "" {
-				grpParams.Settings.MembersCanPostAsTheGroup = "true"
-			} else {
-				grpParams.Settings.MembersCanPostAsTheGroup = "false"
-				grpParams.Settings.ForceSendFields = append(grpParams.Settings.ForceSendFields, "MembersCanPostAsTheGroup")
-			}
-		}
-		if lowerAttrName == "messagemoderationlevel" {
-			err := messageModVal(grpParams.Settings, attrName, attrVal)
-			if err != nil {
-				return err
-			}
-		}
-		if lowerAttrName == "primarylanguage" {
-			err := languageVal(grpParams.Settings, attrName, attrVal)
-			if err != nil {
-				return err
-			}
-		}
-		if lowerAttrName == "replyto" {
-			err := replyToVal(grpParams.Settings, attrName, attrVal)
-			if err != nil {
-				return err
-			}
-		}
-		if lowerAttrName == "sendmessagedenynotification" {
-			if attrVal == "" {
-				grpParams.Settings.SendMessageDenyNotification = "true"
-			} else {
-				grpParams.Settings.SendMessageDenyNotification = "false"
-				grpParams.Settings.ForceSendFields = append(grpParams.Settings.ForceSendFields, "SendMessageDenyNotification")
-			}
-		}
-		if lowerAttrName == "spammoderationlevel" {
-			err := spamModVal(grpParams.Settings, attrName, attrVal)
-			if err != nil {
-				return err
-			}
-		}
-		if lowerAttrName == "whocanapprovemembers" {
-			err := approveMemberVal(grpParams.Settings, attrName, attrVal)
-			if err != nil {
-				return err
-			}
-		}
-		if lowerAttrName == "whocanassistcontent" {
-			err := assistContentVal(grpParams.Settings, attrName, attrVal)
-			if err != nil {
-				return err
-			}
-		}
-		if lowerAttrName == "whocanbanusers" {
-			err := banUserVal(grpParams.Settings, attrName, attrVal)
-			if err != nil {
-				return err
-			}
-		}
-		if lowerAttrName == "whocancontactowner" {
-			err := contactOwnerVal(grpParams.Settings, attrName, attrVal)
-			if err != nil {
-				return err
-			}
-		}
-		if lowerAttrName == "whocandiscovergroup" {
-			err := discoverGroupVal(grpParams.Settings, attrName, attrVal)
-			if err != nil {
-				return err
-			}
-		}
-		if lowerAttrName == "whocanjoin" {
-			err := joinVal(grpParams.Settings, attrName, attrVal)
-			if err != nil {
-				return err
-			}
-		}
-		if lowerAttrName == "whocanleavegroup" {
-			err := leaveVal(grpParams.Settings, attrName, attrVal)
-			if err != nil {
-				return err
-			}
-		}
-		if lowerAttrName == "whocanmoderatecontent" {
-			err := modContentVal(grpParams.Settings, attrName, attrVal)
-			if err != nil {
-				return err
-			}
-		}
-		if lowerAttrName == "whocanmoderatemembers" {
-			err := modMemberVal(grpParams.Settings, attrName, attrVal)
-			if err != nil {
-				return err
-			}
-		}
-		if lowerAttrName == "whocanpostmessage" {
-			err := postMessageVal(grpParams.Settings, attrName, attrVal)
-			if err != nil {
-				return err
-			}
-		}
-		if lowerAttrName == "whocanviewgroup" {
-			err := viewGroupVal(grpParams.Settings, attrName, attrVal)
-			if err != nil {
-				return err
-			}
-		}
-		if lowerAttrName == "whocanviewmembership" {
-			err := viewMembershipVal(grpParams.Settings, attrName, attrVal)
-			if err != nil {
-				return err
-			}
-		}
-	}
 
+		// Look up function to populate group setting attribute
+		pf, attrExists := populateFuncMap[lowerAttrName]
+		if attrExists {
+			err := pf(grpParams.Settings, attrName, attrVal)
+			if err != nil {
+				return err
+			}
+			continue
+		}
+
+		// If we get here attribute is not recognized
+		err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, attrName)
+		return err
+	}
 	return nil
 }
 
@@ -706,16 +747,25 @@ func postMessageVal(grpSettings *gset.Groups, attrName string, attrValue string)
 	return nil
 }
 
-func printFlagValues(flagMap map[string]string, filter string) {
+func printFlagValues(flagName string, filter string) error {
 	lg.Debugw("starting printFlagValues()",
-		"flagMap", flagMap,
+		"flagName", flagName,
 		"filter", filter)
 	defer lg.Debug("finished printFlagValues()")
 
 	values := []string{}
+
+	flagMap, ok := flagLookupMap[flagName]
+	if !ok {
+		err := fmt.Errorf(gmess.ERR_FLAGNOTRECOGNIZED, flagName)
+		lg.Error(err)
+		return err
+	}
+
 	for _, value := range flagMap {
 		values = append(values, value)
 	}
+
 	sort.Strings(values)
 	for _, v := range values {
 		if filter == "" {
@@ -727,9 +777,10 @@ func printFlagValues(flagMap map[string]string, filter string) {
 			fmt.Println(v)
 		}
 	}
+	return nil
 }
 
-func replyEmailVal(grpSettings *gset.Groups, attrValue string) error {
+func replyEmailVal(grpSettings *gset.Groups, attrName string, attrValue string) error {
 	lg.Debug("starting replyEmailVal()")
 	defer lg.Debug("finished replyEmailVal()")
 
@@ -756,6 +807,19 @@ func replyToVal(grpSetting *gset.Groups, attrName string, attrValue string) erro
 		return err
 	}
 	grpSetting.ReplyTo = validTxt
+	return nil
+}
+
+func sendMessDenyVal(grpSettings *gset.Groups, attrName string, attrValue string) error {
+	lg.Debug("starting sendMessDenyVal()")
+	defer lg.Debug("finished sendMessDenyVal()")
+
+	if strings.ToLower(attrValue) == "true" {
+		grpSettings.SendMessageDenyNotification = "true"
+	} else {
+		grpSettings.SendMessageDenyNotification = "false"
+		grpSettings.ForceSendFields = append(grpSettings.ForceSendFields, "SendMessageDenyNotification")
+	}
 	return nil
 }
 
@@ -790,7 +854,10 @@ func ShowAttrValues(lenArgs int, args []string, filter string) error {
 		"filter", filter)
 	defer lg.Debug("finished ShowAttrValues()")
 
-	values := []string{}
+	var (
+		err    error
+		values []string
+	)
 
 	if lenArgs > 2 {
 		err := fmt.Errorf(gmess.ERR_TOOMANYARGSMAX1, args[0])
@@ -804,89 +871,8 @@ func ShowAttrValues(lenArgs int, args []string, filter string) error {
 
 	if lenArgs == 2 {
 		attr := strings.ToLower(args[1])
-		if attr == "messagemoderationlevel" {
-			for _, val := range MessageModMap {
-				values = append(values, val)
-			}
-		}
-		if attr == "primarylanguage" {
-			for _, val := range LanguageMap {
-				values = append(values, val)
-			}
-		}
-		if attr == "replyto" {
-			for _, val := range ReplyToMap {
-				values = append(values, val)
-			}
-		}
-		if attr == "spammoderationlevel" {
-			for _, val := range SpamModMap {
-				values = append(values, val)
-			}
-		}
-		if attr == "whocanapprovemembers" {
-			for _, val := range ApproveMemberMap {
-				values = append(values, val)
-			}
-		}
-		if attr == "whocanassistcontent" {
-			for _, val := range AssistContentMap {
-				values = append(values, val)
-			}
-		}
-		if attr == "whocanbanusers" {
-			for _, val := range BanUserMap {
-				values = append(values, val)
-			}
-		}
-		if attr == "whocancontactowner" {
-			for _, val := range ContactOwnerMap {
-				values = append(values, val)
-			}
-		}
-		if attr == "whocandiscovergroup" {
-			for _, val := range DiscoverGroupMap {
-				values = append(values, val)
-			}
-		}
-		if attr == "whocanjoin" {
-			for _, val := range JoinMap {
-				values = append(values, val)
-			}
-		}
-		if attr == "whocanleavegroup" {
-			for _, val := range LeaveMap {
-				values = append(values, val)
-			}
-		}
-		if attr == "whocanmoderatecontent" {
-			for _, val := range ModContentMap {
-				values = append(values, val)
-			}
-		}
-		if attr == "whocanmoderatemembers" {
-			for _, val := range ModMemberMap {
-				values = append(values, val)
-			}
-		}
-		if attr == "whocanpostmessage" {
-			for _, val := range PostMessageMap {
-				values = append(values, val)
-			}
-		}
-		if attr == "whocanviewgroup" {
-			for _, val := range ViewGroupMap {
-				values = append(values, val)
-			}
-		}
-		if attr == "whocanviewmembership" {
-			for _, val := range ViewMembershipMap {
-				values = append(values, val)
-			}
-		}
-		if len(values) < 1 {
-			err := fmt.Errorf(gmess.ERR_ATTRNOTRECOGNIZED, args[1])
-			lg.Error(err)
+		values, err = lookupAttrValue(attr)
+		if err != nil {
 			return err
 		}
 	}
@@ -918,75 +904,10 @@ func ShowFlagValues(lenArgs int, args []string, filter string) error {
 
 	if lenArgs == 2 {
 		flag := strings.ToLower(args[1])
-
-		if flag == "approve-member" {
-			printFlagValues(ApproveMemberMap, filter)
-			return nil
+		err := printFlagValues(flag, filter)
+		if err != nil {
+			return err
 		}
-		if flag == "assist-content" {
-			printFlagValues(AssistContentMap, filter)
-			return nil
-		}
-		if flag == "ban-user" {
-			printFlagValues(BanUserMap, filter)
-			return nil
-		}
-		if flag == "contact-owner" {
-			printFlagValues(ContactOwnerMap, filter)
-			return nil
-		}
-		if flag == "discover-group" {
-			printFlagValues(DiscoverGroupMap, filter)
-			return nil
-		}
-		if flag == "join" {
-			printFlagValues(JoinMap, filter)
-			return nil
-		}
-		if flag == "language" {
-			printFlagValues(LanguageMap, filter)
-			return nil
-		}
-		if flag == "leave" {
-			printFlagValues(LeaveMap, filter)
-			return nil
-		}
-		if flag == "message-mod" {
-			printFlagValues(MessageModMap, filter)
-			return nil
-		}
-		if flag == "mod-content" {
-			printFlagValues(ModContentMap, filter)
-			return nil
-		}
-		if flag == "mod-member" {
-			printFlagValues(ModMemberMap, filter)
-			return nil
-		}
-		if flag == "post-message" {
-			printFlagValues(PostMessageMap, filter)
-			return nil
-		}
-		if flag == "reply-to" {
-			printFlagValues(ReplyToMap, filter)
-			return nil
-		}
-		if flag == "spam-mod" {
-			printFlagValues(SpamModMap, filter)
-			return nil
-		}
-		if flag == "view-group" {
-			printFlagValues(ViewGroupMap, filter)
-			return nil
-		}
-		if flag == "view-membership" {
-			printFlagValues(ViewMembershipMap, filter)
-			return nil
-		}
-		// Flag not recognized
-		err := fmt.Errorf(gmess.ERR_FLAGNOTRECOGNIZED, args[1])
-		lg.Error(err)
-		return err
 	}
 
 	return nil
