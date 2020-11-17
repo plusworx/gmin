@@ -248,9 +248,9 @@ func DoList(glc *admin.GroupsListCall) (*admin.Groups, error) {
 
 // GetFlagVal returns group command flag values
 func GetFlagVal(cmd *cobra.Command, flagName string) (interface{}, error) {
-	lg.Debugw("starting getFlagVal()",
+	lg.Debugw("starting GetFlagVal()",
 		"flagName", flagName)
-	defer lg.Debug("finished getFlagVal()")
+	defer lg.Debug("finished GetFlagVal()")
 
 	boolFlags := []string{
 		flgnm.FLG_COUNT,

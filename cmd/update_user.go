@@ -67,7 +67,9 @@ func doUpdateUser(cmd *cobra.Command, args []string) error {
 
 	// Collect names of command flags passed in
 	cmd.Flags().Visit(func(f *pflag.Flag) {
-		flagsPassed = append(flagsPassed, f.Name)
+		if f.Name != flgnm.FLG_SILENT {
+			flagsPassed = append(flagsPassed, f.Name)
+		}
 	})
 
 	// Populate flag value map

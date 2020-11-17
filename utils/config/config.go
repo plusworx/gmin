@@ -25,7 +25,9 @@ package config
 import (
 	"fmt"
 
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
+	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 )
@@ -96,6 +98,38 @@ type File struct {
 
 // Logger passed from logging package
 var Logger *zap.SugaredLogger
+
+// GetFlagVal returns user command flag values
+func GetFlagVal(cmd *cobra.Command, flagName string) (interface{}, error) {
+	Logger.Debugw("starting GetFlagVal()",
+		"flagName", flagName)
+	defer Logger.Debug("finished GetFlagVal()")
+
+	if flagName == flgnm.FLG_LOGROTATIONCOUNT {
+		uiVal, err := cmd.Flags().GetUint(flagName)
+		if err != nil {
+			Logger.Error(err)
+			return nil, err
+		}
+		return uiVal, nil
+	}
+
+	if flagName == flgnm.FLG_LOGROTATIONTIME {
+		iVal, err := cmd.Flags().GetInt(flagName)
+		if err != nil {
+			Logger.Error(err)
+			return nil, err
+		}
+		return iVal, nil
+	}
+
+	sVal, err := cmd.Flags().GetString(flagName)
+	if err != nil {
+		Logger.Error(err)
+		return nil, err
+	}
+	return sVal, nil
+}
 
 // ReadConfigString gets a string item from config file
 func ReadConfigString(key string) (string, error) {

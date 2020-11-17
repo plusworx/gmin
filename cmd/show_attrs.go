@@ -73,6 +73,33 @@ func doShowAttrs(cmd *cobra.Command, args []string) error {
 		"args", args)
 	defer lg.Debug("finished doShowAttrs()")
 
+	aliasSlice := [][]string{
+		ca.CDevAliases,
+		ca.GroupAliases,
+		ca.GAAliases,
+		ca.GMAliases,
+		ca.GSAliases,
+		ca.MDevAliases,
+		ca.OUAliases,
+		ca.SCAliases,
+		ca.UserAliases,
+		ca.UAAliases,
+	}
+
+	// Functions are mapped to index values governed by aliasSlice
+	flagFuncMap := map[int]func([]string, int, string, string, bool, bool) error{
+		0: saChromeOSDev,
+		1: saGroup,
+		2: saGroupAlias,
+		3: saGroupMember,
+		4: saGroupSettings,
+		5: saMobileDev,
+		6: saOrgUnit,
+		7: saSchema,
+		8: saUser,
+		9: saUserAlias,
+	}
+
 	lArgs := len(args)
 	object := strings.ToLower(args[0])
 
@@ -110,73 +137,15 @@ func doShowAttrs(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if cmn.SliceContainsStr(ca.CDevAliases, object) {
-		err := saChromeOSDev(args, lArgs, args[0], lowerFilter, flgQueryableVal, flgCompositeVal)
-		if err != nil {
-			return err
-		}
-	}
-
-	if cmn.SliceContainsStr(ca.GroupAliases, object) {
-		err := saGroup(args, lArgs, args[0], lowerFilter, flgQueryableVal, flgCompositeVal)
-		if err != nil {
-			return err
-		}
-	}
-
-	if cmn.SliceContainsStr(ca.GAAliases, object) {
-		err := saGroupAlias(args, lArgs, args[0], lowerFilter, flgQueryableVal, flgCompositeVal)
-		if err != nil {
-			return err
-		}
-	}
-
-	if cmn.SliceContainsStr(ca.GMAliases, object) {
-		err := saGroupMember(args, lArgs, args[0], lowerFilter, flgQueryableVal, flgCompositeVal)
-		if err != nil {
-			return err
-		}
-	}
-
-	if cmn.SliceContainsStr(ca.GSAliases, object) {
-		err := saGroupSettings(args, lArgs, args[0], lowerFilter, flgQueryableVal, flgCompositeVal)
-		if err != nil {
-			return err
-		}
-	}
-
-	if cmn.SliceContainsStr(ca.MDevAliases, object) {
-		err := saMobileDev(args, lArgs, args[0], lowerFilter, flgQueryableVal, flgCompositeVal)
-		if err != nil {
-			return err
-		}
-	}
-
-	if cmn.SliceContainsStr(ca.OUAliases, object) {
-		err := saOrgUnit(args, lArgs, args[0], lowerFilter, flgQueryableVal, flgCompositeVal)
-		if err != nil {
-			return err
-		}
-	}
-
-	if cmn.SliceContainsStr(ca.SCAliases, object) {
-		err := saSchema(args, lArgs, args[0], lowerFilter, flgQueryableVal, flgCompositeVal)
-		if err != nil {
-			return err
-		}
-	}
-
-	if cmn.SliceContainsStr(ca.UserAliases, object) {
-		err := saUser(args, lArgs, args[0], lowerFilter, flgQueryableVal, flgCompositeVal)
-		if err != nil {
-			return err
-		}
-	}
-
-	if cmn.SliceContainsStr(ca.UAAliases, object) {
-		err := saUserAlias(args, lArgs, args[0], lowerFilter, flgQueryableVal, flgCompositeVal)
-		if err != nil {
-			return err
+	for idx, alSlice := range aliasSlice {
+		exists := cmn.SliceContainsStr(alSlice, object)
+		if exists {
+			showFunc := flagFuncMap[idx]
+			err := showFunc(args, lArgs, args[0], lowerFilter, flgQueryableVal, flgCompositeVal)
+			if err != nil {
+				return err
+			}
+			return nil
 		}
 	}
 

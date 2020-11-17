@@ -33,10 +33,12 @@ import (
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
 	flgnm "github.com/plusworx/gmin/utils/flagnames"
+	gd "github.com/plusworx/gmin/utils/gendatastructs"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	gpars "github.com/plusworx/gmin/utils/gminparsers"
 	lg "github.com/plusworx/gmin/utils/logging"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	admin "google.golang.org/api/admin/directory/v1"
 )
 
@@ -57,8 +59,25 @@ func doListCrOSDevs(cmd *cobra.Command, args []string) error {
 	defer lg.Debug("finished doListCrOSDevs()")
 
 	var (
-		crosdevs *admin.ChromeOsDevices
+		crosdevs    *admin.ChromeOsDevices
+		flagsPassed []string
 	)
+
+	flagValueMap := map[string]interface{}{}
+
+	// Collect names of command flags passed in
+	cmd.Flags().Visit(func(f *pflag.Flag) {
+		flagsPassed = append(flagsPassed, f.Name)
+	})
+
+	// Populate flag value map
+	for _, flg := range flagsPassed {
+		val, err := cdevs.GetFlagVal(cmd, flg)
+		if err != nil {
+			return err
+		}
+		flagValueMap[flg] = val
+	}
 
 	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryDeviceChromeosReadonlyScope)
 	if err != nil {
@@ -73,120 +92,28 @@ func doListCrOSDevs(cmd *cobra.Command, args []string) error {
 
 	cdlc := ds.Chromeosdevices.List(customerID)
 
-	flgAttrsVal, err := cmd.Flags().GetString(flgnm.FLG_ATTRIBUTES)
+	err = lstCrOSDevProcessFlags(cdlc, flagValueMap)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
-	if flgAttrsVal != "" {
-		listAttrs, err := gpars.ParseOutputAttrs(flgAttrsVal, cdevs.CrOSDevAttrMap)
-		if err != nil {
-			return err
-		}
-		formattedAttrs := cdevs.STARTCHROMEDEVICESFIELD + listAttrs + cdevs.ENDFIELD
-		listCall := cdevs.AddFields(cdlc, formattedAttrs)
-		cdlc = listCall.(*admin.ChromeosdevicesListCall)
-	}
-
-	flgOrderByVal, err := cmd.Flags().GetString(flgnm.FLG_ORDERBY)
-	if err != nil {
-		lg.Error(err)
-		return err
-	}
-	if flgOrderByVal != "" {
-		ob := strings.ToLower(flgOrderByVal)
-		ok := cmn.SliceContainsStr(cdevs.ValidOrderByStrs, ob)
-		if !ok {
-			err = fmt.Errorf(gmess.ERR_INVALIDORDERBY, flgOrderByVal)
-			lg.Error(err)
-			return err
-		}
-
-		validOrderBy, err := cmn.IsValidAttr(ob, cdevs.CrOSDevAttrMap)
-		if err != nil {
-			return err
-		}
-
-		cdlc = cdevs.AddOrderBy(cdlc, validOrderBy)
-
-		flgSrtOrdVal, err := cmd.Flags().GetString(flgnm.FLG_SORTORDER)
-		if err != nil {
-			lg.Error(err)
-			return err
-		}
-		if flgSrtOrdVal != "" {
-			so := strings.ToLower(flgSrtOrdVal)
-			validSortOrder, err := cmn.IsValidAttr(so, cmn.ValidSortOrders)
-			if err != nil {
-				return err
-			}
-
-			cdlc = cdevs.AddSortOrder(cdlc, validSortOrder)
-		}
-	}
-
-	flgOUVal, err := cmd.Flags().GetString(flgnm.FLG_ORGUNITPATH)
-	if err != nil {
-		lg.Error(err)
-		return err
-	}
-	if flgOUVal != "" {
-		cdlc = cdevs.AddQuery(cdlc, flgOUVal)
-	}
-
-	flgProjectionVal, err := cmd.Flags().GetString(flgnm.FLG_PROJECTION)
-	if err != nil {
-		lg.Error(err)
-		return err
-	}
-	if flgProjectionVal != "" {
-		proj := strings.ToLower(flgProjectionVal)
-		ok := cmn.SliceContainsStr(cdevs.ValidProjections, proj)
-		if !ok {
-			err = fmt.Errorf(gmess.ERR_INVALIDPROJECTIONTYPE, flgProjectionVal)
-			lg.Error(err)
-			return err
-		}
-
-		listCall := cdevs.AddProjection(cdlc, proj)
-		cdlc = listCall.(*admin.ChromeosdevicesListCall)
-	}
-
-	flgQueryVal, err := cmd.Flags().GetString(flgnm.FLG_QUERY)
-	if err != nil {
-		lg.Error(err)
-		return err
-	}
-	if flgQueryVal != "" {
-		formattedQuery, err := gpars.ParseQuery(flgQueryVal, cdevs.QueryAttrMap)
-		if err != nil {
-			return err
-		}
-
-		cdlc = cdevs.AddQuery(cdlc, formattedQuery)
-	}
-
-	flgMaxResultsVal, err := cmd.Flags().GetInt64(flgnm.FLG_MAXRESULTS)
-	if err != nil {
-		lg.Error(err)
-		return err
-	}
-	cdlc = cdevs.AddMaxResults(cdlc, flgMaxResultsVal)
 
 	crosdevs, err = cdevs.DoList(cdlc)
 	if err != nil {
 		return err
 	}
 
-	flgPagesVal, err := cmd.Flags().GetString(flgnm.FLG_PAGES)
+	err = lstCrOSDevPages(cdlc, crosdevs, flagValueMap)
 	if err != nil {
 		lg.Error(err)
 		return err
 	}
-	if flgPagesVal != "" {
-		err = doCrOSDevPages(cdlc, crosdevs, flgPagesVal)
-		if err != nil {
-			return err
+
+	flgCountVal, countPresent := flagValueMap[flgnm.FLG_COUNT]
+	if countPresent {
+		countVal := flgCountVal.(bool)
+		if countVal {
+			fmt.Println(len(crosdevs.Chromeosdevices))
+			return nil
 		}
 	}
 
@@ -195,17 +122,7 @@ func doListCrOSDevs(cmd *cobra.Command, args []string) error {
 		lg.Error(err)
 		return err
 	}
-
-	flgCountVal, err := cmd.Flags().GetBool(flgnm.FLG_COUNT)
-	if err != nil {
-		lg.Error(err)
-		return err
-	}
-	if flgCountVal {
-		fmt.Println(len(crosdevs.Chromeosdevices))
-	} else {
-		fmt.Println(string(jsonData))
-	}
+	fmt.Println(string(jsonData))
 
 	return nil
 }
@@ -296,4 +213,192 @@ func init() {
 	listCrOSDevsCmd.Flags().StringP(flgnm.FLG_QUERY, "q", "", "selection criteria to get devices (separated by ~)")
 	listCrOSDevsCmd.Flags().StringP(flgnm.FLG_SORTORDER, "s", "", "sort order of returned results")
 	listCrOSDevsCmd.Flags().StringP(flgnm.FLG_ORGUNITPATH, "t", "", "sets orgunit path that returned devices belong to")
+}
+
+func lstCrOSDevAttributes(cdlc *admin.ChromeosdevicesListCall, flagVal interface{}) error {
+	lg.Debug("starting lstCrOSDevAttributes()")
+	defer lg.Debug("finished lstCrOSDevAttributes()")
+
+	attrsVal := fmt.Sprintf("%v", flagVal)
+	if attrsVal != "" {
+		listAttrs, err := gpars.ParseOutputAttrs(attrsVal, cdevs.CrOSDevAttrMap)
+		if err != nil {
+			return err
+		}
+		formattedAttrs := cdevs.STARTCHROMEDEVICESFIELD + listAttrs + cdevs.ENDFIELD
+
+		listCall := cdevs.AddFields(cdlc, formattedAttrs)
+		cdlc = listCall.(*admin.ChromeosdevicesListCall)
+	}
+
+	return nil
+}
+
+func lstCrOSDevMaxResults(cdlc *admin.ChromeosdevicesListCall, flagVal interface{}) error {
+	lg.Debug("starting lstCrOSDevMaxResults()")
+	defer lg.Debug("finished lstCrOSDevMaxResults()")
+
+	flgMaxResultsVal := flagVal.(int64)
+
+	cdlc = cdevs.AddMaxResults(cdlc, flgMaxResultsVal)
+	return nil
+}
+
+func lstCrOSDevOrderBy(cdlc *admin.ChromeosdevicesListCall, inData interface{}) error {
+	lg.Debug("starting lstCrOSDevOrderBy()")
+	defer lg.Debug("finished lstCrOSDevOrderBy()")
+
+	var (
+		err          error
+		validOrderBy string
+	)
+
+	inStruct := inData.(gd.TwoStrStruct)
+
+	orderVal := inStruct.Element1
+	if orderVal != "" {
+		ob := strings.ToLower(orderVal)
+		ok := cmn.SliceContainsStr(cdevs.ValidOrderByStrs, ob)
+		if !ok {
+			err := fmt.Errorf(gmess.ERR_INVALIDORDERBY, orderVal)
+			lg.Error(err)
+			return err
+		}
+
+		validOrderBy, err = cmn.IsValidAttr(ob, cdevs.CrOSDevAttrMap)
+		if err != nil {
+			lg.Error(err)
+			return err
+		}
+		cdlc = cdevs.AddOrderBy(cdlc, validOrderBy)
+
+		flgSrtOrdByVal := inStruct.Element2
+		if flgSrtOrdByVal != "" {
+			so := strings.ToLower(flgSrtOrdByVal)
+			validSortOrder, err := cmn.IsValidAttr(so, cmn.ValidSortOrders)
+			if err != nil {
+				lg.Error(err)
+				return err
+			}
+
+			cdlc = cdevs.AddSortOrder(cdlc, validSortOrder)
+		}
+	}
+	return nil
+}
+
+func lstCrOSDevPages(cdlc *admin.ChromeosdevicesListCall, crosdevs *admin.ChromeOsDevices, flgValMap map[string]interface{}) error {
+	lg.Debug("starting lstCrOSDevPages()")
+	defer lg.Debug("finished lstCrOSDevPages()")
+
+	flgPagesVal, pagesPresent := flgValMap[flgnm.FLG_PAGES]
+	if !pagesPresent {
+		return nil
+	}
+	if flgPagesVal != "" {
+		pagesVal := fmt.Sprintf("%v", flgPagesVal)
+		err := doCrOSDevPages(cdlc, crosdevs, pagesVal)
+		if err != nil {
+			lg.Error(err)
+			return err
+		}
+	}
+	return nil
+}
+
+func lstCrOSDevOUPath(cdlc *admin.ChromeosdevicesListCall, flagVal interface{}) error {
+	flgOUVal := fmt.Sprintf("%v", flagVal)
+	if flgOUVal != "" {
+		cdlc = cdevs.AddQuery(cdlc, flgOUVal)
+	}
+	return nil
+}
+
+func lstCrOSDevProcessFlags(cdlc *admin.ChromeosdevicesListCall, flgValMap map[string]interface{}) error {
+	lg.Debug("starting lstCrOSDevProcessFlags()")
+	defer lg.Debug("finished lstCrOSDevProcessFlags()")
+
+	lstCrOSDevFuncMap := map[string]func(*admin.ChromeosdevicesListCall, interface{}) error{
+		flgnm.FLG_ATTRIBUTES:  lstCrOSDevAttributes,
+		flgnm.FLG_MAXRESULTS:  lstCrOSDevMaxResults,
+		flgnm.FLG_ORDERBY:     lstCrOSDevOrderBy,
+		flgnm.FLG_ORGUNITPATH: lstCrOSDevOUPath,
+		flgnm.FLG_PROJECTION:  lstCrOSDevProjection,
+		flgnm.FLG_QUERY:       lstCrOSDevQuery,
+	}
+
+	// Cycle through flags that build the mdlc excluding pages and count
+	for key, val := range flgValMap {
+		// Order by has dependent sort order so deal with that
+		if key == flgnm.FLG_ORDERBY {
+			retStruct, err := lstCrOSDevSortOrderBy(flgValMap)
+			if err != nil {
+				return err
+			}
+			val = retStruct
+		}
+
+		lcdf, ok := lstCrOSDevFuncMap[key]
+		if !ok {
+			continue
+		}
+		err := lcdf(cdlc, val)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func lstCrOSDevProjection(cdlc *admin.ChromeosdevicesListCall, flagVal interface{}) error {
+	flgProjectionVal := fmt.Sprintf("%v", flagVal)
+	if flgProjectionVal != "" {
+		proj := strings.ToLower(flgProjectionVal)
+		ok := cmn.SliceContainsStr(cdevs.ValidProjections, proj)
+		if !ok {
+			err := fmt.Errorf(gmess.ERR_INVALIDPROJECTIONTYPE, flgProjectionVal)
+			lg.Error(err)
+			return err
+		}
+
+		listCall := cdevs.AddProjection(cdlc, proj)
+		cdlc = listCall.(*admin.ChromeosdevicesListCall)
+	}
+	return nil
+}
+
+func lstCrOSDevQuery(cdlc *admin.ChromeosdevicesListCall, flagVal interface{}) error {
+	lg.Debug("starting lstCrOSDevQuery()")
+	defer lg.Debug("finished lstCrOSDevQuery()")
+
+	qryVal := fmt.Sprintf("%v", flagVal)
+	if qryVal != "" {
+		formattedQuery, err := gpars.ParseQuery(qryVal, cdevs.QueryAttrMap)
+		if err != nil {
+			lg.Error(err)
+			return err
+		}
+
+		cdlc = cdevs.AddQuery(cdlc, formattedQuery)
+	}
+	return nil
+}
+
+func lstCrOSDevSortOrderBy(flgValMap map[string]interface{}) (gd.TwoStrStruct, error) {
+	lg.Debug("starting lstCrOSDevSortOrderBy()")
+	defer lg.Debug("finished lstCrOSDevSortOrderBy()")
+
+	outData := gd.TwoStrStruct{}
+
+	orderByVal := flgValMap[flgnm.FLG_ORDERBY]
+	sortOrderVal, sortOrderPresent := flgValMap[flgnm.FLG_SORTORDER]
+
+	outData.Element1 = fmt.Sprintf("%v", orderByVal)
+	if sortOrderPresent {
+		outData.Element2 = fmt.Sprintf("%v", sortOrderVal)
+	} else {
+		outData.Element2 = ""
+	}
+
+	return outData, nil
 }

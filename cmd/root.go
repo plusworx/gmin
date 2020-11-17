@@ -103,6 +103,15 @@ func initConfig() {
 	viper.ReadInConfig()
 }
 
+func logUsrInfo(cmd *cobra.Command, admAddr string, args []string) {
+	lg.Infow("User Information",
+		"gmin admin", admAddr,
+		"Username", cmn.Username(),
+		"Hostname", cmn.Hostname(),
+		"IP Address", cmn.IPAddress(),
+		"command", cmd.Parent().Name()+" "+cmd.CalledAs()+" "+strings.Join(args, " "))
+}
+
 func preRun(cmd *cobra.Command, args []string) error {
 	// Set up logging
 	err := setupLogging(cmd)
@@ -125,12 +134,8 @@ func preRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	// Log current user
-	lg.Infow("User Information",
-		"gmin admin", admAddr,
-		"Username", cmn.Username(),
-		"Hostname", cmn.Hostname(),
-		"IP Address", cmn.IPAddress(),
-		"command", cmd.Parent().Name()+" "+cmd.CalledAs()+" "+strings.Join(args, " "))
+	logUsrInfo(cmd, admAddr, args)
+
 	return nil
 }
 
@@ -146,12 +151,8 @@ func preRunForDisplayCmds(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	// Log current user
-	lg.Infow("User Information",
-		"gmin admin", admAddr,
-		"Username", cmn.Username(),
-		"Hostname", cmn.Hostname(),
-		"IP Address", cmn.IPAddress(),
-		"command", cmd.Parent().Name()+" "+cmd.CalledAs()+" "+strings.Join(args, " "))
+	logUsrInfo(cmd, admAddr, args)
+
 	return nil
 }
 

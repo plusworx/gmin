@@ -77,7 +77,7 @@ func doShowFlagVals(cmd *cobra.Command, args []string) error {
 		ca.UserAliases,
 	}
 
-	// Functions are mapped to inex values governed by aliasSlice
+	// Functions are mapped to index values governed by aliasSlice
 	flagFuncMap := map[int]func(int, []string, string) error{
 		0: cdevs.ShowFlagValues,
 		1: grps.ShowFlagValues,

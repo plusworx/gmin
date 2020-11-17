@@ -841,9 +841,9 @@ func DoList(ulc *admin.UsersListCall) (*admin.Users, error) {
 
 // GetFlagVal returns user command flag values
 func GetFlagVal(cmd *cobra.Command, flagName string) (interface{}, error) {
-	lg.Debugw("starting getFlagVal()",
+	lg.Debugw("starting GetFlagVal()",
 		"flagName", flagName)
-	defer lg.Debug("finished getFlagVal()")
+	defer lg.Debug("finished GetFlagVal()")
 
 	boolFlags := []string{
 		flgnm.FLG_CHANGEPWD,
@@ -930,72 +930,40 @@ func PopulateUser(user *admin.User, hdrMap map[int]string, objData []interface{}
 
 	name := new(admin.UserName)
 
+	attrUsrFuncMap := map[string]func(*admin.User, string, string) error{
+		"changePasswordAtNextLogin":  puChangePwd,
+		"includeInGlobalAddressList": puIncludeInGAL,
+		"ipWhitelisted":              puIPWhitelisted,
+		"orgUnitPath":                puOrgUnitPath,
+		"password":                   puPassword,
+		"primaryEmail":               puPrimaryEmail,
+		"recoveryEmail":              puRecoveryEmail,
+		"recoveryPhone":              puRecoveryPhone,
+		"suspended":                  puSuspended,
+	}
+
+	attrNameFuncMap := map[string]func(*admin.UserName, string, string) error{
+		"familyName": puFamilyName,
+		"givenName":  puGivenName,
+	}
+
 	for idx, attr := range objData {
 		attrName := hdrMap[idx]
 		attrVal := fmt.Sprintf("%v", attr)
-		lowerAttrVal := strings.ToLower(fmt.Sprintf("%v", attr))
 
-		if attrName == "changePasswordAtNextLogin" {
-			if lowerAttrVal == "true" {
-				user.ChangePasswordAtNextLogin = true
-			}
-		}
-		if attrName == "familyName" {
-			name.FamilyName = attrVal
-		}
-		if attrName == "givenName" {
-			name.GivenName = attrVal
-		}
-		if attrName == "includeInGlobalAddressList" {
-			if lowerAttrVal == "false" {
-				user.IncludeInGlobalAddressList = false
-				user.ForceSendFields = append(user.ForceSendFields, "IncludeInGlobalAddressList")
-			}
-		}
-		if attrName == "ipWhitelisted" {
-			if lowerAttrVal == "true" {
-				user.IpWhitelisted = true
-			}
-		}
-		if attrName == "orgUnitPath" {
-			user.OrgUnitPath = attrVal
-		}
-		if attrName == "password" {
-			if attrVal == "" {
-				err := fmt.Errorf(gmess.ERR_EMPTYSTRING, attrName)
-				lg.Error(err)
-				return err
-			}
-			pwd, err := HashPassword(attrVal)
+		nameFunc, naExists := attrNameFuncMap[attrName]
+		if naExists {
+			err := nameFunc(name, attrName, attrVal)
 			if err != nil {
 				return err
 			}
-			user.Password = pwd
-			user.HashFunction = HASHFUNCTION
 		}
-		if attrName == "primaryEmail" {
-			if attrVal == "" {
-				err := fmt.Errorf(gmess.ERR_EMPTYSTRING, attrName)
-				lg.Error(err)
+
+		usrFunc, uaExists := attrUsrFuncMap[attrName]
+		if uaExists {
+			err := usrFunc(user, attrName, attrVal)
+			if err != nil {
 				return err
-			}
-			user.PrimaryEmail = attrVal
-		}
-		if attrName == "recoveryEmail" {
-			user.RecoveryEmail = attrVal
-		}
-		if attrName == "recoveryPhone" {
-			if attrVal != "" {
-				err := cmn.ValidateRecoveryPhone(attrVal)
-				if err != nil {
-					return err
-				}
-				user.RecoveryPhone = attrVal
-			}
-		}
-		if attrName == "suspended" {
-			if lowerAttrVal == "true" {
-				user.Suspended = true
 			}
 		}
 	}
@@ -1011,104 +979,319 @@ func PopulateUserForUpdate(userParams *UserParams, hdrMap map[int]string, objDat
 
 	name := new(admin.UserName)
 
+	attrUsrFuncMap := map[string]func(*UserParams, string, string) error{
+		"changePasswordAtNextLogin":  pufuChangePwd,
+		"includeInGlobalAddressList": pufuIncludeInGAL,
+		"ipWhitelisted":              pufuIPWhitelisted,
+		"orgUnitPath":                pufuOrgUnitPath,
+		"password":                   pufuPassword,
+		"primaryEmail":               pufuPrimaryEmail,
+		"recoveryEmail":              pufuRecoveryEmail,
+		"recoveryPhone":              pufuRecoveryPhone,
+		"suspended":                  pufuSuspended,
+		"userKey":                    pufuUserKey,
+	}
+
+	attrNameFuncMap := map[string]func(*admin.UserName, string, string) error{
+		"familyName": puFamilyName,
+		"givenName":  puGivenName,
+	}
+
 	for idx, attr := range objData {
 		attrName := hdrMap[idx]
 		attrVal := fmt.Sprintf("%v", attr)
-		lowerAttrVal := strings.ToLower(fmt.Sprintf("%v", attr))
 
-		if attrName == "changePasswordAtNextLogin" {
-			if lowerAttrVal == "true" {
-				userParams.User.ChangePasswordAtNextLogin = true
-			} else {
-				userParams.User.ChangePasswordAtNextLogin = false
-				userParams.User.ForceSendFields = append(userParams.User.ForceSendFields, "ChangePasswordAtNextLogin")
-			}
-		}
-		if attrName == "familyName" {
-			name.FamilyName = attrVal
-		}
-		if attrName == "givenName" {
-			name.GivenName = attrVal
-		}
-		if attrName == "includeInGlobalAddressList" {
-			if lowerAttrVal == "true" {
-				userParams.User.IncludeInGlobalAddressList = true
-			} else {
-				userParams.User.IncludeInGlobalAddressList = false
-				userParams.User.ForceSendFields = append(userParams.User.ForceSendFields, "IncludeInGlobalAddressList")
-			}
-		}
-		if attrName == "ipWhitelisted" {
-			if lowerAttrVal == "true" {
-				userParams.User.IpWhitelisted = true
-			} else {
-				userParams.User.IpWhitelisted = false
-				userParams.User.ForceSendFields = append(userParams.User.ForceSendFields, "IpWhitelisted")
-			}
-		}
-		if attrName == "orgUnitPath" {
-			if attrVal == "" {
-				err := fmt.Errorf(gmess.ERR_EMPTYSTRING, attrName)
+		nameFunc, naExists := attrNameFuncMap[attrName]
+		if naExists {
+			err := nameFunc(name, attrName, attrVal)
+			if err != nil {
 				return err
 			}
-			userParams.User.OrgUnitPath = attrVal
 		}
-		if attrName == "password" {
-			if attrVal != "" {
-				pwd, err := HashPassword(attrVal)
-				if err != nil {
-					return err
-				}
-				userParams.User.Password = pwd
-				userParams.User.HashFunction = HASHFUNCTION
-			}
-		}
-		if attrName == "primaryEmail" {
-			if attrVal == "" {
-				err := fmt.Errorf(gmess.ERR_EMPTYSTRING, attrName)
+
+		usrFunc, uaExists := attrUsrFuncMap[attrName]
+		if uaExists {
+			err := usrFunc(userParams, attrName, attrVal)
+			if err != nil {
 				return err
 			}
-			userParams.User.PrimaryEmail = attrVal
-		}
-		if attrName == "recoveryEmail" {
-			userParams.User.RecoveryEmail = attrVal
-			if attrVal == "" {
-				userParams.User.ForceSendFields = append(userParams.User.ForceSendFields, "RecoveryEmail")
-			}
-		}
-		if attrName == "recoveryPhone" {
-			if attrVal != "" {
-				err := cmn.ValidateRecoveryPhone(attrVal)
-				if err != nil {
-					lg.Error(err)
-					return err
-				}
-			}
-			if attrVal == "" {
-				userParams.User.ForceSendFields = append(userParams.User.ForceSendFields, "RecoveryPhone")
-			}
-			userParams.User.RecoveryPhone = attrVal
-		}
-		if attrName == "suspended" {
-			if lowerAttrVal == "true" {
-				userParams.User.Suspended = true
-			} else {
-				userParams.User.Suspended = false
-				userParams.User.ForceSendFields = append(userParams.User.ForceSendFields, "Suspended")
-			}
-		}
-		if attrName == "userKey" {
-			if attrVal == "" {
-				err := fmt.Errorf(gmess.ERR_EMPTYSTRING, attrName)
-				return err
-			}
-			userParams.UserKey = attrVal
 		}
 	}
 
 	if name.FamilyName != "" || name.GivenName != "" || name.FullName != "" {
 		userParams.User.Name = name
 	}
+	return nil
+}
+
+func puChangePwd(user *admin.User, attrName string, attrVal string) error {
+	lg.Debug("starting puChangePwd()")
+	defer lg.Debug("finished puChangePwd()")
+
+	if strings.ToLower(attrVal) == "true" {
+		user.ChangePasswordAtNextLogin = true
+	}
+	return nil
+}
+
+func puFamilyName(name *admin.UserName, attrName string, attrVal string) error {
+	lg.Debug("starting puFamilyName()")
+	defer lg.Debug("finished puFamilyName()")
+
+	name.FamilyName = attrVal
+	return nil
+}
+
+func puGivenName(name *admin.UserName, attrName string, attrVal string) error {
+	lg.Debug("starting puGivenName()")
+	defer lg.Debug("finished puGivenName()")
+
+	name.GivenName = attrVal
+	return nil
+}
+
+func puIncludeInGAL(user *admin.User, attrName string, attrVal string) error {
+	lg.Debug("starting puIncludeInGAL()")
+	defer lg.Debug("finished puIncludeInGAL()")
+
+	if strings.ToLower(attrVal) == "false" {
+		user.IncludeInGlobalAddressList = false
+		user.ForceSendFields = append(user.ForceSendFields, "IncludeInGlobalAddressList")
+	}
+	return nil
+}
+
+func puIPWhitelisted(user *admin.User, attrName string, attrVal string) error {
+	lg.Debug("starting puIpWhitelisted()")
+	defer lg.Debug("finished puIpWhitelisted()")
+
+	if strings.ToLower(attrVal) == "true" {
+		user.IpWhitelisted = true
+	}
+	return nil
+}
+
+func puOrgUnitPath(user *admin.User, attrName string, attrVal string) error {
+	lg.Debug("starting puOrgUnitPath()")
+	defer lg.Debug("finished puOrgUnitPath()")
+
+	user.OrgUnitPath = attrVal
+	return nil
+}
+
+func puPassword(user *admin.User, attrName string, attrVal string) error {
+	lg.Debug("starting puPassword()")
+	defer lg.Debug("finished puPassword()")
+
+	if attrVal == "" {
+		err := fmt.Errorf(gmess.ERR_EMPTYSTRING, attrName)
+		lg.Error(err)
+		return err
+	}
+	pwd, err := HashPassword(attrVal)
+	if err != nil {
+		return err
+	}
+	user.Password = pwd
+	user.HashFunction = HASHFUNCTION
+
+	return nil
+}
+
+func puPrimaryEmail(user *admin.User, attrName string, attrVal string) error {
+	lg.Debug("starting puPrimaryEmail()")
+	defer lg.Debug("finished puPrimaryEmail()")
+
+	if attrVal == "" {
+		err := fmt.Errorf(gmess.ERR_EMPTYSTRING, attrName)
+		lg.Error(err)
+		return err
+	}
+	user.PrimaryEmail = attrVal
+
+	return nil
+}
+
+func puRecoveryEmail(user *admin.User, attrName string, attrVal string) error {
+	lg.Debug("starting puRecoveryEmail()")
+	defer lg.Debug("finished puRecoveryEmail()")
+
+	user.RecoveryEmail = attrVal
+	return nil
+}
+
+func puRecoveryPhone(user *admin.User, attrName string, attrVal string) error {
+	lg.Debug("starting puRecoveryPhone()")
+	defer lg.Debug("finished puRecoveryPhone()")
+
+	if attrVal != "" {
+		err := cmn.ValidateRecoveryPhone(attrVal)
+		if err != nil {
+			return err
+		}
+		user.RecoveryPhone = attrVal
+	}
+	return nil
+}
+
+func puSuspended(user *admin.User, attrName string, attrVal string) error {
+	lg.Debug("starting puSuspended()")
+	defer lg.Debug("finished puSuspended()")
+
+	if strings.ToLower(attrVal) == "true" {
+		user.Suspended = true
+	}
+	return nil
+}
+
+func pufuChangePwd(userParams *UserParams, attrName string, attrVal string) error {
+	lg.Debug("starting pufuChangePwd()")
+	defer lg.Debug("finished pufuChangePwd()")
+
+	if strings.ToLower(attrVal) == "true" {
+		userParams.User.ChangePasswordAtNextLogin = true
+	} else {
+		userParams.User.ChangePasswordAtNextLogin = false
+		userParams.User.ForceSendFields = append(userParams.User.ForceSendFields, "ChangePasswordAtNextLogin")
+	}
+	return nil
+}
+
+func pufuFamilyName(name *admin.UserName, attrName string, attrVal string) error {
+	lg.Debug("starting pufuFamilyName()")
+	defer lg.Debug("finished pufuFamilyName()")
+
+	name.FamilyName = attrVal
+	return nil
+}
+
+func pufuGivenName(name *admin.UserName, attrName string, attrVal string) error {
+	lg.Debug("starting pufuGivenName()")
+	defer lg.Debug("finished pufuGivenName()")
+
+	name.GivenName = attrVal
+	return nil
+}
+
+func pufuIncludeInGAL(userParams *UserParams, attrName string, attrVal string) error {
+	lg.Debug("starting pufuIncludeInGAL()")
+	defer lg.Debug("finished pufuIncludeInGAL()")
+
+	if strings.ToLower(attrVal) == "true" {
+		userParams.User.IncludeInGlobalAddressList = true
+	} else {
+		userParams.User.IncludeInGlobalAddressList = false
+		userParams.User.ForceSendFields = append(userParams.User.ForceSendFields, "IncludeInGlobalAddressList")
+	}
+	return nil
+}
+
+func pufuIPWhitelisted(userParams *UserParams, attrName string, attrVal string) error {
+	lg.Debug("starting pufuIPWhitelisted()")
+	defer lg.Debug("finished pufuIPWhitelisted()")
+
+	if strings.ToLower(attrVal) == "true" {
+		userParams.User.IpWhitelisted = true
+	} else {
+		userParams.User.IpWhitelisted = false
+		userParams.User.ForceSendFields = append(userParams.User.ForceSendFields, "IpWhitelisted")
+	}
+	return nil
+}
+
+func pufuOrgUnitPath(userParams *UserParams, attrName string, attrVal string) error {
+	lg.Debug("starting pufuOrgUnitPath()")
+	defer lg.Debug("finished pufuOrgUnitPath()")
+
+	if attrVal == "" {
+		err := fmt.Errorf(gmess.ERR_EMPTYSTRING, attrName)
+		return err
+	}
+	userParams.User.OrgUnitPath = attrVal
+	return nil
+}
+
+func pufuPassword(userParams *UserParams, attrName string, attrVal string) error {
+	lg.Debug("starting pufuPassword()")
+	defer lg.Debug("finished pufuPassword()")
+
+	if attrVal != "" {
+		pwd, err := HashPassword(attrVal)
+		if err != nil {
+			return err
+		}
+		userParams.User.Password = pwd
+		userParams.User.HashFunction = HASHFUNCTION
+	}
+	return nil
+}
+
+func pufuPrimaryEmail(userParams *UserParams, attrName string, attrVal string) error {
+	lg.Debug("starting pufuPrimaryEmail()")
+	defer lg.Debug("finished pufuPrimaryEmail()")
+
+	if attrVal == "" {
+		err := fmt.Errorf(gmess.ERR_EMPTYSTRING, attrName)
+		return err
+	}
+	userParams.User.PrimaryEmail = attrVal
+
+	return nil
+}
+
+func pufuRecoveryEmail(userParams *UserParams, attrName string, attrVal string) error {
+	lg.Debug("starting pufuRecoveryEmail()")
+	defer lg.Debug("finished pufuRecoveryEmail()")
+
+	userParams.User.RecoveryEmail = attrVal
+	if attrVal == "" {
+		userParams.User.ForceSendFields = append(userParams.User.ForceSendFields, "RecoveryEmail")
+	}
+	return nil
+}
+
+func pufuRecoveryPhone(userParams *UserParams, attrName string, attrVal string) error {
+	lg.Debug("starting pufuRecoveryPhone()")
+	defer lg.Debug("finished pufuRecoveryPhone()")
+
+	if attrVal != "" {
+		err := cmn.ValidateRecoveryPhone(attrVal)
+		if err != nil {
+			lg.Error(err)
+			return err
+		}
+	}
+	if attrVal == "" {
+		userParams.User.ForceSendFields = append(userParams.User.ForceSendFields, "RecoveryPhone")
+	}
+	userParams.User.RecoveryPhone = attrVal
+
+	return nil
+}
+
+func pufuSuspended(userParams *UserParams, attrName string, attrVal string) error {
+	lg.Debug("starting pufuSuspended()")
+	defer lg.Debug("finished pufuSuspended()")
+
+	if strings.ToLower(attrVal) == "true" {
+		userParams.User.Suspended = true
+	} else {
+		userParams.User.Suspended = false
+		userParams.User.ForceSendFields = append(userParams.User.ForceSendFields, "Suspended")
+	}
+	return nil
+}
+
+func pufuUserKey(userParams *UserParams, attrName string, attrVal string) error {
+	lg.Debug("starting pufuUserKey()")
+	defer lg.Debug("finished pufuUserKey()")
+
+	if attrVal == "" {
+		err := fmt.Errorf(gmess.ERR_EMPTYSTRING, attrName)
+		return err
+	}
+	userParams.UserKey = attrVal
+
 	return nil
 }
 

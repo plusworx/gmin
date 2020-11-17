@@ -189,9 +189,9 @@ func DoList(mlc *admin.MembersListCall) (*admin.Members, error) {
 
 // GetFlagVal returns member command flag values
 func GetFlagVal(cmd *cobra.Command, flagName string) (interface{}, error) {
-	lg.Debugw("starting getFlagVal()",
+	lg.Debugw("starting GetFlagVal()",
 		"flagName", flagName)
-	defer lg.Debug("finished getFlagVal()")
+	defer lg.Debug("finished GetFlagVal()")
 
 	if flagName == flgnm.FLG_MAXRESULTS {
 		iVal, err := cmd.Flags().GetInt64(flagName)

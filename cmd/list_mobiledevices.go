@@ -32,11 +32,13 @@ import (
 	cmn "github.com/plusworx/gmin/utils/common"
 	cfg "github.com/plusworx/gmin/utils/config"
 	flgnm "github.com/plusworx/gmin/utils/flagnames"
+	gd "github.com/plusworx/gmin/utils/gendatastructs"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	gpars "github.com/plusworx/gmin/utils/gminparsers"
 	lg "github.com/plusworx/gmin/utils/logging"
 	mdevs "github.com/plusworx/gmin/utils/mobiledevices"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	admin "google.golang.org/api/admin/directory/v1"
 )
 
@@ -57,8 +59,25 @@ func doListMobDevs(cmd *cobra.Command, args []string) error {
 	defer lg.Debug("finished doListMobDevs()")
 
 	var (
-		mobdevs *admin.MobileDevices
+		flagsPassed []string
+		mobdevs     *admin.MobileDevices
 	)
+
+	flagValueMap := map[string]interface{}{}
+
+	// Collect names of command flags passed in
+	cmd.Flags().Visit(func(f *pflag.Flag) {
+		flagsPassed = append(flagsPassed, f.Name)
+	})
+
+	// Populate flag value map
+	for _, flg := range flagsPassed {
+		val, err := mdevs.GetFlagVal(cmd, flg)
+		if err != nil {
+			return err
+		}
+		flagValueMap[flg] = val
+	}
 
 	srv, err := cmn.CreateService(cmn.SRVTYPEADMIN, admin.AdminDirectoryDeviceMobileReadonlyScope)
 	if err != nil {
@@ -73,111 +92,28 @@ func doListMobDevs(cmd *cobra.Command, args []string) error {
 
 	mdlc := ds.Mobiledevices.List(customerID)
 
-	flgAttrsVal, err := cmd.Flags().GetString(flgnm.FLG_ATTRIBUTES)
+	err = lstMobDevProcessFlags(mdlc, flagValueMap)
 	if err != nil {
-		lg.Error(err)
 		return err
 	}
-	if flgAttrsVal != "" {
-		listAttrs, err := gpars.ParseOutputAttrs(flgAttrsVal, mdevs.MobDevAttrMap)
-		if err != nil {
-			return err
-		}
-		formattedAttrs := mdevs.STARTMOBDEVICESFIELD + listAttrs + mdevs.ENDFIELD
-		listCall := mdevs.AddFields(mdlc, formattedAttrs)
-		mdlc = listCall.(*admin.MobiledevicesListCall)
-	}
-
-	flgOrderByVal, err := cmd.Flags().GetString(flgnm.FLG_ORDERBY)
-	if err != nil {
-		lg.Error(err)
-		return err
-	}
-	if flgOrderByVal != "" {
-		ob := strings.ToLower(flgOrderByVal)
-		ok := cmn.SliceContainsStr(mdevs.ValidOrderByStrs, ob)
-		if !ok {
-			err = fmt.Errorf(gmess.ERR_INVALIDORDERBY, flgOrderByVal)
-			lg.Error(err)
-			return err
-		}
-
-		validOrderBy, err := cmn.IsValidAttr(ob, mdevs.MobDevAttrMap)
-		if err != nil {
-			return err
-		}
-
-		mdlc = mdevs.AddOrderBy(mdlc, validOrderBy)
-
-		flgSrtOrdVal, err := cmd.Flags().GetString(flgnm.FLG_SORTORDER)
-		if err != nil {
-			lg.Error(err)
-			return err
-		}
-		if flgSrtOrdVal != "" {
-			so := strings.ToLower(flgSrtOrdVal)
-			validSortOrder, err := cmn.IsValidAttr(so, cmn.ValidSortOrders)
-			if err != nil {
-				return err
-			}
-
-			mdlc = mdevs.AddSortOrder(mdlc, validSortOrder)
-		}
-	}
-
-	flgProjectionVal, err := cmd.Flags().GetString(flgnm.FLG_PROJECTION)
-	if err != nil {
-		lg.Error(err)
-		return err
-	}
-	if flgProjectionVal != "" {
-		proj := strings.ToLower(flgProjectionVal)
-		ok := cmn.SliceContainsStr(mdevs.ValidProjections, proj)
-		if !ok {
-			err = fmt.Errorf(gmess.ERR_INVALIDPROJECTIONTYPE, flgProjectionVal)
-			lg.Error(err)
-			return err
-		}
-
-		listCall := mdevs.AddProjection(mdlc, proj)
-		mdlc = listCall.(*admin.MobiledevicesListCall)
-	}
-
-	flgQueryVal, err := cmd.Flags().GetString(flgnm.FLG_QUERY)
-	if err != nil {
-		lg.Error(err)
-		return err
-	}
-	if flgQueryVal != "" {
-		formattedQuery, err := gpars.ParseQuery(flgQueryVal, mdevs.QueryAttrMap)
-		if err != nil {
-			return err
-		}
-
-		mdlc = mdevs.AddQuery(mdlc, formattedQuery)
-	}
-
-	flgMaxResultsVal, err := cmd.Flags().GetInt64(flgnm.FLG_MAXRESULTS)
-	if err != nil {
-		lg.Error(err)
-		return err
-	}
-	mdlc = mdevs.AddMaxResults(mdlc, flgMaxResultsVal)
 
 	mobdevs, err = mdevs.DoList(mdlc)
 	if err != nil {
 		return err
 	}
 
-	flgPagesVal, err := cmd.Flags().GetString(flgnm.FLG_PAGES)
+	err = lstMobDevPages(mdlc, mobdevs, flagValueMap)
 	if err != nil {
 		lg.Error(err)
 		return err
 	}
-	if flgPagesVal != "" {
-		err = doMobDevPages(mdlc, mobdevs, flgPagesVal)
-		if err != nil {
-			return err
+
+	flgCountVal, countPresent := flagValueMap[flgnm.FLG_COUNT]
+	if countPresent {
+		countVal := flgCountVal.(bool)
+		if countVal {
+			fmt.Println(len(mobdevs.Mobiledevices))
+			return nil
 		}
 	}
 
@@ -186,17 +122,7 @@ func doListMobDevs(cmd *cobra.Command, args []string) error {
 		lg.Error(err)
 		return err
 	}
-
-	flgCountVal, err := cmd.Flags().GetBool(flgnm.FLG_COUNT)
-	if err != nil {
-		lg.Error(err)
-		return err
-	}
-	if flgCountVal {
-		fmt.Println(len(mobdevs.Mobiledevices))
-	} else {
-		fmt.Println(string(jsonData))
-	}
+	fmt.Println(string(jsonData))
 
 	return nil
 }
@@ -286,4 +212,183 @@ func init() {
 	listMobDevsCmd.Flags().StringP(flgnm.FLG_PROJECTION, "j", "", "type of projection")
 	listMobDevsCmd.Flags().StringP(flgnm.FLG_QUERY, "q", "", "selection criteria to get devices (separated by ~)")
 	listMobDevsCmd.Flags().StringP(flgnm.FLG_SORTORDER, "s", "", "sort order of returned results")
+}
+
+func lstMobDevAttributes(mdlc *admin.MobiledevicesListCall, flagVal interface{}) error {
+	lg.Debug("starting lstMobDevAttributes()")
+	defer lg.Debug("finished lstMobDevAttributes()")
+
+	attrsVal := fmt.Sprintf("%v", flagVal)
+	if attrsVal != "" {
+		listAttrs, err := gpars.ParseOutputAttrs(attrsVal, mdevs.MobDevAttrMap)
+		if err != nil {
+			return err
+		}
+		formattedAttrs := mdevs.STARTMOBDEVICESFIELD + listAttrs + mdevs.ENDFIELD
+
+		listCall := mdevs.AddFields(mdlc, formattedAttrs)
+		mdlc = listCall.(*admin.MobiledevicesListCall)
+	}
+
+	return nil
+}
+
+func lstMobDevMaxResults(mdlc *admin.MobiledevicesListCall, flagVal interface{}) error {
+	lg.Debug("starting lstMobDevMaxResults()")
+	defer lg.Debug("finished lstMobDevMaxResults()")
+
+	flgMaxResultsVal := flagVal.(int64)
+
+	mdlc = mdevs.AddMaxResults(mdlc, flgMaxResultsVal)
+	return nil
+}
+
+func lstMobDevOrderBy(mdlc *admin.MobiledevicesListCall, inData interface{}) error {
+	lg.Debug("starting lstMobDevOrderBy()")
+	defer lg.Debug("finished lstMobDevOrderBy()")
+
+	var (
+		err          error
+		validOrderBy string
+	)
+
+	inStruct := inData.(gd.TwoStrStruct)
+
+	orderVal := inStruct.Element1
+	if orderVal != "" {
+		ob := strings.ToLower(orderVal)
+		ok := cmn.SliceContainsStr(mdevs.ValidOrderByStrs, ob)
+		if !ok {
+			err := fmt.Errorf(gmess.ERR_INVALIDORDERBY, orderVal)
+			lg.Error(err)
+			return err
+		}
+
+		validOrderBy, err = cmn.IsValidAttr(ob, mdevs.MobDevAttrMap)
+		if err != nil {
+			lg.Error(err)
+			return err
+		}
+		mdlc = mdevs.AddOrderBy(mdlc, validOrderBy)
+
+		flgSrtOrdByVal := inStruct.Element2
+		if flgSrtOrdByVal != "" {
+			so := strings.ToLower(flgSrtOrdByVal)
+			validSortOrder, err := cmn.IsValidAttr(so, cmn.ValidSortOrders)
+			if err != nil {
+				lg.Error(err)
+				return err
+			}
+
+			mdlc = mdevs.AddSortOrder(mdlc, validSortOrder)
+		}
+	}
+	return nil
+}
+
+func lstMobDevPages(mdlc *admin.MobiledevicesListCall, mobdevs *admin.MobileDevices, flgValMap map[string]interface{}) error {
+	lg.Debug("starting lstMobDevPages()")
+	defer lg.Debug("finished lstMobDevPages()")
+
+	flgPagesVal, pagesPresent := flgValMap[flgnm.FLG_PAGES]
+	if !pagesPresent {
+		return nil
+	}
+	if flgPagesVal != "" {
+		pagesVal := fmt.Sprintf("%v", flgPagesVal)
+		err := doMobDevPages(mdlc, mobdevs, pagesVal)
+		if err != nil {
+			lg.Error(err)
+			return err
+		}
+	}
+	return nil
+}
+
+func lstMobDevProcessFlags(mdlc *admin.MobiledevicesListCall, flgValMap map[string]interface{}) error {
+	lg.Debug("starting lstMobDevProcessFlags()")
+	defer lg.Debug("finished lstMobDevProcessFlags()")
+
+	lstMobDevFuncMap := map[string]func(*admin.MobiledevicesListCall, interface{}) error{
+		flgnm.FLG_ATTRIBUTES: lstMobDevAttributes,
+		flgnm.FLG_MAXRESULTS: lstMobDevMaxResults,
+		flgnm.FLG_ORDERBY:    lstMobDevOrderBy,
+		flgnm.FLG_PROJECTION: lstMobDevProjection,
+		flgnm.FLG_QUERY:      lstMobDevQuery,
+	}
+
+	// Cycle through flags that build the mdlc excluding pages and count
+	for key, val := range flgValMap {
+		// Order by has dependent sort order so deal with that
+		if key == flgnm.FLG_ORDERBY {
+			retStruct, err := lstMobDevSortOrderBy(flgValMap)
+			if err != nil {
+				return err
+			}
+			val = retStruct
+		}
+
+		lmdf, ok := lstMobDevFuncMap[key]
+		if !ok {
+			continue
+		}
+		err := lmdf(mdlc, val)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func lstMobDevProjection(mdlc *admin.MobiledevicesListCall, flagVal interface{}) error {
+	flgProjectionVal := fmt.Sprintf("%v", flagVal)
+	if flgProjectionVal != "" {
+		proj := strings.ToLower(flgProjectionVal)
+		ok := cmn.SliceContainsStr(mdevs.ValidProjections, proj)
+		if !ok {
+			err := fmt.Errorf(gmess.ERR_INVALIDPROJECTIONTYPE, flgProjectionVal)
+			lg.Error(err)
+			return err
+		}
+
+		listCall := mdevs.AddProjection(mdlc, proj)
+		mdlc = listCall.(*admin.MobiledevicesListCall)
+	}
+	return nil
+}
+
+func lstMobDevQuery(mdlc *admin.MobiledevicesListCall, flagVal interface{}) error {
+	lg.Debug("starting lstMobDevQuery()")
+	defer lg.Debug("finished lstMobDevQuery()")
+
+	qryVal := fmt.Sprintf("%v", flagVal)
+	if qryVal != "" {
+		formattedQuery, err := gpars.ParseQuery(qryVal, mdevs.QueryAttrMap)
+		if err != nil {
+			lg.Error(err)
+			return err
+		}
+
+		mdlc = mdevs.AddQuery(mdlc, formattedQuery)
+	}
+	return nil
+}
+
+func lstMobDevSortOrderBy(flgValMap map[string]interface{}) (gd.TwoStrStruct, error) {
+	lg.Debug("starting lstMobDevSortOrderBy()")
+	defer lg.Debug("finished lstMobDevSortOrderBy()")
+
+	outData := gd.TwoStrStruct{}
+
+	orderByVal := flgValMap[flgnm.FLG_ORDERBY]
+	sortOrderVal, sortOrderPresent := flgValMap[flgnm.FLG_SORTORDER]
+
+	outData.Element1 = fmt.Sprintf("%v", orderByVal)
+	if sortOrderPresent {
+		outData.Element2 = fmt.Sprintf("%v", sortOrderVal)
+	} else {
+		outData.Element2 = ""
+	}
+
+	return outData, nil
 }

@@ -29,6 +29,7 @@ import (
 	"strings"
 
 	cmn "github.com/plusworx/gmin/utils/common"
+	flgnm "github.com/plusworx/gmin/utils/flagnames"
 	gmess "github.com/plusworx/gmin/utils/gminmessages"
 	lg "github.com/plusworx/gmin/utils/logging"
 	"github.com/spf13/cobra"
@@ -485,9 +486,27 @@ func DoList(cdlc *admin.ChromeosdevicesListCall) (*admin.ChromeOsDevices, error)
 
 // GetFlagVal returns chromeOS device command flag values
 func GetFlagVal(cmd *cobra.Command, flagName string) (interface{}, error) {
-	lg.Debugw("starting getFlagVal()",
+	lg.Debugw("starting GetFlagVal()",
 		"flagName", flagName)
-	defer lg.Debug("finished getFlagVal()")
+	defer lg.Debug("finished GetFlagVal()")
+
+	if flagName == flgnm.FLG_MAXRESULTS {
+		iVal, err := cmd.Flags().GetInt64(flagName)
+		if err != nil {
+			lg.Error(err)
+			return nil, err
+		}
+		return iVal, nil
+	}
+
+	if flagName == flgnm.FLG_COUNT {
+		bVal, err := cmd.Flags().GetBool(flagName)
+		if err != nil {
+			lg.Error(err)
+			return nil, err
+		}
+		return bVal, nil
+	}
 
 	sVal, err := cmd.Flags().GetString(flagName)
 	if err != nil {

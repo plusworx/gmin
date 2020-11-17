@@ -37,6 +37,7 @@ const (
 	ERR_BATCHOU                  string = "error - %s - orgunit: %s"
 	ERR_BATCHUSER                string = "error - %s - user: %s"
 	ERR_CALLTYPENOTRECOGNIZED    string = "%v call type not recognized"
+	ERR_CANNOTBEZERO             string = "%v cannot be zero"
 	ERR_CREATEDIRECTORYSERVICE   string = "error - Creating Directory Service: %v"
 	ERR_CREATEGRPSETTINGSERVICE  string = "error - Creating Group Setting Service: %v"
 	ERR_CREATESHEETSERVICE       string = "error - Creating Sheet Service: %v"
