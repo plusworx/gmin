@@ -97,6 +97,15 @@ func doListMobDevs(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	// If maxresults flag wasn't passed in then use the default value
+	_, maxResultsPresent := flagValueMap[flgnm.FLG_MAXRESULTS]
+	if !maxResultsPresent {
+		err := lstMobDevMaxResults(mdlc, int64(100))
+		if err != nil {
+			return err
+		}
+	}
+
 	mobdevs, err = mdevs.DoList(mdlc)
 	if err != nil {
 		return err

@@ -90,6 +90,15 @@ func doListMembers(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	// If maxresults flag wasn't passed in then use the default value
+	_, maxResultsPresent := flagValueMap[flgnm.FLG_MAXRESULTS]
+	if !maxResultsPresent {
+		err := lstMemMaxResults(mlc, int64(200))
+		if err != nil {
+			return err
+		}
+	}
+
 	members, err = mems.DoList(mlc)
 	if err != nil {
 		return err

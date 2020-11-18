@@ -93,6 +93,15 @@ func doListUsers(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	// If maxresults flag wasn't passed in then use the default value
+	_, maxResultsPresent := flagValueMap[flgnm.FLG_MAXRESULTS]
+	if !maxResultsPresent {
+		err := lstUsrMaxResults(ulc, int64(500))
+		if err != nil {
+			return err
+		}
+	}
+
 	users, err = usrs.DoList(ulc)
 	if err != nil {
 		lg.Error(err)

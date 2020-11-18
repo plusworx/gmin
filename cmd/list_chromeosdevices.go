@@ -97,6 +97,15 @@ func doListCrOSDevs(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	// If maxresults flag wasn't passed in then use the default value
+	_, maxResultsPresent := flagValueMap[flgnm.FLG_MAXRESULTS]
+	if !maxResultsPresent {
+		err := lstCrOSDevMaxResults(cdlc, int64(200))
+		if err != nil {
+			return err
+		}
+	}
+
 	crosdevs, err = cdevs.DoList(cdlc)
 	if err != nil {
 		return err

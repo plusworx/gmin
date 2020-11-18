@@ -93,6 +93,15 @@ func doListGroups(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	// If maxresults flag wasn't passed in then use the default value
+	_, maxResultsPresent := flagValueMap[flgnm.FLG_MAXRESULTS]
+	if !maxResultsPresent {
+		err := lstGrpMaxResults(glc, int64(200))
+		if err != nil {
+			return err
+		}
+	}
+
 	groups, err = grps.DoList(glc)
 	if err != nil {
 		return err
