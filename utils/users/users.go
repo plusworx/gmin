@@ -1703,7 +1703,7 @@ func ShowSubAttrs(compAttr string, filter string) error {
 	// Check whether attr is comp plural
 	attrVal, isPlural := userCompAttrs[lwrCompAttr]
 	if isPlural {
-		lwrCompAttr = attrVal
+		lwrCompAttr = strings.ToLower(attrVal)
 	}
 
 	attrMap, isCompAttr := attrMatchMap[lwrCompAttr]
