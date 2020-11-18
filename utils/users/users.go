@@ -1700,6 +1700,12 @@ func ShowSubAttrs(compAttr string, filter string) error {
 		"website":      websiteAttrs,
 	}
 
+	// Check whether attr is comp plural
+	attrVal, isPlural := userCompAttrs[lwrCompAttr]
+	if isPlural {
+		lwrCompAttr = attrVal
+	}
+
 	attrMap, isCompAttr := attrMatchMap[lwrCompAttr]
 	if isCompAttr {
 		cmn.ShowAttrs(attrMap, UserAttrMap, filter)
